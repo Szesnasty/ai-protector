@@ -24,7 +24,7 @@
 
 ## Phase 2: Firewall Pipeline (week 3–4)
 
-- [ ] **[Step 06 — Pipeline Core (LangGraph)](06-pipeline-core/SPEC.md)**
+- [x] **[Step 06 — Pipeline Core (LangGraph)](06-pipeline-core/SPEC.md)**
   ParseNode + IntentNode + RulesNode, LangGraph state & graph wiring
 
 - [ ] **[Step 07 — Security Scanners](07-security-scanners/SPEC.md)**

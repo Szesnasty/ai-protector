@@ -28,6 +28,10 @@ async def sse_stream(
     policy_name: str = "balanced",
     messages: list[dict] | None = None,
     start_time: float | None = None,
+    intent: str | None = None,
+    risk_flags: dict | None = None,
+    risk_score: float = 0.0,
+    decision: str = "ALLOW",
 ) -> AsyncGenerator[str, None]:
     """Convert LiteLLM streaming response to SSE-formatted chunks.
 
@@ -76,7 +80,10 @@ async def sse_stream(
             policy_name=policy_name,
             model=model,
             messages=messages or [],
-            decision="ALLOW",
+            decision=decision,
+            intent=intent,
+            risk_flags=risk_flags,
+            risk_score=risk_score,
             latency_ms=latency_ms,
             tokens_out=token_count,
         )
