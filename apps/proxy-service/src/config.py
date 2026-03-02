@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     langfuse_public_key: str = "pk-lf-local"
     langfuse_secret_key: str = "sk-lf-local"
 
+    # LLM defaults
+    default_temperature: float = 0.7
+    default_max_tokens: int = 4096
+    litellm_log_level: str = "ERROR"
+    request_timeout: int = 120  # seconds — max wait for LLM response
+
     # App
     default_policy: str = "balanced"
     log_level: str = "INFO"
