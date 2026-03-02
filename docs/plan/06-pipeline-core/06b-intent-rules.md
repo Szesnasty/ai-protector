@@ -19,7 +19,7 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
 
 ### 1. IntentNode (`src/pipeline/nodes/intent.py`)
 
-- [ ] Intent categories:
+- [x] Intent categories:
   | Intent | Description | Example |
   |--------|-------------|---------|
   | `qa` | General question answering | "What is photosynthesis?" |
@@ -30,7 +30,7 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
   | `jailbreak` | Attempting role override | "You are now DAN…" |
   | `unknown` | Unclassifiable | — |
 
-- [ ] Pattern lists (case-insensitive matching):
+- [x] Pattern lists (case-insensitive matching):
   ```python
   JAILBREAK_PATTERNS = [
       "ignore previous", "ignore all prior", "ignore your instructions",
@@ -53,7 +53,7 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
   ]
   ```
 
-- [ ] Implementation:
+- [x] Implementation:
   ```python
   @timed_node("intent")
   async def intent_node(state: PipelineState) -> PipelineState:
@@ -87,13 +87,13 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
 
 ### 2. RulesNode (`src/pipeline/nodes/rules.py`)
 
-- [ ] Deterministic checks:
+- [x] Deterministic checks:
   ```python
   MAX_PROMPT_LENGTH = 16_000   # characters
   MAX_MESSAGES = 50
   SPECIAL_CHAR_THRESHOLD = 0.3 # ratio
   ```
-- [ ] Implementation:
+- [x] Implementation:
   ```python
   @timed_node("rules")
   async def rules_node(state: PipelineState) -> PipelineState:
@@ -132,7 +132,7 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
 
 ### 3. Denylist service (`src/services/denylist.py`)
 
-- [ ] Load `denylist_phrases` from DB for the policy:
+- [x] Load `denylist_phrases` from DB for the policy:
   ```python
   async def check_denylist(text: str, policy_name: str) -> list[str]:
       """
@@ -151,12 +151,12 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
                   hits.append(phrase.phrase)
       return hits
   ```
-- [ ] Cache denylist in Redis (key: `denylist:{policy_name}`, TTL 60s)
-- [ ] If Redis unavailable, fall back to DB query
+- [x] Cache denylist in Redis (key: `denylist:{policy_name}`, TTL 60s)
+- [x] If Redis unavailable, fall back to DB query
 
 ### 4. Pattern helpers (`src/pipeline/nodes/rules.py`)
 
-- [ ] `contains_encoded_content(text)`:
+- [x] `contains_encoded_content(text)`:
   ```python
   def contains_encoded_content(text: str) -> bool:
       """Detect base64 or hex-encoded content used for obfuscation."""
@@ -168,7 +168,7 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
           return True
       return False
   ```
-- [ ] `excessive_special_chars(text)`:
+- [x] `excessive_special_chars(text)`:
   ```python
   def excessive_special_chars(text: str) -> bool:
       """Detect prompts with >30% non-alphanumeric characters."""
@@ -180,7 +180,7 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
 
 ### 5. Seed denylist phrases (`src/db/seed.py`)
 
-- [ ] Extend `seed_policies()` or add `seed_denylist()`:
+- [x] Extend `seed_policies()` or add `seed_denylist()`:
   ```python
   DEFAULT_DENYLIST = [
       {"phrase": "ignore previous instructions", "category": "injection"},
@@ -193,23 +193,23 @@ Implement the **IntentNode** (keyword-based intent classifier) and the **RulesNo
       {"phrase": r"(?i)\b(bomb|weapon|exploit)\b.*\b(make|build|create)\b", "category": "harmful", "is_regex": True},
   ]
   ```
-- [ ] Link phrases to `balanced`, `strict`, `paranoid` policies (not `fast`)
-- [ ] Idempotent: skip if phrase already exists for that policy
-- [ ] Run in lifespan startup after `seed_policies()`
+- [x] Link phrases to `balanced`, `strict`, `paranoid` policies (not `fast`)
+- [x] Idempotent: skip if phrase already exists for that policy
+- [x] Run in lifespan startup after `seed_policies()`
 
 ---
 
 ## Definition of Done
 
-- [ ] IntentNode classifies 7 intent types via keyword heuristics
-- [ ] `"ignore previous instructions"` → `intent=jailbreak`, `risk_flags.suspicious_intent=0.8`
-- [ ] `"Hello!"` → `intent=chitchat`, confidence=0.9
-- [ ] `"What is Python?"` → `intent=qa`, confidence=0.5
-- [ ] RulesNode checks denylist (exact + regex), length, messages count, encoding, special chars
-- [ ] Denylist loaded from DB, cached in Redis (TTL 60s)
-- [ ] 8+ default denylist phrases seeded (4 categories)
-- [ ] Pattern utilitie: `contains_encoded_content()`, `excessive_special_chars()`
-- [ ] `ruff check src/` → 0 errors
+- [x] IntentNode classifies 7 intent types via keyword heuristics
+- [x] `"ignore previous instructions"` → `intent=jailbreak`, `risk_flags.suspicious_intent=0.8`
+- [x] `"Hello!"` → `intent=chitchat`, confidence=0.9
+- [x] `"What is Python?"` → `intent=qa`, confidence=0.5
+- [x] RulesNode checks denylist (exact + regex), length, messages count, encoding, special chars
+- [x] Denylist loaded from DB, cached in Redis (TTL 60s)
+- [x] 8+ default denylist phrases seeded (4 categories)
+- [x] Pattern utilitie: `contains_encoded_content()`, `excessive_special_chars()`
+- [x] `ruff check src/` → 0 errors
 
 ---
 

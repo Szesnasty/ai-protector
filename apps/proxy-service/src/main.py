@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.config import get_settings
-from src.db.seed import seed_policies
+from src.db.seed import seed_denylist, seed_policies
 from src.db.session import close_db, close_redis, engine
 from src.llm.exceptions import LLMError
 from src.logging import CorrelationIdMiddleware, setup_logging
@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await conn.run_sync(Base.metadata.create_all)
 
     await seed_policies()
+    await seed_denylist()
     logger.info("proxy_ready")
 
     yield
