@@ -16,7 +16,7 @@
 - [x] **[Step 03 — Proxy Service Foundation](03-proxy-foundation/SPEC.md)**
   FastAPI skeleton, SQLAlchemy models, Alembic migrations, health endpoint, seed data
 
-- [ ] **Step 04 — Basic LLM Proxy**
+- [ ] **[Step 04 — Basic LLM Proxy](04-basic-llm-proxy/SPEC.md)**
   `POST /v1/chat/completions` passthrough to Ollama via LiteLLM, streaming support
 
 - [ ] **Step 05 — Frontend Foundation**
@@ -24,10 +24,10 @@
 
 ## Phase 2: Firewall Pipeline (week 3–4)
 
-- [ ] **Step 06 — Pipeline Core (LangGraph)**
+- [ ] **[Step 06 — Pipeline Core (LangGraph)](06-pipeline-core/SPEC.md)**
   ParseNode + IntentNode + RulesNode, LangGraph state & graph wiring
 
-- [ ] **Step 07 — Security Scanners**
+- [ ] **[Step 07 — Security Scanners](07-security-scanners/SPEC.md)**
   LLM Guard (injection, toxicity, secrets) + Presidio PII detection — parallel scanner nodes
 
 - [ ] **Step 08 — Policy Engine**
