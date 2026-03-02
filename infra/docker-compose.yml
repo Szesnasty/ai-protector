@@ -68,20 +68,20 @@ services:
     networks:
       - ai-protector
 
-  # ── App Services (uncomment when code exists) ─────────
-  # proxy-service:
-  #   build:
-  #     context: ../apps/proxy-service
-  #   ports:
-  #     - "8000:8000"
-  #   env_file: .env
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   networks:
-  #     - ai-protector
+  # ── App Services ───────────────────────────────────────
+  proxy-service:
+    build:
+      context: ../apps/proxy-service
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-protector
 
   # agent-demo:
   #   build:

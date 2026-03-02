@@ -20,7 +20,7 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
 
 ### 1. Application structure
 
-- [ ] Create the package layout:
+- [x] Create the package layout:
   ```
   apps/proxy-service/
   ├── src/
@@ -60,7 +60,7 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
 
 ### 2. Configuration (`src/config.py`)
 
-- [ ] Pydantic `BaseSettings` with:
+- [x] Pydantic `BaseSettings` with:
   ```python
   class Settings(BaseSettings):
       # Database
@@ -84,36 +84,36 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
 
       model_config = SettingsConfigDict(env_file=".env")
   ```
-- [ ] Singleton pattern via `@lru_cache`
+- [x] Singleton pattern via `@lru_cache`
 
 ### 3. Database models (`src/models/`)
 
-- [ ] `base.py`: `DeclarativeBase` with UUID primary key mixin
-- [ ] `policy.py`: `Policy` model matching the SQL schema from MVP.spec.md
+- [x] `base.py`: `DeclarativeBase` with UUID primary key mixin
+- [x] `policy.py`: `Policy` model matching the SQL schema from MVP.spec.md
   - id (UUID), name, description, config (JSONB), is_active, version, created_at, updated_at
-- [ ] `request.py`: `Request` model
+- [x] `request.py`: `Request` model
   - id, client_id, policy_id (FK), intent, prompt_hash, prompt_preview, decision, risk_flags (JSONB), risk_score, latency_ms, model_used, tokens_in, tokens_out, blocked_reason, response_masked, created_at
-- [ ] `denylist.py`: `DenylistPhrase` model
+- [x] `denylist.py`: `DenylistPhrase` model
   - id, policy_id (FK, cascade), phrase, category, is_regex, created_at
 
 ### 4. Database session (`src/db/session.py`)
 
-- [ ] `create_async_engine()` with pool settings
-- [ ] `async_sessionmaker` for creating sessions
-- [ ] `get_db()` async generator for FastAPI dependency injection
-- [ ] Redis client factory (`get_redis()`)
+- [x] `create_async_engine()` with pool settings
+- [x] `async_sessionmaker` for creating sessions
+- [x] `get_db()` async generator for FastAPI dependency injection
+- [x] Redis client factory (`get_redis()`)
 
 ### 5. Alembic setup
 
-- [ ] Initialize Alembic: `alembic init alembic`
-- [ ] Configure `alembic/env.py` for async SQLAlchemy
-- [ ] Set `sqlalchemy.url` from `Settings.database_url`
-- [ ] Generate initial migration: `alembic revision --autogenerate -m "initial schema"`
-- [ ] Verify: `alembic upgrade head` creates all 3 tables + indexes
+- [x] Initialize Alembic: `alembic init alembic`
+- [x] Configure `alembic/env.py` for async SQLAlchemy
+- [x] Set `sqlalchemy.url` from `Settings.database_url`
+- [x] Generate initial migration: `alembic revision --autogenerate -m "initial schema"`
+- [x] Verify: `alembic upgrade head` creates all 3 tables + indexes
 
 ### 6. Seed data (`src/db/seed.py`)
 
-- [ ] Create 4 default policies:
+- [x] Create 4 default policies:
   ```python
   DEFAULT_POLICIES = [
       {
@@ -150,12 +150,12 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
       }
   ]
   ```
-- [ ] Idempotent: skip if policies already exist (upsert by name)
-- [ ] Run on app startup (lifespan event)
+- [x] Idempotent: skip if policies already exist (upsert by name)
+- [x] Run on app startup (lifespan event)
 
 ### 7. Health endpoint (`src/routers/health.py`)
 
-- [ ] `GET /health` returns:
+- [x] `GET /health` returns:
   ```json
   {
       "status": "ok",
@@ -168,25 +168,25 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
       "version": "0.1.0"
   }
   ```
-- [ ] Each service check:
+- [x] Each service check:
   - **db**: `SELECT 1` via async session
   - **redis**: `PING` via aioredis
   - **ollama**: `GET {ollama_base_url}/api/tags` via httpx
   - **langfuse**: `GET {langfuse_host}/api/public/health` via httpx
-- [ ] If a service is down → `"status": "degraded"`, service shows `"error": "..."`
-- [ ] Response model: `HealthResponse` Pydantic schema
+- [x] If a service is down → `"status": "degraded"`, service shows `"error": "..."`
+- [x] Response model: `HealthResponse` Pydantic schema
 
 ### 8. Structured logging (`src/logging.py`)
 
-- [ ] Configure Structlog with:
+- [x] Configure Structlog with:
   - JSON renderer (production) / ConsoleRenderer (dev)
   - Processors: timestamp, log level, caller info, request correlation ID
   - Integration with uvicorn access logs
-- [ ] Add middleware to inject `correlation_id` (UUID) into every request
+- [x] Add middleware to inject `correlation_id` (UUID) into every request
 
 ### 9. FastAPI app (`src/main.py`)
 
-- [ ] App factory with lifespan:
+- [x] App factory with lifespan:
   ```python
   @asynccontextmanager
   async def lifespan(app: FastAPI):
@@ -198,14 +198,14 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
       await close_db()
       await close_redis()
   ```
-- [ ] Include routers: `/health`
-- [ ] CORS middleware (allow frontend origin)
-- [ ] Request correlation ID middleware
-- [ ] OpenAPI metadata (title, description, version)
+- [x] Include routers: `/health`
+- [x] CORS middleware (allow frontend origin)
+- [x] Request correlation ID middleware
+- [x] OpenAPI metadata (title, description, version)
 
 ### 10. Dockerfile
 
-- [ ] Multi-stage build:
+- [x] Multi-stage build:
   ```dockerfile
   # Stage 1: Builder
   FROM python:3.12-slim AS builder
@@ -227,7 +227,7 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
 
 ### 11. First test
 
-- [ ] `tests/test_health.py`:
+- [x] `tests/test_health.py`:
   ```python
   async def test_health_endpoint(client):
       response = await client.get("/health")
@@ -235,7 +235,7 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
       data = response.json()
       assert data["status"] in ("ok", "degraded")
   ```
-- [ ] Configure `pytest` with `httpx.AsyncClient` + `TestClient`
+- [x] Configure `pytest` with `httpx.AsyncClient` + `TestClient`
 
 ---
 
@@ -254,15 +254,15 @@ Every request gets a UUID that flows through all logs, Langfuse traces, and DB r
 
 ## Definition of Done
 
-- [ ] `cd apps/proxy-service && uvicorn src.main:app` → starts on :8000
-- [ ] `GET /health` → returns JSON with status + all 4 service checks
-- [ ] `alembic upgrade head` → creates `policies`, `requests`, `denylist_phrases` tables
-- [ ] `SELECT * FROM policies` → 4 default policies (fast, balanced, strict, paranoid)
-- [ ] Structlog outputs JSON logs with correlation_id
-- [ ] `ruff check src/` → 0 errors
-- [ ] `pytest tests/` → test_health passes
-- [ ] Dockerfile builds: `docker build -t ai-protector-proxy .`
-- [ ] Uncomment `proxy-service` in docker-compose.yml → service starts and connects to DB
+- [x] `cd apps/proxy-service && uvicorn src.main:app` → starts on :8000
+- [x] `GET /health` → returns JSON with status + all 4 service checks
+- [x] `alembic upgrade head` → creates `policies`, `requests`, `denylist_phrases` tables
+- [x] `SELECT * FROM policies` → 4 default policies (fast, balanced, strict, paranoid)
+- [x] Structlog outputs JSON logs with correlation_id
+- [x] `ruff check src/` → 0 errors
+- [x] `pytest tests/` → test_health passes
+- [x] Dockerfile builds: `docker build -t ai-protector-proxy .`
+- [x] Uncomment `proxy-service` in docker-compose.yml → service starts and connects to DB
 
 ---
 
