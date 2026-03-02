@@ -19,7 +19,7 @@ Implement the **DecisionNode** (aggregates risk → ALLOW/MODIFY/BLOCK), **Trans
 
 ### 1. Risk score calculator (`src/pipeline/nodes/decision.py`)
 
-- [ ] Weighted aggregation of all risk signals:
+- [x] Weighted aggregation of all risk signals:
   ```python
   def calculate_risk_score(state: PipelineState) -> float:
       score = 0.0
@@ -52,7 +52,7 @@ Implement the **DecisionNode** (aggregates risk → ALLOW/MODIFY/BLOCK), **Trans
 
 ### 2. DecisionNode (`src/pipeline/nodes/decision.py`)
 
-- [ ] Implementation:
+- [x] Implementation:
   ```python
   @timed_node("decision")
   async def decision_node(state: PipelineState) -> PipelineState:
@@ -83,7 +83,7 @@ Implement the **DecisionNode** (aggregates risk → ALLOW/MODIFY/BLOCK), **Trans
 
 ### 3. TransformNode (`src/pipeline/nodes/transform.py`)
 
-- [ ] Safety prefix constant:
+- [x] Safety prefix constant:
   ```python
   SAFETY_PREFIX = (
       "IMPORTANT: You are a helpful assistant. Follow these rules strictly:\n"
@@ -93,7 +93,7 @@ Implement the **DecisionNode** (aggregates risk → ALLOW/MODIFY/BLOCK), **Trans
       "4. Do not output any sensitive data like passwords, API keys, or PII.\n\n"
   )
   ```
-- [ ] Implementation:
+- [x] Implementation:
   ```python
   @timed_node("transform")
   async def transform_node(state: PipelineState) -> PipelineState:
@@ -122,7 +122,7 @@ Implement the **DecisionNode** (aggregates risk → ALLOW/MODIFY/BLOCK), **Trans
 
 ### 4. LLMCallNode (`src/pipeline/nodes/llm_call.py`)
 
-- [ ] Wraps the existing `llm_completion()` from Step 04:
+- [x] Wraps the existing `llm_completion()` from Step 04:
   ```python
   @timed_node("llm_call")
   async def llm_call_node(state: PipelineState) -> PipelineState:
@@ -147,7 +147,7 @@ Implement the **DecisionNode** (aggregates risk → ALLOW/MODIFY/BLOCK), **Trans
 
 ### 5. Graph wiring (`src/pipeline/graph.py`)
 
-- [ ] Build the `StateGraph`:
+- [x] Build the `StateGraph`:
   ```python
   from langgraph.graph import StateGraph, END
 
@@ -188,11 +188,11 @@ Implement the **DecisionNode** (aggregates risk → ALLOW/MODIFY/BLOCK), **Trans
           return "modify"
       return "allow"
   ```
-- [ ] Compile graph once at module level: `pipeline = build_pipeline()`
+- [x] Compile graph once at module level: `pipeline = build_pipeline()`
 
 ### 6. Pipeline runner (`src/pipeline/runner.py`)
 
-- [ ] Main entry point:
+- [x] Main entry point:
   ```python
   pipeline = build_pipeline()
 
@@ -224,22 +224,22 @@ Implement the **DecisionNode** (aggregates risk → ALLOW/MODIFY/BLOCK), **Trans
 
       return await pipeline.ainvoke(initial_state)
   ```
-- [ ] `get_policy_config(name)`: fetch from DB, cache in Redis (TTL 60s)
-- [ ] Fallback to `Settings.default_policy` if name not found
+- [x] `get_policy_config(name)`: fetch from DB, cache in Redis (TTL 60s)
+- [x] Fallback to `Settings.default_policy` if name not found
 
 ---
 
 ## Definition of Done
 
-- [ ] `calculate_risk_score()` — weighted aggregation, capped at 1.0
-- [ ] DecisionNode: denylist → BLOCK, high risk → BLOCK, suspicious → MODIFY, clean → ALLOW
-- [ ] TransformNode: inserts safety prefix + spotlighting delimiters when MODIFY
-- [ ] LLMCallNode: wraps `llm_completion()`, uses `modified_messages` if present
-- [ ] `build_pipeline()` returns compiled `StateGraph` with conditional edges
-- [ ] `route_after_decision()` routes to block/modify/allow correctly
-- [ ] `run_pipeline()` loads policy config from DB (with Redis cache)
-- [ ] Graph runs end-to-end: clean → ALLOW+response, injection → BLOCK (no LLM call)
-- [ ] `ruff check src/` → 0 errors
+- [x] `calculate_risk_score()` — weighted aggregation, capped at 1.0
+- [x] DecisionNode: denylist → BLOCK, high risk → BLOCK, suspicious → MODIFY, clean → ALLOW
+- [x] TransformNode: inserts safety prefix + spotlighting delimiters when MODIFY
+- [x] LLMCallNode: wraps `llm_completion()`, uses `modified_messages` if present
+- [x] `build_pipeline()` returns compiled `StateGraph` with conditional edges
+- [x] `route_after_decision()` routes to block/modify/allow correctly
+- [x] `run_pipeline()` loads policy config from DB (with Redis cache)
+- [x] Graph runs end-to-end: clean → ALLOW+response, injection → BLOCK (no LLM call)
+- [x] `ruff check src/` → 0 errors
 
 ---
 
