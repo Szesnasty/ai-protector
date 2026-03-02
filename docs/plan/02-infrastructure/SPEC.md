@@ -20,19 +20,19 @@ Create a complete Docker Compose setup so that `docker compose up` brings up the
 
 ### 1. Docker Compose file (`infra/docker-compose.yml`)
 
-- [ ] Define all services with proper dependency order
-- [ ] Use `depends_on` with `condition: service_healthy` where possible
-- [ ] Named volumes for persistent data (pgdata, ollama_models)
-- [ ] Network: single `ai-protector` bridge network
+- [x] Define all services with proper dependency order
+- [x] Use `depends_on` with `condition: service_healthy` where possible
+- [x] Named volumes for persistent data (pgdata, ollama_models)
+- [x] Network: single `ai-protector` bridge network
 
 ### 2. PostgreSQL + pgvector
 
-- [ ] Image: `pgvector/pgvector:pg16`
-- [ ] Port: `5432:5432`
-- [ ] Environment: `POSTGRES_DB=ai_protector`, `POSTGRES_USER=postgres`, `POSTGRES_PASSWORD=postgres`
-- [ ] Volume: `pgdata:/var/lib/postgresql/data`
-- [ ] Healthcheck: `pg_isready -U postgres`
-- [ ] Init script: `infra/init-db.sql` — create a second database `langfuse` for Langfuse
+- [x] Image: `pgvector/pgvector:pg16`
+- [x] Port: `5432:5432`
+- [x] Environment: `POSTGRES_DB=ai_protector`, `POSTGRES_USER=postgres`, `POSTGRES_PASSWORD=postgres`
+- [x] Volume: `pgdata:/var/lib/postgresql/data`
+- [x] Healthcheck: `pg_isready -U postgres`
+- [x] Init script: `infra/init-db.sql` — create a second database `langfuse` for Langfuse
   ```sql
   -- infra/init-db.sql
   SELECT 'CREATE DATABASE langfuse'
@@ -41,17 +41,17 @@ Create a complete Docker Compose setup so that `docker compose up` brings up the
 
 ### 3. Redis
 
-- [ ] Image: `redis:7-alpine`
-- [ ] Port: `6379:6379`
-- [ ] Healthcheck: `redis-cli ping`
-- [ ] No persistence needed for dev (data is cache/ephemeral)
+- [x] Image: `redis:7-alpine`
+- [x] Port: `6379:6379`
+- [x] Healthcheck: `redis-cli ping`
+- [x] No persistence needed for dev (data is cache/ephemeral)
 
 ### 4. Ollama
 
-- [ ] Image: `ollama/ollama:latest`
-- [ ] Port: `11434:11434`
-- [ ] Volume: `ollama_models:/root/.ollama`
-- [ ] Create `infra/scripts/pull-model.sh`:
+- [x] Image: `ollama/ollama:latest`
+- [x] Port: `11434:11434`
+- [x] Volume: `ollama_models:/root/.ollama`
+- [x] Create `infra/scripts/pull-model.sh`:
   ```bash
   #!/bin/bash
   echo "Waiting for Ollama to be ready..."
@@ -60,30 +60,30 @@ Create a complete Docker Compose setup so that `docker compose up` brings up the
   ollama pull llama3.1:8b
   echo "Model ready."
   ```
-- [ ] Document: first `docker compose up` will need `./infra/scripts/pull-model.sh` to download the model (~4.7 GB)
+- [x] Document: first `docker compose up` will need `./infra/scripts/pull-model.sh` to download the model (~4.7 GB)
 
 ### 5. Langfuse
 
-- [ ] Image: `langfuse/langfuse:latest`
-- [ ] Port: `3001:3000` (avoids conflict with frontend on 3000)
-- [ ] Environment variables:
+- [x] Image: `langfuse/langfuse:2` *(pinned to v2 — v3 requires ClickHouse + MinIO)*
+- [x] Port: `3001:3000` (avoids conflict with frontend on 3000)
+- [x] Environment variables:
   - `DATABASE_URL=postgresql://postgres:postgres@db:5432/langfuse`
   - `NEXTAUTH_URL=http://localhost:3001`
   - `NEXTAUTH_SECRET=local-dev-secret`
   - `SALT=local-dev-salt`
-- [ ] Depends on: `db`
-- [ ] Healthcheck: `curl -f http://localhost:3000/api/public/health`
+- [x] Depends on: `db`
+- [x] Healthcheck: `wget -qO- http://localhost:3000/api/public/health` *(wget instead of curl — not available in Langfuse v2 image)*
 
 ### 6. App service stubs (build context only, no code yet)
 
-- [ ] `proxy-service` — build context `../apps/proxy-service`, ports `8000:8000`, env vars from `.env`
-- [ ] `agent-demo` — build context `../apps/agent-demo`, ports `8002:8002`
-- [ ] `frontend` — build context `../apps/frontend`, ports `3000:3000`
-- [ ] All 3 commented out initially (uncommented once code exists in future steps)
+- [x] `proxy-service` — build context `../apps/proxy-service`, ports `8000:8000`, env vars from `.env`
+- [x] `agent-demo` — build context `../apps/agent-demo`, ports `8002:8002`
+- [x] `frontend` — build context `../apps/frontend`, ports `3000:3000`
+- [x] All 3 commented out initially (uncommented once code exists in future steps)
 
 ### 7. Environment file
 
-- [ ] Update `infra/.env.example` with all variables:
+- [x] Update `infra/.env.example` with all variables:
   ```env
   # PostgreSQL
   POSTGRES_DB=ai_protector
@@ -109,11 +109,11 @@ Create a complete Docker Compose setup so that `docker compose up` brings up the
   # Agent Demo
   PROXY_BASE_URL=http://proxy-service:8000
   ```
-- [ ] Create `infra/.env` by copying `.env.example` (gitignored)
+- [x] Create `infra/.env` by copying `.env.example` (gitignored)
 
 ### 8. Verification script
 
-- [ ] Create `infra/scripts/verify-stack.sh`:
+- [x] Create `infra/scripts/verify-stack.sh`:
   - Checks PostgreSQL connection
   - Checks Redis ping
   - Checks Ollama API
@@ -152,14 +152,14 @@ No code exists yet (created in Steps 03–05). Including them would cause build 
 
 ## Definition of Done
 
-- [ ] `cd infra && docker compose up -d` → all 4 infra services start (db, redis, ollama, langfuse)
-- [ ] `docker compose ps` → all services `healthy` or `running`
-- [ ] `psql -h localhost -U postgres -d ai_protector -c '\dt'` → connects (empty is fine)
-- [ ] `redis-cli -h localhost ping` → `PONG`
-- [ ] `curl http://localhost:11434/api/tags` → Ollama responds
-- [ ] `./infra/scripts/pull-model.sh` → downloads llama3.1:8b successfully
-- [ ] `curl http://localhost:3001` → Langfuse UI loads
-- [ ] `./infra/scripts/verify-stack.sh` → all checks pass
+- [x] `cd infra && docker compose up -d` → all 4 infra services start (db, redis, ollama, langfuse)
+- [x] `docker compose ps` → all services `healthy` or `running`
+- [x] `psql -h localhost -U postgres -d ai_protector -c '\dt'` → connects (empty is fine)
+- [x] `redis-cli -h localhost ping` → `PONG`
+- [x] `curl http://localhost:11434/api/tags` → Ollama responds
+- [ ] `./infra/scripts/pull-model.sh` → downloads llama3.1:8b successfully *(skipped — 4.7 GB download, script verified working)*
+- [x] `curl http://localhost:3001` → Langfuse UI loads (HTTP 200)
+- [x] `./infra/scripts/verify-stack.sh` → all checks pass
 
 ---
 

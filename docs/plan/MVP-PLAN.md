@@ -10,7 +10,7 @@
 - [x] **[Step 01 — Project Scaffolding](01-project-scaffolding/SPEC.md)**
   Monorepo structure, linters, Python & Node configs, .gitignore
 
-- [ ] **[Step 02 — Infrastructure (Docker Compose)](02-infrastructure/SPEC.md)**
+- [x] **[Step 02 — Infrastructure (Docker Compose)](02-infrastructure/SPEC.md)**
   All services: PostgreSQL, Redis, Ollama, Langfuse — one `docker compose up`
 
 - [ ] **[Step 03 — Proxy Service Foundation](03-proxy-foundation/SPEC.md)**
@@ -75,7 +75,7 @@
 
 | Phase | Steps | Status |
 |-------|-------|--------|
-| Foundation | 01–05 | 🟩 01 done |
+| Foundation | 01–05 | 🟩 01 02 done |
 | Firewall Pipeline | 06–09 | ⬜ Not started |
 | Playground UI | 10 | ⬜ Not started |
 | Agent Demo | 11–13 | ⬜ Not started |

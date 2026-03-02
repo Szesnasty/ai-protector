@@ -1,4 +1,111 @@
-# Placeholder — full setup in Step 02
-# Run: cd infra && docker compose up
+# AI Protector — Development Infrastructure
+# Usage: cd infra && docker compose up -d
 
-services: {}
+services:
+  # ── PostgreSQL + pgvector ─────────────────────────────
+  db:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ai_protector}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ai-protector
+
+  # ── Redis ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ai-protector
+
+  # ── Ollama ────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - ai-protector
+
+  # ── Langfuse ──────────────────────────────────────────
+  # Pinned to v2 — v3 requires ClickHouse + MinIO (overkill for local dev)
+  langfuse:
+    image: langfuse/langfuse:2
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/langfuse
+      NEXTAUTH_URL: http://localhost:3001
+      NEXTAUTH_SECRET: local-dev-secret
+      SALT: local-dev-salt
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/public/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - ai-protector
+
+  # ── App Services (uncomment when code exists) ─────────
+  # proxy-service:
+  #   build:
+  #     context: ../apps/proxy-service
+  #   ports:
+  #     - "8000:8000"
+  #   env_file: .env
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - ai-protector
+
+  # agent-demo:
+  #   build:
+  #     context: ../apps/agent-demo
+  #   ports:
+  #     - "8002:8002"
+  #   env_file: .env
+  #   depends_on:
+  #     - proxy-service
+  #   networks:
+  #     - ai-protector
+
+  # frontend:
+  #   build:
+  #     context: ../apps/frontend
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - ai-protector
+
+volumes:
+  pgdata:
+  ollama_models:
+
+networks:
+  ai-protector:
+    driver: bridge
