@@ -19,7 +19,7 @@ Integrate **Microsoft Presidio** as a pipeline node for PII detection and anonym
 
 ### 1. Presidio node (`src/pipeline/nodes/presidio.py`)
 
-- [ ] Entity types to detect:
+- [x] Entity types to detect:
   | Entity | Examples |
   |--------|---------|
   | `PERSON` | "John Smith", "Dr. Martinez" |
@@ -33,7 +33,7 @@ Integrate **Microsoft Presidio** as a pipeline node for PII detection and anonym
   | `DATE_TIME` | "born on 1990-01-15" |
   | `NRP` | Nationality/religious/political groups |
 
-- [ ] Lazy initialization:
+- [x] Lazy initialization:
   ```python
   from presidio_analyzer import AnalyzerEngine, RecognizerResult
   from presidio_anonymizer import AnonymizerEngine
@@ -56,7 +56,7 @@ Integrate **Microsoft Presidio** as a pipeline node for PII detection and anonym
 
 ### 2. Node implementation
 
-- [ ] Detection:
+- [x] Detection:
   ```python
   PII_ENTITIES = [
       "PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER", "CREDIT_CARD",
@@ -108,7 +108,7 @@ Integrate **Microsoft Presidio** as a pipeline node for PII detection and anonym
 
 ### 3. PII masking (anonymization)
 
-- [ ] When `pii_action == "mask"`, anonymize the user message:
+- [x] When `pii_action == "mask"`, anonymize the user message:
   ```python
   async def mask_pii_in_messages(
       messages: list[dict],
@@ -130,11 +130,11 @@ Integrate **Microsoft Presidio** as a pipeline node for PII detection and anonym
               break
       return masked_messages
   ```
-- [ ] Store `modified_messages` in state when masking is applied
+- [x] Store `modified_messages` in state when masking is applied
 
 ### 4. Configuration (`src/config.py`)
 
-- [ ] Add settings:
+- [x] Add settings:
   ```python
   enable_presidio: bool = True
   presidio_language: str = "en"
@@ -143,41 +143,41 @@ Integrate **Microsoft Presidio** as a pipeline node for PII detection and anonym
 
 ### 5. spaCy model dependency
 
-- [ ] Presidio requires a spaCy NER model
-- [ ] Options:
+- [x] Presidio requires a spaCy NER model
+- [x] Options:
   | Model | Size | Accuracy | Recommended for |
   |-------|------|----------|----------------|
   | `en_core_web_sm` | ~12MB | Good | Development, fast builds |
   | `en_core_web_lg` | ~560MB | Better | Production |
-- [ ] Add to Dockerfile:
+- [x] Add to Dockerfile:
   ```dockerfile
   RUN pip install --no-cache-dir . && python -m spacy download en_core_web_lg
   ```
-- [ ] For dev: `pip install en_core_web_sm` or `python -m spacy download en_core_web_sm`
+- [x] For dev: `pip install en_core_web_sm` or `python -m spacy download en_core_web_sm`
 
 ### 6. Tests (`tests/test_presidio_node.py`)
 
-- [ ] `"My email is john@example.com"` → `pii=["EMAIL_ADDRESS"]`
-- [ ] `"Call me at 555-0123"` → `pii=["PHONE_NUMBER"]`
-- [ ] `"My SSN is 123-45-6789"` → `pii=["US_SSN"]`
-- [ ] No PII present → empty pii list, no risk flags
-- [ ] `pii_action=mask` → `modified_messages` has anonymized text (`<EMAIL_ADDRESS>`, etc.)
-- [ ] `pii_action=block` → decision info passed downstream (tested in 07c)
-- [ ] Analyzer error → logged, not raised
+- [x] `"My email is john@example.com"` → `pii=["EMAIL_ADDRESS"]`
+- [x] `"Call me at 555-0123"` → `pii=["PHONE_NUMBER"]`
+- [x] `"My SSN is 123-45-6789"` → `pii=["US_SSN"]`
+- [x] No PII present → empty pii list, no risk flags
+- [x] `pii_action=mask` → `modified_messages` has anonymized text (`<EMAIL_ADDRESS>`, etc.)
+- [x] `pii_action=block` → decision info passed downstream (tested in 07c)
+- [x] Analyzer error → logged, not raised
 
 ---
 
 ## Definition of Done
 
-- [ ] `src/pipeline/nodes/presidio.py` — node with 10 entity types
-- [ ] Analyzer + Anonymizer lazy-initialized
-- [ ] `asyncio.to_thread()` for CPU-bound NER
-- [ ] PII entities recorded in `risk_flags.pii` and `scanner_results.presidio`
-- [ ] `mask_pii_in_messages()` replaces PII with `<ENTITY_TYPE>` placeholders
-- [ ] Config: `enable_presidio`, `presidio_language`, `presidio_score_threshold`
-- [ ] spaCy model installed (dev: sm, prod: lg)
-- [ ] All tests pass
-- [ ] `ruff check src/` → 0 errors
+- [x] `src/pipeline/nodes/presidio.py` — node with 10 entity types
+- [x] Analyzer + Anonymizer lazy-initialized
+- [x] `asyncio.to_thread()` for CPU-bound NER
+- [x] PII entities recorded in `risk_flags.pii` and `scanner_results.presidio`
+- [x] `mask_pii_in_messages()` replaces PII with `<ENTITY_TYPE>` placeholders
+- [x] Config: `enable_presidio`, `presidio_language`, `presidio_score_threshold`
+- [x] spaCy model installed (dev: sm, prod: lg)
+- [x] All tests pass
+- [x] `ruff check src/` → 0 errors
 
 ---
 

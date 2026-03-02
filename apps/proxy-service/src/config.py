@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     enable_llm_guard: bool = True
     scanner_timeout: int = 30  # Max seconds per scanner
 
+    # Presidio PII
+    enable_presidio: bool = True
+    presidio_language: str = "en"
+    presidio_score_threshold: float = 0.4
+    presidio_spacy_model: str = "en_core_web_sm"  # en_core_web_lg for prod
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
