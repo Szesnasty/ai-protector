@@ -18,8 +18,8 @@ Define the `PipelineState` TypedDict that flows through all pipeline nodes, and 
 
 ### 1. Pipeline state (`src/pipeline/state.py`)
 
-- [ ] Create `src/pipeline/` package with `__init__.py`
-- [ ] Define the shared state:
+- [x] Create `src/pipeline/` package with `__init__.py`
+- [x] Define the shared state:
   ```python
   from typing import TypedDict, Literal, Any
 
@@ -61,12 +61,12 @@ Define the `PipelineState` TypedDict that flows through all pipeline nodes, and 
       node_timings: dict[str, float]     # {"parse": 1.2, "intent": 45.3} (ms)
       errors: list[str]                  # Non-fatal errors from nodes
   ```
-- [ ] This state is the **single source of truth** — every node reads from and writes to it
+- [x] This state is the **single source of truth** — every node reads from and writes to it
 
 ### 2. Node timing decorator (`src/pipeline/nodes/__init__.py`)
 
-- [ ] Create `src/pipeline/nodes/` package
-- [ ] Create a reusable timing helper:
+- [x] Create `src/pipeline/nodes/` package
+- [x] Create a reusable timing helper:
   ```python
   import time
   from functools import wraps
@@ -87,7 +87,7 @@ Define the `PipelineState` TypedDict that flows through all pipeline nodes, and 
 
 ### 3. ParseNode (`src/pipeline/nodes/parse.py`)
 
-- [ ] Implementation:
+- [x] Implementation:
   ```python
   @timed_node("parse")
   async def parse_node(state: PipelineState) -> PipelineState:
@@ -123,20 +123,20 @@ Define the `PipelineState` TypedDict that flows through all pipeline nodes, and 
           "response_masked": False,
       }
   ```
-- [ ] Handle edge case: no user message found → set `user_message = ""` and add to `errors`
+- [x] Handle edge case: no user message found → set `user_message = ""` and add to `errors`
 
 ---
 
 ## Definition of Done
 
-- [ ] `src/pipeline/state.py` — `PipelineState` TypedDict with all fields
-- [ ] `src/pipeline/nodes/__init__.py` — `timed_node` decorator
-- [ ] `src/pipeline/nodes/parse.py` — `parse_node` function
-- [ ] ParseNode extracts `user_message` from last user message in conversation
-- [ ] ParseNode computes `prompt_hash` (SHA-256 hex)
-- [ ] ParseNode initializes all accumulator fields (risk_flags, errors, etc.)
-- [ ] Edge case: empty messages → `user_message = ""`, error logged
-- [ ] `ruff check src/` → 0 errors
+- [x] `src/pipeline/state.py` — `PipelineState` TypedDict with all fields
+- [x] `src/pipeline/nodes/__init__.py` — `timed_node` decorator
+- [x] `src/pipeline/nodes/parse.py` — `parse_node` function
+- [x] ParseNode extracts `user_message` from last user message in conversation
+- [x] ParseNode computes `prompt_hash` (SHA-256 hex)
+- [x] ParseNode initializes all accumulator fields (risk_flags, errors, etc.)
+- [x] Edge case: empty messages → `user_message = ""`, error logged
+- [x] `ruff check src/` → 0 errors
 
 ---
 
