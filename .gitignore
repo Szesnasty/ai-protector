@@ -1,0 +1,46 @@
+# ==== Python ====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.so
+
+# ==== Node / Frontend ====
+node_modules/
+.nuxt/
+.output/
+.nitro/
+.cache/
+dist/
+*.tsbuildinfo
+
+# ==== Docker ====
+docker-compose.override.yml
+
+# ==== Environment ====
+.env
+.env.local
+.env.*.local
+
+# ==== IDE ====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==== Ollama models (local dev) ====
+ollama_models/

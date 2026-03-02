@@ -1,0 +1,4 @@
+# Placeholder — full setup in Step 02
+# Run: cd infra && docker compose up
+
+services: {}

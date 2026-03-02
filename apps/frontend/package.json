@@ -1,0 +1,30 @@
+{
+  "name": "frontend",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@mdi/font": "^7.4.47",
+    "@pinia/nuxt": "^0.11.3",
+    "echarts": "^6.0.0",
+    "nuxt": "^4.3.1",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.29",
+    "vue-echarts": "^8.0.1",
+    "vue-router": "^4.6.4",
+    "vuetify": "^4.0.0",
+    "vuetify-nuxt-module": "^0.19.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.15.2",
+    "eslint": "^9.39.3",
+    "sass-embedded": "^1.97.3"
+  }
+}

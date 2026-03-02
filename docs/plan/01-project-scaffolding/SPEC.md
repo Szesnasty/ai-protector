@@ -20,63 +20,63 @@ Create the monorepo directory structure, configure all linters and formatters, i
 
 ### 1. Root-level config
 
-- [ ] Create root `.gitignore` (Python, Node, Docker, IDE, OS files)
-- [ ] Create `.editorconfig` (indent style, charset, trailing whitespace)
-- [ ] Create root `Makefile` or `justfile` with common commands:
+- [x] Create root `.gitignore` (Python, Node, Docker, IDE, OS files)
+- [x] Create `.editorconfig` (indent style, charset, trailing whitespace)
+- [x] Create root `Makefile` or `justfile` with common commands:
   - `make dev` → docker compose up
   - `make lint` → run all linters
   - `make format` → run all formatters
 
 ### 2. Python — Proxy Service (`apps/proxy-service/`)
 
-- [ ] Create `apps/proxy-service/` directory
-- [ ] `pyproject.toml` with:
+- [x] Create `apps/proxy-service/` directory
+- [x] `pyproject.toml` with:
   - Python 3.12+ requirement
   - Dependencies: `fastapi`, `uvicorn[standard]`, `pydantic[v2]`, `sqlalchemy[asyncio]`, `alembic`, `asyncpg`, `redis[hiredis]`, `litellm`, `llm-guard`, `presidio-analyzer`, `presidio-anonymizer`, `nemoguardrails`, `langgraph`, `langfuse`, `structlog`, `httpx`
   - Dev dependencies: `pytest`, `pytest-asyncio`, `pytest-cov`, `ruff`, `mypy`
   - Ruff config: line-length 120, select rules (E, W, F, I, UP, B, SIM)
   - mypy config: strict mode
-- [ ] Create `apps/proxy-service/src/` package with `__init__.py`
-- [ ] Create `apps/proxy-service/tests/` with `__init__.py`
-- [ ] Create `apps/proxy-service/Dockerfile` (multi-stage: builder + runtime)
-- [ ] Verify: `cd apps/proxy-service && pip install -e ".[dev]"` works
-- [ ] Verify: `ruff check .` runs clean on empty project
+- [x] Create `apps/proxy-service/src/` package with `__init__.py`
+- [x] Create `apps/proxy-service/tests/` with `__init__.py`
+- [x] Create `apps/proxy-service/Dockerfile` (multi-stage: builder + runtime)
+- [x] Verify: `cd apps/proxy-service && pip install -e ".[dev]"` works
+- [x] Verify: `ruff check .` runs clean on empty project
 
 ### 3. Python — Agent Demo (`apps/agent-demo/`)
 
-- [ ] Create `apps/agent-demo/` directory
-- [ ] `pyproject.toml` with:
+- [x] Create `apps/agent-demo/` directory
+- [x] `pyproject.toml` with:
   - Dependencies: `fastapi`, `uvicorn[standard]`, `pydantic`, `langgraph`, `litellm`, `httpx`, `structlog`
   - Dev dependencies: `pytest`, `pytest-asyncio`, `ruff`
   - Same ruff config as proxy-service
-- [ ] Create `apps/agent-demo/src/` package with `__init__.py`
-- [ ] Create `apps/agent-demo/tests/` with `__init__.py`
-- [ ] Create `apps/agent-demo/Dockerfile`
+- [x] Create `apps/agent-demo/src/` package with `__init__.py`
+- [x] Create `apps/agent-demo/tests/` with `__init__.py`
+- [x] Create `apps/agent-demo/Dockerfile`
 
 ### 4. Frontend (`apps/frontend/`)
 
-- [ ] Initialize Nuxt 4 project: `npx nuxi@latest init apps/frontend`
-- [ ] Install Vuetify 3: `vuetify-nuxt-module`
-- [ ] Install additional deps: `pinia`, `@pinia/nuxt`, `zod`, `vue-echarts`, `echarts`
-- [ ] Configure `nuxt.config.ts`:
+- [x] Initialize Nuxt 4 project: `npx nuxi@latest init apps/frontend`
+- [x] Install Vuetify 3: `vuetify-nuxt-module`
+- [x] Install additional deps: `pinia`, `@pinia/nuxt`, `zod`, `vue-echarts`, `echarts`
+- [x] Configure `nuxt.config.ts`:
   - Vuetify module with dark/light theme
   - Pinia module
   - TypeScript strict mode
   - Runtime config for API base URLs
-- [ ] ESLint + Prettier config (via `@nuxt/eslint`)
-- [ ] Create `apps/frontend/Dockerfile` (multi-stage: build + serve)
-- [ ] Verify: `cd apps/frontend && npm run dev` starts without errors
+- [x] ESLint + Prettier config (via `@nuxt/eslint`)
+- [x] Create `apps/frontend/Dockerfile` (multi-stage: build + serve)
+- [x] Verify: `cd apps/frontend && npm run dev` starts without errors
 
 ### 5. Infrastructure directory
 
-- [ ] Create `infra/` directory
-- [ ] Create `infra/.env.example` with all environment variables (documented)
-- [ ] Placeholder `infra/docker-compose.yml` (will be filled in Step 02)
+- [x] Create `infra/` directory
+- [x] Create `infra/.env.example` with all environment variables (documented)
+- [x] Placeholder `infra/docker-compose.yml` (will be filled in Step 02)
 
 ### 6. Documentation structure
 
-- [ ] Ensure `docs/plan/` structure is in place
-- [ ] Add a one-liner `apps/README.md` explaining the monorepo layout
+- [x] Ensure `docs/plan/` structure is in place
+- [x] Add a one-liner `apps/README.md` explaining the monorepo layout
 
 ---
 
@@ -128,13 +128,13 @@ ai-protector/
 
 ## Definition of Done
 
-- [ ] All directories exist as specified above
-- [ ] `ruff check apps/proxy-service/` → 0 errors
-- [ ] `ruff check apps/agent-demo/` → 0 errors
-- [ ] `cd apps/frontend && npm run dev` → starts on :3000
-- [ ] `.gitignore` covers: `__pycache__`, `.venv`, `node_modules`, `.nuxt`, `.output`, `.env`, `*.pyc`, `.mypy_cache`, `.pytest_cache`, `dist/`
-- [ ] All configs are committed and pushed
-- [ ] No leftover TODO placeholders in config files
+- [x] All directories exist as specified above
+- [x] `ruff check apps/proxy-service/` → 0 errors
+- [x] `ruff check apps/agent-demo/` → 0 errors
+- [x] `cd apps/frontend && npm run dev` → starts on :3000
+- [x] `.gitignore` covers: `__pycache__`, `.venv`, `node_modules`, `.nuxt`, `.output`, `.env`, `*.pyc`, `.mypy_cache`, `.pytest_cache`, `dist/`
+- [x] All configs are committed and pushed
+- [x] No leftover TODO placeholders in config files
 
 ---
 
