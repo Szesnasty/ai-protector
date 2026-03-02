@@ -19,7 +19,7 @@ Create the `POST /v1/chat/completions` router with both non-streaming and SSE st
 
 ### 1. Chat completions router (`src/routers/chat.py`)
 
-- [ ] Create the main endpoint:
+- [x] Create the main endpoint:
   ```
   POST /v1/chat/completions
   Headers:
@@ -28,24 +28,24 @@ Create the `POST /v1/chat/completions` router with both non-streaming and SSE st
     x-policy: <string>              (optional, default from Settings.default_policy)
   Body: ChatCompletionRequest
   ```
-- [ ] **Non-streaming flow** (`stream: false`):
+- [x] **Non-streaming flow** (`stream: false`):
   1. Validate request body
   2. Call `llm_completion()` with `stream=False`
   3. Transform LiteLLM response → `ChatCompletionResponse`
   4. Log request metadata with structlog (model, tokens, latency)
   5. Return JSON response
-- [ ] **Streaming flow** (`stream: true`):
+- [x] **Streaming flow** (`stream: true`):
   1. Validate request body
   2. Return `StreamingResponse(media_type="text/event-stream")`
   3. Generator yields: `data: {json_chunk}\n\n` per token
   4. Final yield: `data: [DONE]\n\n`
   5. Log aggregate metadata after stream completes
-- [ ] Measure end-to-end latency (`time.perf_counter()`) and log it
-- [ ] Read `x-client-id` and `x-policy` headers via FastAPI `Header()` dependency
+- [x] Measure end-to-end latency (`time.perf_counter()`) and log it
+- [x] Read `x-client-id` and `x-policy` headers via FastAPI `Header()` dependency
 
 ### 2. SSE streaming helper (`src/llm/streaming.py`)
 
-- [ ] Create SSE generator:
+- [x] Create SSE generator:
   ```python
   async def sse_stream(
       response: AsyncGenerator,
@@ -76,11 +76,11 @@ Create the `POST /v1/chat/completions` router with both non-streaming and SSE st
           yield f"data: {sse_chunk.model_dump_json()}\n\n"
       yield "data: [DONE]\n\n"
   ```
-- [ ] Track token count during streaming (accumulate from chunks or count post-hoc)
+- [x] Track token count during streaming (accumulate from chunks or count post-hoc)
 
 ### 3. Error handling
 
-- [ ] Map exceptions to HTTP status codes:
+- [x] Map exceptions to HTTP status codes:
   | Exception | Status | Error type |
   |-----------|--------|------------|
   | `ChatCompletionRequest` validation | 422 | `invalid_request_error` |
@@ -88,18 +88,18 @@ Create the `POST /v1/chat/completions` router with both non-streaming and SSE st
   | `LLMModelNotFoundError` | 404 | `model_not_found` |
   | `LLMTimeoutError` | 504 | `timeout_error` |
   | `LLMError` (generic) | 500 | `internal_error` |
-- [ ] Use FastAPI exception handler or try/except in router
-- [ ] Include `x-correlation-id` in error responses (already set by middleware)
-- [ ] Return `ErrorResponse` schema on all errors
+- [x] Use FastAPI exception handler or try/except in router
+- [x] Include `x-correlation-id` in error responses (already set by middleware)
+- [x] Return `ErrorResponse` schema on all errors
 
 ### 4. Wire into FastAPI app (`src/main.py`)
 
-- [ ] Register the chat router:
+- [x] Register the chat router:
   ```python
   from src.routers.chat import router as chat_router
   app.include_router(chat_router)
   ```
-- [ ] Set LiteLLM log level in lifespan startup:
+- [x] Set LiteLLM log level in lifespan startup:
   ```python
   import os
   os.environ["LITELLM_LOG"] = settings.litellm_log_level
@@ -109,14 +109,14 @@ Create the `POST /v1/chat/completions` router with both non-streaming and SSE st
 
 ## Definition of Done
 
-- [ ] `POST /v1/chat/completions` with `stream: false` → returns OpenAI-compatible JSON
-- [ ] `POST /v1/chat/completions` with `stream: true` → returns SSE stream (`data: {chunk}\n\n` … `data: [DONE]\n\n`)
-- [ ] Response includes `usage` (prompt_tokens, completion_tokens, total_tokens) for non-streaming
-- [ ] Ollama down → HTTP 502 with `ErrorResponse`
-- [ ] Invalid model → HTTP 404 with `ErrorResponse`
-- [ ] `x-client-id` and `x-policy` headers read and available for logging
-- [ ] Router registered in `main.py`
-- [ ] `ruff check src/` → 0 errors
+- [x] `POST /v1/chat/completions` with `stream: false` → returns OpenAI-compatible JSON
+- [x] `POST /v1/chat/completions` with `stream: true` → returns SSE stream (`data: {chunk}\n\n` … `data: [DONE]\n\n`)
+- [x] Response includes `usage` (prompt_tokens, completion_tokens, total_tokens) for non-streaming
+- [x] Ollama down → HTTP 502 with `ErrorResponse`
+- [x] Invalid model → HTTP 404 with `ErrorResponse`
+- [x] `x-client-id` and `x-policy` headers read and available for logging
+- [x] Router registered in `main.py`
+- [x] `ruff check src/` → 0 errors
 
 ---
 

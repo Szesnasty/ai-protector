@@ -18,8 +18,8 @@ Implement fire-and-forget request logging to the database, write all unit and in
 
 ### 1. Request logger service (`src/services/request_logger.py`)
 
-- [ ] Create `src/services/` package with `__init__.py`
-- [ ] Implement async logging function:
+- [x] Create `src/services/` package with `__init__.py`
+- [x] Implement async logging function:
   ```python
   async def log_request(
       client_id: str | None,
@@ -33,19 +33,19 @@ Implement fire-and-forget request logging to the database, write all unit and in
   ) -> None:
       """Write request to DB. Non-blocking — errors logged, not raised."""
   ```
-- [ ] Compute `prompt_hash` — SHA-256 of last user message
-- [ ] Compute `prompt_preview` — first 200 chars of last user message
-- [ ] Lookup `policy_id` by name (cache lookup via dict or `lru_cache`)
-- [ ] Insert into `requests` table:
+- [x] Compute `prompt_hash` — SHA-256 of last user message
+- [x] Compute `prompt_preview` — first 200 chars of last user message
+- [x] Lookup `policy_id` by name (cache lookup via dict or `lru_cache`)
+- [x] Insert into `requests` table:
   - `decision = "ALLOW"` (always in this step — pipeline not yet wired)
   - `intent = None` (not yet classified)
   - `risk_flags = {}`, `risk_score = 0.0`
-- [ ] Wrap in `try/except` — never let logging failure break the proxy response
-- [ ] Log errors via structlog
+- [x] Wrap in `try/except` — never let logging failure break the proxy response
+- [x] Log errors via structlog
 
 ### 2. Wire logger into chat router
 
-- [ ] After LLM response (non-streaming), call `log_request()`:
+- [x] After LLM response (non-streaming), call `log_request()`:
   ```python
   # Fire-and-forget via asyncio.create_task
   asyncio.create_task(log_request(
@@ -59,32 +59,32 @@ Implement fire-and-forget request logging to the database, write all unit and in
       tokens_out=usage.completion_tokens if usage else None,
   ))
   ```
-- [ ] After streaming completes, fire logging task with accumulated token counts
+- [x] After streaming completes, fire logging task with accumulated token counts
 
 ### 3. Schema tests (`tests/test_chat_schemas.py`)
 
-- [ ] Validate `ChatCompletionRequest` with minimal input (model + messages)
-- [ ] Validate `ChatCompletionRequest` with all optional fields
-- [ ] Reject empty `messages` list
-- [ ] Reject `temperature` out of range (< 0 or > 2)
-- [ ] Validate `ChatCompletionResponse` round-trip
+- [x] Validate `ChatCompletionRequest` with minimal input (model + messages)
+- [x] Validate `ChatCompletionRequest` with all optional fields
+- [x] Reject empty `messages` list
+- [x] Reject `temperature` out of range (< 0 or > 2)
+- [x] Validate `ChatCompletionResponse` round-trip
 
 ### 4. Endpoint tests (`tests/test_chat_endpoint.py`)
 
-- [ ] Mock `litellm.acompletion` → test non-streaming response shape
-- [ ] Mock `litellm.acompletion(stream=True)` → test SSE response format
+- [x] Mock `litellm.acompletion` → test non-streaming response shape
+- [x] Mock `litellm.acompletion(stream=True)` → test SSE response format
   - Verify `data: {...}\n\n` format
   - Verify `data: [DONE]\n\n` at end
-- [ ] Test error case: Ollama down → 502 response
-- [ ] Test `x-correlation-id` header present in response
-- [ ] Test `x-client-id` and `x-policy` headers are accepted
+- [x] Test error case: Ollama down → 502 response
+- [x] Test `x-correlation-id` header present in response
+- [x] Test `x-client-id` and `x-policy` headers are accepted
 
 ### 5. Request logger tests (`tests/test_request_logger.py`)
 
-- [ ] Mock DB session → verify `Request` model insert with correct fields
-- [ ] Verify `prompt_hash` is valid SHA-256 hex (64 chars)
-- [ ] Verify `prompt_preview` is truncated to 200 chars
-- [ ] Verify logging failure doesn't raise (mock session.commit() to throw)
+- [x] Mock DB session → verify `Request` model insert with correct fields
+- [x] Verify `prompt_hash` is valid SHA-256 hex (64 chars)
+- [x] Verify `prompt_preview` is truncated to 200 chars
+- [x] Verify logging failure doesn't raise (mock session.commit() to throw)
 
 ### 6. Docker / Compose verification
 
@@ -115,17 +115,19 @@ Implement fire-and-forget request logging to the database, write all unit and in
 
 ## Definition of Done
 
-- [ ] `src/services/request_logger.py` exists with `log_request()` function
-- [ ] Every chat request creates a row in `requests` table
-- [ ] `prompt_hash` = SHA-256, `prompt_preview` = first 200 chars
-- [ ] Logger failure does NOT break the proxy response
-- [ ] `pytest tests/test_chat_schemas.py` → all pass
-- [ ] `pytest tests/test_chat_endpoint.py` → all pass (mocked LLM)
-- [ ] `pytest tests/test_request_logger.py` → all pass (mocked DB)
-- [ ] `ruff check src/ tests/` → 0 errors
+- [x] `src/services/request_logger.py` exists with `log_request()` function
+- [x] Every chat request creates a row in `requests` table
+- [x] `prompt_hash` = SHA-256, `prompt_preview` = first 200 chars
+- [x] Logger failure does NOT break the proxy response
+- [x] `pytest tests/test_chat_schemas.py` → all pass
+- [x] `pytest tests/test_chat_endpoint.py` → all pass (mocked LLM)
+- [x] `pytest tests/test_request_logger.py` → all pass (mocked DB)
+- [x] `ruff check src/ tests/` → 0 errors
 - [ ] End-to-end: `curl` from host → proxy → Ollama → response (non-streaming + streaming)
 - [ ] Docker: `proxy-service` container successfully proxies to `ollama` container
 - [ ] DB: `SELECT * FROM requests` shows logged requests
+
+> **Note:** Docker e2e verification deferred — requires Ollama model pull + running containers.
 
 ---
 

@@ -1,0 +1,94 @@
+"""Fire-and-forget request logger — writes audit rows to the requests table."""
+
+from __future__ import annotations
+
+import hashlib
+import uuid
+
+import structlog
+from sqlalchemy import select
+
+from src.db.session import async_session
+from src.models.policy import Policy
+from src.models.request import Request
+
+logger = structlog.get_logger()
+
+# In-memory cache: policy_name → policy_id
+_policy_cache: dict[str, uuid.UUID] = {}
+
+
+async def _resolve_policy_id(policy_name: str) -> uuid.UUID | None:
+    """Return the UUID for a policy name, using an in-memory cache."""
+    if policy_name in _policy_cache:
+        return _policy_cache[policy_name]
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(Policy.id).where(Policy.name == policy_name)
+        )
+        row = result.scalar_one_or_none()
+        if row is not None:
+            _policy_cache[policy_name] = row
+        return row
+
+
+def _prompt_hash(messages: list[dict]) -> str | None:
+    """SHA-256 hex of the last user message content."""
+    for msg in reversed(messages):
+        if msg.get("role") == "user":
+            return hashlib.sha256(msg["content"].encode()).hexdigest()
+    return None
+
+
+def _prompt_preview(messages: list[dict], max_len: int = 200) -> str | None:
+    """First *max_len* chars of the last user message."""
+    for msg in reversed(messages):
+        if msg.get("role") == "user":
+            return msg["content"][:max_len]
+    return None
+
+
+async def log_request(
+    *,
+    client_id: str | None,
+    policy_name: str,
+    model: str,
+    messages: list[dict],
+    decision: str = "ALLOW",
+    latency_ms: int = 0,
+    tokens_in: int | None = None,
+    tokens_out: int | None = None,
+) -> None:
+    """Write an audit row to the requests table.
+
+    This is designed to be called via ``asyncio.create_task`` so it never
+    blocks the HTTP response.  Any exception is swallowed and logged.
+    """
+    try:
+        policy_id = await _resolve_policy_id(policy_name)
+        if policy_id is None:
+            logger.warning("log_request_unknown_policy", policy=policy_name)
+            return
+
+        row = Request(
+            client_id=client_id or "anonymous",
+            policy_id=policy_id,
+            model_used=model,
+            prompt_hash=_prompt_hash(messages),
+            prompt_preview=_prompt_preview(messages),
+            decision=decision,
+            risk_flags={},
+            risk_score=0.0,
+            latency_ms=latency_ms,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+        )
+
+        async with async_session() as session:
+            session.add(row)
+            await session.commit()
+
+        logger.debug("request_logged", client_id=row.client_id, decision=decision)
+    except Exception:
+        logger.exception("log_request_failed")

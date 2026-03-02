@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -13,6 +14,7 @@ from src.schemas.chat import (
     ChatCompletionChunkChoice,
     ChatCompletionChunkDelta,
 )
+from src.services.request_logger import log_request
 
 logger = structlog.get_logger()
 
@@ -21,10 +23,16 @@ async def sse_stream(
     response: AsyncGenerator[Any, None],
     request_id: str,
     model: str,
+    *,
+    client_id: str | None = None,
+    policy_name: str = "balanced",
+    messages: list[dict] | None = None,
+    start_time: float | None = None,
 ) -> AsyncGenerator[str, None]:
     """Convert LiteLLM streaming response to SSE-formatted chunks.
 
     Yields ``data: {json}\\n\\n`` per token, ending with ``data: [DONE]\\n\\n``.
+    After the stream completes, fires a background request-log task.
     """
     created = int(time.time())
     token_count = 0
@@ -58,4 +66,18 @@ async def sse_stream(
 
     yield "data: [DONE]\n\n"
 
-    logger.info("stream_complete", request_id=request_id, model=model, approx_tokens=token_count)
+    latency_ms = int((time.perf_counter() - start_time) * 1000) if start_time else 0
+    logger.info("stream_complete", request_id=request_id, model=model, approx_tokens=token_count, latency_ms=latency_ms)
+
+    # Fire-and-forget request logging
+    asyncio.create_task(
+        log_request(
+            client_id=client_id,
+            policy_name=policy_name,
+            model=model,
+            messages=messages or [],
+            decision="ALLOW",
+            latency_ms=latency_ms,
+            tokens_out=token_count,
+        )
+    )

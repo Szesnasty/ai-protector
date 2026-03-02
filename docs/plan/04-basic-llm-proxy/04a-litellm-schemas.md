@@ -18,8 +18,8 @@ Create the LiteLLM client wrapper and all OpenAI-compatible Pydantic request/res
 
 ### 1. LiteLLM client wrapper (`src/llm/client.py`)
 
-- [ ] Create `src/llm/` package with `__init__.py`
-- [ ] Implement async LiteLLM wrapper:
+- [x] Create `src/llm/` package with `__init__.py`
+- [x] Implement async LiteLLM wrapper:
   ```python
   from litellm import acompletion
 
@@ -44,18 +44,18 @@ Create the LiteLLM client wrapper and all OpenAI-compatible Pydantic request/res
       )
       return response
   ```
-- [ ] Handle LiteLLM exceptions → map to custom exception classes:
+- [x] Handle LiteLLM exceptions → map to custom exception classes:
   | LiteLLM error | Custom exception | HTTP mapping |
-  |---------------|-----------------|--------------|
+  |---------------|-----------------||--------------|
   | `ServiceUnavailableError` | `LLMUpstreamError` | 502 |
   | `NotFoundError` | `LLMModelNotFoundError` | 404 |
   | `Timeout` | `LLMTimeoutError` | 504 |
   | Generic | `LLMError` | 500 |
-- [ ] Add `LITELLM_LOG` env var config (set `"ERROR"` by default to silence verbose logs)
+- [x] Add `LITELLM_LOG` env var config (set `"ERROR"` by default to silence verbose logs)
 
 ### 2. Chat schemas (`src/schemas/chat.py`)
 
-- [ ] **Request model**:
+- [x] **Request model**:
   ```python
   class ChatMessage(BaseModel):
       role: Literal["system", "user", "assistant", "tool"]
@@ -73,7 +73,7 @@ Create the LiteLLM client wrapper and all OpenAI-compatible Pydantic request/res
       frequency_penalty: float | None = None
       presence_penalty: float | None = None
   ```
-- [ ] **Response models** (non-streaming):
+- [x] **Response models** (non-streaming):
   ```python
   class ChatChoice(BaseModel):
       index: int
@@ -93,7 +93,7 @@ Create the LiteLLM client wrapper and all OpenAI-compatible Pydantic request/res
       choices: list[ChatChoice]
       usage: Usage | None = None
   ```
-- [ ] **Streaming chunk models**:
+- [x] **Streaming chunk models**:
   ```python
   class ChatCompletionChunkDelta(BaseModel):
       role: str | None = None
@@ -111,7 +111,7 @@ Create the LiteLLM client wrapper and all OpenAI-compatible Pydantic request/res
       model: str
       choices: list[ChatCompletionChunkChoice]
   ```
-- [ ] **Error response model**:
+- [x] **Error response model**:
   ```python
   class ErrorDetail(BaseModel):
       message: str
@@ -121,11 +121,11 @@ Create the LiteLLM client wrapper and all OpenAI-compatible Pydantic request/res
   class ErrorResponse(BaseModel):
       error: ErrorDetail
   ```
-- [ ] Validation: `messages` must be non-empty, at least one `user` message required
+- [x] Validation: `messages` must be non-empty, at least one `user` message required
 
 ### 3. Configuration updates (`src/config.py`)
 
-- [ ] Add new settings fields:
+- [x] Add new settings fields:
   ```python
   default_temperature: float = 0.7
   default_max_tokens: int = 4096
@@ -137,13 +137,13 @@ Create the LiteLLM client wrapper and all OpenAI-compatible Pydantic request/res
 
 ## Definition of Done
 
-- [ ] `src/llm/client.py` exists with `llm_completion()` async function
-- [ ] `src/llm/__init__.py` exports `llm_completion`
-- [ ] LiteLLM exceptions mapped to custom exception classes
-- [ ] `src/schemas/chat.py` has all 8 Pydantic models (request + response + streaming + error)
-- [ ] `ChatCompletionRequest` rejects empty `messages`, out-of-range `temperature`
-- [ ] Config updated with `litellm_log_level`, `request_timeout`, `default_temperature`, `default_max_tokens`
-- [ ] `ruff check src/` → 0 errors
+- [x] `src/llm/client.py` exists with `llm_completion()` async function
+- [x] `src/llm/__init__.py` exports `llm_completion`
+- [x] LiteLLM exceptions mapped to custom exception classes
+- [x] `src/schemas/chat.py` has all 8 Pydantic models (request + response + streaming + error)
+- [x] `ChatCompletionRequest` rejects empty `messages`, out-of-range `temperature`
+- [x] Config updated with `litellm_log_level`, `request_timeout`, `default_temperature`, `default_max_tokens`
+- [x] `ruff check src/` → 0 errors
 
 ---
 

@@ -16,7 +16,7 @@
 - [x] **[Step 03 — Proxy Service Foundation](03-proxy-foundation/SPEC.md)**
   FastAPI skeleton, SQLAlchemy models, Alembic migrations, health endpoint, seed data
 
-- [ ] **[Step 04 — Basic LLM Proxy](04-basic-llm-proxy/SPEC.md)**
+- [x] **[Step 04 — Basic LLM Proxy](04-basic-llm-proxy/SPEC.md)**
   `POST /v1/chat/completions` passthrough to Ollama via LiteLLM, streaming support
 
 - [ ] **Step 05 — Frontend Foundation**
@@ -75,7 +75,7 @@
 
 | Phase | Steps | Status |
 |-------|-------|--------|
-| Foundation | 01–05 | 🟩 01 02 03 done |
+| Foundation | 01–05 | 🟩 01 02 03 04 done |
 | Firewall Pipeline | 06–09 | ⬜ Not started |
 | Playground UI | 10 | ⬜ Not started |
 | Agent Demo | 11–13 | ⬜ Not started |

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 
@@ -9,6 +10,7 @@ import structlog
 from fastapi import APIRouter, Header, Request
 from fastapi.responses import StreamingResponse
 
+from src.config import get_settings
 from src.llm.client import llm_completion
 from src.llm.streaming import sse_stream
 from src.schemas.chat import (
@@ -18,6 +20,7 @@ from src.schemas.chat import (
     ChatMessage,
     Usage,
 )
+from src.services.request_logger import log_request
 
 logger = structlog.get_logger()
 
@@ -55,6 +58,8 @@ async def chat_completions(
     )
     log.info("chat_request")
 
+    policy = x_policy or get_settings().default_policy
+
     if body.stream:
         response = await llm_completion(
             messages=messages,
@@ -63,7 +68,15 @@ async def chat_completions(
             temperature=body.temperature,
             max_tokens=body.max_tokens,
         )
-        generator = sse_stream(response=response, request_id=request_id, model=body.model)
+        generator = sse_stream(
+            response=response,
+            request_id=request_id,
+            model=body.model,
+            client_id=x_client_id,
+            policy_name=policy,
+            messages=messages,
+            start_time=start,
+        )
         return StreamingResponse(generator, media_type="text/event-stream")
 
     # Non-streaming
@@ -110,6 +123,20 @@ async def chat_completions(
         finish_reason=choice.finish_reason,
         prompt_tokens=getattr(usage_info, "prompt_tokens", None),
         completion_tokens=getattr(usage_info, "completion_tokens", None),
+    )
+
+    # Fire-and-forget request logging
+    asyncio.create_task(
+        log_request(
+            client_id=x_client_id,
+            policy_name=policy,
+            model=body.model,
+            messages=messages,
+            decision="ALLOW",
+            latency_ms=latency_ms,
+            tokens_in=getattr(usage_info, "prompt_tokens", None),
+            tokens_out=getattr(usage_info, "completion_tokens", None),
+        )
     )
 
     return result
