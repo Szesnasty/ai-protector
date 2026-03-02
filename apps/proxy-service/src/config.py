@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     app_version: str = "0.1.0"
 
+    # Security scanners
+    enable_llm_guard: bool = True
+    scanner_timeout: int = 30  # Max seconds per scanner
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
