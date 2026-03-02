@@ -16,6 +16,7 @@ from src.pipeline.nodes.decision import decision_node
 from src.pipeline.nodes.intent import intent_node
 from src.pipeline.nodes.parse import parse_node
 from src.pipeline.nodes.rules import rules_node
+from src.pipeline.nodes.scanners import parallel_scanners_node
 from src.pipeline.state import PipelineState
 
 logger = structlog.get_logger()
@@ -110,16 +111,18 @@ async def run_pipeline(
 
 
 def _build_pre_llm_pipeline():
-    """Build a sub-graph that runs parse→intent→rules→decision (no LLM call)."""
+    """Build a sub-graph that runs parse→intent→rules→scanners→decision (no LLM call)."""
     graph = StateGraph(PipelineState)
     graph.add_node("parse", parse_node)
     graph.add_node("intent", intent_node)
     graph.add_node("rules", rules_node)
+    graph.add_node("scanners", parallel_scanners_node)
     graph.add_node("decision", decision_node)
 
     graph.add_edge("parse", "intent")
     graph.add_edge("intent", "rules")
-    graph.add_edge("rules", "decision")
+    graph.add_edge("rules", "scanners")
+    graph.add_edge("scanners", "decision")
     graph.add_edge("decision", END)
     graph.set_entry_point("parse")
     return graph.compile()

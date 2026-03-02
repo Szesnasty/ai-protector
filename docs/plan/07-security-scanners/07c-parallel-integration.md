@@ -18,7 +18,7 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
 
 ### 1. Parallel scanner wrapper (`src/pipeline/nodes/scanners.py`)
 
-- [ ] Dispatch enabled scanners concurrently:
+- [x] Dispatch enabled scanners concurrently:
   ```python
   @timed_node("scanners")
   async def parallel_scanners_node(state: PipelineState) -> PipelineState:
@@ -58,7 +58,7 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
           "errors": merged_errors,
       }
   ```
-- [ ] Scanner selection by policy:
+- [x] Scanner selection by policy:
   | Policy | Scanners |
   |--------|----------|
   | `fast` | none |
@@ -68,7 +68,7 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
 
 ### 2. Update LangGraph (`src/pipeline/graph.py`)
 
-- [ ] Insert scanners between `rules` and `decision`:
+- [x] Insert scanners between `rules` and `decision`:
   ```python
   # Before (Step 06):
   #   parse → intent → rules → decision → ...
@@ -84,7 +84,7 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
 
 ### 3. Update DecisionNode (`src/pipeline/nodes/decision.py`)
 
-- [ ] Extend `calculate_risk_score()` with scanner weights:
+- [x] Extend `calculate_risk_score()` with scanner weights:
   ```python
   # LLM Guard signals
   if "promptinjection" in flags:
@@ -105,7 +105,7 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
       score += min(pii_count * 0.1, 0.5)
   ```
 
-- [ ] Add PII action logic to `decision_node()`:
+- [x] Add PII action logic to `decision_node()`:
   ```python
   presidio = state.get("scanner_results", {}).get("presidio", {})
   pii_action = presidio.get("pii_action", "flag")
@@ -123,7 +123,7 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
 
 ### 4. Update TransformNode (`src/pipeline/nodes/transform.py`)
 
-- [ ] Apply PII masking when Presidio found entities and `pii_action=mask`:
+- [x] Apply PII masking when Presidio found entities and `pii_action=mask`:
   ```python
   async def transform_node(state: PipelineState) -> PipelineState:
       if state["decision"] != "MODIFY":
@@ -150,13 +150,13 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
 
 ### 5. Dockerfile updates
 
-- [ ] Ensure all dependencies installed:
+- [x] Ensure all dependencies installed:
   ```dockerfile
   # In builder stage
   RUN pip install --no-cache-dir . \
       && python -m spacy download en_core_web_lg
   ```
-- [ ] Consider baking scanner warmup into image:
+- [x] Consider baking scanner warmup into image:
   ```dockerfile
   COPY scripts/warmup-scanners.py scripts/
   RUN python scripts/warmup-scanners.py
@@ -165,7 +165,7 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
 
 ### 6. Performance benchmarks
 
-- [ ] Measure and document:
+- [x] Measure and document:
   | Scanner | Cold start | Warm | Target |
   |---------|-----------|------|--------|
   | LLM Guard PromptInjection | ~3s | ~50-100ms | <200ms |
@@ -173,22 +173,22 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
   | LLM Guard Secrets | <100ms | <10ms | <50ms |
   | Presidio Analyzer | ~1s | ~20-50ms | <100ms |
   | **Parallel total (warm)** | — | **~100-150ms** | **<250ms** |
-- [ ] If a scanner exceeds `scanner_timeout` → abort, log warning, continue
+- [x] If a scanner exceeds `scanner_timeout` → abort, log warning, continue
 
 ### 7. Tests
 
-- [ ] `tests/test_parallel_scanners.py`:
+- [x] `tests/test_parallel_scanners.py`:
   - Both scanners run concurrently → total time ≈ max, not sum
   - Scanner disabled by policy → results empty for that scanner
   - `fast` policy → no scanners execute
   - One scanner fails, other succeeds → merged results correct
-- [ ] `tests/test_decision_with_scanners.py`:
+- [x] `tests/test_decision_with_scanners.py`:
   - Injection + balanced → BLOCK (risk > 0.7)
   - PII + strict (mask) → MODIFY
   - PII + paranoid (block) → BLOCK
   - Clean + all scanners pass → ALLOW
   - Toxic prompt above threshold → BLOCK
-- [ ] `tests/test_integration_scanners.py` (end-to-end):
+- [x] `tests/test_integration_scanners.py` (end-to-end):
   - `POST /v1/chat/completions` injection → 403, `risk_flags.promptinjection`
   - `POST /v1/chat/completions` PII + strict → 200, `x-decision: MODIFY`
   - `POST /v1/chat/completions` clean → 200, `x-decision: ALLOW`
@@ -198,19 +198,19 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
 
 ## Definition of Done
 
-- [ ] Scanners run **in parallel** via `asyncio.gather`
-- [ ] Policy `config.nodes` controls which scanners are enabled
-- [ ] `fast` policy → zero scanner overhead
-- [ ] `calculate_risk_score()` uses scanner weights (injection×0.8, toxicity×0.5, etc.)
-- [ ] PII + `pii_action=mask` → MODIFY → anonymized messages sent to LLM
-- [ ] PII + `pii_action=block` → BLOCK (403)
-- [ ] LangGraph: `parse → intent → rules → scanners → decision → ...`
-- [ ] Scanner errors don't crash pipeline (logged, skipped)
-- [ ] Warm scanner latency < 250ms (parallel)
-- [ ] `pytest tests/` → all tests pass (unit + integration)
-- [ ] `ruff check src/ tests/` → 0 errors
-- [ ] Docker image builds with spaCy + LLM Guard dependencies
-- [ ] All prior Step 04 + 06 tests still pass
+- [x] Scanners run **in parallel** via `asyncio.gather`
+- [x] Policy `config.nodes` controls which scanners are enabled
+- [x] `fast` policy → zero scanner overhead
+- [x] `calculate_risk_score()` uses scanner weights (injection×0.8, toxicity×0.5, etc.)
+- [x] PII + `pii_action=mask` → MODIFY → anonymized messages sent to LLM
+- [x] PII + `pii_action=block` → BLOCK (403)
+- [x] LangGraph: `parse → intent → rules → scanners → decision → ...`
+- [x] Scanner errors don't crash pipeline (logged, skipped)
+- [x] Warm scanner latency < 250ms (parallel)
+- [x] `pytest tests/` → all tests pass (unit + integration)
+- [x] `ruff check src/ tests/` → 0 errors
+- [x] Docker image builds with spaCy + LLM Guard dependencies
+- [x] All prior Step 04 + 06 tests still pass
 
 ---
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from src.pipeline.graph import route_after_decision
 from src.pipeline.nodes.decision import calculate_risk_score, decision_node
 from src.pipeline.nodes.llm_call import llm_call_node
@@ -65,16 +67,16 @@ class TestCalculateRiskScore:
     def test_scanner_injection_flag(self) -> None:
         state: PipelineState = {
             "intent": "qa",
-            "risk_flags": {"injection": 0.9},
+            "risk_flags": {"promptinjection": 0.9},
         }  # type: ignore[typeddict-item]
-        assert calculate_risk_score(state) == 0.9
+        assert calculate_risk_score(state) == pytest.approx(0.72)
 
     def test_pii_flag(self) -> None:
         state: PipelineState = {
             "intent": "qa",
-            "risk_flags": {"pii": ["EMAIL"]},
+            "risk_flags": {"pii": ["EMAIL"], "pii_count": 1},
         }  # type: ignore[typeddict-item]
-        assert calculate_risk_score(state) == 0.3
+        assert calculate_risk_score(state) == 0.1
 
 
 # ── decision_node ────────────────────────────────────────────────────
@@ -156,6 +158,7 @@ class TestTransformNode:
     async def test_inject_safety_no_system(self) -> None:
         state: PipelineState = {
             "decision": "MODIFY",
+            "risk_flags": {"suspicious_intent": 0.7},
             "messages": [{"role": "user", "content": "hello"}],
         }  # type: ignore[typeddict-item]
         result = await transform_node(state)
@@ -166,6 +169,7 @@ class TestTransformNode:
     async def test_inject_safety_existing_system(self) -> None:
         state: PipelineState = {
             "decision": "MODIFY",
+            "risk_flags": {"suspicious_intent": 0.7},
             "messages": [
                 {"role": "system", "content": "You are a bot."},
                 {"role": "user", "content": "hello"},
@@ -180,6 +184,7 @@ class TestTransformNode:
     async def test_spotlighting_delimiters(self) -> None:
         state: PipelineState = {
             "decision": "MODIFY",
+            "risk_flags": {"suspicious_intent": 0.7},
             "messages": [{"role": "user", "content": "test input"}],
         }  # type: ignore[typeddict-item]
         result = await transform_node(state)
@@ -191,6 +196,7 @@ class TestTransformNode:
         original = [{"role": "user", "content": "hi"}]
         state: PipelineState = {
             "decision": "MODIFY",
+            "risk_flags": {"suspicious_intent": 0.7},
             "messages": original,
         }  # type: ignore[typeddict-item]
         await transform_node(state)
@@ -199,6 +205,7 @@ class TestTransformNode:
     async def test_records_timing(self) -> None:
         state: PipelineState = {
             "decision": "MODIFY",
+            "risk_flags": {"suspicious_intent": 0.7},
             "messages": [{"role": "user", "content": "hi"}],
         }  # type: ignore[typeddict-item]
         result = await transform_node(state)

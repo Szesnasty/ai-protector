@@ -28,11 +28,20 @@ def calculate_risk_score(state: PipelineState) -> float:
     if flags.get("length_exceeded"):
         score += 0.1
 
-    # Scanner-based (Step 07 — additive, zero for now)
-    if flags.get("injection"):
-        score += float(flags["injection"])
-    if flags.get("pii"):
-        score += 0.3
+    # LLM Guard signals
+    if "promptinjection" in flags:
+        score += float(flags["promptinjection"]) * 0.8
+    if "toxicity" in flags:
+        score += float(flags["toxicity"]) * 0.5
+    if "secrets" in flags:
+        score += 0.6
+    if "invisibletext" in flags:
+        score += 0.4
+
+    # Presidio PII
+    pii_count = flags.get("pii_count", 0)
+    if pii_count > 0:
+        score += min(pii_count * 0.1, 0.5)
 
     return min(score, 1.0)
 
@@ -55,6 +64,19 @@ async def decision_node(state: PipelineState) -> PipelineState:
             "risk_score": risk_score,
         }
 
+    # PII action overrides
+    presidio = state.get("scanner_results", {}).get("presidio", {})
+    pii_action = presidio.get("pii_action", "flag")
+    has_pii = bool(state.get("risk_flags", {}).get("pii"))
+
+    if pii_action == "block" and has_pii:
+        return {
+            **state,
+            "decision": "BLOCK",
+            "blocked_reason": "PII detected (block policy)",
+            "risk_score": risk_score,
+        }
+
     # Risk threshold
     if risk_score > max_risk:
         return {
@@ -63,6 +85,10 @@ async def decision_node(state: PipelineState) -> PipelineState:
             "blocked_reason": f"Risk {risk_score:.2f} > threshold {max_risk}",
             "risk_score": risk_score,
         }
+
+    # PII mask → force MODIFY
+    if pii_action == "mask" and has_pii:
+        return {**state, "decision": "MODIFY", "risk_score": risk_score}
 
     # Suspicious but below threshold → MODIFY
     if state.get("risk_flags", {}).get("suspicious_intent"):

@@ -9,6 +9,7 @@ from src.pipeline.nodes.intent import intent_node
 from src.pipeline.nodes.llm_call import llm_call_node
 from src.pipeline.nodes.parse import parse_node
 from src.pipeline.nodes.rules import rules_node
+from src.pipeline.nodes.scanners import parallel_scanners_node
 from src.pipeline.nodes.transform import transform_node
 from src.pipeline.state import PipelineState
 
@@ -28,23 +29,25 @@ def build_pipeline() -> StateGraph:
 
     .. code-block:: text
 
-        parse → intent → rules → decision
-                                    ├─ BLOCK  → END
-                                    ├─ MODIFY → transform → llm_call → END
-                                    └─ ALLOW  → llm_call → END
+        parse → intent → rules → scanners → decision
+                                               ├─ BLOCK  → END
+                                               ├─ MODIFY → transform → llm_call → END
+                                               └─ ALLOW  → llm_call → END
     """
     graph = StateGraph(PipelineState)
 
     graph.add_node("parse", parse_node)
     graph.add_node("intent", intent_node)
     graph.add_node("rules", rules_node)
+    graph.add_node("scanners", parallel_scanners_node)
     graph.add_node("decision", decision_node)
     graph.add_node("transform", transform_node)
     graph.add_node("llm_call", llm_call_node)
 
     graph.add_edge("parse", "intent")
     graph.add_edge("intent", "rules")
-    graph.add_edge("rules", "decision")
+    graph.add_edge("rules", "scanners")
+    graph.add_edge("scanners", "decision")
     graph.add_conditional_edges(
         "decision",
         route_after_decision,
