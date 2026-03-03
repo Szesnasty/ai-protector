@@ -135,16 +135,21 @@ async def output_filter_node(state: PipelineState) -> PipelineState:
             "output_filter_results": results,
         }
 
-    # Extract content
+    # Extract content — handle both dict and attribute-based (LiteLLM) responses
     try:
+        # Try dict access first
         content: str = llm_response["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError):
-        logger.warning("output_filter_no_content", response_keys=list(llm_response.keys()))
-        return {
-            **state,
-            "output_filtered": False,
-            "output_filter_results": results,
-        }
+        try:
+            # Attribute-based access (LiteLLM ModelResponse / SimpleNamespace)
+            content = llm_response.choices[0].message.content
+        except (AttributeError, IndexError, TypeError):
+            logger.warning("output_filter_no_content")
+            return {
+                **state,
+                "output_filtered": False,
+                "output_filter_results": results,
+            }
 
     filtered = False
 
@@ -175,7 +180,11 @@ async def output_filter_node(state: PipelineState) -> PipelineState:
     # Update response with filtered content
     if filtered:
         new_response = copy.deepcopy(llm_response)
-        new_response["choices"][0]["message"]["content"] = content
+        try:
+            new_response["choices"][0]["message"]["content"] = content
+        except (KeyError, IndexError, TypeError):
+            # Attribute-based response
+            new_response.choices[0].message.content = content
         state = {
             **state,
             "llm_response": new_response,

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
 import uuid
 
@@ -22,7 +21,6 @@ from src.schemas.chat import (
     ChatMessage,
     Usage,
 )
-from src.services.request_logger import log_request
 
 logger = structlog.get_logger()
 
@@ -139,21 +137,6 @@ async def chat_completions(
         )
 
         if pre_result["decision"] == "BLOCK":
-            latency_ms = int((time.perf_counter() - start) * 1000)
-            asyncio.create_task(
-                log_request(
-                    client_id=x_client_id,
-                    policy_name=policy,
-                    model=body.model,
-                    messages=messages,
-                    decision="BLOCK",
-                    blocked_reason=pre_result.get("blocked_reason"),
-                    intent=pre_result.get("intent"),
-                    risk_flags=pre_result.get("risk_flags"),
-                    risk_score=pre_result.get("risk_score", 0.0),
-                    latency_ms=latency_ms,
-                )
-            )
             return _block_response(pre_result)
 
         # ALLOW or MODIFY — stream from LLM
@@ -199,20 +182,6 @@ async def chat_completions(
     latency_ms = int((time.perf_counter() - start) * 1000)
 
     if result["decision"] == "BLOCK":
-        asyncio.create_task(
-            log_request(
-                client_id=x_client_id,
-                policy_name=policy,
-                model=body.model,
-                messages=messages,
-                decision="BLOCK",
-                blocked_reason=result.get("blocked_reason"),
-                intent=result.get("intent"),
-                risk_flags=result.get("risk_flags"),
-                risk_score=result.get("risk_score", 0.0),
-                latency_ms=latency_ms,
-            )
-        )
         return _block_response(result)
 
     # ALLOW / MODIFY → build response
@@ -224,22 +193,6 @@ async def chat_completions(
         intent=result.get("intent"),
         risk_score=result.get("risk_score"),
         latency_ms=latency_ms,
-    )
-
-    asyncio.create_task(
-        log_request(
-            client_id=x_client_id,
-            policy_name=policy,
-            model=body.model,
-            messages=messages,
-            decision=result.get("decision", "ALLOW"),
-            intent=result.get("intent"),
-            risk_flags=result.get("risk_flags"),
-            risk_score=result.get("risk_score", 0.0),
-            latency_ms=latency_ms,
-            tokens_in=result.get("tokens_in"),
-            tokens_out=result.get("tokens_out"),
-        )
     )
 
     return JSONResponse(

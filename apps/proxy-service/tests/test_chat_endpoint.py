@@ -121,16 +121,14 @@ CHAT_BODY = {"messages": [{"role": "user", "content": "Say hello"}]}
 _PATCH_RUN = "src.routers.chat.run_pipeline"
 _PATCH_PRE = "src.routers.chat.run_pre_llm_pipeline"
 _PATCH_LLM = "src.routers.chat.llm_completion"
-_PATCH_LOG = "src.services.request_logger.log_request"
 
 
 class TestNonStreaming:
     """Non-streaming chat completion tests."""
 
     @pytest.mark.asyncio
-    @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_RUN, new_callable=AsyncMock)
-    async def test_clean_returns_200_openai_shape(self, mock_run, mock_log, client: AsyncClient):
+    async def test_clean_returns_200_openai_shape(self, mock_run, client: AsyncClient):
         mock_run.return_value = _pipeline_state()
 
         resp = await client.post("/v1/chat/completions", json=CHAT_BODY)
@@ -144,9 +142,8 @@ class TestNonStreaming:
         assert data["id"].startswith("chatcmpl-")
 
     @pytest.mark.asyncio
-    @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_RUN, new_callable=AsyncMock)
-    async def test_block_returns_403(self, mock_run, mock_log, client: AsyncClient):
+    async def test_block_returns_403(self, mock_run, client: AsyncClient):
         mock_run.return_value = _pipeline_state(
             decision="BLOCK",
             blocked_reason="Injection detected",
@@ -166,9 +163,8 @@ class TestNonStreaming:
         assert data["intent"] == "jailbreak"
 
     @pytest.mark.asyncio
-    @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_RUN, new_callable=AsyncMock)
-    async def test_pipeline_headers_present(self, mock_run, mock_log, client: AsyncClient):
+    async def test_pipeline_headers_present(self, mock_run, client: AsyncClient):
         mock_run.return_value = _pipeline_state(intent="code_gen", risk_score=0.25)
 
         resp = await client.post("/v1/chat/completions", json=CHAT_BODY)
@@ -179,18 +175,16 @@ class TestNonStreaming:
         assert resp.headers["x-risk-score"] == "0.25"
 
     @pytest.mark.asyncio
-    @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_RUN, new_callable=AsyncMock)
-    async def test_correlation_id_header(self, mock_run, mock_log, client: AsyncClient):
+    async def test_correlation_id_header(self, mock_run, client: AsyncClient):
         mock_run.return_value = _pipeline_state()
 
         resp = await client.post("/v1/chat/completions", json=CHAT_BODY)
         assert "x-correlation-id" in resp.headers
 
     @pytest.mark.asyncio
-    @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_RUN, new_callable=AsyncMock)
-    async def test_accepts_custom_headers(self, mock_run, mock_log, client: AsyncClient):
+    async def test_accepts_custom_headers(self, mock_run, client: AsyncClient):
         mock_run.return_value = _pipeline_state()
 
         resp = await client.post(
@@ -205,10 +199,9 @@ class TestStreaming:
     """SSE streaming tests."""
 
     @pytest.mark.asyncio
-    @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
     @patch(_PATCH_PRE, new_callable=AsyncMock)
-    async def test_sse_format(self, mock_pre, mock_llm, mock_log, client: AsyncClient):
+    async def test_sse_format(self, mock_pre, mock_llm, client: AsyncClient):
         mock_pre.return_value = _pre_pipeline_state()
         mock_llm.return_value = _fake_stream_response()
 
@@ -225,10 +218,9 @@ class TestStreaming:
         assert lines[-1] == "data: [DONE]"
 
     @pytest.mark.asyncio
-    @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
     @patch(_PATCH_PRE, new_callable=AsyncMock)
-    async def test_stream_block_returns_403(self, mock_pre, mock_llm, mock_log, client: AsyncClient):
+    async def test_stream_block_returns_403(self, mock_pre, mock_llm, client: AsyncClient):
         mock_pre.return_value = _pre_pipeline_state(
             decision="BLOCK",
             blocked_reason="Denylist hit",
@@ -244,10 +236,9 @@ class TestStreaming:
         mock_llm.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
     @patch(_PATCH_PRE, new_callable=AsyncMock)
-    async def test_stream_chunks_are_json(self, mock_pre, mock_llm, mock_log, client: AsyncClient):
+    async def test_stream_chunks_are_json(self, mock_pre, mock_llm, client: AsyncClient):
         mock_pre.return_value = _pre_pipeline_state()
         mock_llm.return_value = _fake_stream_response()
 

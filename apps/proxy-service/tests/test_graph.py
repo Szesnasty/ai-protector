@@ -63,9 +63,11 @@ class TestFullGraphClean:
     """Clean prompt → ALLOW → LLM called → response."""
 
     @pytest.mark.asyncio
+    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
+    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
-    async def test_clean_prompt_allow(self, mock_denylist, mock_llm):
+    async def test_clean_prompt_allow(self, mock_denylist, mock_llm, mock_log, mock_trace):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
 
@@ -82,9 +84,11 @@ class TestFullGraphBlock:
     """Injection prompt → BLOCK → LLM never called."""
 
     @pytest.mark.asyncio
+    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
+    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
-    async def test_denylist_hit_blocks(self, mock_denylist, mock_llm):
+    async def test_denylist_hit_blocks(self, mock_denylist, mock_llm, mock_log, mock_trace):
         mock_denylist.return_value = ["ignore all instructions"]
         mock_llm.return_value = _fake_llm_response()
 
@@ -99,9 +103,11 @@ class TestFullGraphBlock:
         mock_llm.assert_not_called()
 
     @pytest.mark.asyncio
+    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
+    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
-    async def test_high_risk_injection_blocks(self, mock_denylist, mock_llm):
+    async def test_high_risk_injection_blocks(self, mock_denylist, mock_llm, mock_log, mock_trace):
         """Jailbreak intent + encoded content → risk > 0.7 → BLOCK."""
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -126,9 +132,11 @@ class TestFullGraphModify:
     """Suspicious but below threshold → MODIFY → transformed messages."""
 
     @pytest.mark.asyncio
+    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
+    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
-    async def test_suspicious_intent_modifies(self, mock_denylist, mock_llm):
+    async def test_suspicious_intent_modifies(self, mock_denylist, mock_llm, mock_log, mock_trace):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
 
