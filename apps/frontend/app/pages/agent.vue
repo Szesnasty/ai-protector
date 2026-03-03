@@ -2,7 +2,7 @@
   <v-container fluid class="agent-page pa-0">
     <v-row class="agent-page__row" style="margin: 0; gap: 0;">
       <v-col cols="12" md="8" lg="9" class="agent-page__chat">
-        <agent-agent-chat
+        <agent-chat
           :messages="messages"
           :is-loading="isLoading"
           @send="sendMessage"
@@ -10,7 +10,7 @@
       </v-col>
 
       <v-col cols="12" md="4" lg="3" class="agent-page__sidebar">
-        <agent-agent-config
+        <agent-config
           :role="config.role"
           :policy="config.policy"
           :disabled="isLoading"
@@ -19,7 +19,7 @@
           @new-conversation="newConversation"
         />
         <v-divider class="my-2" />
-        <agent-agent-trace-panel
+        <agent-trace-panel
           :trace="lastTrace"
           :decision="lastFirewallDecision"
         />

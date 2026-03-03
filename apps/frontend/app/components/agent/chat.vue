@@ -9,7 +9,7 @@
         </p>
       </div>
 
-      <agent-agent-message
+      <agent-message
         v-for="msg in messages"
         :key="msg.id"
         :message="msg"
