@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select, text
+from sqlalchemy import func, literal_column, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
@@ -30,43 +30,47 @@ router = APIRouter(tags=["analytics"])
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _cutoff(hours: int) -> datetime:
+def _cutoff(hours: float) -> datetime:
     """Return the UTC cutoff timestamp for *hours* ago."""
     return datetime.now(timezone.utc) - timedelta(hours=hours)
 
 
-BUCKET_MAP: dict[str, str] = {
-    "5m": "5 minutes",
-    "15m": "15 minutes",
-    "1h": "1 hour",
-    "6h": "6 hours",
-    "1d": "1 day",
+BUCKET_MAP: dict[str, int] = {
+    "1m": 60,
+    "5m": 300,
+    "15m": 900,
+    "1h": 3600,
+    "6h": 21600,
+    "1d": 86400,
 }
 
 
-def _auto_bucket(hours: int) -> str:
-    """Pick a reasonable bucket interval for a given lookback window."""
-    if hours <= 2:
-        return "5 minutes"
-    if hours <= 12:
-        return "15 minutes"
-    if hours <= 72:
-        return "1 hour"
-    if hours <= 336:
-        return "6 hours"
-    return "1 day"
+def _auto_bucket_seconds(hours: float) -> int:
+    """Pick a reasonable bucket size in seconds for a given lookback window."""
+    if hours <= 0.25:      # ≤ 15 min  → 1-minute buckets
+        return 60
+    if hours <= 1:         # ≤ 1 h     → 2-minute buckets
+        return 120
+    if hours <= 6:         # ≤ 6 h     → 5-minute buckets
+        return 300
+    if hours <= 24:        # ≤ 24 h    → 15-minute buckets
+        return 900
+    if hours <= 72:        # ≤ 3 d     → 1-hour buckets
+        return 3600
+    if hours <= 336:       # ≤ 14 d    → 6-hour buckets
+        return 21600
+    return 86400           # else      → 1-day buckets
 
 
-def _bucket_trunc(interval: str) -> str:
-    """Map an interval string to a ``date_trunc`` precision."""
-    mapping = {
-        "5 minutes": "minute",
-        "15 minutes": "minute",
-        "1 hour": "hour",
-        "6 hours": "hour",
-        "1 day": "day",
-    }
-    return mapping.get(interval, "hour")
+def _epoch_bucket(seconds: int):
+    """Return a SQLAlchemy expression that buckets created_at into *seconds*-wide bins.
+
+    Uses: to_timestamp(floor(extract(epoch from created_at) / N) * N)
+    This gives correct 5-minute, 15-minute, etc. boundaries aligned to epoch.
+    """
+    epoch = func.extract("epoch", Request.created_at)
+    floored = func.floor(epoch / seconds) * seconds
+    return func.to_timestamp(floored).label("bucket_time")
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +79,7 @@ def _bucket_trunc(interval: str) -> str:
 
 @router.get("/analytics/summary", response_model=AnalyticsSummary)
 async def get_summary(
-    hours: int = Query(24, ge=1, le=720),
+    hours: float = Query(24, ge=0.05, le=720),
     db: AsyncSession = Depends(get_db),
 ) -> AnalyticsSummary:
     cutoff = _cutoff(hours)
@@ -123,28 +127,25 @@ async def get_summary(
 
 @router.get("/analytics/timeline", response_model=list[TimelineBucket])
 async def get_timeline(
-    hours: int = Query(24, ge=1, le=720),
+    hours: float = Query(24, ge=0.05, le=720),
     bucket: str = Query("auto"),
     db: AsyncSession = Depends(get_db),
 ) -> list[TimelineBucket]:
-    interval = BUCKET_MAP.get(bucket, _auto_bucket(hours))
+    bucket_secs = BUCKET_MAP.get(bucket, _auto_bucket_seconds(hours))
     cutoff = _cutoff(hours)
-
-    # Simple approach: just bucket by date_trunc on the appropriate precision
-    # and let the application layer fill in gaps
-    trunc = _bucket_trunc(interval)
+    bucket_expr = _epoch_bucket(bucket_secs)
 
     q = (
         select(
-            func.date_trunc(trunc, Request.created_at).label("bucket_time"),
+            bucket_expr,
             func.count().label("total"),
             func.count().filter(Request.decision == "BLOCK").label("blocked"),
             func.count().filter(Request.decision == "MODIFY").label("modified"),
             func.count().filter(Request.decision == "ALLOW").label("allowed"),
         )
         .where(Request.created_at >= cutoff)
-        .group_by(text("1"))
-        .order_by(text("1"))
+        .group_by(literal_column("bucket_time"))
+        .order_by(literal_column("bucket_time"))
     )
 
     rows = (await db.execute(q)).fetchall()
@@ -167,7 +168,7 @@ async def get_timeline(
 
 @router.get("/analytics/by-policy", response_model=list[PolicyStats])
 async def get_by_policy(
-    hours: int = Query(24, ge=1, le=720),
+    hours: float = Query(24, ge=0.05, le=720),
     db: AsyncSession = Depends(get_db),
 ) -> list[PolicyStats]:
     cutoff = _cutoff(hours)
@@ -211,7 +212,7 @@ async def get_by_policy(
 
 @router.get("/analytics/top-flags", response_model=list[RiskFlagCount])
 async def get_top_flags(
-    hours: int = Query(24, ge=1, le=720),
+    hours: float = Query(24, ge=0.05, le=720),
     limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ) -> list[RiskFlagCount]:
@@ -249,7 +250,7 @@ async def get_top_flags(
 
 @router.get("/analytics/intents", response_model=list[IntentCount])
 async def get_intents(
-    hours: int = Query(24, ge=1, le=720),
+    hours: float = Query(24, ge=0.05, le=720),
     db: AsyncSession = Depends(get_db),
 ) -> list[IntentCount]:
     cutoff = _cutoff(hours)
