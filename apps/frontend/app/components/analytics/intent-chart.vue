@@ -4,7 +4,9 @@
     <v-card-text>
       <v-skeleton-loader v-if="loading" type="image" height="260" />
       <div v-else-if="data?.length" style="max-width: 400px; margin: 0 auto;">
-        <v-chart :option="chartOption" autoresize style="height: 260px;" />
+        <client-only>
+          <v-chart :option="chartOption" autoresize style="height: 260px;" />
+        </client-only>
       </div>
       <div v-else class="text-center text-medium-emphasis py-8">No intent data</div>
     </v-card-text>
@@ -12,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import VChart from 'vue-echarts'
+const VChart = defineAsyncComponent(() => import('vue-echarts'))
 import type { IntentCount } from '~/types/api'
 
 const props = defineProps<{

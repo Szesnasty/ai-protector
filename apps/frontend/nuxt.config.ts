@@ -9,10 +9,6 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
   ],
 
-  css: [
-    '@mdi/font/css/materialdesignicons.css',
-  ],
-
   vuetify: {
     moduleOptions: {
       styles: true,

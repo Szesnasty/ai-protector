@@ -4,12 +4,14 @@
     <div v-else-if="!data?.length" class="d-flex align-center justify-center h-100 text-medium-emphasis">
       No data for this time range
     </div>
-    <v-chart v-else :option="chartOption" autoresize style="height: 100%;" />
+    <client-only v-else>
+      <v-chart :option="chartOption" autoresize style="height: 100%;" />
+    </client-only>
   </div>
 </template>
 
 <script setup lang="ts">
-import VChart from 'vue-echarts'
+const VChart = defineAsyncComponent(() => import('vue-echarts'))
 import type { TimelineBucket } from '~/types/api'
 
 const props = defineProps<{

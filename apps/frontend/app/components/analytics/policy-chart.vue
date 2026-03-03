@@ -4,7 +4,9 @@
     <v-card-text>
       <v-skeleton-loader v-if="loading" type="image" height="160" />
       <template v-else-if="data?.length">
-        <v-chart :option="chartOption" autoresize style="height: 160px;" />
+        <client-only>
+          <v-chart :option="chartOption" autoresize style="height: 160px;" />
+        </client-only>
         <v-table density="compact" class="mt-3 text-caption">
           <thead>
             <tr>
@@ -34,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import VChart from 'vue-echarts'
+const VChart = defineAsyncComponent(() => import('vue-echarts'))
 import type { PolicyStatsRow } from '~/types/api'
 
 const props = defineProps<{
