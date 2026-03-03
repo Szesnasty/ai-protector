@@ -14,6 +14,7 @@ from src.llm.client import llm_completion
 from src.llm.streaming import sse_stream
 from src.pipeline.runner import run_pipeline, run_pre_llm_pipeline
 from src.pipeline.state import PipelineState
+from src.services.request_logger import log_request_from_state
 from src.schemas.chat import (
     ChatChoice,
     ChatCompletionRequest,
@@ -137,6 +138,13 @@ async def chat_completions(
         )
 
         if pre_result["decision"] == "BLOCK":
+            # Log BLOCK to Postgres (streaming pre-LLM pipeline has no logging node)
+            latency_ms = int((time.perf_counter() - start) * 1000)
+            pre_result["latency_ms"] = latency_ms
+            try:
+                await log_request_from_state(dict(pre_result))
+            except Exception:
+                logger.exception("stream_block_audit_log_failed")
             return _block_response(pre_result)
 
         # ALLOW or MODIFY — stream from LLM

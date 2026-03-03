@@ -19,7 +19,11 @@ _policy_cache: dict[str, uuid.UUID] = {}
 
 
 async def _resolve_policy_id(policy_name: str) -> uuid.UUID | None:
-    """Return the UUID for a policy name, using an in-memory cache."""
+    """Return the UUID for a policy name, using an in-memory cache.
+
+    Falls back to 'balanced' if the requested policy is not found,
+    so that audit rows are never silently dropped.
+    """
     if policy_name in _policy_cache:
         return _policy_cache[policy_name]
 
@@ -30,7 +34,14 @@ async def _resolve_policy_id(policy_name: str) -> uuid.UUID | None:
         row = result.scalar_one_or_none()
         if row is not None:
             _policy_cache[policy_name] = row
-        return row
+            return row
+
+    # Fallback: try 'balanced' default so we never silently lose logs
+    if policy_name != "balanced":
+        logger.warning("policy_not_found_falling_back", requested=policy_name, fallback="balanced")
+        return await _resolve_policy_id("balanced")
+
+    return None
 
 
 def _prompt_hash(messages: list[dict]) -> str | None:
