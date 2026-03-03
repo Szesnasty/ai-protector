@@ -26,7 +26,8 @@
 
     <attack-scenarios-panel
       v-model="showScenarios"
-      :scenarios="playgroundScenarios"
+      :scenarios="scenarios ?? []"
+      :loading="scenariosLoading"
       @send="handleAttackSend"
     />
 
@@ -47,13 +48,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useChat } from '~/composables/useChat'
-import { playgroundScenarios } from '~/composables/usePlaygroundScenarios'
+import { useScenarios } from '~/composables/useScenarios'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
 definePageMeta({ title: 'Playground' })
 
 const { messages, isStreaming, lastDecision, error, config, send, clear, abort } = useChat()
+const { scenarios, isLoading: scenariosLoading } = useScenarios('playground')
 
 const showScenarios = ref(true)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)

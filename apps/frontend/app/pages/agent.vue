@@ -29,7 +29,8 @@
 
     <attack-scenarios-panel
       v-model="showScenarios"
-      :scenarios="agentScenarios"
+      :scenarios="scenarios ?? []"
+      :loading="scenariosLoading"
       @send="handleAttackSend"
     />
 
@@ -50,7 +51,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAgentChat } from '~/composables/useAgentChat'
-import { agentScenarios } from '~/composables/useAgentScenarios'
+import { useScenarios } from '~/composables/useScenarios'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
@@ -67,6 +68,7 @@ const {
   newConversation,
 } = useAgentChat()
 
+const { scenarios, isLoading: scenariosLoading } = useScenarios('agent')
 const showScenarios = ref(true)
 const agentChatRef = ref<{ setText: (s: string) => void } | null>(null)
 
