@@ -14,16 +14,6 @@
       </v-col>
 
       <v-col cols="12" md="4" lg="3" class="playground-page__sidebar">
-        <v-btn
-          :color="showScenarios ? 'primary' : undefined"
-          variant="tonal"
-          block
-          class="mb-2"
-          prepend-icon="mdi-shield-bug"
-          @click="showScenarios = !showScenarios"
-        >
-          Attack Scenarios
-        </v-btn>
         <playground-config-sidebar
           :config="config"
           :disabled="isStreaming"
@@ -39,6 +29,18 @@
       :scenarios="playgroundScenarios"
       @send="handleAttackSend"
     />
+
+    <v-btn
+      icon
+      size="large"
+      :color="showScenarios ? 'error' : 'surface-variant'"
+      class="attack-fab"
+      elevation="8"
+      @click="showScenarios = !showScenarios"
+    >
+      <v-icon>mdi-skull-crossbones</v-icon>
+      <v-tooltip activator="parent" location="left">Attack Scenarios</v-tooltip>
+    </v-btn>
   </v-container>
 </template>
 
@@ -81,5 +83,12 @@ function handleAttackSend(prompt: string) {
     height: 100%;
     overflow-y: auto;
   }
+}
+
+.attack-fab {
+  position: fixed !important;
+  top: 80px;
+  right: 24px;
+  z-index: 1000;
 }
 </style>
