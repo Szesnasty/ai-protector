@@ -1,6 +1,6 @@
 # AI Protector — MVP Implementation Diagram
 
-> 19 steps across 6 phases. Each step builds on the previous.
+> 20 steps across 7 phases. Each step builds on the previous.
 > ✅ = done, 🔜 = next, ⬜ = planned.
 
 ---
@@ -18,22 +18,27 @@
 └─────────────────────┘     └──────────────────────────┘               ▼
                                                           Phase 4: Custom Security Rules
                                                           ┌─────────────────────────┐
-                                                          │ 🔜 14a Model & CRUD API │
-                                                          │ ⬜ 14b Pipeline Integr.  │
-                                                          │ ⬜ 14c Frontend Editor   │
+                                                          │ ✅ 14a Model & CRUD API  │
+                                                          │ ✅ 14b Pipeline Integr.  │
+                                                          │ ✅ 14c Frontend Editor   │
                                                           └────────────┬────────────┘
                                                                        ▼
                                                           Phase 5: Dashboard & Data
                                                           ┌─────────────────────────┐
-                                                          │ ⬜ 15  Policies & Log UI │
-                                                          │ ⬜ 16  Analytics          │
+                                                          │ ✅ 15  Policies & Log UI │
+                                                          │ ✅ 16  Analytics          │
                                                           └────────────┬────────────┘
                                                                        ▼
-                                                            Phase 6: Harden & Ship
+                                                          Phase 6: Enterprise Readiness
                                                           ┌─────────────────────────┐
-                                                          │ ⬜ 17  MLJudge + NeMo    │
-                                                          │ ⬜ 18  Rate Limit/Cache  │
-                                                          │ ⬜ 19  Docs & Demo       │
+                                                          │ ⬜ 17  Observe/Simulate  │
+                                                          │ ⬜ 18  Explainability    │
+                                                          │ ⬜ 19  Replay Requests   │
+                                                          └────────────┬────────────┘
+                                                                       ▼
+                                                          Phase 7: Demo & Polish
+                                                          ┌─────────────────────────┐
+                                                          │ ✅ 20  Attack Scenarios  │
                                                           └─────────────────────────┘
 ```
 
@@ -69,28 +74,34 @@
 | 12 | **Agent ↔ Firewall** | Agent calls `proxy-service` via LiteLLM, session memory, mock KB + orders | ✅ Done |
 | 13 | **Agent Demo UI** | Copilot chat, role selector, tool call annotations, agent trace panel | ✅ Done |
 
-### Phase 4: Custom Security Rules 🔜
+### Phase 4: Custom Security Rules ✅
 
 | Step | Name | What it does | Status |
 |------|------|-------------|--------|
-| 14a | **Model & CRUD API** | SecurityRule ORM, Alembic migration, OWASP LLM Top 10 + PII/PL seed categories, REST CRUD | 🔜 Next |
-| 14b | **Pipeline Integration** | RulesNode reads custom rules, DenylistHit, flag/score_boost, intent override | ⬜ Planned |
-| 14c | **Frontend Rules Editor** | Presets dropdown, auto-fill, data table, filters, create/edit/delete dialogs | ⬜ Planned |
+| 14a | **Model & CRUD API** | SecurityRule ORM, Alembic migration, OWASP LLM Top 10 + PII/PL seed categories, REST CRUD | ✅ Done |
+| 14b | **Pipeline Integration** | RulesNode reads custom rules, DenylistHit, flag/score_boost, intent override | ✅ Done |
+| 14c | **Frontend Rules Editor** | Presets dropdown, auto-fill, data table, filters, create/edit/delete dialogs | ✅ Done |
 
-### Phase 5: Dashboard & Data ⬜
-
-| Step | Name | What it does | Status |
-|------|------|-------------|--------|
-| 15 | **Policies & Log UI** | Policies CRUD interface, request log with pagination, filters, expandable rows | ⬜ Planned |
-| 16 | **Analytics** | KPI cards, timeline chart, block rate by policy, top risk flags, intent distribution | ⬜ Planned |
-
-### Phase 6: Harden & Ship ⬜
+### Phase 5: Dashboard & Data ✅
 
 | Step | Name | What it does | Status |
 |------|------|-------------|--------|
-| 17 | **MLJudge + NeMo** | `MLJudgeNode` (LLM-as-judge via Ollama), NeMo Guardrails integration, canary tokens | ⬜ Planned |
-| 18 | **Rate Limit & Cache** | Redis rate limiting, decision caching for repeated prompts | ⬜ Planned |
-| 19 | **Docs & Demo** | `securing-agents.md` (Level 0/1/2), README with setup, screenshots, demo GIF | ⬜ Planned |
+| 15 | **Policies & Log UI** | Policies CRUD interface, request log with pagination, filters, expandable rows | ✅ Done |
+| 16 | **Analytics** | KPI cards, timeline chart (ECharts), block rate by policy, top risk flags, intent distribution, sub-minute polling | ✅ Done |
+
+### Phase 6: Enterprise Readiness ⬜
+
+| Step | Name | What it does | Status |
+|------|------|-------------|--------|
+| 17 | **Observe / Simulate** | Per-policy observe mode: BLOCK → ALLOW in shadow, logs `original_decision` for audit | ⬜ Spec written |
+| 18 | **Explainability** | Structured explanation for every decision: matched rules, scanner signals, risk breakdown | ⬜ Spec written |
+| 19 | **Replay Requests** | Replay any log entry through pipeline with different policy, side-by-side comparison | ⬜ Spec written |
+
+### Phase 7: Demo & Polish ✅
+
+| Step | Name | What it does | Status |
+|------|------|-------------|--------|
+| 20 | **Attack Scenarios Panel** | 260 ready-made attack prompts (157 Playground + 103 Agent), skull FAB, one-click auto-submit, tag filter, OWASP labels | ✅ Done |
 
 ---
 
@@ -218,26 +229,28 @@ Four built-in policy levels control the pipeline behavior:
 ## Test Coverage
 
 ```
-325 tests passing (pytest)
- ├── Pipeline nodes .................. ~120 tests
- │   ├── parse, intent, rules ........ 35
- │   ├── scanners (LLM Guard + Presidio) 45
- │   ├── decision node ............... 20
+348 tests (pytest)
+ ├── Pipeline nodes .................. ~140 tests
+ │   ├── parse, intent, rules ........ 45
+ │   ├── scanners (LLM Guard + Presidio) 50
+ │   ├── decision node ............... 22
  │   ├── output filter ............... 12
- │   └── logging node ................ 12
- ├── Integration (full pipeline) ..... ~40 tests
- │   ├── graph routing ............... 3
- │   ├── ALLOW/BLOCK/MODIFY E2E ...... 10
- │   └── graph with mocked LLM ...... 6
- ├── Services ........................ ~30 tests
- │   ├── request logger .............. 10
+ │   └── logging node ................ 14
+ ├── Integration (full pipeline) ..... ~50 tests
+ │   ├── graph routing ............... 5
+ │   ├── ALLOW/BLOCK/MODIFY E2E ...... 12
+ │   └── graph with mocked LLM ...... 8
+ ├── Services ........................ ~50 tests
+ │   ├── request logger .............. 14
+ │   ├── custom rules CRUD ........... 20
  │   ├── langfuse client ............. 8
  │   └── denylist, policy cache ...... 12
- ├── API endpoints ................... ~25 tests
- │   ├── chat completions ............ 11
+ ├── API endpoints ................... ~40 tests
+ │   ├── chat completions ............ 14
  │   ├── policies CRUD ............... 14
+ │   ├── analytics ................... 8
  │   └── health ...................... 2
- └── Schemas & utils ................ ~20 tests
+ └── Schemas & utils ................ ~30 tests
 ```
 
 ---

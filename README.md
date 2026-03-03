@@ -12,13 +12,17 @@ Self-hosted **LLM Firewall with an Agentic Security Pipeline** — an OpenAI-com
 
 ## Current Status
 
-The full **firewall pipeline** is implemented and tested (325 tests):
+The full **firewall pipeline**, **frontend dashboard**, and **attack demo** are implemented and tested (348 tests):
 
 | Phase | Steps | Status |
 |-------|-------|--------|
-| Foundation (01–04) | Scaffolding, Docker, FastAPI, LLM Proxy | ✅ Done |
-| Firewall Pipeline (06–09) | LangGraph, Scanners, Policies, Output Pipeline | ✅ Done |
-| Frontend & Agent (05, 10–18) | Playground, Agent Demo, Dashboard | 🔜 Next |
+| Foundation (01–05) | Scaffolding, Docker, FastAPI, LLM Proxy, Frontend Shell | ✅ Done |
+| Firewall Pipeline (06–10) | LangGraph, Scanners, Policies, Output Pipeline, Playground UI | ✅ Done |
+| Agent Demo (11–13) | Agent App, Firewall Integration, Agent Demo UI | ✅ Done |
+| Custom Rules (14) | OWASP LLM Top 10 rules, CRUD API, Pipeline Integration, Frontend Editor | ✅ Done |
+| Dashboard (15–16) | Policies CRUD UI, Request Log, Analytics (ECharts, KPIs, Timeline) | ✅ Done |
+| Enterprise Readiness (17–19) | Observe/Simulate Mode, Explainability, Replay Requests | ⬜ Specs written |
+| Demo & Polish (20) | Attack Scenarios Panel — 260 prompts (157 Playground + 103 Agent) | ✅ Done |
 
 ### Pipeline Architecture
 
@@ -41,12 +45,12 @@ User Request → POST /v1/chat/completions
     └─────────────────────────────────────────────────────────────────────┘
 ```
 
-See [mvp-diagram.md](mvp-diagram.md) for the full 18-step implementation plan diagram.
+See [mvp-diagram.md](mvp-diagram.md) for the full 20-step implementation plan diagram.
 
 ## Tech Stack
 
-**Frontend:** Nuxt 4 · Vuetify 3 · Pinia · vue-echarts
-**Backend:** FastAPI · LangGraph · LiteLLM · LLM Guard · Presidio · NeMo Guardrails
+**Frontend:** Nuxt 4 · Vuetify 4 · Vue Query · ECharts
+**Backend:** FastAPI · LangGraph · LiteLLM · LLM Guard · Presidio
 **Infra:** Docker Compose · PostgreSQL 16 · Redis 7 · Ollama · Langfuse
 
 ## Docs
@@ -129,7 +133,7 @@ curl -X POST http://localhost:8000/v1/chat/completions \
 ```bash
 cd apps/proxy-service
 source .venv/bin/activate
-pytest tests/ -v               # all tests
+pytest tests/ -v               # all tests (348)
 ruff check src/ tests/         # linter
 ```
 

@@ -627,37 +627,37 @@ volumes:
 - [ ] Docker Compose (db + redis + ollama + langfuse)
 - [ ] FastAPI skeleton with healthcheck
 - [ ] SQLAlchemy models + Alembic migrations
-- [ ] Seed 4 default policies
-- [ ] `POST /v1/chat/completions` — basic proxy to Ollama via LiteLLM
-- [ ] Nuxt 4 + Vuetify 3 setup (layout, sidebar, theme)
+- [x] Seed 4 default policies
+- [x] `POST /v1/chat/completions` — basic proxy to Ollama via LiteLLM
+- [x] Nuxt 4 + Vuetify 4 setup (layout, sidebar, theme)
 
 ### Sprint 2: Firewall Pipeline (week 3–4)
-- [ ] ParseNode + IntentNode
-- [ ] RulesNode (denylist, length limits)
-- [ ] LLM Guard ScannerNode (PromptInjection, Toxicity, Secrets)
-- [ ] Presidio PII DetectionNode
-- [ ] PolicyDecisionNode
-- [ ] PromptTransformNode (spotlighting, tagging)
-- [ ] OutputFilterNode (PII masking, canary)
-- [ ] MemoryHygieneNode (context sanitization)
-- [ ] LoggingNode (PostgreSQL + Langfuse)
-- [ ] LangGraph wiring — full pipeline graph
+- [x] ParseNode + IntentNode
+- [x] RulesNode (denylist, length limits)
+- [x] LLM Guard ScannerNode (PromptInjection, Toxicity, Secrets)
+- [x] Presidio PII DetectionNode
+- [x] PolicyDecisionNode
+- [x] PromptTransformNode (spotlighting, tagging)
+- [x] OutputFilterNode (PII masking, canary)
+- [x] MemoryHygieneNode (context sanitization)
+- [x] LoggingNode (PostgreSQL + Langfuse)
+- [x] LangGraph wiring — full pipeline graph
 
 ### Sprint 3: Agent Demo (week 5–6)
-- [ ] Agent Demo FastAPI skeleton
-- [ ] LangGraph agent: IntentClassifier → PolicyCheck → ToolRouter
-- [ ] 3 tools (searchKB, getOrderStatus, getInternalSecrets)
-- [ ] Role-based access control (PolicyCheckNode)
-- [ ] MemoryManager (session context with sanitization)
-- [ ] Agent calls proxy-service via LiteLLM
-- [ ] Mock data for KB and orders
+- [x] Agent Demo FastAPI skeleton
+- [x] LangGraph agent: IntentClassifier → PolicyCheck → ToolRouter
+- [x] 3 tools (searchKB, getOrderStatus, getInternalSecrets)
+- [x] Role-based access control (PolicyCheckNode)
+- [x] MemoryManager (session context with sanitization)
+- [x] Agent calls proxy-service via LiteLLM
+- [x] Mock data for KB and orders
 
 ### Sprint 4: Frontend (week 5–7)
-- [ ] Playground: chat, policy selector, debug panel
-- [ ] Agent Demo UI: copilot chat, role selector, agent trace
-- [ ] Policies: data table + edit form
-- [ ] Request Log: paginated table, filters, expandable rows
-- [ ] Analytics: KPI cards, timeline, breakdowns
+- [x] Playground: chat, policy selector, debug panel
+- [x] Agent Demo UI: copilot chat, role selector, agent trace
+- [x] Policies: data table + edit form
+- [x] Request Log: paginated table, filters, expandable rows
+- [x] Analytics: KPI cards, timeline, breakdowns
 
 ### Sprint 5: Polish & Ship (week 7–8)
 - [ ] MLJudgeNode (Ollama LLM-as-judge)
@@ -665,8 +665,8 @@ volumes:
 - [ ] Canary Token System
 - [ ] Rate limiting (Redis)
 - [ ] Write `docs/securing-agents.md` (Level 0/1/2 comparison)
-- [ ] Error handling, loading states, edge cases
-- [ ] README with setup instructions + screenshots
+- [x] Error handling, loading states, edge cases
+- [x] README with setup instructions + screenshots
 - [ ] Demo recording / GIF
 
 ---
@@ -674,29 +674,29 @@ volumes:
 ## 11. Definition of Done
 
 **Firewall:**
-- [ ] `docker compose up` → full stack starts
-- [ ] Normal prompt → ALLOW
-- [ ] "Ignore previous instructions" → BLOCK (balanced+)
-- [ ] Prompt with email → PII masked (strict+)
-- [ ] Intent classification in request log
+- [x] `docker compose up` → full stack starts
+- [x] Normal prompt → ALLOW
+- [x] "Ignore previous instructions" → BLOCK (balanced+)
+- [x] Prompt with email → PII masked (strict+)
+- [x] Intent classification in request log
 
 **Agent Demo:**
-- [ ] Customer: can search KB and check orders
-- [ ] Customer: cannot call getInternalSecrets (agent-level block)
-- [ ] Injection through agent → blocked by proxy (Level 2 security)
-- [ ] Agent trace visible in frontend
+- [x] Customer: can search KB and check orders
+- [x] Customer: cannot call getInternalSecrets (agent-level block)
+- [x] Injection through agent → blocked by proxy (Level 2 security)
+- [x] Agent trace visible in frontend
 
 **Frontend:**
-- [ ] Playground shows decision + risk flags
-- [ ] Agent Demo chat with role switching
-- [ ] Policies CRUD from UI
-- [ ] Request Log with filters
-- [ ] Analytics with timeline + block rate
+- [x] Playground shows decision + risk flags
+- [x] Agent Demo chat with role switching
+- [x] Policies CRUD from UI
+- [x] Request Log with filters
+- [x] Analytics with timeline + block rate
 
 **Observability:**
-- [ ] Langfuse traces with latency + tokens
-- [ ] Every request logged with intent + risk flags
+- [x] Langfuse traces with latency + tokens
+- [x] Every request logged with intent + risk flags
 
 **Docs:**
 - [ ] `securing-agents.md` — Level 0/1/2 comparison
-- [ ] README — new person runs project in < 10 min
+- [x] README — new person runs project in < 10 min

@@ -5,7 +5,7 @@
 | **Phase** | Dashboard & Data |
 | **Estimated time** | 10–14 hours |
 | **Prev** | [Step 15 — Policies & Request Log](../15-policies-request-log/SPEC.md) |
-| **Next** | [Step 17 — MLJudge & Advanced Scanners](../17-advanced-scanners/SPEC.md) |
+| **Next** | [Step 17 — Observe / Simulate Mode](../17-observe-simulate/SPEC.md) |
 | **Depends on** | Step 15 (request log API, populated requests table), Step 08 (policies) |
 | **Master plan** | [MVP-PLAN.md](../MVP-PLAN.md) |
 

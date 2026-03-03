@@ -99,13 +99,16 @@
 
 ## Phase 7: Demo & Polish
 
-- [ ] **[Step 20 — Attack Scenarios Panel](20-attack-scenarios-panel/SPEC.md)**
-  Floating side panel with 40 ready-made attack prompts (injection, jailbreak, PII, exfil, toxicity,
-  tool abuse, role bypass). One click → auto-submit. Tag filter + OWASP labels. Both Playground & Agent Demo.
-  - [ ] 20a — Types + scenario data (7 Playground groups / 21 prompts, 6 Agent groups / 19 prompts)
-  - [ ] 20b — `AttackScenariosPanel.vue` component (search, tag filter, grouped buttons, decision chips)
-  - [ ] 20c — Playground integration (toggle, auto-send, chat input expose)
-  - [ ] 20d — Agent Demo integration (toggle, auto-send, chat input expose)
+- [x] **[Step 20 — Attack Scenarios Panel](20-attack-scenarios-panel/SPEC.md)**
+  Floating side panel with **260 ready-made attack prompts** (157 Playground + 103 Agent) covering
+  injection, jailbreak, PII, exfil, toxicity, tool abuse, role bypass, system prompt leaking,
+  cognitive hacking, misinformation, few-shot manipulation, excessive agency, resource exhaustion,
+  multi-turn escalation, chain-of-thought attacks. One click → auto-submit. Tag filter + OWASP labels.
+  Both Playground & Agent Demo. Skull FAB toggle, panels collapsed by default.
+  - [x] 20a — Types + scenario data (14 Playground groups / 157 prompts, 12 Agent groups / 103 prompts)
+  - [x] 20b — `AttackScenariosPanel.vue` component (search, tag filter, grouped buttons, decision chips)
+  - [x] 20c — Playground integration (toggle, auto-send, chat input expose)
+  - [x] 20d — Agent Demo integration (toggle, auto-send, chat input expose)
 
 ---
 
@@ -119,8 +122,8 @@
 | Agent Demo | 11–13 | � 11 12 13 done |
 | Custom Rules | 14 | � 14a 14b 14c done |
 | Dashboard | 15–16 | � 15 16 done |
-| Enterprise Readiness | 17–19 | ⬜ Not started |
-| Demo & Polish | 20 | ⬜ Not started |
+| Enterprise Readiness | 17–19 | ⬜ Not started (specs written) |
+| Demo & Polish | 20 | 🟩 20 done |
 
 ---
 

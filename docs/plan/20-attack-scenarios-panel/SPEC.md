@@ -1,5 +1,8 @@
 # Step 20 — Attack Scenarios Panel
 
+> **Status**: ✅ **DONE** — Implemented with 260 attack prompts (157 Playground + 103 Agent)
+> across 14 Playground groups and 12 Agent groups. Far exceeds the original 40-prompt goal.
+
 > **Goal**: A floating side panel with ready-made attack prompts for live demos.
 > One click → prompt injected into the chat input → auto-submitted after a brief
 > delay so the audience sees what's being sent. Visible in both Playground and
