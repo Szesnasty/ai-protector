@@ -10,6 +10,15 @@ def calculate_risk_score(state: PipelineState) -> float:
     """Weighted aggregation of all risk signals, capped at 1.0."""
     score = 0.0
     flags: dict = state.get("risk_flags", {})
+    thresholds: dict = state.get("policy_config", {}).get("thresholds", {})
+
+    # Policy-configurable scanner weights (defaults match legacy values)
+    injection_weight = thresholds.get("injection_weight", 0.8)
+    toxicity_weight = thresholds.get("toxicity_weight", 0.5)
+    secrets_weight = thresholds.get("secrets_weight", 0.6)
+    invisible_weight = thresholds.get("invisible_weight", 0.4)
+    pii_per_entity = thresholds.get("pii_per_entity_weight", 0.1)
+    pii_max = thresholds.get("pii_max_weight", 0.5)
 
     # Intent-based
     intent = state.get("intent")
@@ -30,18 +39,18 @@ def calculate_risk_score(state: PipelineState) -> float:
 
     # LLM Guard signals
     if "promptinjection" in flags:
-        score += float(flags["promptinjection"]) * 0.8
+        score += float(flags["promptinjection"]) * injection_weight
     if "toxicity" in flags:
-        score += float(flags["toxicity"]) * 0.5
+        score += float(flags["toxicity"]) * toxicity_weight
     if "secrets" in flags:
-        score += 0.6
+        score += secrets_weight
     if "invisibletext" in flags:
-        score += 0.4
+        score += invisible_weight
 
     # Presidio PII
     pii_count = flags.get("pii_count", 0)
     if pii_count > 0:
-        score += min(pii_count * 0.1, 0.5)
+        score += min(pii_count * pii_per_entity, pii_max)
 
     return min(score, 1.0)
 

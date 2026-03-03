@@ -102,6 +102,7 @@ async def run_pipeline(
     logger.info(
         "pipeline_complete",
         request_id=request_id,
+        policy=policy_name,
         decision=result.get("decision"),
         risk_score=result.get("risk_score"),
         intent=result.get("intent"),
@@ -167,6 +168,7 @@ async def run_pre_llm_pipeline(
     logger.info(
         "pre_llm_pipeline_complete",
         request_id=request_id,
+        policy=policy_name,
         decision=result.get("decision"),
         risk_score=result.get("risk_score"),
         intent=result.get("intent"),
