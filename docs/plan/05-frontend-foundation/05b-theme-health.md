@@ -26,7 +26,7 @@ Add a dark/light theme toggle (persisted to `localStorage`) and a live health in
 
 ### 1. Theme toggle
 
-- [ ] Create `app/composables/useAppTheme.ts`:
+- [x] Create `app/composables/useAppTheme.ts`:
   ```typescript
   export const useAppTheme = () => {
     const theme = useTheme()           // Vuetify's useTheme()
@@ -48,16 +48,16 @@ Add a dark/light theme toggle (persisted to `localStorage`) and a live health in
     return { isDark, toggle }
   }
   ```
-- [ ] Add `v-btn` with `mdi-weather-sunny` / `mdi-weather-night` icon in app bar
-- [ ] Toggle calls `useAppTheme().toggle()`
-- [ ] Icon changes reactively based on `isDark`
+- [x] Add `v-btn` with `mdi-weather-sunny` / `mdi-weather-night` icon in app bar
+- [x] Toggle calls `useAppTheme().toggle()`
+- [x] Icon changes reactively based on `isDark`
 
 ### 2. Health composable (`app/composables/useHealth.ts`) — initial version
 
 This is the **initial version** using raw `$fetch`. It gets refactored in 05c to Vue Query + Axios.
 
-- [ ] Calls `GET {apiBase}/health` (from `runtimeConfig.public.apiBase`)
-- [ ] Returns reactive state:
+- [x] Calls `GET {apiBase}/health` (from `runtimeConfig.public.apiBase`)
+- [x] Returns reactive state:
   ```typescript
   interface HealthState {
     status: 'ok' | 'degraded' | 'error' | 'loading'
@@ -66,35 +66,35 @@ This is the **initial version** using raw `$fetch`. It gets refactored in 05c to
     error: string | null
   }
   ```
-- [ ] Polls every **30 seconds** (`setInterval`)
-- [ ] First call fires immediately on composable init
-- [ ] Clears interval on component unmount (`onUnmounted`)
-- [ ] On fetch error → sets `status: 'error'`
-- [ ] Timeout: 5 seconds per request (don't hang if proxy is unreachable)
+- [x] Polls every **30 seconds** (`setInterval`)
+- [x] First call fires immediately on composable init
+- [x] Clears interval on component unmount (`onUnmounted`)
+- [x] On fetch error → sets `status: 'error'`
+- [x] Timeout: 5 seconds per request (don't hang if proxy is unreachable)
 
 ### 3. Health indicator component (`app/components/health-indicator.vue`)
 
 Uses `<script setup lang="ts">` + **Vuetify components** throughout:
 
-- [ ] Small colored dot in the app bar (right side, before theme toggle):
+- [x] Small colored dot in the app bar (right side, before theme toggle):
   | Status | Color | Vuetify icon |
   |--------|-------|------|
   | `ok` | `success` (green) | `mdi-circle` via `v-icon` |
   | `degraded` | `warning` (orange) | `mdi-circle` via `v-icon` |
   | `error` | `error` (red) | `mdi-circle` via `v-icon` |
   | `loading` | `grey` | `mdi-loading` via `v-progress-circular` |
-- [ ] `v-tooltip` on hover showing:
+- [x] `v-tooltip` on hover showing:
   - Overall status text + last checked time (formatted with `toLocaleTimeString()`)
   - Per-service status as `v-list` with `v-list-item` per service
   - Each `v-list-item` has prepend `v-icon` color-coded by service status
   - Error detail shown as `v-list-item-subtitle` if any service is unhealthy
-- [ ] Wrap the whole thing in a `v-btn` with `variant="text"` for consistent app bar spacing
+- [x] Wrap the whole thing in a `v-btn` with `variant="text"` for consistent app bar spacing
 
 ### 4. Wire into layout
 
-- [ ] Add `<health-indicator />` and theme toggle `v-btn` to app bar's `append` slot
-- [ ] Order: `<health-indicator />` → theme toggle (left to right)
-- [ ] Ensure both render correctly in both dark and light themes
+- [x] Add `<health-indicator />` and theme toggle `v-btn` to app bar's `append` slot
+- [x] Order: `<health-indicator />` → theme toggle (left to right)
+- [x] Ensure both render correctly in both dark and light themes
 
 ---
 
@@ -133,17 +133,17 @@ When a service is down:
 
 ## Definition of Done
 
-- [ ] Theme toggle `v-btn` visible in app bar (sun/moon icon)
-- [ ] Clicking toggle switches between dark and light themes instantly
-- [ ] Refreshing browser preserves selected theme (localStorage key: `ai-protector-theme`)
-- [ ] All `.vue` files use `<script setup lang="ts">` (Composition API)
-- [ ] Health dot shows green `v-icon` when proxy-service + infra are running
-- [ ] Health dot shows red `v-icon` when proxy-service is stopped
-- [ ] Hovering health dot shows `v-tooltip` with `v-list` of per-service breakdown
-- [ ] Tooltip shows last checked time
-- [ ] Health polls every 30s (verify in Network tab: periodic GET /health)
-- [ ] No CORS errors in console (proxy serves `Access-Control-Allow-Origin: http://localhost:3000`)
-- [ ] Both features work in dark and light themes
+- [x] Theme toggle `v-btn` visible in app bar (sun/moon icon)
+- [x] Clicking toggle switches between dark and light themes instantly
+- [x] Refreshing browser preserves selected theme (localStorage key: `ai-protector-theme`)
+- [x] All `.vue` files use `<script setup lang="ts">` (Composition API)
+- [x] Health dot shows green `v-icon` when proxy-service + infra are running
+- [x] Health dot shows red `v-icon` when proxy-service is stopped
+- [x] Hovering health dot shows `v-tooltip` with `v-list` of per-service breakdown
+- [x] Tooltip shows last checked time
+- [x] Health polls every 30s (verify in Network tab: periodic GET /health)
+- [x] No CORS errors in console (proxy serves `Access-Control-Allow-Origin: http://localhost:3000`)
+- [x] Both features work in dark and light themes
 
 ---
 

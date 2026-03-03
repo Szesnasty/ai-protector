@@ -88,24 +88,24 @@ Implement fire-and-forget request logging to the database, write all unit and in
 
 ### 6. Docker / Compose verification
 
-- [ ] Ensure `ollama` service is reachable from `proxy-service` container
-- [ ] Pull model inside Ollama container:
+- [x] Ensure `ollama` service is reachable from `proxy-service` container
+- [x] Pull model inside Ollama container:
   ```bash
   docker compose exec ollama ollama pull llama3.1:8b
   ```
-- [ ] Test end-to-end (non-streaming):
+- [x] Test end-to-end (non-streaming):
   ```bash
   curl -s http://localhost:8000/v1/chat/completions \
     -H "Content-Type: application/json" \
     -d '{"messages":[{"role":"user","content":"Say hello"}]}' | python3 -m json.tool
   ```
-- [ ] Test end-to-end (streaming):
+- [x] Test end-to-end (streaming):
   ```bash
   curl -N http://localhost:8000/v1/chat/completions \
     -H "Content-Type: application/json" \
     -d '{"messages":[{"role":"user","content":"Say hello"}],"stream":true}'
   ```
-- [ ] Verify request logged in DB:
+- [x] Verify request logged in DB:
   ```bash
   docker compose exec -T db psql -U postgres -d ai_protector \
     -c "SELECT decision, prompt_preview, latency_ms FROM requests ORDER BY created_at DESC LIMIT 3;"
@@ -123,9 +123,9 @@ Implement fire-and-forget request logging to the database, write all unit and in
 - [x] `pytest tests/test_chat_endpoint.py` → all pass (mocked LLM)
 - [x] `pytest tests/test_request_logger.py` → all pass (mocked DB)
 - [x] `ruff check src/ tests/` → 0 errors
-- [ ] End-to-end: `curl` from host → proxy → Ollama → response (non-streaming + streaming)
-- [ ] Docker: `proxy-service` container successfully proxies to `ollama` container
-- [ ] DB: `SELECT * FROM requests` shows logged requests
+- [x] End-to-end: `curl` from host → proxy → Ollama → response (non-streaming + streaming)
+- [x] Docker: `proxy-service` container successfully proxies to `ollama` container
+- [x] DB: `SELECT * FROM requests` shows logged requests
 
 > **Note:** Docker e2e verification deferred — requires Ollama model pull + running containers.
 

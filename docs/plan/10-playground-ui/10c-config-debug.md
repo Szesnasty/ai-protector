@@ -23,7 +23,7 @@ Build the right-side sidebar containing two sections:
 
 ### 1. Config sidebar (`app/components/playground/config-sidebar.vue`)
 
-- [ ] Props & injections:
+- [x] Props & injections:
   ```typescript
   interface Props {
     config: {
@@ -36,36 +36,36 @@ Build the right-side sidebar containing two sections:
   }
   ```
 
-- [ ] Emits:
+- [x] Emits:
   ```typescript
   defineEmits<{
     'update:config': [config: Props['config']]
   }>()
   ```
 
-- [ ] **Policy selector** (`v-select`):
+- [x] **Policy selector** (`v-select`):
   - Items from `usePolicies()` composable → array of `{ title: policy.name, value: policy.level }`
   - Default: `balanced`
   - Each item shows short description in `v-select` subtitle slot (from `policy.description`)
   - Loading state via `isLoading` from `usePolicies`
 
-- [ ] **Model input** (`v-text-field`):
+- [x] **Model input** (`v-text-field`):
   - Default: `llama3.1:8b`
   - Hint: "Ollama model name"
   - `variant="outlined"`, `density="compact"`
 
-- [ ] **Temperature slider** (`v-slider`):
+- [x] **Temperature slider** (`v-slider`):
   - Range: `0` — `2`, step `0.1`
   - Default: `0.7`
   - Show thumb label
   - Label: "Temperature"
 
-- [ ] **Max tokens** (`v-text-field` type number):
+- [x] **Max tokens** (`v-text-field` type number):
   - Optional (nullable)
   - Placeholder: "Default (model limit)"
   - `variant="outlined"`, `density="compact"`
 
-- [ ] All controls disabled while `disabled` is true (streaming)
+- [x] All controls disabled while `disabled` is true (streaming)
 
 ```vue
 <template>
@@ -169,38 +169,38 @@ function updateField<K extends keyof Config>(key: K, value: Config[K]) {
 
 ### 2. Debug panel (`app/components/playground/debug-panel.vue`)
 
-- [ ] Props:
+- [x] Props:
   ```typescript
   interface Props {
     decision: PipelineDecision | null
   }
   ```
 
-- [ ] Show nothing (or "No data yet" placeholder) when `decision` is null
+- [x] Show nothing (or "No data yet" placeholder) when `decision` is null
 
-- [ ] **Decision chip** — `v-chip` with color based on value:
+- [x] **Decision chip** — `v-chip` with color based on value:
   - `ALLOW` → `success` (green)
   - `MODIFY` → `warning` (orange)
   - `BLOCK` → `error` (red)
 
-- [ ] **Intent** — text label:
+- [x] **Intent** — text label:
   ```
   Intent: qa
   ```
 
-- [ ] **Risk score gauge** — `v-progress-linear` with dynamic color:
+- [x] **Risk score gauge** — `v-progress-linear` with dynamic color:
   - `0.0–0.3` → `success`
   - `0.3–0.7` → `warning`
   - `0.7–1.0` → `error`
   - Display score as percentage label (`0.42 → 42%`)
 
-- [ ] **Risk flags** — list each flag as `v-chip` with score:
+- [x] **Risk flags** — list each flag as `v-chip` with score:
   ```
   injection: 0.95  |  toxicity: 0.1
   ```
   - Chips colored by severity: >0.7 red, >0.3 orange, else grey
 
-- [ ] **Blocked reason** — if `decision === 'BLOCK'`, show the reason in a `v-alert` type `error`
+- [x] **Blocked reason** — if `decision === 'BLOCK'`, show the reason in a `v-alert` type `error`
 
 ```vue
 <template>
@@ -329,7 +329,7 @@ function flagColor(score: number): string {
 
 ### 3. Wire sidebar into Playground page
 
-- [ ] Update `playground.vue` (from 10b) to include both components in the sidebar column:
+- [x] Update `playground.vue` (from 10b) to include both components in the sidebar column:
   ```vue
   <v-col cols="12" md="4" lg="3" class="playground-page__sidebar">
     <config-sidebar
@@ -342,14 +342,14 @@ function flagColor(score: number): string {
   </v-col>
   ```
 
-- [ ] `useChat()` now provides `config` (reactive) and `lastDecision`:
+- [x] `useChat()` now provides `config` (reactive) and `lastDecision`:
   ```typescript
   const { messages, isStreaming, lastDecision, error, config, send, clear, abort } = useChat()
   ```
 
 ### 4. Navigation link
 
-- [ ] Add "Playground" item to the nav drawer (from Step 05a) pointing to `/playground`
+- [x] Add "Playground" item to the nav drawer (from Step 05a) pointing to `/playground`
   - Icon: `mdi-flask` or `mdi-chat-processing`
 
 ---
@@ -373,23 +373,23 @@ app/
 
 ## Definition of Done
 
-- [ ] Config sidebar renders with policy selector, model, temperature, max tokens
-- [ ] Policy selector loads items from `usePolicies()` (Vue Query), shows loading state
-- [ ] Temperature slider controls range 0–2 with 0.1 step, shows thumb label
-- [ ] All config changes propagate reactively to `useChat` config
-- [ ] All sidebar controls disabled during streaming
-- [ ] Debug panel shows "Send a message…" placeholder when no decision exists
-- [ ] After first message: decision chip appears (ALLOW green / MODIFY orange / BLOCK red)
-- [ ] Intent label updates per request
-- [ ] Risk score progress bar shows 0–100% with color coded thresholds
-- [ ] Risk flags render as labeled chips with severity colors
-- [ ] BLOCK responses show red alert with blocked reason text
-- [ ] Config sidebar + debug panel are visually separated by divider
-- [ ] Navigation drawer has a "Playground" link
-- [ ] All `.vue` files use `<script setup lang="ts">`
-- [ ] All component files are kebab-case
-- [ ] All styles use `<style lang="scss" scoped>`
-- [ ] `npx nuxi typecheck` passes
+- [x] Config sidebar renders with policy selector, model, temperature, max tokens
+- [x] Policy selector loads items from `usePolicies()` (Vue Query), shows loading state
+- [x] Temperature slider controls range 0–2 with 0.1 step, shows thumb label
+- [x] All config changes propagate reactively to `useChat` config
+- [x] All sidebar controls disabled during streaming
+- [x] Debug panel shows "Send a message…" placeholder when no decision exists
+- [x] After first message: decision chip appears (ALLOW green / MODIFY orange / BLOCK red)
+- [x] Intent label updates per request
+- [x] Risk score progress bar shows 0–100% with color coded thresholds
+- [x] Risk flags render as labeled chips with severity colors
+- [x] BLOCK responses show red alert with blocked reason text
+- [x] Config sidebar + debug panel are visually separated by divider
+- [x] Navigation drawer has a "Playground" link
+- [x] All `.vue` files use `<script setup lang="ts">`
+- [x] All component files are kebab-case
+- [x] All styles use `<style lang="scss" scoped>`
+- [x] `npx nuxi typecheck` passes
 
 ---
 

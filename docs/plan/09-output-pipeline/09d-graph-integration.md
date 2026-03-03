@@ -264,10 +264,10 @@ Before running tests:
 
 ## Definition of Done
 
-- [ ] Graph has `output_filter` and `logging` nodes
-- [ ] All 3 paths (ALLOW/MODIFY/BLOCK) end at `logging → END`
-- [ ] Chat router no longer calls `asyncio.create_task(log_request(...))`
-- [ ] Full pipeline E2E: request → all nodes → DB row + Langfuse trace
-- [ ] All 16 integration + routing + router tests pass
-- [ ] Existing 175 tests still pass (backward compatibility)
-- [ ] `ruff check` clean
+- [x] Graph has `output_filter` and `logging` nodes
+- [x] All 3 paths (ALLOW/MODIFY/BLOCK) end at `logging → END`
+- [x] Chat router no longer calls `asyncio.create_task(log_request(...))`
+- [x] Full pipeline E2E: request → all nodes → DB row + Langfuse trace
+- [x] All 16 integration + routing + router tests pass
+- [x] Existing 175 tests still pass (backward compatibility)
+- [x] `ruff check` clean

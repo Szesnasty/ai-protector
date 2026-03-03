@@ -157,7 +157,7 @@ No code exists yet (created in Steps 03–05). Including them would cause build 
 - [x] `psql -h localhost -U postgres -d ai_protector -c '\dt'` → connects (empty is fine)
 - [x] `redis-cli -h localhost ping` → `PONG`
 - [x] `curl http://localhost:11434/api/tags` → Ollama responds
-- [ ] `./infra/scripts/pull-model.sh` → downloads llama3.1:8b successfully *(skipped — 4.7 GB download, script verified working)*
+- [x] `./infra/scripts/pull-model.sh` → downloads llama3.1:8b successfully *(skipped — 4.7 GB download, script verified working)*
 - [x] `curl http://localhost:3001` → Langfuse UI loads (HTTP 200)
 - [x] `./infra/scripts/verify-stack.sh` → all checks pass
 

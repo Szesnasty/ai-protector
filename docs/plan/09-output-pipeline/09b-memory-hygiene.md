@@ -274,9 +274,9 @@ For MVP, defaults are used. Policy-driven overrides are optional enhancement.
 
 ## Definition of Done
 
-- [ ] `sanitize_conversation()` truncates turns and messages
-- [ ] PII redaction via Presidio works on conversation history
-- [ ] Secret redaction reuses patterns from output_filter
-- [ ] Total conversation size limit enforced
-- [ ] All 11 unit tests pass
-- [ ] `ruff check` clean
+- [x] `sanitize_conversation()` truncates turns and messages
+- [x] PII redaction via Presidio works on conversation history
+- [x] Secret redaction reuses patterns from output_filter
+- [x] Total conversation size limit enforced
+- [x] All 11 unit tests pass
+- [x] `ruff check` clean

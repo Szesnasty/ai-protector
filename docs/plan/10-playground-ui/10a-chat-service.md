@@ -21,7 +21,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
 
 ### 1. Chat service (`app/services/chatService.ts`)
 
-- [ ] **Non-streaming** call (fallback):
+- [x] **Non-streaming** call (fallback):
   ```typescript
   import { api } from './api'
   import type { ChatCompletionRequest, ChatCompletionResponse } from '~/types/api'
@@ -33,7 +33,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
   }
   ```
 
-- [ ] **Streaming** function using `fetch` + `ReadableStream`:
+- [x] **Streaming** function using `fetch` + `ReadableStream`:
   ```typescript
   export interface StreamCallbacks {
     onToken: (token: string) => void
@@ -111,7 +111,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
 
 ### 2. Pipeline decision extraction
 
-- [ ] Helper to extract pipeline metadata from response headers:
+- [x] Helper to extract pipeline metadata from response headers:
   ```typescript
   import type { PipelineDecision } from '~/types/api'
 
@@ -125,7 +125,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
   }
   ```
 
-- [ ] For BLOCK responses (403), extract full details from JSON body:
+- [x] For BLOCK responses (403), extract full details from JSON body:
   ```typescript
   export function extractBlockDecision(errorBody: ApiError): PipelineDecision {
     return {
@@ -140,7 +140,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
 
 ### 3. Policy service (`app/services/policyService.ts`)
 
-- [ ] Fetch active policies for the selector dropdown:
+- [x] Fetch active policies for the selector dropdown:
   ```typescript
   import { api } from './api'
   import type { Policy } from '~/types/api'
@@ -154,7 +154,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
 
 ### 4. `usePolicies` composable (`app/composables/usePolicies.ts`)
 
-- [ ] Vue Query wrapper:
+- [x] Vue Query wrapper:
   ```typescript
   import { useQuery } from '@tanstack/vue-query'
   import { policyService } from '~/services/policyService'
@@ -173,7 +173,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
 
 ### 5. `useChat` composable (`app/composables/useChat.ts`)
 
-- [ ] Core state:
+- [x] Core state:
   ```typescript
   interface ChatState {
     messages: Ref<ChatMessage[]>
@@ -183,7 +183,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
   }
   ```
 
-- [ ] `send(text: string)` function:
+- [x] `send(text: string)` function:
   1. Push `{ role: 'user', content: text }` to `messages`
   2. Push empty `{ role: 'assistant', content: '' }` (placeholder for streaming)
   3. Set `isStreaming = true`, `error = null`
@@ -193,11 +193,11 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
      - `onError`: set error, remove empty assistant message
   5. After response: extract `PipelineDecision` from headers → set `lastDecision`
 
-- [ ] `clear()` function — reset messages, lastDecision, error
+- [x] `clear()` function — reset messages, lastDecision, error
 
-- [ ] `abort()` function — cancel in-flight stream via `AbortController`
+- [x] `abort()` function — cancel in-flight stream via `AbortController`
 
-- [ ] Config refs:
+- [x] Config refs:
   ```typescript
   const config = reactive({
     policy: 'balanced',
@@ -207,11 +207,11 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
   })
   ```
 
-- [ ] Sends config as headers/body:
+- [x] Sends config as headers/body:
   - `x-policy` header from `config.policy`
   - `model`, `temperature`, `max_tokens` from config in request body
 
-- [ ] Handle BLOCK responses:
+- [x] Handle BLOCK responses:
   - Catch 403 errors
   - Push a system-style message: `{ role: 'assistant', content: '⛔ Blocked: {reason}' }`
   - Set `lastDecision` with full block details (risk_flags, intent, etc.)
@@ -220,7 +220,7 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
 
 ## Types (additions to `app/types/api.ts`)
 
-- [ ] If not already present, ensure these exist:
+- [x] If not already present, ensure these exist:
   ```typescript
   export interface PipelineDecision {
     decision: 'ALLOW' | 'MODIFY' | 'BLOCK'
@@ -235,19 +235,19 @@ Create the data layer for the Playground chat: an Axios-based `chatService` for 
 
 ## Definition of Done
 
-- [ ] `chatService.sendMessage()` calls proxy and returns typed `ChatCompletionResponse`
-- [ ] `streamChat()` reads SSE stream token-by-token, fires `onToken` per chunk
-- [ ] `streamChat()` correctly handles `data: [DONE]` sentinel
-- [ ] BLOCK responses (403) throw with full `ApiError` body
-- [ ] `extractPipelineDecision(response)` parses `x-decision`, `x-intent`, `x-risk-score` headers
-- [ ] `extractBlockDecision(errorBody)` extracts `risk_flags`, `intent`, `blocked_reason`
-- [ ] `usePolicies()` returns `{ policies, isLoading, error }` via Vue Query
-- [ ] `useChat()` returns `{ messages, isStreaming, lastDecision, error, config, send, clear, abort }`
-- [ ] Sending a message pushes user + assistant placeholder, streams tokens into assistant
-- [ ] BLOCK response adds blocked message and populates `lastDecision` with flags
-- [ ] `abort()` cancels in-flight stream without errors
-- [ ] All code is fully typed TypeScript (no `any`)
-- [ ] `npx nuxi typecheck` passes
+- [x] `chatService.sendMessage()` calls proxy and returns typed `ChatCompletionResponse`
+- [x] `streamChat()` reads SSE stream token-by-token, fires `onToken` per chunk
+- [x] `streamChat()` correctly handles `data: [DONE]` sentinel
+- [x] BLOCK responses (403) throw with full `ApiError` body
+- [x] `extractPipelineDecision(response)` parses `x-decision`, `x-intent`, `x-risk-score` headers
+- [x] `extractBlockDecision(errorBody)` extracts `risk_flags`, `intent`, `blocked_reason`
+- [x] `usePolicies()` returns `{ policies, isLoading, error }` via Vue Query
+- [x] `useChat()` returns `{ messages, isStreaming, lastDecision, error, config, send, clear, abort }`
+- [x] Sending a message pushes user + assistant placeholder, streams tokens into assistant
+- [x] BLOCK response adds blocked message and populates `lastDecision` with flags
+- [x] `abort()` cancels in-flight stream without errors
+- [x] All code is fully typed TypeScript (no `any`)
+- [x] `npx nuxi typecheck` passes
 
 ---
 

@@ -210,10 +210,10 @@ Add `"output_filter"` to `balanced`, `strict`, and `paranoid` policy node lists 
 
 ## Definition of Done
 
-- [ ] `output_filter_node` scans for PII, secrets, system leaks
-- [ ] Presidio reuse works for output text
-- [ ] Secret regex patterns catch common patterns
-- [ ] System prompt fragment detection works
-- [ ] Policy-gated: only runs when `output_filter` in policy nodes
-- [ ] All 10 unit tests pass
-- [ ] `ruff check` clean
+- [x] `output_filter_node` scans for PII, secrets, system leaks
+- [x] Presidio reuse works for output text
+- [x] Secret regex patterns catch common patterns
+- [x] System prompt fragment detection works
+- [x] Policy-gated: only runs when `output_filter` in policy nodes
+- [x] All 10 unit tests pass
+- [x] `ruff check` clean

@@ -381,11 +381,11 @@ enable_langfuse: bool = True  # Set False to disable tracing
 
 ## Definition of Done
 
-- [ ] `logging_node` writes to Postgres with full pipeline data
-- [ ] Langfuse trace created with spans for each pipeline stage
-- [ ] `log_request_from_state()` accepts full pipeline state
-- [ ] 3 new JSONB columns in `requests` table via migration
-- [ ] Langfuse client gracefully handles connection failures
-- [ ] Old `log_request()` still works (backward compat)
-- [ ] All 16 tests pass
-- [ ] `ruff check` clean
+- [x] `logging_node` writes to Postgres with full pipeline data
+- [x] Langfuse trace created with spans for each pipeline stage
+- [x] `log_request_from_state()` accepts full pipeline state
+- [x] 3 new JSONB columns in `requests` table via migration
+- [x] Langfuse client gracefully handles connection failures
+- [x] Old `log_request()` still works (backward compat)
+- [x] All 16 tests pass
+- [x] `ruff check` clean

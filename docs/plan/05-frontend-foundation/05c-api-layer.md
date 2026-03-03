@@ -27,16 +27,16 @@ After this step, the data-fetching and form-validation patterns are established 
 
 ### 1. Install dependencies
 
-- [ ] Install packages:
+- [x] Install packages:
   ```bash
   cd apps/frontend
   npm install axios @tanstack/vue-query vee-validate @vee-validate/zod
   ```
-- [ ] Verify all resolve in `node_modules` and `npm run dev` still starts
+- [x] Verify all resolve in `node_modules` and `npm run dev` still starts
 
 ### 2. Axios instance (`app/services/api.ts`)
 
-- [ ] Create `app/services/api.ts`:
+- [x] Create `app/services/api.ts`:
   ```typescript
   import axios from 'axios'
   import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
@@ -66,14 +66,14 @@ After this step, the data-fetching and form-validation patterns are established 
 
   export { api }
   ```
-- [ ] **Note:** Because `useRuntimeConfig()` is a Nuxt composable (only available in Vue setup context), the actual pattern should use a **lazy init** or a Nuxt plugin to set `baseURL`. Implementation options:
+- [x] **Note:** Because `useRuntimeConfig()` is a Nuxt composable (only available in Vue setup context), the actual pattern should use a **lazy init** or a Nuxt plugin to set `baseURL`. Implementation options:
   - Option A: Hardcode `import.meta.env.NUXT_PUBLIC_API_BASE` (simpler)
   - Option B: Create a `createApi()` factory called from a Nuxt plugin that sets `api.defaults.baseURL`
   - Either works; pick whichever feels cleaner during implementation
 
 ### 3. Error mapping utility (`app/services/api.ts` or `app/utils/apiErrors.ts`)
 
-- [ ] Map Axios errors to user-friendly messages:
+- [x] Map Axios errors to user-friendly messages:
   ```typescript
   export interface AppError {
     message: string
@@ -116,7 +116,7 @@ After this step, the data-fetching and form-validation patterns are established 
 
 ### 4. Health service (`app/services/healthService.ts`)
 
-- [ ] Plain async function (no Vue reactivity):
+- [x] Plain async function (no Vue reactivity):
   ```typescript
   import { api } from './api'
   import type { HealthResponse } from '~/types/api'
@@ -129,7 +129,7 @@ After this step, the data-fetching and form-validation patterns are established 
 
 ### 5. Vue Query plugin (`app/plugins/vue-query.ts`)
 
-- [ ] Create Nuxt plugin:
+- [x] Create Nuxt plugin:
   ```typescript
   import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
   import type { VueQueryPluginOptions } from '@tanstack/vue-query'
@@ -150,11 +150,11 @@ After this step, the data-fetching and form-validation patterns are established 
     nuxtApp.vueApp.use(VueQueryPlugin, options)
   })
   ```
-- [ ] Verify Vue Query Devtools are accessible (floating button in bottom-right in dev mode)
+- [x] Verify Vue Query Devtools are accessible (floating button in bottom-right in dev mode)
 
 ### 6. Refactor `useHealth` to Vue Query (`app/composables/useHealth.ts`)
 
-- [ ] Replace manual `setInterval` polling with Vue Query's `useQuery`:
+- [x] Replace manual `setInterval` polling with Vue Query's `useQuery`:
   ```typescript
   import { useQuery } from '@tanstack/vue-query'
   import { healthService } from '~/services/healthService'
@@ -183,12 +183,12 @@ After this step, the data-fetching and form-validation patterns are established 
     return { status, services, lastChecked, error, isLoading }
   }
   ```
-- [ ] Update `health-indicator.vue` if needed (should mostly work — same interface)
-- [ ] Delete the old `setInterval` logic
+- [x] Update `health-indicator.vue` if needed (should mostly work — same interface)
+- [x] Delete the old `setInterval` logic
 
 ### 7. VeeValidate + Vuetify integration
 
-- [ ] Create a **thin integration helper** (`app/utils/vuetifyField.ts`) that bridges VeeValidate field state to Vuetify input props:
+- [x] Create a **thin integration helper** (`app/utils/vuetifyField.ts`) that bridges VeeValidate field state to Vuetify input props:
   ```typescript
   import { useField } from 'vee-validate'
 
@@ -209,7 +209,7 @@ After this step, the data-fetching and form-validation patterns are established 
     return { field, value, errorMessage }
   }
   ```
-- [ ] Create a **demo/smoke test** component to verify the integration works — this can be a hidden `/dev/form-test` page or just verified manually during development and removed:
+- [x] Create a **demo/smoke test** component to verify the integration works — this can be a hidden `/dev/form-test` page or just verified manually during development and removed:
   ```vue
   <!-- Verify VeeValidate + Vuetify + Zod work together -->
   <script setup lang="ts">
@@ -230,11 +230,11 @@ After this step, the data-fetching and form-validation patterns are established 
   })
   </script>
   ```
-- [ ] This is **infrastructure only** — actual forms come in Step 14 (Policies CRUD)
+- [x] This is **infrastructure only** — actual forms come in Step 14 (Policies CRUD)
 
 ### 8. Types (`app/types/api.ts`)
 
-- [ ] Shared TypeScript interfaces matching proxy schemas:
+- [x] Shared TypeScript interfaces matching proxy schemas:
   ```typescript
   // ─── Health ───
   export interface ServiceHealth {
@@ -340,20 +340,20 @@ app/
 
 ## Definition of Done
 
-- [ ] `npm install` adds `axios`, `@tanstack/vue-query`, `vee-validate`, `@vee-validate/zod`
-- [ ] `import { api } from '~/services/api'` resolves correctly
-- [ ] `api.get('/health')` returns typed `AxiosResponse<HealthResponse>`
-- [ ] Network errors map to `AppError` with `code: 'NETWORK_ERROR'`
-- [ ] 403 responses map to `AppError` with server's blocked reason
-- [ ] Vue Query plugin registered — `useQuery` works in any component
-- [ ] Vue Query Devtools floating button visible in dev mode
-- [ ] `useHealth()` now uses `useQuery` with `refetchInterval: 30_000` (no manual `setInterval`)
-- [ ] Health indicator still works identically (green/red dot, tooltip)
-- [ ] `useVuetifyField('name')` returns `{ field, value, errorMessage }` compatible with `<v-text-field v-bind="field" />`
-- [ ] VeeValidate + Zod schema validation works (verified manually or via test page)
-- [ ] All types in `app/types/api.ts` match proxy service schemas
-- [ ] `npx nuxi typecheck` passes
-- [ ] `npm run lint` passes
+- [x] `npm install` adds `axios`, `@tanstack/vue-query`, `vee-validate`, `@vee-validate/zod`
+- [x] `import { api } from '~/services/api'` resolves correctly
+- [x] `api.get('/health')` returns typed `AxiosResponse<HealthResponse>`
+- [x] Network errors map to `AppError` with `code: 'NETWORK_ERROR'`
+- [x] 403 responses map to `AppError` with server's blocked reason
+- [x] Vue Query plugin registered — `useQuery` works in any component
+- [x] Vue Query Devtools floating button visible in dev mode
+- [x] `useHealth()` now uses `useQuery` with `refetchInterval: 30_000` (no manual `setInterval`)
+- [x] Health indicator still works identically (green/red dot, tooltip)
+- [x] `useVuetifyField('name')` returns `{ field, value, errorMessage }` compatible with `<v-text-field v-bind="field" />`
+- [x] VeeValidate + Zod schema validation works (verified manually or via test page)
+- [x] All types in `app/types/api.ts` match proxy service schemas
+- [x] `npx nuxi typecheck` passes
+- [x] `npm run lint` passes
 
 ---
 

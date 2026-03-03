@@ -22,12 +22,12 @@ Build the Playground page and chat components that wire to the `useChat` composa
 
 ### 1. Page route (`app/pages/playground.vue`)
 
-- [ ] Registered automatically by Nuxt file-based routing
-- [ ] Layout: two-column grid using `v-row` / `v-col`:
+- [x] Registered automatically by Nuxt file-based routing
+- [x] Layout: two-column grid using `v-row` / `v-col`:
   - **Left (col 8–9)**: Chat area (message list + input)
   - **Right (col 3–4)**: Config sidebar + debug panel (built in 10c, slot/empty placeholder for now)
-- [ ] Imports and uses `useChat()` composable
-- [ ] Passes `messages`, `isStreaming`, `error` to child components
+- [x] Imports and uses `useChat()` composable
+- [x] Passes `messages`, `isStreaming`, `error` to child components
 
 ```vue
 <template>
@@ -79,7 +79,7 @@ const { messages, isStreaming, error, send } = useChat()
 
 ### 2. Message list (`app/components/playground/chat-message-list.vue`)
 
-- [ ] Props:
+- [x] Props:
   ```typescript
   interface Props {
     messages: ChatMessage[]
@@ -87,10 +87,10 @@ const { messages, isStreaming, error, send } = useChat()
   }
   ```
 
-- [ ] Renders each message via `<chat-message>` component
-- [ ] Auto-scrolls to bottom on new message / streaming token (use `nextTick` + `scrollIntoView`)
-- [ ] Show a subtle typing indicator (three-dot animation or `v-progress-linear indeterminate`) when `isStreaming` is true and last message content is still empty
-- [ ] If `messages` is empty, show a centered placeholder:
+- [x] Renders each message via `<chat-message>` component
+- [x] Auto-scrolls to bottom on new message / streaming token (use `nextTick` + `scrollIntoView`)
+- [x] Show a subtle typing indicator (three-dot animation or `v-progress-linear indeterminate`) when `isStreaming` is true and last message content is still empty
+- [x] If `messages` is empty, show a centered placeholder:
   ```
   "Type a message to start testing the AI Protector pipeline."
   ```
@@ -178,20 +178,20 @@ watch(
 
 ### 3. Single message (`app/components/playground/chat-message.vue`)
 
-- [ ] Props:
+- [x] Props:
   ```typescript
   interface Props {
     message: ChatMessage
   }
   ```
 
-- [ ] Layout: Bubble-style with role icon on the left
+- [x] Layout: Bubble-style with role icon on the left
   - **user**: `mdi-account-circle` icon, right-aligned or muted background
   - **assistant**: `mdi-robot` icon, left-aligned
   - **blocked messages** (containing `⛔`): red-tinted background, `mdi-shield-alert` icon
 
-- [ ] Content rendered as plain text (Markdown rendering is out of scope for MVP, can be added later)
-- [ ] Visual distinction between roles (color, alignment or border)
+- [x] Content rendered as plain text (Markdown rendering is out of scope for MVP, can be added later)
+- [x] Visual distinction between roles (color, alignment or border)
 
 ```vue
 <template>
@@ -259,19 +259,19 @@ const cardColor = computed(() => {
 
 ### 4. Chat input (`app/components/playground/chat-input.vue`)
 
-- [ ] Props:
+- [x] Props:
   ```typescript
   interface Props {
     disabled?: boolean
   }
   ```
 
-- [ ] Emits: `send(text: string)`
-- [ ] Uses `v-textarea` with `rows="1"` and `auto-grow` for multiline support
-- [ ] Send on **Enter** (without Shift), Shift+Enter for newline
-- [ ] Send button (icon `mdi-send`) appended via `append-inner` slot
-- [ ] Clears input after emit
-- [ ] Disabled state: input + button grayed out while streaming
+- [x] Emits: `send(text: string)`
+- [x] Uses `v-textarea` with `rows="1"` and `auto-grow` for multiline support
+- [x] Send on **Enter** (without Shift), Shift+Enter for newline
+- [x] Send button (icon `mdi-send`) appended via `append-inner` slot
+- [x] Clears input after emit
+- [x] Disabled state: input + button grayed out while streaming
 
 ```vue
 <template>
@@ -350,20 +350,20 @@ app/
 
 ## Definition of Done
 
-- [ ] `/playground` route renders the two-column layout
-- [ ] Chat message list shows empty placeholder when no messages
-- [ ] User can type a message and press Enter to send
-- [ ] User message appears immediately (optimistic push from `useChat`)
-- [ ] Assistant response streams in token-by-token (visible real-time text append)
-- [ ] BLOCK responses show a red-tinted card with shield icon and block reason
-- [ ] Chat auto-scrolls to bottom during streaming
-- [ ] Typing indicator shows while waiting for first token
-- [ ] Input is disabled during streaming, re-enabled on completion
-- [ ] Shift+Enter creates a newline (no send)
-- [ ] All `.vue` files use `<script setup lang="ts">`
-- [ ] All component files are kebab-case
-- [ ] All styles use `<style lang="scss" scoped>`
-- [ ] `npx nuxi typecheck` passes
+- [x] `/playground` route renders the two-column layout
+- [x] Chat message list shows empty placeholder when no messages
+- [x] User can type a message and press Enter to send
+- [x] User message appears immediately (optimistic push from `useChat`)
+- [x] Assistant response streams in token-by-token (visible real-time text append)
+- [x] BLOCK responses show a red-tinted card with shield icon and block reason
+- [x] Chat auto-scrolls to bottom during streaming
+- [x] Typing indicator shows while waiting for first token
+- [x] Input is disabled during streaming, re-enabled on completion
+- [x] Shift+Enter creates a newline (no send)
+- [x] All `.vue` files use `<script setup lang="ts">`
+- [x] All component files are kebab-case
+- [x] All styles use `<style lang="scss" scoped>`
+- [x] `npx nuxi typecheck` passes
 
 ---
 
