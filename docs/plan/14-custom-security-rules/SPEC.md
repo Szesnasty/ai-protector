@@ -32,9 +32,9 @@ After this step:
 
 | # | Sub-step | Scope | Est. |
 |---|----------|-------|------|
-| a | [14a — Model migration & CRUD API](#14a--model-migration--crud-api) | Alembic migration (add `action`, `severity`, `description`), index on `category`, seed data (20+ rules), 5 REST endpoints, Pydantic schemas, bulk import | 3–4 h |
-| b | [14b — Pipeline integration](#14b--pipeline-integration) | Extend `check_denylist()` to return action/severity, extend `classify_intent()` to query custom `intent:*` rules, risk score boosting | 2–3 h |
-| c | [14c — Frontend: Rules Editor](#14c--frontend-rules-editor) | Rules page: table with CRUD, filters, bulk import, rule test preview, **preset categories dropdown with auto-fill**, description column | 4–5 h |
+| a | [14a — Model migration & CRUD API](14a-model-migration-crud.md) | Alembic migration (add `action`, `severity`, `description`), index on `category`, seed data (20+ rules), 5 REST endpoints, Pydantic schemas, bulk import | 3–4 h |
+| b | [14b — Pipeline integration](14b-pipeline-integration.md) | Extend `check_denylist()` to return action/severity, extend `classify_intent()` to query custom `intent:*` rules, risk score boosting | 2–3 h |
+| c | [14c — Frontend: Rules Editor](14c-frontend-rules-editor.md) | Rules page: table with CRUD, filters, bulk import, rule test preview, **preset categories dropdown with auto-fill**, description column | 4–5 h |
 
 ---
 
