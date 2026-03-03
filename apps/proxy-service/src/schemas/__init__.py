@@ -15,6 +15,16 @@ from src.schemas.chat import (
 from src.schemas.health import HealthResponse, ServiceHealth
 from src.schemas.policy import PolicyBase, PolicyCreate, PolicyRead, PolicyUpdate
 from src.schemas.request import RequestRead
+from src.schemas.rule import (
+    RuleAction,
+    RuleBulkImport,
+    RuleCreate,
+    RuleRead,
+    RuleSeverity,
+    RuleTestRequest,
+    RuleTestResult,
+    RuleUpdate,
+)
 
 __all__ = [
     "ChatCompletionChunk",
@@ -32,6 +42,14 @@ __all__ = [
     "PolicyRead",
     "PolicyUpdate",
     "RequestRead",
+    "RuleAction",
+    "RuleBulkImport",
+    "RuleCreate",
+    "RuleRead",
+    "RuleSeverity",
+    "RuleTestRequest",
+    "RuleTestResult",
+    "RuleUpdate",
     "ServiceHealth",
     "Usage",
 ]

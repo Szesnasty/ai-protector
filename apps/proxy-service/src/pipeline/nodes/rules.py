@@ -13,6 +13,9 @@ MAX_PROMPT_LENGTH = 16_000  # characters
 MAX_MESSAGES = 50
 SPECIAL_CHAR_THRESHOLD = 0.3  # ratio of non-alnum/non-space chars
 
+# Severity → risk score boost mapping
+SEVERITY_SCORE = {"low": 0.1, "medium": 0.2, "high": 0.3, "critical": 0.5}
+
 
 # ── Pattern helpers ───────────────────────────────────────────────────
 
@@ -43,12 +46,25 @@ async def rules_node(state: PipelineState) -> PipelineState:
     text = state.get("user_message", "")
     messages = state.get("messages", [])
 
-    # 1. Denylist
+    # 1. Denylist — returns DenylistHit with action/severity
     policy_name = state.get("policy_name", "balanced")
     denylist_hits = await check_denylist(text, policy_name)
     for hit in denylist_hits:
-        matched.append(f"denylist:{hit}")
-        risk_flags["denylist_hit"] = True
+        if hit.action == "block":
+            matched.append(f"denylist:{hit.phrase}")
+            risk_flags["denylist_hit"] = True
+        elif hit.action == "flag":
+            custom_flags = risk_flags.get("custom_flags", [])
+            custom_flags.append({
+                "phrase": hit.phrase,
+                "category": hit.category,
+                "severity": hit.severity,
+                "description": hit.description,
+            })
+            risk_flags["custom_flags"] = custom_flags
+        elif hit.action == "score_boost":
+            boost = SEVERITY_SCORE.get(hit.severity, 0.2)
+            risk_flags["score_boost"] = risk_flags.get("score_boost", 0.0) + boost
 
     # 2. Prompt length
     if len(text) > MAX_PROMPT_LENGTH:

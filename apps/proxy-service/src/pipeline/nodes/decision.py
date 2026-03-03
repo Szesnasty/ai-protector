@@ -52,6 +52,9 @@ def calculate_risk_score(state: PipelineState) -> float:
     if pii_count > 0:
         score += min(pii_count * pii_per_entity, pii_max)
 
+    # Custom rule score_boost (accumulated from rules_node)
+    score += flags.get("score_boost", 0.0)
+
     return min(score, 1.0)
 
 

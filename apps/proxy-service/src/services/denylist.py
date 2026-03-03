@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 
 import structlog
 from sqlalchemy import select
@@ -15,6 +16,18 @@ from src.models.policy import Policy
 logger = structlog.get_logger()
 
 CACHE_TTL = 60  # seconds
+
+
+@dataclass
+class DenylistHit:
+    """Structured result from a denylist match."""
+
+    phrase: str
+    category: str
+    action: str       # "block" | "flag" | "score_boost"
+    severity: str     # "low" | "medium" | "high" | "critical"
+    is_regex: bool
+    description: str
 
 
 async def _load_phrases_from_db(policy_name: str) -> list[dict]:
@@ -30,7 +43,14 @@ async def _load_phrases_from_db(policy_name: str) -> list[dict]:
         if policy is None:
             return []
         return [
-            {"phrase": dp.phrase, "is_regex": dp.is_regex, "category": dp.category}
+            {
+                "phrase": dp.phrase,
+                "is_regex": dp.is_regex,
+                "category": dp.category,
+                "action": dp.action,
+                "severity": dp.severity,
+                "description": dp.description,
+            }
             for dp in policy.denylist_phrases
         ]
 
@@ -58,20 +78,30 @@ async def _get_phrases(policy_name: str) -> list[dict]:
     return phrases
 
 
-async def check_denylist(text: str, policy_name: str) -> list[str]:
+async def check_denylist(text: str, policy_name: str) -> list[DenylistHit]:
     """Check *text* against denylist phrases for *policy_name*.
 
-    Returns a list of matched phrase strings.
+    Returns a list of DenylistHit objects with action/severity/description.
     """
     phrases = await _get_phrases(policy_name)
-    hits: list[str] = []
+    hits: list[DenylistHit] = []
     text_lower = text.lower()
     for p in phrases:
         phrase_str: str = p["phrase"]
+        matched = False
         if p.get("is_regex"):
             if re.search(phrase_str, text, re.IGNORECASE):
-                hits.append(phrase_str)
+                matched = True
         else:
             if phrase_str.lower() in text_lower:
-                hits.append(phrase_str)
+                matched = True
+        if matched:
+            hits.append(DenylistHit(
+                phrase=phrase_str,
+                category=p.get("category", "general"),
+                action=p.get("action", "block"),
+                severity=p.get("severity", "medium"),
+                is_regex=p.get("is_regex", False),
+                description=p.get("description", ""),
+            ))
     return hits

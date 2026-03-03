@@ -77,3 +77,49 @@ export interface ApiError {
   risk_flags?: Record<string, unknown>
   intent?: string
 }
+
+// ─── Rules ───
+export type RuleAction = 'block' | 'flag' | 'score_boost'
+export type RuleSeverity = 'low' | 'medium' | 'high' | 'critical'
+
+export interface Rule {
+  id: string
+  policy_id: string
+  phrase: string
+  category: string
+  is_regex: boolean
+  action: RuleAction
+  severity: RuleSeverity
+  description: string
+  created_at: string
+  updated_at: string
+}
+
+export interface RuleCreate {
+  phrase: string
+  category?: string
+  is_regex?: boolean
+  action?: RuleAction
+  severity?: RuleSeverity
+  description?: string
+}
+
+export interface RuleUpdate {
+  phrase?: string
+  category?: string
+  is_regex?: boolean
+  action?: RuleAction
+  severity?: RuleSeverity
+  description?: string
+}
+
+export interface RuleTestResult {
+  matched: boolean
+  phrase: string
+  category: string
+  action: string
+  severity: string
+  is_regex: boolean
+  description: string
+  match_details: string | null
+}
