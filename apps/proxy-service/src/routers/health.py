@@ -1,14 +1,20 @@
 """Health check router."""
 
+import os
+import time
+
 import httpx
+import psutil
 import structlog
 from fastapi import APIRouter, Depends
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import Settings, get_settings
 from src.db.session import get_db, get_redis
-from src.schemas.health import HealthResponse, ServiceHealth
+from src.schemas.health import HealthResponse, ServiceHealth, SystemMetrics
+
+_PROCESS_START = time.monotonic()
 
 router = APIRouter(tags=["health"])
 logger = structlog.get_logger()
@@ -59,6 +65,40 @@ async def _check_langfuse(host: str) -> ServiceHealth:
         return ServiceHealth(status="error", detail=str(exc))
 
 
+async def _collect_metrics(db: AsyncSession) -> SystemMetrics:
+    """Collect system resource metrics."""
+    # Memory
+    mem = psutil.virtual_memory()
+    # CPU (non-blocking — returns instant snapshot)
+    cpu = psutil.cpu_percent(interval=None)
+    # Disk
+    disk = psutil.disk_usage("/")
+    # Process info
+    proc = psutil.Process(os.getpid())
+    # Total requests from DB
+    try:
+        from src.models.request import Request
+        result = await db.execute(select(func.count()).select_from(Request))
+        total_requests = result.scalar() or 0
+    except Exception:
+        total_requests = 0
+
+    return SystemMetrics(
+        memory_used_mb=round(mem.used / 1024 / 1024, 1),
+        memory_total_mb=round(mem.total / 1024 / 1024, 1),
+        memory_percent=round(mem.percent, 1),
+        cpu_percent=round(cpu, 1),
+        disk_used_gb=round(disk.used / 1024 / 1024 / 1024, 1),
+        disk_total_gb=round(disk.total / 1024 / 1024 / 1024, 1),
+        disk_percent=round(disk.percent, 1),
+        uptime_seconds=round(time.monotonic() - _PROCESS_START, 0),
+        pid=os.getpid(),
+        open_files=len(proc.open_files()),
+        threads=proc.num_threads(),
+        total_requests=total_requests,
+    )
+
+
 @router.get("/health", response_model=HealthResponse)
 async def health(
     db: AsyncSession = Depends(get_db),  # noqa: B008
@@ -74,8 +114,15 @@ async def health(
 
     overall = "ok" if all(s.status == "ok" for s in services.values()) else "degraded"
 
+    try:
+        metrics = await _collect_metrics(db)
+    except Exception as exc:
+        logger.warning("health_metrics_error", error=str(exc))
+        metrics = None
+
     return HealthResponse(
         status=overall,
         services=services,
         version=settings.app_version,
+        metrics=metrics,
     )

@@ -21,6 +21,7 @@ dependencies = [
     "langfuse>=2.0.0",
     "structlog>=24.4.0",
     "httpx>=0.28.0",
+    "psutil>=6.0.0",
 ]
 
 [project.optional-dependencies]

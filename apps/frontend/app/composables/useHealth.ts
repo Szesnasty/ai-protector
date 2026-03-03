@@ -7,7 +7,7 @@ export const useHealth = () => {
   const { data, error, isLoading, dataUpdatedAt } = useQuery<HealthResponse>({
     queryKey: ['health'],
     queryFn: healthService.getHealth,
-    refetchInterval: 30_000,
+    refetchInterval: 10_000,
     refetchIntervalInBackground: true,
   })
 
@@ -18,10 +18,11 @@ export const useHealth = () => {
   })
 
   const services = computed(() => data.value?.services ?? {})
+  const metrics = computed(() => data.value?.metrics ?? null)
 
   const lastChecked = computed(() =>
     dataUpdatedAt.value ? new Date(dataUpdatedAt.value) : null,
   )
 
-  return { status, services, lastChecked, error, isLoading }
+  return { status, services, metrics, lastChecked, error, isLoading }
 }

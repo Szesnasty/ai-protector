@@ -4,10 +4,26 @@ export interface ServiceHealth {
   detail?: string
 }
 
+export interface SystemMetrics {
+  memory_used_mb: number
+  memory_total_mb: number
+  memory_percent: number
+  cpu_percent: number
+  disk_used_gb: number
+  disk_total_gb: number
+  disk_percent: number
+  uptime_seconds: number
+  pid: number
+  open_files: number
+  threads: number
+  total_requests: number
+}
+
 export interface HealthResponse {
   status: 'ok' | 'degraded'
   services: Record<string, ServiceHealth>
   version: string
+  metrics?: SystemMetrics
 }
 
 // ─── Chat ───
