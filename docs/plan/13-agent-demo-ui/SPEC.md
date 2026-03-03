@@ -298,20 +298,20 @@ cd apps/frontend && npx nuxt typecheck
 ```
 
 ### Checklist
-- [ ] `pages/agent.vue` renders the Agent Demo page
-- [ ] Navigation drawer links to `/agent` with robot icon
-- [ ] `agentService.ts` calls `POST /agent/chat` (configurable base URL via `NUXT_PUBLIC_AGENT_API_BASE`)
-- [ ] `useAgentChat` composable manages messages, role, session, loading state
-- [ ] `agent-message.vue` renders tool call chips inline (✅ allowed, ❌ denied)
-- [ ] `tool-call-chip.vue` shows tool name, args, result (collapsible)
-- [ ] `agent-config.vue` has role selector and policy selector
-- [ ] `agent-trace-panel.vue` shows agent trace + firewall decision
-- [ ] Role change resets session and shows system message
-- [ ] "New conversation" button starts fresh session
-- [ ] Loading state shown while waiting for agent response
-- [ ] Error handling: network errors, 500s shown as error messages
-- [ ] Responsive: sidebar collapses on mobile (consistent with playground)
-- [ ] TypeScript types match backend `AgentChatResponse` schema
+- [x] `pages/agent.vue` renders the Agent Demo page
+- [x] Navigation drawer links to `/agent` with robot icon
+- [x] `agentService.ts` calls `POST /agent/chat` (configurable base URL via `NUXT_PUBLIC_AGENT_API_BASE`)
+- [x] `useAgentChat` composable manages messages, role, session, loading state
+- [x] `agent-message.vue` renders tool call chips inline (✅ allowed, ❌ denied)
+- [x] `tool-call-chip.vue` shows tool name, args, result (collapsible)
+- [x] `agent-config.vue` has role selector and policy selector
+- [x] `agent-trace-panel.vue` shows agent trace + firewall decision
+- [x] Role change resets session and shows system message
+- [x] "New conversation" button starts fresh session
+- [x] Loading state shown while waiting for agent response
+- [x] Error handling: network errors, 500s shown as error messages
+- [x] Responsive: sidebar collapses on mobile (consistent with playground)
+- [x] TypeScript types match backend `AgentChatResponse` schema
 
 ---
 

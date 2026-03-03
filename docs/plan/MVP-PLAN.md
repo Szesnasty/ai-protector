@@ -47,7 +47,7 @@
 - [x] **[Step 12 — Agent ↔ Firewall Integration](12-agent-firewall-integration/SPEC.md)**
   Agent calls proxy-service via LiteLLM, session memory, mock data (KB + orders)
 
-- [ ] **[Step 13 — Frontend: Agent Demo UI](13-agent-demo-ui/SPEC.md)**
+- [x] **[Step 13 — Frontend: Agent Demo UI](13-agent-demo-ui/SPEC.md)**
   Copilot chat, role selector, tool call annotations, agent trace panel
 
 ## Phase 4: Custom Security Rules (week 6)
