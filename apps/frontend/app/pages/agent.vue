@@ -3,6 +3,7 @@
     <v-row class="agent-page__row" style="margin: 0; gap: 0;">
       <v-col cols="12" md="8" lg="9" class="agent-page__chat">
         <agent-chat
+          ref="agentChatRef"
           :messages="messages"
           :is-loading="isLoading"
           @send="sendMessage"
@@ -10,6 +11,16 @@
       </v-col>
 
       <v-col cols="12" md="4" lg="3" class="agent-page__sidebar">
+        <v-btn
+          :color="showScenarios ? 'primary' : undefined"
+          variant="tonal"
+          block
+          class="mb-2"
+          prepend-icon="mdi-shield-bug"
+          @click="showScenarios = !showScenarios"
+        >
+          Attack Scenarios
+        </v-btn>
         <agent-config
           :role="config.role"
           :policy="config.policy"
@@ -25,11 +36,21 @@
         />
       </v-col>
     </v-row>
+
+    <attack-scenarios-panel
+      v-model="showScenarios"
+      :scenarios="agentScenarios"
+      @send="handleAttackSend"
+    />
   </v-container>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useAgentChat } from '~/composables/useAgentChat'
+import { agentScenarios } from '~/composables/useAgentScenarios'
+
+const ATTACK_SUBMIT_DELAY_MS = 300
 
 definePageMeta({ title: 'Agent Demo' })
 
@@ -43,6 +64,14 @@ const {
   switchRole,
   newConversation,
 } = useAgentChat()
+
+const showScenarios = ref(true)
+const agentChatRef = ref<{ setText: (s: string) => void } | null>(null)
+
+function handleAttackSend(prompt: string) {
+  agentChatRef.value?.setText(prompt)
+  setTimeout(() => sendMessage(prompt), ATTACK_SUBMIT_DELAY_MS)
+}
 </script>
 
 <style lang="scss" scoped>

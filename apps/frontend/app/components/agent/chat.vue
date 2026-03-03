@@ -77,6 +77,12 @@ function handleSend() {
   text.value = ''
 }
 
+function setText(value: string) {
+  text.value = value
+}
+
+defineExpose({ setText })
+
 watch(
   () => props.messages.length,
   async () => {

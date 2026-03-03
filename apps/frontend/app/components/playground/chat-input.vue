@@ -45,6 +45,12 @@ function handleSend() {
   emit('send', trimmed)
   text.value = ''
 }
+
+function setText(value: string) {
+  text.value = value
+}
+
+defineExpose({ setText })
 </script>
 
 <style lang="scss" scoped>
