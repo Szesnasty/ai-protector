@@ -89,8 +89,9 @@ services:
     ports:
       - "8002:8002"
     environment:
-      PROXY_BASE_URL: http://proxy-service:8000
+      PROXY_BASE_URL: http://proxy-service:8000/v1
       DEFAULT_MODEL: llama3.1:8b
+      DEFAULT_MODEL_PREFIX: openai
       DEFAULT_POLICY: strict
       LITELLM_LOG_LEVEL: ERROR
     depends_on:

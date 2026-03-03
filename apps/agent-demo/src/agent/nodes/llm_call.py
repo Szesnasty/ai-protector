@@ -86,12 +86,14 @@ async def llm_call_node(state: AgentState) -> AgentState:
 
     try:
         response = await acompletion(
-            model=f"ollama/{settings.default_model}",
+            model=f"{settings.default_model_prefix}/{settings.default_model}",
             messages=messages,
             api_base=settings.proxy_base_url,
+            api_key="not-needed",
             extra_headers={
                 "x-client-id": f"agent-{session_id}",
                 "x-policy": policy,
+                "x-correlation-id": session_id,
             },
             temperature=settings.default_temperature,
             max_tokens=settings.default_max_tokens,
@@ -101,13 +103,22 @@ async def llm_call_node(state: AgentState) -> AgentState:
         llm_text = response.choices[0].message.content or ""
 
         # Try to extract firewall headers from response
+        # LiteLLM prefixes provider headers with "llm_provider-"
         hidden = getattr(response, "_hidden_params", {})
         addl_headers = hidden.get("additional_headers", {}) if isinstance(hidden, dict) else {}
         if addl_headers:
+            # Try both raw and llm_provider- prefixed header names
+            def _hdr(name: str) -> str:
+                return addl_headers.get(name, addl_headers.get(f"llm_provider-{name}", ""))
+
+            decision = _hdr("x-decision") or "ALLOW"
+            risk_score_str = _hdr("x-risk-score") or "0"
+            intent_val = _hdr("x-intent") or ""
+
             firewall_decision = {
-                "decision": addl_headers.get("x-decision", "ALLOW"),
-                "risk_score": float(addl_headers.get("x-risk-score", "0")),
-                "intent": addl_headers.get("x-intent", ""),
+                "decision": decision,
+                "risk_score": float(risk_score_str),
+                "intent": intent_val,
                 "risk_flags": {},
             }
         else:

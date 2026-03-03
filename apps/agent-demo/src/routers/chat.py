@@ -32,7 +32,7 @@ async def agent_chat(body: AgentChatRequest) -> AgentChatResponse:
         "session_id": body.session_id,
         "user_role": body.user_role,
         "message": body.message,
-        "policy": settings.default_policy,
+        "policy": body.policy or settings.default_policy,
     }
 
     # Run the agent graph

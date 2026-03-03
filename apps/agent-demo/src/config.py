@@ -11,10 +11,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # Proxy
-    proxy_base_url: str = "http://localhost:8000"
+    proxy_base_url: str = "http://localhost:8000/v1"
 
     # LLM
     default_model: str = "llama3.1:8b"
+    default_model_prefix: str = "openai"
     default_policy: str = "strict"
     default_temperature: float = 0.3
     default_max_tokens: int = 1024

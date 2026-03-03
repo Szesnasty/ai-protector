@@ -11,6 +11,7 @@ class AgentChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=4096)
     user_role: str = Field(default="customer", pattern=r"^(customer|admin)$")
     session_id: str = Field(..., min_length=1, max_length=128)
+    policy: str | None = Field(default=None, max_length=64, description="Policy name override (default: from config)")
 
 
 class ToolCallInfo(BaseModel):
