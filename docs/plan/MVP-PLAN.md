@@ -30,7 +30,7 @@
 - [x] **[Step 07 — Security Scanners](07-security-scanners/SPEC.md)**
   LLM Guard (injection, toxicity, secrets) + Presidio PII detection — parallel scanner nodes
 
-- [ ] **Step 08 — Policy Engine**
+- [x] **[Step 08 — Policy Engine](08-policy-engine/SPEC.md)**
   PolicyDecisionNode, 4 policy levels (fast/balanced/strict/paranoid), policies CRUD API
 
 - [ ] **Step 09 — Output Pipeline**
@@ -76,7 +76,7 @@
 | Phase | Steps | Status |
 |-------|-------|--------|
 | Foundation | 01–05 | 🟩 01 02 03 04 done |
-| Firewall Pipeline | 06–09 | ⬜ Not started |
+| Firewall Pipeline | 06–09 | 🟨 06 07 08 done |
 | Playground UI | 10 | ⬜ Not started |
 | Agent Demo | 11–13 | ⬜ Not started |
 | Dashboard | 14–15 | ⬜ Not started |

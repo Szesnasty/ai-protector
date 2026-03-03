@@ -18,7 +18,7 @@ Make the `DecisionNode` fully policy-aware: dynamic threshold resolution from po
 
 ### 1. Dynamic threshold resolution in DecisionNode
 
-- [ ] Replace hardcoded weights with policy-configurable values:
+- [x] Replace hardcoded weights with policy-configurable values:
   ```python
   def calculate_risk_score(state: PipelineState) -> float:
       thresholds = state.get("policy_config", {}).get("thresholds", {})
@@ -33,7 +33,7 @@ Make the `DecisionNode` fully policy-aware: dynamic threshold resolution from po
       # ... apply weights ...
   ```
 
-- [ ] Support optional `weight_overrides` in policy config:
+- [x] Support optional `weight_overrides` in policy config:
   ```json
   {
     "thresholds": {
@@ -46,46 +46,46 @@ Make the `DecisionNode` fully policy-aware: dynamic threshold resolution from po
 
 ### 2. Policy-level decision customization
 
-- [ ] `fast` policy behavior:
+- [x] `fast` policy behavior:
   - Higher `max_risk` (0.9) — only blocks obvious attacks
   - No scanner flags (scanners don't run at all)
   - Only rule-based + intent-based scoring
 
-- [ ] `balanced` policy behavior:
+- [x] `balanced` policy behavior:
   - Standard `max_risk` (0.7)
   - LLM Guard flags contribute to score
   - PII flagged but not blocked
 
-- [ ] `strict` policy behavior:
+- [x] `strict` policy behavior:
   - Lower `max_risk` (0.5)
   - PII → mask (MODIFY decision forced)
   - All scanner flags contribute
 
-- [ ] `paranoid` policy behavior:
+- [x] `paranoid` policy behavior:
   - Lowest `max_risk` (0.3)
   - PII → block (BLOCK decision forced)
   - All scanner flags contribute with higher weights
 
 ### 3. Redis cache invalidation end-to-end
 
-- [ ] Verify that after `PATCH /v1/policies/{id}`:
+- [x] Verify that after `PATCH /v1/policies/{id}`:
   1. Redis key `policy_config:{name}` is deleted
   2. Next `run_pipeline()` call fetches fresh config from DB
   3. Pipeline uses updated thresholds
 
-- [ ] Add cache invalidation to `DELETE` endpoint too
-- [ ] Consider adding `Cache-Control` header to policy endpoints
+- [x] Add cache invalidation to `DELETE` endpoint too
+- [x] Consider adding `Cache-Control` header to policy endpoints
 
 ### 4. Policy selection in runner
 
-- [ ] Verify `run_pipeline()` and `run_pre_llm_pipeline()` use latest config:
+- [x] Verify `run_pipeline()` and `run_pre_llm_pipeline()` use latest config:
   ```python
   async def run_pipeline(...):
       policy_config = await get_policy_config(policy_name)
       # policy_config now comes from DB/Redis with real thresholds
   ```
 
-- [ ] Log policy version used:
+- [x] Log policy version used:
   ```python
   logger.info("pipeline_complete",
       request_id=request_id,
@@ -97,25 +97,25 @@ Make the `DecisionNode` fully policy-aware: dynamic threshold resolution from po
 
 ### 5. Tests
 
-- [ ] `test_decision_fast_policy` — high max_risk → fewer blocks
-- [ ] `test_decision_balanced_policy` — standard thresholds
-- [ ] `test_decision_strict_policy` — low max_risk, PII mask
-- [ ] `test_decision_paranoid_policy` — lowest max_risk, PII block
-- [ ] `test_custom_weights` — custom injection_weight applied
-- [ ] `test_cache_invalidation_e2e` — update policy → next request uses new config
-- [ ] `test_default_thresholds` — missing thresholds → sensible defaults
+- [x] `test_decision_fast_policy` — high max_risk → fewer blocks
+- [x] `test_decision_balanced_policy` — standard thresholds
+- [x] `test_decision_strict_policy` — low max_risk, PII mask
+- [x] `test_decision_paranoid_policy` — lowest max_risk, PII block
+- [x] `test_custom_weights` — custom injection_weight applied
+- [x] `test_cache_invalidation_e2e` — update policy → next request uses new config
+- [x] `test_default_thresholds` — missing thresholds → sensible defaults
 
 ---
 
 ## Definition of Done
 
-- [ ] `calculate_risk_score()` uses policy-configurable weights
-- [ ] All 4 policy levels produce correct decisions for identical inputs
-- [ ] Custom weight overrides in policy config are respected
-- [ ] Redis cache invalidated on CRUD → next request picks up changes
-- [ ] Pipeline runner logs policy version
-- [ ] All tests pass
-- [ ] `ruff check src/ tests/` → 0 errors
+- [x] `calculate_risk_score()` uses policy-configurable weights
+- [x] All 4 policy levels produce correct decisions for identical inputs
+- [x] Custom weight overrides in policy config are respected
+- [x] Redis cache invalidated on CRUD → next request picks up changes
+- [x] Pipeline runner logs policy version
+- [x] All tests pass
+- [x] `ruff check src/ tests/` → 0 errors
 
 ---
 

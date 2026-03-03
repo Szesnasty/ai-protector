@@ -18,7 +18,7 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
 
 ### 1. Router (`src/routers/policies.py`)
 
-- [ ] `GET /v1/policies` — list all policies:
+- [x] `GET /v1/policies` — list all policies:
   ```python
   @router.get("/policies", response_model=list[PolicyRead])
   async def list_policies(
@@ -33,7 +33,7 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
       return result.scalars().all()
   ```
 
-- [ ] `GET /v1/policies/{policy_id}` — get single policy:
+- [x] `GET /v1/policies/{policy_id}` — get single policy:
   ```python
   @router.get("/policies/{policy_id}", response_model=PolicyRead)
   async def get_policy(
@@ -46,7 +46,7 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
       return policy
   ```
 
-- [ ] `POST /v1/policies` — create policy:
+- [x] `POST /v1/policies` — create policy:
   ```python
   @router.post("/policies", response_model=PolicyRead, status_code=201)
   async def create_policy(
@@ -67,7 +67,7 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
       return policy
   ```
 
-- [ ] `PATCH /v1/policies/{policy_id}` — update policy:
+- [x] `PATCH /v1/policies/{policy_id}` — update policy:
   ```python
   @router.patch("/policies/{policy_id}", response_model=PolicyRead)
   async def update_policy(
@@ -92,7 +92,7 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
       return policy
   ```
 
-- [ ] `DELETE /v1/policies/{policy_id}` — soft-delete (set `is_active=False`):
+- [x] `DELETE /v1/policies/{policy_id}` — soft-delete (set `is_active=False`):
   ```python
   @router.delete("/policies/{policy_id}", status_code=204)
   async def delete_policy(
@@ -112,7 +112,7 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
 
 ### 2. Redis cache invalidation helper
 
-- [ ] Add to `src/routers/policies.py`:
+- [x] Add to `src/routers/policies.py`:
   ```python
   async def _invalidate_policy_cache(policy_name: str) -> None:
       """Remove cached policy config from Redis after CRUD mutation."""
@@ -125,7 +125,7 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
 
 ### 3. Register router in `src/main.py`
 
-- [ ] Add:
+- [x] Add:
   ```python
   from src.routers.policies import router as policies_router
   app.include_router(policies_router, prefix="/v1")
@@ -133,7 +133,7 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
 
 ### 4. Update schema (`src/schemas/policy.py`)
 
-- [ ] Ensure `PolicyRead` includes `updated_at`:
+- [x] Ensure `PolicyRead` includes `updated_at`:
   ```python
   class PolicyRead(PolicyBase):
       model_config = ConfigDict(from_attributes=True)
@@ -145,29 +145,29 @@ Create a full REST CRUD router for firewall policies. Operators can list, read, 
 
 ### 5. Tests (`tests/test_policies_crud.py`)
 
-- [ ] `GET /v1/policies` → returns list of policies
-- [ ] `GET /v1/policies?active_only=false` → includes inactive
-- [ ] `GET /v1/policies/{id}` → returns single policy
-- [ ] `GET /v1/policies/{id}` with bad UUID → 404
-- [ ] `POST /v1/policies` → creates, returns 201
-- [ ] `POST /v1/policies` duplicate name → 409
-- [ ] `PATCH /v1/policies/{id}` → updates, bumps version
-- [ ] `PATCH /v1/policies/{id}` with bad UUID → 404
-- [ ] `DELETE /v1/policies/{id}` → soft-deletes, 204
-- [ ] `DELETE /v1/policies/{id}` built-in policy → 403
-- [ ] Redis cache invalidated on update/delete
+- [x] `GET /v1/policies` → returns list of policies
+- [x] `GET /v1/policies?active_only=false` → includes inactive
+- [x] `GET /v1/policies/{id}` → returns single policy
+- [x] `GET /v1/policies/{id}` with bad UUID → 404
+- [x] `POST /v1/policies` → creates, returns 201
+- [x] `POST /v1/policies` duplicate name → 409
+- [x] `PATCH /v1/policies/{id}` → updates, bumps version
+- [x] `PATCH /v1/policies/{id}` with bad UUID → 404
+- [x] `DELETE /v1/policies/{id}` → soft-deletes, 204
+- [x] `DELETE /v1/policies/{id}` built-in policy → 403
+- [x] Redis cache invalidated on update/delete
 
 ---
 
 ## Definition of Done
 
-- [ ] `src/routers/policies.py` — full CRUD (5 endpoints)
-- [ ] Router registered in `src/main.py` at `/v1`
-- [ ] `PolicyRead` schema includes `updated_at`
-- [ ] Redis cache invalidated on update and delete
-- [ ] Built-in policies (`fast`, `balanced`, `strict`, `paranoid`) protected from delete
-- [ ] All tests pass
-- [ ] `ruff check src/ tests/` → 0 errors
+- [x] `src/routers/policies.py` — full CRUD (5 endpoints)
+- [x] Router registered in `src/main.py` at `/v1`
+- [x] `PolicyRead` schema includes `updated_at`
+- [x] Redis cache invalidated on update and delete
+- [x] Built-in policies (`fast`, `balanced`, `strict`, `paranoid`) protected from delete
+- [x] All tests pass
+- [x] `ruff check src/ tests/` → 0 errors
 
 ---
 

@@ -19,7 +19,7 @@ Add a Pydantic validation model for the JSONB `config` field in policies. Ensure
 
 ### 1. Policy config schema (`src/schemas/policy_config.py`)
 
-- [ ] Define the `PolicyConfigSchema`:
+- [x] Define the `PolicyConfigSchema`:
   ```python
   from pydantic import BaseModel, Field
 
@@ -53,7 +53,7 @@ Add a Pydantic validation model for the JSONB `config` field in policies. Ensure
 
 ### 2. Validate config on create/update
 
-- [ ] In `POST /v1/policies` and `PATCH /v1/policies/{id}`:
+- [x] In `POST /v1/policies` and `PATCH /v1/policies/{id}`:
   ```python
   if "config" in update_data:
       try:
@@ -64,7 +64,7 @@ Add a Pydantic validation model for the JSONB `config` field in policies. Ensure
 
 ### 3. Update `PolicyCreate` / `PolicyUpdate` schemas
 
-- [ ] Change `config` type to use the validation:
+- [x] Change `config` type to use the validation:
   ```python
   class PolicyCreate(PolicyBase):
       config: dict  # Validated in router via PolicyConfigSchema
@@ -75,9 +75,9 @@ Add a Pydantic validation model for the JSONB `config` field in policies. Ensure
 
 ### 4. Version bumping rules
 
-- [ ] On `PATCH`: always increment `version += 1`
-- [ ] On `POST`: start at `version = 1` (default from model)
-- [ ] Store `updated_at` on every mutation:
+- [x] On `PATCH`: always increment `version += 1`
+- [x] On `POST`: start at `version = 1` (default from model)
+- [x] Store `updated_at` on every mutation:
   ```python
   # In Policy model — add updated_at if not present
   updated_at: Mapped[datetime | None] = mapped_column(
@@ -89,7 +89,7 @@ Add a Pydantic validation model for the JSONB `config` field in policies. Ensure
 
 ### 5. Update seed data (`src/db/seed.py`)
 
-- [ ] Align `nodes` lists with actual pipeline node names:
+- [x] Align `nodes` lists with actual pipeline node names:
   ```python
   # fast — no scanners, just core pipeline
   "nodes": [],  # empty = skip scanners
@@ -105,29 +105,29 @@ Add a Pydantic validation model for the JSONB `config` field in policies. Ensure
   ```
   > Nodes like `parse`, `intent`, `rules`, `decision`, `transform`, `llm` always run (core pipeline). The `nodes` list in config only controls **optional** scanners/extensions.
 
-- [ ] Create a migration if `updated_at` column is added to `policies`
+- [x] Create a migration if `updated_at` column is added to `policies`
 
 ### 6. Tests
 
-- [ ] Valid config → accepted
-- [ ] Invalid `max_risk: 2.0` → 422
-- [ ] Invalid node name `"foobar"` → 422
-- [ ] Invalid `pii_action: "nuke"` → 422
-- [ ] Missing `thresholds` → defaults applied
-- [ ] Version bumps on update
-- [ ] `updated_at` changes on PATCH
+- [x] Valid config → accepted
+- [x] Invalid `max_risk: 2.0` → 422
+- [x] Invalid node name `"foobar"` → 422
+- [x] Invalid `pii_action: "nuke"` → 422
+- [x] Missing `thresholds` → defaults applied
+- [x] Version bumps on update
+- [x] `updated_at` changes on PATCH
 
 ---
 
 ## Definition of Done
 
-- [ ] `src/schemas/policy_config.py` — Pydantic model validates `nodes` + `thresholds`
-- [ ] Create and update endpoints validate config before saving
-- [ ] Invalid configs rejected with 422 + clear error messages
-- [ ] `updated_at` tracked on Policy model
-- [ ] Seed data `nodes` lists aligned with actual pipeline (only scanner/extension names)
-- [ ] All tests pass
-- [ ] `ruff check src/ tests/` → 0 errors
+- [x] `src/schemas/policy_config.py` — Pydantic model validates `nodes` + `thresholds`
+- [x] Create and update endpoints validate config before saving
+- [x] Invalid configs rejected with 422 + clear error messages
+- [x] `updated_at` tracked on Policy model
+- [x] Seed data `nodes` lists aligned with actual pipeline (only scanner/extension names)
+- [x] All tests pass
+- [x] `ruff check src/ tests/` → 0 errors
 
 ---
 
