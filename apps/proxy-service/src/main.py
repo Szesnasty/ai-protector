@@ -17,6 +17,7 @@ from src.logging import CorrelationIdMiddleware, setup_logging
 from src.models import Base
 from src.routers.chat import router as chat_router
 from src.routers.health import router as health_router
+from src.routers.policies import router as policies_router
 from src.schemas.chat import ErrorDetail, ErrorResponse
 
 logger = structlog.get_logger()
@@ -71,6 +72,7 @@ app.add_middleware(CorrelationIdMiddleware)
 # -- Routers --
 app.include_router(health_router)
 app.include_router(chat_router)
+app.include_router(policies_router, prefix="/v1")
 
 
 # -- Exception handlers --

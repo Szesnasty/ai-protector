@@ -27,7 +27,7 @@
 - [x] **[Step 06 — Pipeline Core (LangGraph)](06-pipeline-core/SPEC.md)**
   ParseNode + IntentNode + RulesNode, LangGraph state & graph wiring
 
-- [ ] **[Step 07 — Security Scanners](07-security-scanners/SPEC.md)**
+- [x] **[Step 07 — Security Scanners](07-security-scanners/SPEC.md)**
   LLM Guard (injection, toxicity, secrets) + Presidio PII detection — parallel scanner nodes
 
 - [ ] **Step 08 — Policy Engine**
