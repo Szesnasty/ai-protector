@@ -50,23 +50,28 @@
 - [ ] **[Step 13 — Frontend: Agent Demo UI](13-agent-demo-ui/SPEC.md)**
   Copilot chat, role selector, tool call annotations, agent trace panel
 
-## Phase 4: Dashboard & Data (week 6–7)
+## Phase 4: Custom Security Rules (week 6)
 
-- [ ] **Step 14 — Frontend: Policies & Request Log**
+- [ ] **[Step 14 — Custom Security Rules](14-custom-security-rules/SPEC.md)**
+  Rules CRUD API (action: block/flag/score_boost, severity), intent-aware matching, bulk import/export, frontend Rules Editor
+
+## Phase 5: Dashboard & Data (week 7)
+
+- [ ] **Step 15 — Frontend: Policies & Request Log**
   Policies CRUD UI, request log with server-side pagination, filters, expandable rows
 
-- [ ] **Step 15 — Frontend: Analytics**
+- [ ] **Step 16 — Frontend: Analytics**
   KPI cards, timeline chart, block rate by policy, top risk flags, intent distribution
 
-## Phase 5: Harden & Ship (week 7–8)
+## Phase 6: Harden & Ship (week 7–8)
 
-- [ ] **Step 16 — MLJudge & Advanced Scanners**
+- [ ] **Step 17 — MLJudge & Advanced Scanners**
   MLJudgeNode (LLM-as-judge via Ollama), NeMo Guardrails integration, canary tokens
 
-- [ ] **Step 17 — Rate Limiting & Caching**
+- [ ] **Step 18 — Rate Limiting & Caching**
   Redis rate limiting, decision caching for repeated prompts
 
-- [ ] **Step 18 — Docs & Demo**
+- [ ] **Step 19 — Docs & Demo**
   `securing-agents.md` (Level 0/1/2), README with setup guide, screenshots, demo GIF
 
 ---
@@ -79,8 +84,9 @@
 | Firewall Pipeline | 06–09 | 🟩 06 07 08 09 done |
 | Playground UI | 10 | 🟩 10 done |
 | Agent Demo | 11–13 | 🟨 11 done, 12-13 pending |
-| Dashboard | 14–15 | ⬜ Not started |
-| Harden & Ship | 16–18 | ⬜ Not started |
+| Custom Rules | 14 | ⬜ Spec ready |
+| Dashboard | 15–16 | ⬜ Not started |
+| Harden & Ship | 17–19 | ⬜ Not started |
 
 ---
 
