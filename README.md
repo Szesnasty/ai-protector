@@ -10,6 +10,39 @@ Self-hosted **LLM Firewall with an Agentic Security Pipeline** — an OpenAI-com
 - **Full Observability** — Langfuse tracing, structured logging, risk scoring
 - **Local-first** — runs on Ollama (Llama 3.1 8B), no cloud keys needed
 
+## Current Status
+
+The full **firewall pipeline** is implemented and tested (325 tests):
+
+| Phase | Steps | Status |
+|-------|-------|--------|
+| Foundation (01–04) | Scaffolding, Docker, FastAPI, LLM Proxy | ✅ Done |
+| Firewall Pipeline (06–09) | LangGraph, Scanners, Policies, Output Pipeline | ✅ Done |
+| Frontend & Agent (05, 10–18) | Playground, Agent Demo, Dashboard | 🔜 Next |
+
+### Pipeline Architecture
+
+```
+User Request → POST /v1/chat/completions
+                 │
+    ┌────────────▼────────────┐
+    │   ParseNode → IntentNode → RulesNode → ScannersNode → DecisionNode   │
+    │                                                           │          │
+    │                    ┌──────────────────┬────────────────────┤          │
+    │                    ▼                  ▼                    ▼          │
+    │                  BLOCK             MODIFY               ALLOW        │
+    │                    │            TransformNode              │          │
+    │                    │                  │                    │          │
+    │                    │              LLM Call             LLM Call       │
+    │                    │                  │                    │          │
+    │                    │           OutputFilterNode    OutputFilterNode   │
+    │                    │                  │                    │          │
+    │                    └──────► LoggingNode (Postgres + Langfuse) ◄──────┘
+    └─────────────────────────────────────────────────────────────────────┘
+```
+
+See [mvp-diagram.md](mvp-diagram.md) for the full 18-step implementation plan diagram.
+
 ## Tech Stack
 
 **Frontend:** Nuxt 4 · Vuetify 3 · Pinia · vue-echarts
@@ -110,5 +143,4 @@ ruff check src/ tests/         # linter
 | `DEFAULT_MODEL` | `ollama/llama3.1:8b` | Default LLM model |
 | `DEFAULT_POLICY` | `balanced` | Default firewall policy |
 | `DEFAULT_TEMPERATURE` | `0.7` | Default LLM temperature |
-| `LANGFUSE_PUBLIC_KEY` | — | Langfuse public key (optional) |
-| `LANGFUSE_SECRET_KEY` | — | Langfuse secret key (optional) |
+| `ENABLE_LANGFUSE` | `true` | Enable Langfuse tracing |

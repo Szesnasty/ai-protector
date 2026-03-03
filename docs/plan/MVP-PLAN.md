@@ -33,8 +33,8 @@
 - [x] **[Step 08 — Policy Engine](08-policy-engine/SPEC.md)**
   PolicyDecisionNode, 4 policy levels (fast/balanced/strict/paranoid), policies CRUD API
 
-- [ ] **Step 09 — Output Pipeline**
-  PromptTransformNode, OutputFilterNode, MemoryHygieneNode, LoggingNode (Postgres + Langfuse)
+- [x] **[Step 09 — Output Pipeline](09-output-pipeline/SPEC.md)**
+  OutputFilterNode (PII/secrets/leak redaction), MemoryHygieneNode, LoggingNode (Postgres + Langfuse), graph integration
 
 - [ ] **Step 10 — Frontend: Playground**
   Chat UI with streaming, policy selector, debug panel (decision, intent, risk, flags)
@@ -76,7 +76,7 @@
 | Phase | Steps | Status |
 |-------|-------|--------|
 | Foundation | 01–05 | 🟩 01 02 03 04 done |
-| Firewall Pipeline | 06–09 | 🟨 06 07 08 done |
+| Firewall Pipeline | 06–09 | � 06 07 08 09 done |
 | Playground UI | 10 | ⬜ Not started |
 | Agent Demo | 11–13 | ⬜ Not started |
 | Dashboard | 14–15 | ⬜ Not started |
