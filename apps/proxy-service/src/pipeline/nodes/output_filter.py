@@ -21,6 +21,7 @@ from src.config import get_settings
 from src.pipeline.nodes import timed_node
 from src.pipeline.nodes.presidio import PII_ENTITIES, get_analyzer, get_anonymizer
 from src.pipeline.state import PipelineState
+from src.pipeline.utils.memory_hygiene import sanitize_conversation
 
 logger = structlog.get_logger()
 
@@ -175,16 +176,33 @@ async def output_filter_node(state: PipelineState) -> PipelineState:
     if filtered:
         new_response = copy.deepcopy(llm_response)
         new_response["choices"][0]["message"]["content"] = content
-        return {
+        state = {
             **state,
             "llm_response": new_response,
             "output_filtered": True,
             "output_filter_results": results,
             "response_masked": True,
         }
+    else:
+        state = {
+            **state,
+            "output_filtered": False,
+            "output_filter_results": results,
+        }
 
-    return {
-        **state,
-        "output_filtered": False,
-        "output_filter_results": results,
-    }
+    # Memory hygiene: sanitize conversation for logging / future storage
+    if "memory_hygiene" in nodes:
+        try:
+            sanitized = await sanitize_conversation(
+                state.get("messages", []),
+                redact_pii=True,
+                redact_secrets=True,
+            )
+            state = {**state, "sanitized_messages": sanitized}
+        except Exception as exc:
+            logger.warning("memory_hygiene_failed", error=str(exc))
+            errors = list(state.get("errors", []))
+            errors.append(f"memory_hygiene: {exc}")
+            state = {**state, "errors": errors}
+
+    return state

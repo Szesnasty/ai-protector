@@ -49,6 +49,7 @@ class PipelineState(TypedDict, total=False):
     # ── Output filtering (set by OutputFilterNode) ────────────────────
     output_filtered: bool  # True if output was modified
     output_filter_results: dict  # {"pii_redacted": N, "secrets_redacted": N, "system_leak": bool}
+    sanitized_messages: list[dict] | None  # Conversation with PII/secrets stripped
 
     # ── Metadata ──────────────────────────────────────────────────────
     node_timings: dict[str, float]  # {"parse": 1.2, "intent": 45.3} (ms)
