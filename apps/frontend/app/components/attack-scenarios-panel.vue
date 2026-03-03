@@ -209,10 +209,8 @@ const filteredGroups = computed(() => {
     .filter(group => group.items.length > 0)
 })
 
-// Default: all panels expanded
-const expandedPanels = ref<number[]>(
-  props.scenarios.map((_, i) => i),
-)
+// Default: all panels collapsed
+const expandedPanels = ref<number[]>([])
 
 function decisionColor(decision: string) {
   switch (decision) {
