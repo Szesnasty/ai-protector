@@ -52,19 +52,25 @@
 
 ## Phase 4: Custom Security Rules (week 6)
 
-- [ ] **[Step 14 — Custom Security Rules](14-custom-security-rules/SPEC.md)**
+- [x] **[Step 14 — Custom Security Rules](14-custom-security-rules/SPEC.md)**
   OWASP LLM Top 10 + PII/PL preset categories, rules CRUD API, pipeline integration, frontend Rules Editor
-  - [ ] [14a — Model, Migration & CRUD API](14-custom-security-rules/14a-model-migration-crud.md)
-  - [ ] [14b — Pipeline Integration](14-custom-security-rules/14b-pipeline-integration.md)
-  - [ ] [14c — Frontend Rules Editor](14-custom-security-rules/14c-frontend-rules-editor.md)
+  - [x] [14a — Model, Migration & CRUD API](14-custom-security-rules/14a-model-migration-crud.md)
+  - [x] [14b — Pipeline Integration](14-custom-security-rules/14b-pipeline-integration.md)
+  - [x] [14c — Frontend Rules Editor](14-custom-security-rules/14c-frontend-rules-editor.md)
 
 ## Phase 5: Dashboard & Data (week 7)
 
-- [ ] **Step 15 — Frontend: Policies & Request Log**
+- [ ] **[Step 15 — Frontend: Policies & Request Log](15-policies-request-log/SPEC.md)**
   Policies CRUD UI, request log with server-side pagination, filters, expandable rows
+  - [ ] [15a — Request Log API](15-policies-request-log/15a-request-log-api.md)
+  - [ ] [15b — Policies CRUD UI](15-policies-request-log/15b-policies-ui.md)
+  - [ ] [15c — Request Log UI](15-policies-request-log/15c-request-log-ui.md)
 
-- [ ] **Step 16 — Frontend: Analytics**
+- [ ] **[Step 16 — Frontend: Analytics](16-analytics/SPEC.md)**
   KPI cards, timeline chart, block rate by policy, top risk flags, intent distribution
+  - [ ] [16a — Analytics API](16-analytics/16a-analytics-api.md)
+  - [ ] [16b — KPI Cards & Timeline](16-analytics/16b-kpi-timeline.md)
+  - [ ] [16c — Breakdown Panels](16-analytics/16c-breakdowns.md)
 
 ## Phase 6: Harden & Ship (week 7–8)
 
@@ -87,8 +93,8 @@
 | Firewall Pipeline | 06–09 | 🟩 06 07 08 09 done |
 | Playground UI | 10 | 🟩 10 done |
 | Agent Demo | 11–13 | � 11 12 13 done |
-| Custom Rules | 14 | 🔜 14a 14b 14c — spec ready, next |
-| Dashboard | 15–16 | ⬜ Not started |
+| Custom Rules | 14 | � 14a 14b 14c done |
+| Dashboard | 15–16 | 🔜 15a 15b 15c · 16a 16b 16c — spec ready, next |
 | Harden & Ship | 17–19 | ⬜ Not started |
 
 ---
