@@ -72,6 +72,10 @@ export const useChat = () => {
 
       // Extract pipeline decision from response headers
       lastDecision.value = extractPipelineDecision(response)
+      // Attach decision to assistant message
+      if (lastDecision.value && messages.value[assistantIdx]) {
+        messages.value[assistantIdx].decision = lastDecision.value
+      }
     } catch (err: unknown) {
       isStreaming.value = false
 
@@ -88,12 +92,13 @@ export const useChat = () => {
         messages.value[assistantIdx] = {
           role: 'assistant',
           content: `⛔ Blocked: ${apiErr.error.message}`,
+          decision: lastDecision.value ?? undefined,
         }
         error.value = apiErr.error.message
       } else {
         // Unknown error
         error.value = 'An unexpected error occurred'
-        if (!messages.value[assistantIdx].content) {
+        if (!messages.value[assistantIdx]?.content) {
           messages.value.splice(assistantIdx, 1)
         }
       }

@@ -36,7 +36,7 @@
 - [x] **[Step 09 — Output Pipeline](09-output-pipeline/SPEC.md)**
   OutputFilterNode (PII/secrets/leak redaction), MemoryHygieneNode, LoggingNode (Postgres + Langfuse), graph integration
 
-- [ ] **[Step 10 — Frontend: Playground](10-playground-ui/SPEC.md)**
+- [x] **[Step 10 — Frontend: Playground](10-playground-ui/SPEC.md)**
   Chat UI with streaming, policy selector, debug panel (decision, intent, risk, flags)
 
 ## Phase 3: Agent Demo (week 5–6)

@@ -15,6 +15,7 @@ export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool'
   content: string
   name?: string
+  decision?: PipelineDecision
 }
 
 export interface ChatCompletionRequest {
