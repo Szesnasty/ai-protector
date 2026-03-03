@@ -44,7 +44,7 @@
 - [x] **[Step 11 — Agent Demo App](11-agent-demo-app/SPEC.md)**
   LangGraph agent: IntentClassifier → PolicyCheck → ToolRouter, 3 tools, role-based access
 
-- [ ] **[Step 12 — Agent ↔ Firewall Integration](12-agent-firewall-integration/SPEC.md)**
+- [x] **[Step 12 — Agent ↔ Firewall Integration](12-agent-firewall-integration/SPEC.md)**
   Agent calls proxy-service via LiteLLM, session memory, mock data (KB + orders)
 
 - [ ] **[Step 13 — Frontend: Agent Demo UI](13-agent-demo-ui/SPEC.md)**

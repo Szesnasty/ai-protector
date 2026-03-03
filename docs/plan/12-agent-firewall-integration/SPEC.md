@@ -227,18 +227,18 @@ curl -s 'http://localhost:8000/v1/requests?client_id=agent-int-1&per_page=1' \
 ```
 
 ### Checklist
-- [ ] `LLMCallNode` routes through `proxy-service:8000` via LiteLLM
-- [ ] `x-client-id` and `x-policy` headers sent with every LLM call
-- [ ] Firewall `x-decision`, `x-intent`, `x-risk-score` captured from response
-- [ ] 403 BLOCK handled gracefully with `risk_flags` and `blocked_reason`
-- [ ] `firewall_decision` included in every `/agent/chat` response
-- [ ] Session memory works across multiple calls (same `session_id`)
-- [ ] Memory trimmed at `MAX_TURNS=20`
-- [ ] Mock KB has ≥10 articles with realistic content
-- [ ] Mock orders has ≥5 entries with varied statuses
-- [ ] All 9 security scenarios pass as integration tests
-- [ ] Agent requests visible in proxy-service request log
-- [ ] Docker Compose updated with `agent-demo` service
+- [x] `LLMCallNode` routes through `proxy-service:8000` via LiteLLM
+- [x] `x-client-id` and `x-policy` headers sent with every LLM call
+- [x] Firewall `x-decision`, `x-intent`, `x-risk-score` captured from response
+- [x] 403 BLOCK handled gracefully with `risk_flags` and `blocked_reason`
+- [x] `firewall_decision` included in every `/agent/chat` response
+- [x] Session memory works across multiple calls (same `session_id`)
+- [x] Memory trimmed at `MAX_TURNS=20`
+- [x] Mock KB has ≥10 articles with realistic content
+- [x] Mock orders has ≥5 entries with varied statuses
+- [x] All 9 security scenarios pass as integration tests
+- [x] Agent requests visible in proxy-service request log
+- [x] Docker Compose updated with `agent-demo` service
 
 ---
 
