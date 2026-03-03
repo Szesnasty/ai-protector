@@ -21,7 +21,7 @@
     "vee-validate": "^4.15.1",
     "vue": "^3.5.29",
     "vue-echarts": "^8.0.1",
-    "vue-router": "^4.6.4",
+    "vue-router": "^5.0.3",
     "vuetify": "^4.0.0",
     "vuetify-nuxt-module": "^0.19.5",
     "zod": "^3.24.0"
