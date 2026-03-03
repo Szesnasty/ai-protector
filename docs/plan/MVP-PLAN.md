@@ -60,17 +60,17 @@
 
 ## Phase 5: Dashboard & Data (week 7)
 
-- [ ] **[Step 15 — Frontend: Policies & Request Log](15-policies-request-log/SPEC.md)**
+- [x] **[Step 15 — Frontend: Policies & Request Log](15-policies-request-log/SPEC.md)**
   Policies CRUD UI, request log with server-side pagination, filters, expandable rows
-  - [ ] [15a — Request Log API](15-policies-request-log/15a-request-log-api.md)
-  - [ ] [15b — Policies CRUD UI](15-policies-request-log/15b-policies-ui.md)
-  - [ ] [15c — Request Log UI](15-policies-request-log/15c-request-log-ui.md)
+  - [x] [15a — Request Log API](15-policies-request-log/15a-request-log-api.md)
+  - [x] [15b — Policies CRUD UI](15-policies-request-log/15b-policies-ui.md)
+  - [x] [15c — Request Log UI](15-policies-request-log/15c-request-log-ui.md)
 
-- [ ] **[Step 16 — Frontend: Analytics](16-analytics/SPEC.md)**
+- [x] **[Step 16 — Frontend: Analytics](16-analytics/SPEC.md)**
   KPI cards, timeline chart, block rate by policy, top risk flags, intent distribution
-  - [ ] [16a — Analytics API](16-analytics/16a-analytics-api.md)
-  - [ ] [16b — KPI Cards & Timeline](16-analytics/16b-kpi-timeline.md)
-  - [ ] [16c — Breakdown Panels](16-analytics/16c-breakdowns.md)
+  - [x] [16a — Analytics API](16-analytics/16a-analytics-api.md)
+  - [x] [16b — KPI Cards & Timeline](16-analytics/16b-kpi-timeline.md)
+  - [x] [16c — Breakdown Panels](16-analytics/16c-breakdowns.md)
 
 ## Phase 6: Harden & Ship (week 7–8)
 
@@ -94,7 +94,7 @@
 | Playground UI | 10 | 🟩 10 done |
 | Agent Demo | 11–13 | � 11 12 13 done |
 | Custom Rules | 14 | � 14a 14b 14c done |
-| Dashboard | 15–16 | 🔜 15a 15b 15c · 16a 16b 16c — spec ready, next |
+| Dashboard | 15–16 | � 15 16 done |
 | Harden & Ship | 17–19 | ⬜ Not started |
 
 ---

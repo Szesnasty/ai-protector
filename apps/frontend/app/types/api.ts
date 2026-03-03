@@ -184,3 +184,46 @@ export interface PolicyUpdate {
   config?: Record<string, unknown>
   is_active?: boolean
 }
+
+// ─── Analytics ───
+export interface AnalyticsSummary {
+  total_requests: number
+  blocked: number
+  modified: number
+  allowed: number
+  block_rate: number
+  avg_risk: number
+  avg_latency_ms: number
+  top_intent: string | null
+}
+
+export interface TimelineBucket {
+  time: string
+  total: number
+  blocked: number
+  modified: number
+  allowed: number
+}
+
+export interface PolicyStatsRow {
+  policy_id: string
+  policy_name: string
+  total: number
+  blocked: number
+  modified: number
+  allowed: number
+  block_rate: number
+  avg_risk: number
+}
+
+export interface RiskFlagCount {
+  flag: string
+  count: number
+  pct: number
+}
+
+export interface IntentCount {
+  intent: string
+  count: number
+  pct: number
+}

@@ -15,6 +15,7 @@ from src.db.session import close_db, close_redis, engine
 from src.llm.exceptions import LLMError
 from src.logging import CorrelationIdMiddleware, setup_logging
 from src.models import Base
+from src.routers.analytics import router as analytics_router
 from src.routers.chat import router as chat_router
 from src.routers.health import router as health_router
 from src.routers.policies import router as policies_router
@@ -74,6 +75,7 @@ app.add_middleware(CorrelationIdMiddleware)
 # -- Routers --
 app.include_router(health_router)
 app.include_router(chat_router)
+app.include_router(analytics_router, prefix="/v1")
 app.include_router(policies_router, prefix="/v1")
 app.include_router(requests_router, prefix="/v1")
 app.include_router(rules_router, prefix="/v1")

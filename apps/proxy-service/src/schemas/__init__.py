@@ -1,5 +1,12 @@
 """Schemas package."""
 
+from src.schemas.analytics import (
+    AnalyticsSummary,
+    IntentCount,
+    PolicyStats,
+    RiskFlagCount,
+    TimelineBucket,
+)
 from src.schemas.chat import (
     ChatChoice,
     ChatCompletionChunk,
@@ -27,6 +34,7 @@ from src.schemas.rule import (
 )
 
 __all__ = [
+    "AnalyticsSummary",
     "ChatCompletionChunk",
     "ChatCompletionChunkChoice",
     "ChatCompletionChunkDelta",
@@ -37,13 +45,16 @@ __all__ = [
     "ErrorDetail",
     "ErrorResponse",
     "HealthResponse",
+    "IntentCount",
     "PolicyBase",
     "PolicyCreate",
     "PolicyRead",
+    "PolicyStats",
     "PolicyUpdate",
     "PaginatedResponse",
     "RequestDetail",
     "RequestRead",
+    "RiskFlagCount",
     "RuleAction",
     "RuleBulkImport",
     "RuleCreate",
@@ -53,5 +64,6 @@ __all__ = [
     "RuleTestResult",
     "RuleUpdate",
     "ServiceHealth",
+    "TimelineBucket",
     "Usage",
 ]
