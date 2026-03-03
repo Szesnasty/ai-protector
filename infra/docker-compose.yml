@@ -99,13 +99,41 @@ services:
     networks:
       - ai-protector
 
-  # frontend:
-  #   build:
-  #     context: ../apps/frontend
-  #   ports:
-  #     - "3000:3000"
-  #   networks:
-  #     - ai-protector
+  frontend:
+    build:
+      context: ../apps/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Client-side (browser) → calls host machine ports
+      NUXT_PUBLIC_API_BASE: http://localhost:8000
+      NUXT_PUBLIC_AGENT_API_BASE: http://localhost:8002
+    depends_on:
+      - proxy-service
+      - agent-demo
+    networks:
+      - ai-protector
+
+  # ── Model pull (run-once init container) ──────────────
+  model-pull:
+    image: curlimages/curl:latest
+    depends_on:
+      - ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo '⏳ Waiting for Ollama...'
+        until curl -sf http://ollama:11434/api/tags >/dev/null 2>&1; do sleep 2; done
+        echo '📦 Pulling llama3.1:8b (first run only, ~4.7 GB)...'
+        curl -sf http://ollama:11434/api/pull -d '{"name": "llama3.1:8b"}' | while IFS= read -r line; do
+          status=$(echo "$$line" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+          [ -n "$$status" ] && printf "\r  %s" "$$status"
+        done
+        echo ''
+        echo '✅ Model ready.'
+    networks:
+      - ai-protector
+    profiles: ["init"]
 
 volumes:
   pgdata:
