@@ -9,6 +9,7 @@ import pytest
 
 from src.pipeline.graph import build_pipeline
 from src.pipeline.state import PipelineState
+from src.services.denylist import DenylistHit
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ _PATCH_TRACE = "src.pipeline.nodes.logging_node.create_trace"
 _PATCH_SPANS = "src.pipeline.nodes.logging_node.add_pipeline_spans"
 _PATCH_LLM = "src.pipeline.nodes.llm_call.llm_completion"
 _PATCH_DENYLIST = "src.pipeline.nodes.rules.check_denylist"
+_PATCH_INTENT_DENYLIST = "src.pipeline.nodes.intent.check_denylist"
 
 
 # ── Test 1: Clean request ALLOW path ─────────────────────────────────
@@ -70,9 +72,10 @@ class TestCleanAllowPath:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_clean_request_e2e(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -97,11 +100,21 @@ class TestInjectionBlock:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_injection_blocked_and_logged(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
-        mock_denylist.return_value = ["ignore all instructions"]
+        mock_denylist.return_value = [
+            DenylistHit(
+                phrase="ignore all instructions",
+                category="injection",
+                action="block",
+                severity="critical",
+                is_regex=False,
+                description="Denylist match",
+            )
+        ]
 
         graph = build_pipeline()
         result = await graph.ainvoke(
@@ -127,9 +140,10 @@ class TestPiiModifyPath:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_modify_path_full_pipeline(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response("Modified response")
@@ -155,9 +169,10 @@ class TestOutputFilterPii:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_pii_in_response_redacted(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         # LLM returns content with an email address
@@ -189,9 +204,10 @@ class TestOutputFilterSecret:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_secret_in_response_flagged(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response(
@@ -223,9 +239,10 @@ class TestFastPolicyNoOp:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_fast_policy_skips_output_filter(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -254,9 +271,10 @@ class TestStrictPolicyFull:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_strict_policy_all_nodes(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -286,9 +304,10 @@ class TestScannerResultsJSONB:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_scanner_results_populated(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -312,9 +331,10 @@ class TestNodeTimingsJSONB:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock)
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_node_timings_complete(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -339,9 +359,10 @@ class TestLoggingFailureGraceful:
     @patch(_PATCH_TRACE, new_callable=AsyncMock, return_value=None)
     @patch(_PATCH_LOG, new_callable=AsyncMock, side_effect=Exception("DB down"))
     @patch(_PATCH_LLM, new_callable=AsyncMock)
+    @patch(_PATCH_INTENT_DENYLIST, new_callable=AsyncMock, return_value=[])
     @patch(_PATCH_DENYLIST, new_callable=AsyncMock)
     async def test_logging_failure_doesnt_crash(
-        self, mock_denylist, mock_llm, mock_log, mock_trace, mock_spans
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace, mock_spans
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()

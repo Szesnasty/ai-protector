@@ -1,0 +1,141 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-python:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [proxy-service, agent-demo]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install ruff>=0.8.0
+      - name: Ruff check
+        run: ruff check apps/${{ matrix.app }}/
+      - name: Ruff format check
+        run: ruff format --check apps/${{ matrix.app }}/
+
+  lint-frontend:
+    name: Lint Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+      - run: npm ci
+      - run: npx eslint .
+
+  test-proxy:
+    name: Test Proxy Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/proxy-service
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: aip
+          POSTGRES_PASSWORD: aip_secret
+          POSTGRES_DB: aip
+        options: >-
+          --health-cmd="pg_isready -U aip"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        ports:
+          - 6379:6379
+    env:
+      DATABASE_URL: postgresql+asyncpg://aip:aip_secret@localhost:5432/aip
+      REDIS_URL: redis://localhost:6379/0
+      LLM_BACKEND_URL: http://localhost:11434
+      LANGFUSE_PUBLIC_KEY: test
+      LANGFUSE_SECRET_KEY: test
+      LANGFUSE_HOST: http://localhost:3001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest tests/ -v --tb=short -x
+
+  test-agent:
+    name: Test Agent Demo
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/agent-demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest tests/ -v --tb=short -x
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        env:
+          NUXT_PUBLIC_API_BASE: http://localhost:8000
+          NUXT_PUBLIC_AGENT_API_BASE: http://localhost:8002
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - { context: apps/proxy-service, tag: proxy }
+          - { context: apps/agent-demo, tag: agent }
+          - { context: apps/frontend, tag: frontend }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.service.tag }}
+        run: docker build -t ai-protector-${{ matrix.service.tag }}:ci ${{ matrix.service.context }}

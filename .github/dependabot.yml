@@ -1,0 +1,68 @@
+version: 2
+updates:
+  # Python — Proxy Service
+  - package-ecosystem: pip
+    directory: /apps/proxy-service
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - python
+
+  # Python — Agent Demo
+  - package-ecosystem: pip
+    directory: /apps/agent-demo
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - python
+
+  # npm — Frontend
+  - package-ecosystem: npm
+    directory: /apps/frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - javascript
+
+  # Docker — all Dockerfiles
+  - package-ecosystem: docker
+    directory: /apps/proxy-service
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+
+  - package-ecosystem: docker
+    directory: /apps/agent-demo
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+
+  - package-ecosystem: docker
+    directory: /apps/frontend
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - ci

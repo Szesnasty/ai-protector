@@ -110,6 +110,21 @@
   - [x] 20c — Playground integration (toggle, auto-send, chat input expose)
   - [x] 20d — Agent Demo integration (toggle, auto-send, chat input expose)
 
+## Phase 8: OSS Maturity
+
+- [x] **[Step 21 — OSS Maturity & Project Hygiene](21-oss-maturity/SPEC.md)**
+  Transform the repo into a credible open-source project: LICENSE, community files,
+  CI/CD, security scanning, Dependabot, badges, release tagging.
+  - [x] 21a — MIT License
+  - [x] 21b — Community files (CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, issue/PR templates)
+  - [x] 21c — GitHub Actions CI (ci.yml, codeql.yml, dependency-review.yml)
+  - [x] 21d — Dependabot configuration
+  - [x] 21e — Fix failing unit tests (13 tests — missing mocks + wrong DenylistHit types)
+  - [x] 21f — README badges (CI, CodeQL, License, Python, Nuxt)
+  - [ ] 21g — First release tag v0.1.0
+  - [ ] 21h — Branch protection rules (GitHub UI)
+  - [ ] 21i — Repository settings polish (topics, social preview, discussions)
+
 ---
 
 ## Progress
@@ -119,11 +134,12 @@
 | Foundation | 01–05 | 🟩 01 02 03 04 05 done |
 | Firewall Pipeline | 06–09 | 🟩 06 07 08 09 done |
 | Playground UI | 10 | 🟩 10 done |
-| Agent Demo | 11–13 | � 11 12 13 done |
-| Custom Rules | 14 | � 14a 14b 14c done |
-| Dashboard | 15–16 | � 15 16 done |
+| Agent Demo | 11–13 | 🟩 11 12 13 done |
+| Custom Rules | 14 | 🟩 14a 14b 14c done |
+| Dashboard | 15–16 | 🟩 15 16 done |
 | Enterprise Readiness | 17–19 | ⬜ Not started (specs written) |
 | Demo & Polish | 20 | 🟩 20 done |
+| OSS Maturity | 21 | 🟨 21a-f done, 21g-i pending (GitHub UI) |
 
 ---
 

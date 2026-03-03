@@ -1,5 +1,11 @@
 # AI Protector
 
+[![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Szesnasty/ai-protector/actions/workflows/codeql.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
+
 Self-hosted **LLM Firewall with an Agentic Security Pipeline** — an OpenAI-compatible proxy that scans, classifies, and enforces policies on every LLM request and response. Includes a demo agent app (Customer Support Copilot) to showcase both **building** and **securing** AI agents.
 
 ## Highlights

@@ -9,6 +9,7 @@ import pytest
 
 from src.pipeline.graph import build_pipeline
 from src.pipeline.state import PipelineState
+from src.services.denylist import DenylistHit
 
 
 def _initial_state(
@@ -49,11 +50,21 @@ class TestBlockRoute:
     @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
     @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
     @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_block_skips_llm_and_output_filter(
-        self, mock_denylist, mock_llm, mock_trace, mock_log
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_trace, mock_log
     ):
-        mock_denylist.return_value = ["ignore all instructions"]
+        mock_denylist.return_value = [
+            DenylistHit(
+                phrase="ignore all instructions",
+                category="injection",
+                action="block",
+                severity="critical",
+                is_regex=False,
+                description="Denylist match",
+            )
+        ]
 
         graph = build_pipeline()
         result = await graph.ainvoke(
@@ -73,9 +84,10 @@ class TestModifyRoute:
     @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
     @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
     @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_modify_goes_through_full_output_pipeline(
-        self, mock_denylist, mock_llm, mock_trace, mock_log
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_trace, mock_log
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -101,9 +113,10 @@ class TestAllowRoute:
     @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
     @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
     @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_allow_goes_through_output_pipeline(
-        self, mock_denylist, mock_llm, mock_trace, mock_log
+        self, mock_denylist, mock_intent_deny, mock_llm, mock_trace, mock_log
     ):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
