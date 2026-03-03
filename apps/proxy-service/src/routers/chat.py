@@ -160,6 +160,9 @@ async def chat_completions(
             risk_flags=pre_result.get("risk_flags"),
             risk_score=pre_result.get("risk_score", 0.0),
             decision=pre_result.get("decision", "ALLOW"),
+            blocked_reason=pre_result.get("blocked_reason"),
+            scanner_results=pre_result.get("scanner_results"),
+            node_timings=pre_result.get("node_timings"),
         )
         return StreamingResponse(
             generator,

@@ -63,6 +63,8 @@ async def log_request(
     latency_ms: int = 0,
     tokens_in: int | None = None,
     tokens_out: int | None = None,
+    scanner_results: dict | None = None,
+    node_timings: dict | None = None,
 ) -> None:
     """Write an audit row to the requests table.
 
@@ -89,6 +91,8 @@ async def log_request(
             latency_ms=latency_ms,
             tokens_in=tokens_in,
             tokens_out=tokens_out,
+            scanner_results=scanner_results or {},
+            node_timings=node_timings or {},
         )
 
         async with async_session() as session:

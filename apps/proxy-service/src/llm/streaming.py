@@ -13,6 +13,7 @@ from src.schemas.chat import (
     ChatCompletionChunkChoice,
     ChatCompletionChunkDelta,
 )
+from src.services.request_logger import log_request
 
 logger = structlog.get_logger()
 
@@ -30,11 +31,14 @@ async def sse_stream(
     risk_flags: dict | None = None,
     risk_score: float = 0.0,
     decision: str = "ALLOW",
+    blocked_reason: str | None = None,
+    scanner_results: dict | None = None,
+    node_timings: dict | None = None,
 ) -> AsyncGenerator[str, None]:
     """Convert LiteLLM streaming response to SSE-formatted chunks.
 
     Yields ``data: {json}\\n\\n`` per token, ending with ``data: [DONE]\\n\\n``.
-    After the stream completes, fires a background request-log task.
+    After the stream completes, writes audit log to Postgres.
     """
     created = int(time.time())
     token_count = 0
@@ -70,3 +74,23 @@ async def sse_stream(
 
     latency_ms = int((time.perf_counter() - start_time) * 1000) if start_time else 0
     logger.info("stream_complete", request_id=request_id, model=model, approx_tokens=token_count, latency_ms=latency_ms)
+
+    # ── Audit log to Postgres ─────────────────────────────────────
+    try:
+        await log_request(
+            client_id=client_id,
+            policy_name=policy_name,
+            model=model,
+            messages=messages or [],
+            decision=decision,
+            blocked_reason=blocked_reason,
+            intent=intent,
+            risk_flags=risk_flags,
+            risk_score=risk_score,
+            latency_ms=latency_ms,
+            tokens_out=token_count,
+            scanner_results=scanner_results,
+            node_timings=node_timings,
+        )
+    except Exception:
+        logger.exception("stream_audit_log_failed")
