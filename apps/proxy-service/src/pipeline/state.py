@@ -46,6 +46,10 @@ class PipelineState(TypedDict, total=False):
     tokens_out: int | None
     latency_ms: int | None
 
+    # ── Output filtering (set by OutputFilterNode) ────────────────────
+    output_filtered: bool  # True if output was modified
+    output_filter_results: dict  # {"pii_redacted": N, "secrets_redacted": N, "system_leak": bool}
+
     # ── Metadata ──────────────────────────────────────────────────────
     node_timings: dict[str, float]  # {"parse": 1.2, "intent": 45.3} (ms)
     errors: list[str]  # Non-fatal errors from nodes
