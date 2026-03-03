@@ -123,3 +123,64 @@ export interface RuleTestResult {
   description: string
   match_details: string | null
 }
+
+// ─── Request Log ───
+export interface RequestRead {
+  id: string
+  client_id: string
+  policy_id: string
+  policy_name: string
+  intent: string | null
+  prompt_preview: string | null
+  decision: 'ALLOW' | 'MODIFY' | 'BLOCK'
+  risk_score: number | null
+  risk_flags: Record<string, unknown> | null
+  latency_ms: number | null
+  model_used: string | null
+  tokens_in: number | null
+  tokens_out: number | null
+  blocked_reason: string | null
+  response_masked: boolean | null
+  created_at: string
+}
+
+export interface RequestDetail extends RequestRead {
+  prompt_hash: string | null
+  scanner_results: Record<string, unknown> | null
+  output_filter_results: Record<string, unknown> | null
+  node_timings: Record<string, number> | null
+}
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
+}
+
+export interface RequestFilters {
+  decision: string | null
+  policy_id: string | null
+  intent: string | null
+  risk_min: number | null
+  risk_max: number | null
+  search: string | null
+  from: string | null
+  to: string | null
+}
+
+// ─── Policy mutations ───
+export interface PolicyCreate {
+  name: string
+  description?: string
+  config?: Record<string, unknown>
+  is_active?: boolean
+}
+
+export interface PolicyUpdate {
+  name?: string
+  description?: string
+  config?: Record<string, unknown>
+  is_active?: boolean
+}

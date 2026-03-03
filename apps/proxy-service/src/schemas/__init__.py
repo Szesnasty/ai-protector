@@ -14,7 +14,7 @@ from src.schemas.chat import (
 )
 from src.schemas.health import HealthResponse, ServiceHealth
 from src.schemas.policy import PolicyBase, PolicyCreate, PolicyRead, PolicyUpdate
-from src.schemas.request import RequestRead
+from src.schemas.request import PaginatedResponse, RequestDetail, RequestRead
 from src.schemas.rule import (
     RuleAction,
     RuleBulkImport,
@@ -41,6 +41,8 @@ __all__ = [
     "PolicyCreate",
     "PolicyRead",
     "PolicyUpdate",
+    "PaginatedResponse",
+    "RequestDetail",
     "RequestRead",
     "RuleAction",
     "RuleBulkImport",
