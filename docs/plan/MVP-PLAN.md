@@ -41,7 +41,7 @@
 
 ## Phase 3: Agent Demo (week 5–6)
 
-- [ ] **[Step 11 — Agent Demo App](11-agent-demo-app/SPEC.md)**
+- [x] **[Step 11 — Agent Demo App](11-agent-demo-app/SPEC.md)**
   LangGraph agent: IntentClassifier → PolicyCheck → ToolRouter, 3 tools, role-based access
 
 - [ ] **[Step 12 — Agent ↔ Firewall Integration](12-agent-firewall-integration/SPEC.md)**
@@ -78,7 +78,7 @@
 | Foundation | 01–05 | 🟩 01 02 03 04 05 done |
 | Firewall Pipeline | 06–09 | 🟩 06 07 08 09 done |
 | Playground UI | 10 | 🟩 10 done |
-| Agent Demo | 11–13 | ⬜ Specs ready |
+| Agent Demo | 11–13 | 🟨 11 done, 12-13 pending |
 | Dashboard | 14–15 | ⬜ Not started |
 | Harden & Ship | 16–18 | ⬜ Not started |
 

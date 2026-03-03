@@ -277,16 +277,16 @@ curl -s http://localhost:8002/agent/chat \
 ```
 
 ### Checklist
-- [ ] `apps/agent-demo/src/main.py` starts on port 8002
-- [ ] `GET /health` returns `200`
-- [ ] `AgentState` TypedDict defined with all fields
-- [ ] LangGraph graph compiles and runs end-to-end
-- [ ] 3 tools implemented with mock data
-- [ ] RBAC: customer cannot access `getInternalSecrets`
-- [ ] IntentNode classifies at least 4 intent categories
-- [ ] Session memory persists across calls with same `session_id`
-- [ ] `POST /agent/chat` returns structured response with `tools_called` and `agent_trace`
-- [ ] All tests pass
+- [x] `apps/agent-demo/src/main.py` starts on port 8002
+- [x] `GET /health` returns `200`
+- [x] `AgentState` TypedDict defined with all fields
+- [x] LangGraph graph compiles and runs end-to-end
+- [x] 3 tools implemented with mock data
+- [x] RBAC: customer cannot access `getInternalSecrets`
+- [x] IntentNode classifies at least 4 intent categories
+- [x] Session memory persists across calls with same `session_id`
+- [x] `POST /agent/chat` returns structured response with `tools_called` and `agent_trace`
+- [x] All tests pass
 
 ---
 
