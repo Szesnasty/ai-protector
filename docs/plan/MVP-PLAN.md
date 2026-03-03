@@ -19,8 +19,8 @@
 - [x] **[Step 04 — Basic LLM Proxy](04-basic-llm-proxy/SPEC.md)**
   `POST /v1/chat/completions` passthrough to Ollama via LiteLLM, streaming support
 
-- [ ] **Step 05 — Frontend Foundation**
-  Nuxt 4 + Vuetify 3 shell: layout, navigation drawer, dark/light theme, health indicator
+- [ ] **[Step 05 — Frontend Foundation](05-frontend-foundation/SPEC.md)**
+  Nuxt 4 + Vuetify 4 shell: layout, navigation drawer, dark/light theme, health indicator, Axios + Vue Query API layer
 
 ## Phase 2: Firewall Pipeline (week 3–4)
 
@@ -36,7 +36,7 @@
 - [x] **[Step 09 — Output Pipeline](09-output-pipeline/SPEC.md)**
   OutputFilterNode (PII/secrets/leak redaction), MemoryHygieneNode, LoggingNode (Postgres + Langfuse), graph integration
 
-- [ ] **Step 10 — Frontend: Playground**
+- [ ] **[Step 10 — Frontend: Playground](10-playground-ui/SPEC.md)**
   Chat UI with streaming, policy selector, debug panel (decision, intent, risk, flags)
 
 ## Phase 3: Agent Demo (week 5–6)
