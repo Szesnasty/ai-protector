@@ -98,3 +98,48 @@ async def log_request(
         logger.debug("request_logged", client_id=row.client_id, decision=decision)
     except Exception:
         logger.exception("log_request_failed")
+
+
+async def log_request_from_state(state: dict) -> None:
+    """Write audit row from full pipeline state.
+
+    Replaces the old ``log_request()`` for pipeline-integrated logging.
+    The old function is kept for backward compatibility with the chat router.
+    """
+    try:
+        policy_id = await _resolve_policy_id(state.get("policy_name", "balanced"))
+        if policy_id is None:
+            logger.warning("log_request_unknown_policy", policy=state.get("policy_name"))
+            return
+
+        row = Request(
+            client_id=state.get("client_id") or "anonymous",
+            policy_id=policy_id,
+            model_used=state.get("model"),
+            prompt_hash=state.get("prompt_hash"),
+            prompt_preview=_prompt_preview(state.get("messages", [])),
+            decision=state.get("decision", "ALLOW"),
+            blocked_reason=state.get("blocked_reason"),
+            intent=state.get("intent"),
+            risk_flags=state.get("risk_flags", {}),
+            risk_score=state.get("risk_score", 0.0),
+            latency_ms=state.get("latency_ms", 0),
+            tokens_in=state.get("tokens_in"),
+            tokens_out=state.get("tokens_out"),
+            response_masked=state.get("response_masked", False),
+            scanner_results=state.get("scanner_results", {}),
+            output_filter_results=state.get("output_filter_results", {}),
+            node_timings=state.get("node_timings", {}),
+        )
+
+        async with async_session() as session:
+            session.add(row)
+            await session.commit()
+
+        logger.debug(
+            "request_logged_from_state",
+            client_id=row.client_id,
+            decision=row.decision,
+        )
+    except Exception:
+        logger.exception("log_request_from_state_failed")

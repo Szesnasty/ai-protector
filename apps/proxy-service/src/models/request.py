@@ -35,6 +35,9 @@ class Request(UUIDMixin, Base):
     tokens_out: Mapped[int | None] = mapped_column(Integer, nullable=True)
     blocked_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     response_masked: Mapped[bool | None] = mapped_column(nullable=True, default=False)
+    scanner_results: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    output_filter_results: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    node_timings: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

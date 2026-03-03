@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     presidio_score_threshold: float = 0.4
     presidio_spacy_model: str = "en_core_web_sm"  # en_core_web_lg for prod
 
+    # Langfuse tracing
+    enable_langfuse: bool = True
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
