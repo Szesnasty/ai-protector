@@ -21,6 +21,7 @@ from src.routers.health import router as health_router
 from src.routers.policies import router as policies_router
 from src.routers.requests import router as requests_router
 from src.routers.rules import router as rules_router
+from src.routers.scenarios import router as scenarios_router
 from src.schemas.chat import ErrorDetail, ErrorResponse
 
 logger = structlog.get_logger()
@@ -79,6 +80,7 @@ app.include_router(analytics_router, prefix="/v1")
 app.include_router(policies_router, prefix="/v1")
 app.include_router(requests_router, prefix="/v1")
 app.include_router(rules_router, prefix="/v1")
+app.include_router(scenarios_router, prefix="/v1")
 
 
 # -- Exception handlers --

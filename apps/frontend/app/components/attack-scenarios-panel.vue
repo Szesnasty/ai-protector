@@ -59,8 +59,13 @@
 
       <!-- Scenario groups -->
       <div class="attack-panel__body">
+        <!-- Loading state -->
+        <div v-if="loading" class="pa-4">
+          <v-skeleton-loader v-for="i in 4" :key="i" type="list-item-two-line" class="mb-2" />
+        </div>
+
         <v-expansion-panels
-          v-if="filteredGroups.length"
+          v-if="!loading && filteredGroups.length"
           v-model="expandedPanels"
           multiple
         >
@@ -119,7 +124,7 @@
         </v-expansion-panels>
 
         <!-- Empty state -->
-        <div v-else class="attack-panel__empty">
+        <div v-else-if="!loading" class="attack-panel__empty">
           <v-icon size="32" color="grey">mdi-magnify-close</v-icon>
           <p class="text-body-2 text-grey mt-2">No matching scenarios</p>
           <v-btn
@@ -146,6 +151,7 @@ const ATTACK_SUBMIT_DELAY_MS = 300
 const props = defineProps<{
   scenarios: ScenarioGroup[]
   modelValue: boolean
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
