@@ -72,16 +72,30 @@
   - [x] [16b — KPI Cards & Timeline](16-analytics/16b-kpi-timeline.md)
   - [x] [16c — Breakdown Panels](16-analytics/16c-breakdowns.md)
 
-## Phase 6: Harden & Ship (week 7–8)
+## Phase 6: Enterprise Readiness (week 7–8)
 
-- [ ] **Step 17 — MLJudge & Advanced Scanners**
-  MLJudgeNode (LLM-as-judge via Ollama), NeMo Guardrails integration, canary tokens
+- [ ] **[Step 17 — Observe / Simulate Mode](17-observe-simulate/SPEC.md)**
+  Per-policy observe mode: pipeline runs fully but BLOCK → ALLOW; logs `original_decision` for audit.
+  Shows enterprise deployment maturity — teams validate policies on live traffic before enforcing.
+  - [ ] 17a — Policy model `mode` column + migration
+  - [ ] 17b — Pipeline mode-gate node (after decision)
+  - [ ] 17c — Request model: `original_decision` + `mode` columns, API filters
+  - [ ] 17d — Frontend: policy toggle, "would block" chips, observe analytics
 
-- [ ] **Step 18 — Rate Limiting & Caching**
-  Redis rate limiting, decision caching for repeated prompts
+- [ ] **[Step 18 — Explainability](18-explainability/SPEC.md)**
+  Structured explanation for every decision: which rules matched, which scanners triggered,
+  per-signal risk breakdown, threshold comparison. Critical for compliance & developer trust.
+  - [ ] 18a — ExplainNode + decomposed `calculate_risk_breakdown()`
+  - [ ] 18b — `explanation` JSONB column, persistence, API
+  - [ ] 18c — Frontend: risk breakdown bar, matched rules, threshold gauge
 
-- [ ] **Step 19 — Docs & Demo**
-  `securing-agents.md` (Level 0/1/2), README with setup guide, screenshots, demo GIF
+- [ ] **[Step 19 — Replay Requests](19-replay-requests/SPEC.md)**
+  Click any log entry → replay through pipeline with different policy/model → side-by-side
+  comparison of decisions. Zero LLM cost (pre-LLM pipeline only). Powerful for policy tuning.
+  - [ ] 19a — `POST /v1/requests/{id}/replay` endpoint + comparison schema
+  - [ ] 19b — `messages_json` persistence in Request model (opt-in)
+  - [ ] 19c — Comparison builder with delta computation
+  - [ ] 19d — Frontend: replay dialog, side-by-side diff view
 
 ---
 
@@ -95,7 +109,7 @@
 | Agent Demo | 11–13 | � 11 12 13 done |
 | Custom Rules | 14 | � 14a 14b 14c done |
 | Dashboard | 15–16 | � 15 16 done |
-| Harden & Ship | 17–19 | ⬜ Not started |
+| Enterprise Readiness | 17–19 | ⬜ Not started |
 
 ---
 
