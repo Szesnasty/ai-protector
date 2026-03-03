@@ -17,27 +17,7 @@
       </template>
     </v-app-bar>
 
-    <v-navigation-drawer
-      v-model="drawer"
-      :rail="rail"
-      permanent
-      class="d-none d-md-flex"
-    >
-      <v-list-item
-        title="AI Protector"
-        subtitle="LLM Firewall"
-        prepend-icon="mdi-shield-check"
-        nav
-      />
-      <v-divider />
-      <app-nav-drawer />
-    </v-navigation-drawer>
-
-    <v-navigation-drawer
-      v-model="drawer"
-      temporary
-      class="d-md-none"
-    >
+    <v-navigation-drawer v-model="drawer">
       <v-list-item
         title="AI Protector"
         subtitle="LLM Firewall"
@@ -59,7 +39,6 @@ import { ref } from 'vue'
 import { useAppTheme } from '~/composables/useAppTheme'
 
 const drawer = ref(true)
-const rail = ref(false)
 const { isDark, toggle } = useAppTheme()
 </script>
 

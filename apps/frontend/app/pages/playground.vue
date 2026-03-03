@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="playground-page pa-0">
-    <v-row no-gutters class="playground-page__row">
+    <v-row class="playground-page__row" style="margin: 0; gap: 0;">
       <v-col cols="12" md="8" lg="9" class="playground-page__chat">
         <playground-chat-message-list
           :messages="messages"

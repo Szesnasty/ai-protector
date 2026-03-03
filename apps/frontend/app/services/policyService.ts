@@ -3,6 +3,6 @@ import type { Policy } from '~/types/api'
 
 export const policyService = {
   listActive: (): Promise<Policy[]> =>
-    api.get<Policy[]>('/v1/policies', { params: { active_only: true } })
+    api.get<Policy[]>('/v1/policies')
       .then((r) => r.data),
 }
