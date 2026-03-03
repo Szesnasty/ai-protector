@@ -24,7 +24,7 @@
     "vue-router": "^4.6.4",
     "vuetify": "^4.0.0",
     "vuetify-nuxt-module": "^0.19.5",
-    "zod": "^4.3.6"
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
