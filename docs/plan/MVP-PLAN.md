@@ -53,7 +53,10 @@
 ## Phase 4: Custom Security Rules (week 6)
 
 - [ ] **[Step 14 — Custom Security Rules](14-custom-security-rules/SPEC.md)**
-  Rules CRUD API (action: block/flag/score_boost, severity), intent-aware matching, bulk import/export, frontend Rules Editor
+  OWASP LLM Top 10 + PII/PL preset categories, rules CRUD API, pipeline integration, frontend Rules Editor
+  - [ ] [14a — Model, Migration & CRUD API](14-custom-security-rules/14a-model-migration-crud.md)
+  - [ ] [14b — Pipeline Integration](14-custom-security-rules/14b-pipeline-integration.md)
+  - [ ] [14c — Frontend Rules Editor](14-custom-security-rules/14c-frontend-rules-editor.md)
 
 ## Phase 5: Dashboard & Data (week 7)
 
@@ -83,8 +86,8 @@
 | Foundation | 01–05 | 🟩 01 02 03 04 05 done |
 | Firewall Pipeline | 06–09 | 🟩 06 07 08 09 done |
 | Playground UI | 10 | 🟩 10 done |
-| Agent Demo | 11–13 | 🟨 11 done, 12-13 pending |
-| Custom Rules | 14 | ⬜ Spec ready |
+| Agent Demo | 11–13 | � 11 12 13 done |
+| Custom Rules | 14 | 🔜 14a 14b 14c — spec ready, next |
 | Dashboard | 15–16 | ⬜ Not started |
 | Harden & Ship | 17–19 | ⬜ Not started |
 

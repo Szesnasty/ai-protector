@@ -1,6 +1,6 @@
 # AI Protector — MVP Implementation Diagram
 
-> 18 steps across 5 phases. Each step builds on the previous.
+> 19 steps across 6 phases. Each step builds on the previous.
 > ✅ = done, 🔜 = next, ⬜ = planned.
 
 ---
@@ -10,23 +10,30 @@
 ```
  Phase 1: Foundation          Phase 2: Firewall Pipeline       Phase 3: Agent Demo
 ┌─────────────────────┐     ┌──────────────────────────┐     ┌─────────────────────────┐
-│ ✅ 01  Scaffolding   │     │ ✅ 06  Pipeline Core      │     │ ⬜ 11  Agent Demo App    │
-│ ✅ 02  Infrastructure│────▶│ ✅ 07  Security Scanners  │────▶│ ⬜ 12  Agent ↔ Firewall  │
-│ ✅ 03  Proxy Service │     │ ✅ 08  Policy Engine      │     │ ⬜ 13  Agent Demo UI     │
+│ ✅ 01  Scaffolding   │     │ ✅ 06  Pipeline Core      │     │ ✅ 11  Agent Demo App    │
+│ ✅ 02  Infrastructure│────▶│ ✅ 07  Security Scanners  │────▶│ ✅ 12  Agent ↔ Firewall  │
+│ ✅ 03  Proxy Service │     │ ✅ 08  Policy Engine      │     │ ✅ 13  Agent Demo UI     │
 │ ✅ 04  LLM Proxy     │     │ ✅ 09  Output Pipeline    │     └─────────────────────────┘
-│ ⬜ 05  Frontend Shell│     │ 🔜 10  Playground UI      │               │
+│ ✅ 05  Frontend Shell│     │ ✅ 10  Playground UI      │               │
 └─────────────────────┘     └──────────────────────────┘               ▼
-                                                           Phase 4: Dashboard & Data
+                                                          Phase 4: Custom Security Rules
                                                           ┌─────────────────────────┐
-                                                          │ ⬜ 14  Policies & Log UI │
-                                                          │ ⬜ 15  Analytics          │
+                                                          │ 🔜 14a Model & CRUD API │
+                                                          │ ⬜ 14b Pipeline Integr.  │
+                                                          │ ⬜ 14c Frontend Editor   │
                                                           └────────────┬────────────┘
                                                                        ▼
-                                                            Phase 5: Harden & Ship
+                                                          Phase 5: Dashboard & Data
                                                           ┌─────────────────────────┐
-                                                          │ ⬜ 16  MLJudge + NeMo    │
-                                                          │ ⬜ 17  Rate Limit/Cache  │
-                                                          │ ⬜ 18  Docs & Demo       │
+                                                          │ ⬜ 15  Policies & Log UI │
+                                                          │ ⬜ 16  Analytics          │
+                                                          └────────────┬────────────┘
+                                                                       ▼
+                                                            Phase 6: Harden & Ship
+                                                          ┌─────────────────────────┐
+                                                          │ ⬜ 17  MLJudge + NeMo    │
+                                                          │ ⬜ 18  Rate Limit/Cache  │
+                                                          │ ⬜ 19  Docs & Demo       │
                                                           └─────────────────────────┘
 ```
 
@@ -42,7 +49,7 @@
 | 02 | **Infrastructure** | Docker Compose: PostgreSQL 16, Redis 7, Ollama, Langfuse — one `docker compose up` | ✅ Done |
 | 03 | **Proxy Service Foundation** | FastAPI skeleton, SQLAlchemy models, Alembic migrations, health endpoint, seed data | ✅ Done |
 | 04 | **Basic LLM Proxy** | `POST /v1/chat/completions` → Ollama via LiteLLM, SSE streaming, request logging | ✅ Done |
-| 05 | **Frontend Shell** | Nuxt 4 + Vuetify 3 layout, navigation drawer, dark/light theme, health indicator | ⬜ Planned |
+| 05 | **Frontend Shell** | Nuxt 4 + Vuetify 3 layout, navigation drawer, dark/light theme, health indicator | ✅ Done |
 
 ### Phase 2: Firewall Pipeline ✅
 
@@ -52,30 +59,38 @@
 | 07 | **Security Scanners** | LLM Guard (injection, toxicity, secrets) + Presidio PII detection, parallel execution | ✅ Done |
 | 08 | **Policy Engine** | `PolicyDecisionNode`, 4 levels (fast/balanced/strict/paranoid), CRUD API + Redis cache | ✅ Done |
 | 09 | **Output Pipeline** | `OutputFilterNode` (PII/secrets/leak redaction), `MemoryHygiene`, `LoggingNode` (Postgres + Langfuse) | ✅ Done |
-| 10 | **Playground UI** | Chat interface with streaming, policy selector, debug panel (decision, intent, risk) | 🔜 Next |
+| 10 | **Playground UI** | Chat interface with streaming, policy selector, debug panel (decision, intent, risk) | ✅ Done |
 
-### Phase 3: Agent Demo ⬜
-
-| Step | Name | What it does | Status |
-|------|------|-------------|--------|
-| 11 | **Agent Demo App** | LangGraph agent: `IntentClassifier → PolicyCheck → ToolRouter`, 3 tools, RBAC | ⬜ Planned |
-| 12 | **Agent ↔ Firewall** | Agent calls `proxy-service` via LiteLLM, session memory, mock KB + orders | ⬜ Planned |
-| 13 | **Agent Demo UI** | Copilot chat, role selector, tool call annotations, agent trace panel | ⬜ Planned |
-
-### Phase 4: Dashboard & Data ⬜
+### Phase 3: Agent Demo ✅
 
 | Step | Name | What it does | Status |
 |------|------|-------------|--------|
-| 14 | **Policies & Log UI** | Policies CRUD interface, request log with pagination, filters, expandable rows | ⬜ Planned |
-| 15 | **Analytics** | KPI cards, timeline chart, block rate by policy, top risk flags, intent distribution | ⬜ Planned |
+| 11 | **Agent Demo App** | LangGraph agent: `IntentClassifier → PolicyCheck → ToolRouter`, 3 tools, RBAC | ✅ Done |
+| 12 | **Agent ↔ Firewall** | Agent calls `proxy-service` via LiteLLM, session memory, mock KB + orders | ✅ Done |
+| 13 | **Agent Demo UI** | Copilot chat, role selector, tool call annotations, agent trace panel | ✅ Done |
 
-### Phase 5: Harden & Ship ⬜
+### Phase 4: Custom Security Rules 🔜
 
 | Step | Name | What it does | Status |
 |------|------|-------------|--------|
-| 16 | **MLJudge + NeMo** | `MLJudgeNode` (LLM-as-judge via Ollama), NeMo Guardrails integration, canary tokens | ⬜ Planned |
-| 17 | **Rate Limit & Cache** | Redis rate limiting, decision caching for repeated prompts | ⬜ Planned |
-| 18 | **Docs & Demo** | `securing-agents.md` (Level 0/1/2), README with setup, screenshots, demo GIF | ⬜ Planned |
+| 14a | **Model & CRUD API** | SecurityRule ORM, Alembic migration, OWASP LLM Top 10 + PII/PL seed categories, REST CRUD | 🔜 Next |
+| 14b | **Pipeline Integration** | RulesNode reads custom rules, DenylistHit, flag/score_boost, intent override | ⬜ Planned |
+| 14c | **Frontend Rules Editor** | Presets dropdown, auto-fill, data table, filters, create/edit/delete dialogs | ⬜ Planned |
+
+### Phase 5: Dashboard & Data ⬜
+
+| Step | Name | What it does | Status |
+|------|------|-------------|--------|
+| 15 | **Policies & Log UI** | Policies CRUD interface, request log with pagination, filters, expandable rows | ⬜ Planned |
+| 16 | **Analytics** | KPI cards, timeline chart, block rate by policy, top risk flags, intent distribution | ⬜ Planned |
+
+### Phase 6: Harden & Ship ⬜
+
+| Step | Name | What it does | Status |
+|------|------|-------------|--------|
+| 17 | **MLJudge + NeMo** | `MLJudgeNode` (LLM-as-judge via Ollama), NeMo Guardrails integration, canary tokens | ⬜ Planned |
+| 18 | **Rate Limit & Cache** | Redis rate limiting, decision caching for repeated prompts | ⬜ Planned |
+| 19 | **Docs & Demo** | `securing-agents.md` (Level 0/1/2), README with setup, screenshots, demo GIF | ⬜ Planned |
 
 ---
 
