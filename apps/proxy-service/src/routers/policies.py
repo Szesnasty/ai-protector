@@ -6,18 +6,40 @@ import uuid
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db, get_redis
 from src.models.policy import Policy
 from src.schemas.policy import PolicyCreate, PolicyRead, PolicyUpdate
+from src.schemas.policy_config import PolicyConfigSchema
 
 logger = structlog.get_logger()
 
 router = APIRouter(tags=["policies"])
 
 BUILTIN_POLICIES = frozenset({"fast", "balanced", "strict", "paranoid"})
+
+
+def _validate_config(config: dict) -> None:
+    """Validate a policy config dict against PolicyConfigSchema.
+
+    Raises HTTPException(422) with Pydantic error details on failure.
+    """
+    try:
+        PolicyConfigSchema(**config)
+    except ValidationError as exc:
+        # Convert to JSON-safe dicts (Pydantic v2 errors may contain non-serializable objs)
+        errors = [
+            {
+                "loc": list(e.get("loc", [])),
+                "msg": e.get("msg", ""),
+                "type": e.get("type", ""),
+            }
+            for e in exc.errors()
+        ]
+        raise HTTPException(status_code=422, detail=errors) from exc
 
 
 async def _invalidate_policy_cache(policy_name: str) -> None:
@@ -60,6 +82,9 @@ async def create_policy(
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> PolicyRead:
     """Create a new policy."""
+    # Validate config structure
+    _validate_config(body.config)
+
     existing = await db.execute(select(Policy).where(Policy.name == body.name))
     if existing.scalar_one_or_none():
         raise HTTPException(
@@ -87,6 +112,10 @@ async def update_policy(
     update_data = body.model_dump(exclude_unset=True)
     if not update_data:
         return policy
+
+    # Validate config if provided
+    if "config" in update_data:
+        _validate_config(update_data["config"])
 
     old_name = policy.name
     for key, value in update_data.items():

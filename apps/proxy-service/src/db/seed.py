@@ -15,7 +15,7 @@ DEFAULT_POLICIES = [
         "name": "fast",
         "description": "Minimal checks — rules only. High throughput, trusted clients.",
         "config": {
-            "nodes": ["parse", "intent", "rules", "decision", "llm", "basic_output", "logging"],
+            "nodes": [],
             "thresholds": {"max_risk": 0.9},
         },
     },
@@ -23,10 +23,7 @@ DEFAULT_POLICIES = [
         "name": "balanced",
         "description": "Default — rules + LLM Guard + output filter + memory hygiene.",
         "config": {
-            "nodes": [
-                "parse", "intent", "rules", "llm_guard", "decision",
-                "transform", "llm", "output_filter", "memory_hygiene", "logging",
-            ],
+            "nodes": ["llm_guard", "output_filter", "memory_hygiene", "logging"],
             "thresholds": {"max_risk": 0.7, "injection_threshold": 0.5},
         },
     },
@@ -35,8 +32,8 @@ DEFAULT_POLICIES = [
         "description": "Full pipeline — adds Presidio PII + ML Judge.",
         "config": {
             "nodes": [
-                "parse", "intent", "rules", "llm_guard", "presidio", "ml_judge",
-                "decision", "transform", "llm", "output_filter", "memory_hygiene", "logging",
+                "llm_guard", "presidio", "ml_judge",
+                "output_filter", "memory_hygiene", "logging",
             ],
             "thresholds": {"max_risk": 0.5, "injection_threshold": 0.3, "pii_action": "mask"},
         },
@@ -46,8 +43,8 @@ DEFAULT_POLICIES = [
         "description": "Maximum security — canary tokens + full audit logging.",
         "config": {
             "nodes": [
-                "parse", "intent", "rules", "llm_guard", "presidio", "ml_judge",
-                "decision", "canary", "transform", "llm", "output_filter", "memory_hygiene", "logging",
+                "llm_guard", "presidio", "ml_judge",
+                "canary", "output_filter", "memory_hygiene", "logging",
             ],
             "thresholds": {
                 "max_risk": 0.3,
@@ -73,7 +70,12 @@ async def seed_policies() -> None:
                 session.add(policy)
                 logger.info("seed_policy_created", name=policy_data["name"])
             else:
-                logger.debug("seed_policy_exists", name=policy_data["name"])
+                # Update config to latest seed definition
+                if existing.config != policy_data["config"]:
+                    existing.config = policy_data["config"]
+                    logger.info("seed_policy_config_updated", name=policy_data["name"])
+                else:
+                    logger.debug("seed_policy_exists", name=policy_data["name"])
 
         await session.commit()
     logger.info("seed_policies_done", count=len(DEFAULT_POLICIES))
