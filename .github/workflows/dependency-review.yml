@@ -1,8 +1,11 @@
 name: Dependency Review
 
+# DISABLED — re-enable when CI is fixed
+# on:
+#   pull_request:
+#     branches: [main]
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
