@@ -49,6 +49,8 @@ export default defineNuxtConfig({
     public: {
       apiBase: 'http://localhost:8000',
       agentApiBase: 'http://localhost:8002',
+      openaiApiBase: 'https://api.openai.com',
+      mistralApiBase: 'https://api.mistral.ai',
     },
   },
 

@@ -20,7 +20,7 @@ import {
   streamChat,
   streamChatDirect,
   supportsDirectBrowserCall,
-  PROVIDER_API_BASES,
+  getProviderApiBases,
   extractPipelineDecision,
   extractBlockDecision,
 } from '~/services/chatService'
@@ -66,7 +66,7 @@ export function useCompareChat() {
   const directEndpointUrl = computed(() => {
     if (!config.model) return ''
     const p = detectProviderClient(config.model)
-    const base = PROVIDER_API_BASES[p]
+    const base = getProviderApiBases()[p]
     return base ? `${base}/v1/chat/completions` : '/v1/chat/direct'
   })
 

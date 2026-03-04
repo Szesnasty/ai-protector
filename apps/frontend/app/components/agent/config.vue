@@ -31,8 +31,7 @@
         <template #item="{ item, props: itemProps }">
           <v-list-item
             v-bind="itemProps"
-            :disabled="item.raw.disabled"
-            :subtitle="item.raw.disabled ? 'Add key in Settings' : item.raw.providerLabel"
+            :subtitle="item.raw.providerLabel"
           />
         </template>
       </v-select>
@@ -99,13 +98,15 @@ const PROVIDER_LABELS: Record<string, string> = {
   ollama: 'Ollama (local)',
 }
 
+/** Only show models that are available (Ollama always + providers with key). */
 const modelItems = computed(() =>
-  (groupedModels.value ?? []).map((m) => ({
-    title: m.name,
-    value: m.id,
-    disabled: !m.available,
-    providerLabel: PROVIDER_LABELS[m.provider] ?? m.provider,
-  })),
+  (groupedModels.value ?? [])
+    .filter((m) => m.available)
+    .map((m) => ({
+      title: m.name,
+      value: m.id,
+      providerLabel: PROVIDER_LABELS[m.provider] ?? m.provider,
+    })),
 )
 
 const policyItems = computed(() =>

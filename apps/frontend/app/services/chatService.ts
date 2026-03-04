@@ -25,14 +25,20 @@ export const chatService = {
  * browser — completely bypassing the AI Protector proxy — to prove
  * the raw model accepts prompts that AI Protector would block.
  */
-export const PROVIDER_API_BASES: Record<string, string> = {
-  openai: 'https://api.openai.com',
-  mistral: 'https://api.mistral.ai',
+/**
+ * Build provider → base URL map from runtime env vars.
+ * Override via NUXT_PUBLIC_OPENAI_API_BASE / NUXT_PUBLIC_MISTRAL_API_BASE.
+ */
+export function getProviderApiBases(): Record<string, string> {
+  return {
+    openai: (import.meta.env.NUXT_PUBLIC_OPENAI_API_BASE as string) ?? 'https://api.openai.com',
+    mistral: (import.meta.env.NUXT_PUBLIC_MISTRAL_API_BASE as string) ?? 'https://api.mistral.ai',
+  }
 }
 
 /** True if the provider supports direct browser → API calls. */
 export function supportsDirectBrowserCall(provider: string): boolean {
-  return provider in PROVIDER_API_BASES
+  return provider in getProviderApiBases()
 }
 
 // ─── Streaming (SSE via fetch) ───
@@ -154,7 +160,8 @@ export async function streamChatDirect(
 ): Promise<Response> {
   const model = options.body.model ?? ''
   const provider = detectProviderClient(model)
-  const base = PROVIDER_API_BASES[provider]
+  const bases = getProviderApiBases()
+  const base = bases[provider]
   const key = getKey(provider)
 
   if (!base) {

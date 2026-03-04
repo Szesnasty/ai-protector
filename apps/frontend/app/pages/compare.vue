@@ -34,8 +34,7 @@
           <template #item="{ item, props: itemProps }">
             <v-list-item
               v-bind="itemProps"
-              :disabled="item.raw.disabled"
-              :subtitle="item.raw.disabled ? 'Add key in Settings' : item.raw.providerLabel"
+              :subtitle="item.raw.providerLabel"
             />
           </template>
         </v-select>
@@ -238,13 +237,15 @@ const hasAvailableModel = computed(() =>
   allModels.value.some((m) => m.available),
 )
 
+/** Only show models that are available (Ollama always + providers with key). */
 const modelItems = computed(() =>
-  allModels.value.map((m) => ({
-    title: m.name,
-    value: m.id,
-    disabled: !m.available,
-    providerLabel: PROVIDER_LABELS[m.provider] ?? m.provider,
-  })),
+  allModels.value
+    .filter((m) => m.available)
+    .map((m) => ({
+      title: m.name,
+      value: m.id,
+      providerLabel: PROVIDER_LABELS[m.provider] ?? m.provider,
+    })),
 )
 
 /** Whether the currently selected model has an API key. */
