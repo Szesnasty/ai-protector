@@ -164,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useCompareChat } from '~/composables/useCompareChat'
 import { useScenarios } from '~/composables/useScenarios'
 import { usePolicies } from '~/composables/usePolicies'
@@ -191,7 +191,7 @@ const {
 
 const { scenarios, isLoading: scenariosLoading } = useScenarios('playground')
 const { policies, isLoading: policiesLoading } = usePolicies()
-const { groupedModels, isLoading: modelsLoading } = useModels()
+const { groupedModels, isLoading: modelsLoading, refreshAvailability } = useModels()
 
 const showScenarios = ref(true)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)
@@ -240,6 +240,23 @@ watch(
   },
   { immediate: true },
 )
+
+/**
+ * Re-check API key availability when user returns to this tab
+ * (e.g. after adding a key in Settings opened in another tab).
+ */
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') refreshAvailability()
+}
+
+onMounted(() => {
+  refreshAvailability() // pick up keys added since last visit
+  window.addEventListener('visibilitychange', onVisibilityChange)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('visibilitychange', onVisibilityChange)
+})
 
 function handleAttackSend(prompt: string) {
   chatInputRef.value?.setText(prompt)
