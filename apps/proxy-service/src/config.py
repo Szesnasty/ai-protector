@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     presidio_score_threshold: float = 0.4
     presidio_spacy_model: str = "en_core_web_sm"  # en_core_web_lg for prod
 
+    # Compare demo
+    enable_direct_endpoint: bool = True  # Set False in production
+
     # Langfuse tracing
     enable_langfuse: bool = True
 

@@ -30,6 +30,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: 'Playground', icon: 'mdi-chat-processing', to: '/playground' },
+  { title: 'Compare', icon: 'mdi-compare', to: '/compare' },
   { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
   { title: 'Security Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
 ]

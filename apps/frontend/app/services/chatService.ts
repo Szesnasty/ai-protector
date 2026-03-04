@@ -27,6 +27,8 @@ export interface StreamOptions {
   body: ChatCompletionRequest
   headers?: Record<string, string>
   signal?: AbortSignal
+  /** Custom endpoint path (default: /v1/chat/completions) */
+  url?: string
 }
 
 export async function streamChat(
@@ -48,7 +50,8 @@ export async function streamChat(
     }
   }
 
-  const response = await fetch(`${baseURL}/v1/chat/completions`, {
+  const endpoint = options.url ?? '/v1/chat/completions'
+  const response = await fetch(`${baseURL}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

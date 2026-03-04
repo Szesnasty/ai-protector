@@ -110,3 +110,42 @@ async def sse_stream(
     except Exception:
         await _audit_log()
         raise
+
+
+async def sse_stream_direct(
+    response: AsyncGenerator[Any, None],
+    request_id: str,
+    model: str,
+) -> AsyncGenerator[str, None]:
+    """Minimal SSE streamer for direct (unprotected) endpoint.
+
+    No audit logging, no pipeline metadata — raw LLM stream only.
+    """
+    created = int(time.time())
+
+    async for chunk in response:
+        choice = chunk.choices[0] if chunk.choices else None
+        if choice is None:
+            continue
+
+        delta = choice.delta
+        content = getattr(delta, "content", None)
+
+        sse_chunk = ChatCompletionChunk(
+            id=request_id,
+            created=created,
+            model=model,
+            choices=[
+                ChatCompletionChunkChoice(
+                    index=0,
+                    delta=ChatCompletionChunkDelta(
+                        role=getattr(delta, "role", None),
+                        content=content,
+                    ),
+                    finish_reason=getattr(choice, "finish_reason", None),
+                )
+            ],
+        )
+        yield f"data: {sse_chunk.model_dump_json()}\n\n"
+
+    yield "data: [DONE]\n\n"
