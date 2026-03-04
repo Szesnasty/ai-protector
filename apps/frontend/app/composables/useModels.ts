@@ -1,32 +1,34 @@
 /**
  * Composable for fetching the model catalog and computing availability.
  *
+ * Uses @tanstack/vue-query (client-side only) instead of Nuxt's useAsyncData
+ * to avoid SSR issues — the frontend Docker container cannot reach the proxy
+ * at localhost:8000 during server rendering.
+ *
  * Models for providers with a browser-stored API key (or ollama) are "available".
- * Others are shown but grayed out in the UI.
+ * Others are hidden from dropdowns.
  */
 import { computed, ref } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { api } from '~/services/api'
 import type { ModelInfo, ModelsResponse } from '~/types/api'
 import { useApiKeys } from '~/composables/useApiKeys'
 
+/**
+ * Module-level reactive trigger shared across all useModels() instances.
+ * Bumping it forces `groupedModels` to recompute in EVERY component
+ * that uses useModels() — not just the one that called refreshAvailability().
+ */
+const _keyVersion = ref(0)
+
 export function useModels() {
   const { hasKeyForProvider } = useApiKeys()
 
-  const { data: rawModels, isLoading, error, refetch } = useAsyncData<ModelInfo[]>(
-    'models-catalog',
-    async () => {
-      const resp = await api.get<ModelsResponse>('/v1/models')
-      return resp.data.models
-    },
-    { default: () => [] },
-  )
-
-  /**
-   * Reactive trigger — bump this to force `groupedModels` to recompute.
-   * Needed because `hasKeyForProvider` reads from browser Storage which is
-   * not reactive in Vue.
-   */
-  const _keyVersion = ref(0)
+  const { data: rawModels, isLoading, error, refetch } = useQuery<ModelInfo[]>({
+    queryKey: ['models-catalog'],
+    queryFn: () => api.get<ModelsResponse>('/v1/models').then((r) => r.data.models),
+    staleTime: 60_000, // refetch after 1 min
+  })
 
   /** Force re-evaluation of model availability (e.g. after adding an API key). */
   function refreshAvailability() {
