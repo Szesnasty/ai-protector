@@ -59,7 +59,7 @@
         <p class="text-caption text-grey mt-1">
           {{ variant === 'protected'
             ? 'Same model & prompt — routed through NeMo Guardrails, PII Scanner, LLM Guard, and Policy Engine before reaching the LLM.'
-            : 'Same model & prompt — sent directly to the LLM with zero scanning or protection.'
+            : 'Same model & prompt — sent via a clean passthrough tunnel (same proxy, zero scanning). Raw LLM response with no protection applied.'
           }}
         </p>
       </div>

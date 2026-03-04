@@ -24,7 +24,7 @@
           v-model="config.model"
           :items="modelItems"
           :loading="modelsLoading"
-          :disabled="isBusy"
+          :disabled="isBusy || !hasExternalModels"
           label="Model"
           variant="outlined"
           density="compact"
@@ -40,7 +40,30 @@
           </template>
         </v-select>
 
+        <!-- Phase indicator -->
+        <v-chip
+          v-if="phase !== 'idle'"
+          :color="phase === 'protected' ? 'info' : 'warning'"
+          size="small"
+          variant="tonal"
+          class="ml-2"
+        >
+          <v-progress-circular indeterminate size="12" width="2" class="mr-1" />
+          {{ phase === 'protected' ? 'Running: Protected…' : 'Running: Direct…' }}
+        </v-chip>
+
         <v-spacer />
+
+        <v-btn
+          v-if="isBusy"
+          size="small"
+          variant="tonal"
+          color="error"
+          prepend-icon="mdi-stop"
+          @click="abort"
+        >
+          Stop
+        </v-btn>
 
         <v-btn
           size="small"
@@ -54,13 +77,29 @@
       </div>
       <v-divider />
 
+      <!-- No API key banner -->
+      <v-alert
+        v-if="!hasAvailableModel"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        class="mx-4 mt-2 mb-0"
+        prominent
+      >
+        <strong>No external API keys configured.</strong>
+        Compare requires an external LLM provider (OpenAI, Anthropic, Google, or Mistral).
+        Go to <nuxt-link to="/settings" class="text-decoration-underline">Settings</nuxt-link> to add an API key.
+      </v-alert>
+
       <!-- Explainer bar -->
       <div class="compare-page__explainer px-4 py-2">
         <v-icon size="16" color="info" class="mr-1">mdi-information</v-icon>
         <span class="text-caption">
-          Both panels send <strong>the same prompt</strong> to <strong>the same model ({{ config.model }})</strong>.
-          The left panel routes through the AI Protector security pipeline. The right panel bypasses all protection.
-          Compare the results to see what the firewall catches.
+          Both panels send <strong>the same prompt</strong> to <strong>the same external model</strong>.
+          The left panel routes through the full AI Protector security pipeline
+          (intent detection, PII scan, guardrails, policy engine).
+          The right panel <strong>bypasses all protection</strong> — a clean passthrough with zero scanning.
+          Requests run sequentially (protected first, then direct) to avoid rate-limit issues.
         </span>
       </div>
       <v-divider />
@@ -96,7 +135,7 @@
       <div class="px-4 py-2">
         <playground-chat-input
           ref="chatInputRef"
-          :disabled="isBusy"
+          :disabled="isBusy || !hasAvailableModel"
           @send="send"
         />
       </div>
@@ -125,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useCompareChat } from '~/composables/useCompareChat'
 import { useScenarios } from '~/composables/useScenarios'
 import { usePolicies } from '~/composables/usePolicies'
@@ -143,8 +182,11 @@ const {
   protectedDecision,
   timings,
   config,
+  phase,
+  isBusy,
   send,
   clear,
+  abort,
 } = useCompareChat()
 
 const { scenarios, isLoading: scenariosLoading } = useScenarios('playground')
@@ -153,8 +195,6 @@ const { groupedModels, isLoading: modelsLoading } = useModels()
 
 const showScenarios = ref(true)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)
-
-const isBusy = computed(() => isProtectedStreaming.value || isDirectStreaming.value)
 
 const policyItems = computed(() =>
   (policies.value ?? []).map((p) => ({
@@ -168,16 +208,37 @@ const PROVIDER_LABELS: Record<string, string> = {
   anthropic: 'Anthropic',
   google: 'Google AI',
   mistral: 'Mistral',
-  ollama: 'Ollama (local)',
 }
 
+/** Only external providers — no Ollama in Compare mode. */
+const externalModels = computed(() =>
+  (groupedModels.value ?? []).filter((m) => m.provider !== 'ollama'),
+)
+
+const hasExternalModels = computed(() => externalModels.value.length > 0)
+
+const hasAvailableModel = computed(() =>
+  externalModels.value.some((m) => m.available),
+)
+
 const modelItems = computed(() =>
-  (groupedModels.value ?? []).map((m) => ({
+  externalModels.value.map((m) => ({
     title: m.name,
     value: m.id,
     disabled: !m.available,
     providerLabel: PROVIDER_LABELS[m.provider] ?? m.provider,
   })),
+)
+
+/** Auto-select first available external model when models load. */
+watch(
+  externalModels,
+  (models) => {
+    if (config.model) return // user already picked something
+    const first = models.find((m) => m.available)
+    if (first) config.model = first.id
+  },
+  { immediate: true },
 )
 
 function handleAttackSend(prompt: string) {
