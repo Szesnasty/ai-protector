@@ -15,6 +15,26 @@ export const chatService = {
       .then((r) => r.data),
 }
 
+// ─── Provider endpoints for direct browser → API calls ───
+
+/**
+ * Base URLs for providers that support direct browser calls
+ * (CORS-enabled, OpenAI-compatible streaming format).
+ *
+ * The Compare Playground's right panel calls these directly from the
+ * browser — completely bypassing the AI Protector proxy — to prove
+ * the raw model accepts prompts that AI Protector would block.
+ */
+export const PROVIDER_API_BASES: Record<string, string> = {
+  openai: 'https://api.openai.com',
+  mistral: 'https://api.mistral.ai',
+}
+
+/** True if the provider supports direct browser → API calls. */
+export function supportsDirectBrowserCall(provider: string): boolean {
+  return provider in PROVIDER_API_BASES
+}
+
 // ─── Streaming (SSE via fetch) ───
 
 export interface StreamCallbacks {
@@ -73,6 +93,99 @@ export async function streamChat(
           message: `Server error (${response.status} ${response.statusText})`,
           type: 'server_error',
           code: String(response.status),
+        },
+      }
+    }
+    throw errorBody
+  }
+
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || !trimmed.startsWith('data: ')) continue
+
+      const data = trimmed.slice(6)
+      if (data === '[DONE]') {
+        callbacks.onDone()
+        return response
+      }
+
+      try {
+        const chunk = JSON.parse(data)
+        const content = chunk.choices?.[0]?.delta?.content
+        if (content) {
+          callbacks.onToken(content)
+        }
+      } catch {
+        // Skip malformed chunks
+      }
+    }
+  }
+
+  callbacks.onDone()
+  return response
+}
+
+/**
+ * Stream a chat completion DIRECTLY to the LLM provider's API.
+ * Browser → api.openai.com / api.mistral.ai — completely bypassing the proxy.
+ *
+ * This proves the raw model accepts prompts our proxy would block.
+ * Supported: OpenAI, Mistral (CORS + OpenAI-compatible format).
+ * Unsupported providers should use streamChat('/v1/chat/direct') as fallback.
+ */
+export async function streamChatDirect(
+  options: {
+    body: ChatCompletionRequest
+    signal?: AbortSignal
+  },
+  callbacks: StreamCallbacks,
+): Promise<Response> {
+  const model = options.body.model ?? ''
+  const provider = detectProviderClient(model)
+  const base = PROVIDER_API_BASES[provider]
+  const key = getKey(provider)
+
+  if (!base) {
+    throw {
+      error: { message: `Direct browser → ${provider} not supported. Using proxy fallback.` },
+    }
+  }
+  if (!key) {
+    throw {
+      error: { message: `No API key for "${provider}".` },
+    }
+  }
+
+  const response = await fetch(`${base}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`,
+    },
+    body: JSON.stringify({ ...options.body, stream: true }),
+    signal: options.signal,
+  })
+
+  if (!response.ok) {
+    let errorBody: unknown
+    try {
+      errorBody = await response.json()
+    } catch {
+      errorBody = {
+        error: {
+          message: `${provider} error (${response.status} ${response.statusText})`,
         },
       }
     }

@@ -108,11 +108,12 @@
       <div class="compare-page__explainer px-4 py-2">
         <v-icon size="16" color="info" class="mr-1">mdi-information</v-icon>
         <span class="text-caption">
-          Both panels send <strong>the same prompt</strong> to <strong>the same external model</strong>.
-          The left panel routes through the full AI Protector security pipeline
+          Both panels send <strong>the same prompt</strong> to <strong>the same model</strong>.
+          The left panel routes through the <strong>AI Protector proxy</strong>
           (intent detection, PII scan, guardrails, policy engine).
-          The right panel <strong>bypasses all protection</strong> — a clean passthrough with zero scanning.
-          Requests run sequentially (protected first, then direct) to avoid rate-limit issues.
+          The right panel sends the request <strong>directly from your browser to the provider API</strong>
+          — no proxy, no scanning, zero protection.
+          This is the exact difference between <code>base_url="your-proxy"</code> and <code>base_url="api.openai.com"</code>.
         </span>
       </div>
       <v-divider />
@@ -138,6 +139,8 @@
           :messages="directMessages"
           :is-streaming="isDirectStreaming"
           :timing="timings.direct"
+          :endpoint-url="directEndpointUrl"
+          :is-direct-browser="isDirectBrowser"
         />
       </div>
     </div>
@@ -198,6 +201,8 @@ const {
   config,
   phase,
   isBusy,
+  directEndpointUrl,
+  isDirectBrowser,
   send,
   clear,
   abort,

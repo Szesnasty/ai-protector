@@ -1,21 +1,26 @@
 /**
  * Composable for the Compare Playground.
  *
- * Fires the SAME prompt to:
- *   1. Protected  — POST /v1/chat/completions (full AI Protector pipeline)
- *   2. Unprotected — POST /v1/chat/direct     (raw passthrough, zero scanning)
+ * Fires the SAME prompt through two paths:
+ *   1. Protected  — POST proxy/v1/chat/completions (full AI Protector pipeline)
+ *   2. Unprotected — DIRECT to provider API (browser → api.openai.com etc.)
+ *
+ * The right panel proves the raw model accepts dangerous prompts.
+ * The left panel proves AI Protector blocks them.  One-line URL change.
+ *
+ * For providers without browser CORS support (Anthropic, Google), the
+ * right panel falls back to the proxy's /v1/chat/direct endpoint
+ * (zero scanning passthrough).
  *
  * Requests run SEQUENTIALLY (protected first, then direct) to avoid
- * doubling inference load on a single GPU / external rate-limit.
- *
- * Compare only works with EXTERNAL providers that require an API key
- * (OpenAI, Anthropic, Google, Mistral).  Ollama is excluded because
- * both sides would hit the same local model serially — pointless and
- * CPU-crushing.
+ * rate-limit issues with external providers.
  */
 import { ref, reactive, computed } from 'vue'
 import {
   streamChat,
+  streamChatDirect,
+  supportsDirectBrowserCall,
+  PROVIDER_API_BASES,
   extractPipelineDecision,
   extractBlockDecision,
 } from '~/services/chatService'
@@ -56,6 +61,20 @@ export function useCompareChat() {
   })
 
   const isBusy = computed(() => phase.value !== 'idle')
+
+  /** URL the direct panel actually hits (provider API or proxy fallback). */
+  const directEndpointUrl = computed(() => {
+    if (!config.model) return ''
+    const p = detectProviderClient(config.model)
+    const base = PROVIDER_API_BASES[p]
+    return base ? `${base}/v1/chat/completions` : '/v1/chat/direct'
+  })
+
+  /** True when the right panel calls the provider API directly from the browser. */
+  const isDirectBrowser = computed(() => {
+    if (!config.model) return false
+    return supportsDirectBrowserCall(detectProviderClient(config.model))
+  })
 
   // ────────────────────────────────────────────────────────────────
   // Sequential send: Protected → then → Direct
@@ -163,33 +182,43 @@ export function useCompareChat() {
     }
 
     // ── Phase 2: Direct (unprotected) ───────────────────────────
+    // For OpenAI/Mistral: browser → provider API directly (true proof)
+    // For others: browser → proxy /v1/chat/direct (zero scanning fallback)
     phase.value = 'direct'
     isDirectStreaming.value = true
     directAbort = new AbortController()
 
     const directStart = performance.now()
+    const directProvider = detectProviderClient(config.model)
+    const useDirectBrowser = supportsDirectBrowserCall(directProvider)
+
+    const directCallbacks = {
+      onToken: (token: string) => {
+        const msg = directMessages.value[dirIdx]
+        if (msg) msg.content = (msg.content ?? '') + token
+      },
+      onDone: () => {
+        isDirectStreaming.value = false
+        timings.direct = Math.round(performance.now() - directStart)
+      },
+      onError: (err: Error) => {
+        isDirectStreaming.value = false
+        timings.direct = Math.round(performance.now() - directStart)
+      },
+    }
+
     try {
-      await streamChat(
-        {
-          body,
-          url: '/v1/chat/direct',
-          signal: directAbort.signal,
-        },
-        {
-          onToken: (token: string) => {
-            const msg = directMessages.value[dirIdx]
-            if (msg) msg.content = (msg.content ?? '') + token
-          },
-          onDone: () => {
-            isDirectStreaming.value = false
-            timings.direct = Math.round(performance.now() - directStart)
-          },
-          onError: (err: Error) => {
-            isDirectStreaming.value = false
-            timings.direct = Math.round(performance.now() - directStart)
-          },
-        },
-      )
+      if (useDirectBrowser) {
+        await streamChatDirect(
+          { body, signal: directAbort.signal },
+          directCallbacks,
+        )
+      } else {
+        await streamChat(
+          { body, url: '/v1/chat/direct', signal: directAbort.signal },
+          directCallbacks,
+        )
+      }
     } catch (err: unknown) {
       isDirectStreaming.value = false
       timings.direct = Math.round(performance.now() - directStart)
@@ -241,6 +270,8 @@ export function useCompareChat() {
     config,
     phase,
     isBusy,
+    directEndpointUrl,
+    isDirectBrowser,
     send,
     clear,
     abort,
