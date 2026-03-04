@@ -266,15 +266,15 @@ Even if NeMo fails, intent score 0.5 + any small LLM Guard signal will exceed 0.
 
 ## Definition of Done
 
-- [ ] 4 new pattern lists in `intent.py` (70+ patterns total)
-- [ ] `classify_intent()` returns new intent types correctly
-- [ ] Intent priority: jailbreak > extraction > role_bypass > tool_abuse > exfiltration > social_eng > code_gen > tool_call
-- [ ] `suspicious_intent` risk flag set for all agent intents
-- [ ] `calculate_risk_score()` includes agent intent weights + NeMo signal
-- [ ] All existing intent tests still pass (no regression)
-- [ ] New intent unit tests pass
-- [ ] New decision unit tests pass
-- [ ] Clean prompts don't false-positive on agent patterns
+- [x] 4 new pattern lists in `intent.py` (70+ patterns total): AGENT_ROLE_BYPASS (18), AGENT_TOOL_ABUSE (20), AGENT_EXFILTRATION (15), AGENT_SOCIAL_ENGINEERING (17)
+- [x] `classify_intent()` returns new intent types correctly: `role_bypass`, `tool_abuse`, `agent_exfiltration`, `social_engineering`
+- [x] Intent priority: jailbreak > extraction > role_bypass > tool_abuse > exfiltration > social_eng > code_gen > tool_call
+- [x] `suspicious_intent` risk flag set for all agent intents
+- [x] `calculate_risk_score()` includes agent intent weights + NeMo signal (`nemo_weight` multiplier)
+- [x] All existing intent tests still pass (no regression) — 107 tests pass
+- [x] New intent unit tests pass
+- [x] New decision unit tests pass
+- [x] Clean prompts don't false-positive on agent patterns
 
 ---
 

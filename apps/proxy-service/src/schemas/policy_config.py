@@ -13,6 +13,7 @@ VALID_NODES: frozenset[str] = frozenset({
     # Scanners
     "llm_guard",
     "presidio",
+    "nemo_guardrails",
     "ml_judge",
     # Output pipeline
     "output_filter",
@@ -39,6 +40,7 @@ class ThresholdsSchema(BaseModel):
     invisible_weight: float = Field(0.4, ge=0.0, le=1.0)
     pii_per_entity_weight: float = Field(0.1, ge=0.0, le=1.0)
     pii_max_weight: float = Field(0.5, ge=0.0, le=1.0)
+    nemo_weight: float = Field(0.7, ge=0.0, le=1.0)
 
 
 class PolicyConfigSchema(BaseModel):

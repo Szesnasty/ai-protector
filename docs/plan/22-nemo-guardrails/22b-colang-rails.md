@@ -397,13 +397,19 @@ Per-policy override: `strict` can use 0.5, `balanced` uses 0.6, `fast` skips ent
 
 ## Definition of Done
 
-- [ ] `src/pipeline/rails/agent_security.co` — 8 flows, 8-12 examples each
-- [ ] `src/pipeline/rails/general_security.co` — 3 flows
-- [ ] `src/pipeline/rails/prompts.yml` — system prompt
-- [ ] All Colang files parse without errors
-- [ ] Embedding matching works for paraphrases (not just exact matches)
-- [ ] Clean prompts (Safe category) produce no false positives
-- [ ] Coverage: ≥100/142 agent scenarios addressed by Colang + existing scanners
+- [x] `src/pipeline/rails/agent_security.co` — 8 flows, 8-12 examples each
+- [x] `src/pipeline/rails/general_security.co` — 3 flows (excessive_agency, hallucination_exploit, supply_chain)
+- [x] ~~`src/pipeline/rails/prompts.yml`~~ — **Not needed**: embeddings_only mode has no LLM to prompt. System prompt would be unused.
+- [x] `src/pipeline/rails/safe_catchall.co` — **Added**: 12 safe attractor examples for embedding-space competition + `embeddings_only_fallback_intent` target
+- [x] All Colang files parse without errors — verified in Docker with NeMo 0.20.0
+- [x] Embedding matching works for paraphrases (not just exact matches) — tested with 8 attack paraphrases
+- [x] Clean prompts (Safe category) produce no false positives — 12/12 safe prompts pass correctly
+- [x] Coverage: ≥100/142 agent scenarios addressed by Colang + existing scanners (11 Colang categories)
+
+### Implementation Notes
+- Uses **Colang 1.0** syntax (not 2.0) — NVIDIA's own NemoGuard safety rails use 1.0 for embeddings_only mode. Colang 2.x `embeddings_only` is broken in NeMo 0.20.0.
+- Bot responses return machine-parseable `BLOCKED:<rail_name>` codes instead of human-readable refusals — optimized for pipeline integration.
+- Threshold tuned to 0.4 with 12 safe attractor examples — tested all values from 0.3 to 0.7.
 
 ---
 
