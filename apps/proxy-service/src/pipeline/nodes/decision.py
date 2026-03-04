@@ -26,6 +26,14 @@ def calculate_risk_score(state: PipelineState) -> float:
         score += 0.6
     elif intent == "system_prompt_extract":
         score += 0.4
+    elif intent == "role_bypass":
+        score += 0.5
+    elif intent == "tool_abuse":
+        score += 0.4
+    elif intent == "agent_exfiltration":
+        score += 0.5
+    elif intent == "social_engineering":
+        score += 0.3
 
     # Rule-based
     if flags.get("denylist_hit"):
@@ -51,6 +59,15 @@ def calculate_risk_score(state: PipelineState) -> float:
     pii_count = flags.get("pii_count", 0)
     if pii_count > 0:
         score += min(pii_count * pii_per_entity, pii_max)
+
+    # NeMo Guardrails signals
+    if flags.get("nemo_blocked"):
+        nemo_score = max(
+            (v for k, v in flags.items()
+             if k.startswith("nemo_") and k != "nemo_blocked" and isinstance(v, (int, float))),
+            default=0.0,
+        )
+        score += float(nemo_score) * thresholds.get("nemo_weight", 0.7)
 
     # Custom rule score_boost (accumulated from rules_node)
     score += flags.get("score_boost", 0.0)

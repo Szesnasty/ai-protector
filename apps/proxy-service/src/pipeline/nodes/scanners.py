@@ -21,6 +21,7 @@ import structlog
 
 from src.pipeline.nodes import timed_node
 from src.pipeline.nodes.llm_guard import llm_guard_node
+from src.pipeline.nodes.nemo_guardrails import nemo_guardrails_node
 from src.pipeline.nodes.presidio import presidio_node
 from src.pipeline.state import PipelineState
 
@@ -41,6 +42,8 @@ async def parallel_scanners_node(state: PipelineState) -> PipelineState:
         tasks.append(("llm_guard", llm_guard_node(state)))
     if "presidio" in policy_nodes:
         tasks.append(("presidio", presidio_node(state)))
+    if "nemo_guardrails" in policy_nodes:
+        tasks.append(("nemo_guardrails", nemo_guardrails_node(state)))
 
     if not tasks:
         return state  # fast policy — skip entirely

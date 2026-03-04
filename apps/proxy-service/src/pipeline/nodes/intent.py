@@ -48,6 +48,90 @@ TOOL_PATTERNS = [
     "get status",
 ]
 
+# ── Agent-specific patterns ──────────────────────────────────────────
+
+AGENT_ROLE_BYPASS_PATTERNS = [
+    "i am admin",
+    "i am the administrator",
+    "i am the system administrator",
+    "grant me access",
+    "grant me admin",
+    "elevate my privileges",
+    "escalate my permissions",
+    "act on behalf of",
+    "pretend i have permission",
+    "my manager said",
+    "my manager approved",
+    "my boss approved",
+    "emergency override",
+    "switch my role to",
+    "override access control",
+    "promote me to admin",
+    "unlock all features",
+    "i have been promoted",
+]
+
+AGENT_TOOL_ABUSE_PATTERNS = [
+    "execute command",
+    "execute shell",
+    "run command",
+    "run shell",
+    "call api",
+    "invoke function",
+    "access internal secrets",
+    "read /etc",
+    "write file",
+    "delete file",
+    "drop table",
+    "rm -rf",
+    "curl ",
+    "wget ",
+    "fetch url",
+    "download file",
+    "execute code",
+    "run script",
+    "system command",
+    "shell access",
+]
+
+AGENT_EXFILTRATION_PATTERNS = [
+    "send to email",
+    "send data to",
+    "post to webhook",
+    "upload to",
+    "forward to external",
+    "exfiltrate",
+    "transfer data to",
+    "send results to",
+    "email me the",
+    "email the database",
+    "external endpoint",
+    "save to pastebin",
+    "copy to external",
+    "export and send",
+    "dump to external",
+]
+
+AGENT_SOCIAL_ENGINEERING_PATTERNS = [
+    "just this once",
+    "don't tell anyone",
+    "do not tell anyone",
+    "keep this secret",
+    "keep this between us",
+    "between you and me",
+    "urgent request",
+    "do it now",
+    "no time to verify",
+    "trust me",
+    "i promise",
+    "confidential task",
+    "everyone has access",
+    "other assistants helped",
+    "special case",
+    "emergency situation",
+    "no one will know",
+]
+
 GREETING_PATTERNS = [
     "hello",
     "hi ",
@@ -68,6 +152,17 @@ def classify_intent(text: str) -> tuple[str, float]:
         return "jailbreak", 0.8
     if any(p in text for p in EXTRACTION_PATTERNS):
         return "system_prompt_extract", 0.7
+
+    # Agent-specific intents (higher priority than generic code_gen / tool_call)
+    if any(p in text for p in AGENT_ROLE_BYPASS_PATTERNS):
+        return "role_bypass", 0.75
+    if any(p in text for p in AGENT_TOOL_ABUSE_PATTERNS):
+        return "tool_abuse", 0.7
+    if any(p in text for p in AGENT_EXFILTRATION_PATTERNS):
+        return "agent_exfiltration", 0.7
+    if any(p in text for p in AGENT_SOCIAL_ENGINEERING_PATTERNS):
+        return "social_engineering", 0.65
+
     if any(p in text for p in CODE_PATTERNS):
         return "code_gen", 0.6
     if any(p in text for p in TOOL_PATTERNS):
@@ -105,7 +200,10 @@ async def intent_node(state: PipelineState) -> PipelineState:
         confidence = 0.75  # custom-rule confidence
 
     risk_flags = {**state.get("risk_flags", {})}
-    if intent in ("jailbreak", "system_prompt_extract", "extraction", "exfiltration"):
+    if intent in (
+        "jailbreak", "system_prompt_extract", "extraction", "exfiltration",
+        "role_bypass", "tool_abuse", "agent_exfiltration", "social_engineering",
+    ):
         risk_flags["suspicious_intent"] = confidence
 
     return {

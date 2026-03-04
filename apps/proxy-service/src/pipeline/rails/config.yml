@@ -1,0 +1,18 @@
+models:
+  - type: main
+    engine: ollama
+    model: llama3.1:8b
+    parameters:
+      base_url: http://ollama:11434
+
+rails:
+  dialog:
+    user_messages:
+      embeddings_only: true
+      embeddings_only_similarity_threshold: 0.3
+
+embedding_search_provider:
+  name: default
+  parameters:
+    embedding_engine: FastEmbed
+    embedding_model: all-MiniLM-L6-v2

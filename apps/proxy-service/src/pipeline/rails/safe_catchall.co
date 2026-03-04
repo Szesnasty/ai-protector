@@ -1,0 +1,39 @@
+# ═══════════════════════════════════════════════════════════════
+# AI Protector — Safe Catch-All (Colang 1.0)
+# Ensures embedding search always matches a defined intent
+# so NeMo never falls through to LLM calls.
+# ═══════════════════════════════════════════════════════════════
+
+define user ask safe question
+  "What is the weather like today"
+  "Tell me about the return policy"
+  "How do I track my order"
+  "What products do you sell"
+  "Can you help me understand this"
+  "Hello how are you doing"
+  "Thank you for your help"
+  "What is the capital of France"
+  "Tell me a joke"
+  "How does this work"
+  "Please explain this to me"
+  "Good morning"
+  "I have a question about my account"
+  "What time does the store open"
+  "Can you recommend something"
+  "I need help with my order"
+  "Where can I find information about"
+  "What are the business hours"
+  "How much does this cost"
+  "Can I speak to a human"
+  "I want to cancel my subscription"
+  "When will my package arrive"
+  "Tell me more about your services"
+  "I have a complaint about my order"
+  "How do I contact customer support"
+
+define bot safe response
+  "SAFE"
+
+define flow handle safe
+  user ask safe question
+  bot safe response

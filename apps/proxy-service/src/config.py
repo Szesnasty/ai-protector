@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     # Security scanners
     enable_llm_guard: bool = True
+    enable_nemo_guardrails: bool = True
     scanner_timeout: int = 30  # Max seconds per scanner
 
     # Presidio PII

@@ -21,29 +21,29 @@ DEFAULT_POLICIES = [
     },
     {
         "name": "balanced",
-        "description": "Default — rules + LLM Guard + output filter + memory hygiene.",
+        "description": "Default — rules + LLM Guard + NeMo Guardrails + output filter + memory hygiene.",
         "config": {
-            "nodes": ["llm_guard", "output_filter", "memory_hygiene", "logging"],
-            "thresholds": {"max_risk": 0.7, "injection_threshold": 0.5},
+            "nodes": ["llm_guard", "nemo_guardrails", "output_filter", "memory_hygiene", "logging"],
+            "thresholds": {"max_risk": 0.7, "injection_threshold": 0.5, "nemo_weight": 0.7},
         },
     },
     {
         "name": "strict",
-        "description": "Full pipeline — adds Presidio PII + ML Judge.",
+        "description": "Full pipeline — adds Presidio PII + NeMo Guardrails + ML Judge.",
         "config": {
             "nodes": [
-                "llm_guard", "presidio", "ml_judge",
+                "llm_guard", "presidio", "nemo_guardrails", "ml_judge",
                 "output_filter", "memory_hygiene", "logging",
             ],
-            "thresholds": {"max_risk": 0.5, "injection_threshold": 0.3, "pii_action": "mask"},
+            "thresholds": {"max_risk": 0.5, "injection_threshold": 0.3, "pii_action": "mask", "nemo_weight": 0.8},
         },
     },
     {
         "name": "paranoid",
-        "description": "Maximum security — canary tokens + full audit logging.",
+        "description": "Maximum security — canary tokens + NeMo Guardrails + full audit logging.",
         "config": {
             "nodes": [
-                "llm_guard", "presidio", "ml_judge",
+                "llm_guard", "presidio", "nemo_guardrails", "ml_judge",
                 "canary", "output_filter", "memory_hygiene", "logging",
             ],
             "thresholds": {
@@ -51,6 +51,7 @@ DEFAULT_POLICIES = [
                 "injection_threshold": 0.2,
                 "pii_action": "block",
                 "enable_canary": True,
+                "nemo_weight": 0.9,
             },
         },
     },

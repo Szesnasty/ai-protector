@@ -439,3 +439,90 @@ class TestCrossPolicyComparison:
             _make_state(intent="jailbreak", risk_flags=flags, policy_config=BALANCED_CONFIG)
         )
         assert result_balanced["decision"] == "BLOCK"
+
+
+# ── Agent intent weights (Step 22c) ─────────────────────────────────
+
+
+class TestAgentIntentWeights:
+    """Agent-specific intents contribute to risk score."""
+
+    async def test_role_bypass_score(self) -> None:
+        """role_bypass adds 0.5 to risk score."""
+        state = _make_state(intent="role_bypass", policy_config=BALANCED_CONFIG)
+        score = calculate_risk_score(state)
+        assert score == pytest.approx(0.5)
+
+    async def test_tool_abuse_score(self) -> None:
+        """tool_abuse adds 0.4."""
+        state = _make_state(intent="tool_abuse", policy_config=BALANCED_CONFIG)
+        score = calculate_risk_score(state)
+        assert score == pytest.approx(0.4)
+
+    async def test_exfiltration_score(self) -> None:
+        """agent_exfiltration adds 0.5."""
+        state = _make_state(intent="agent_exfiltration", policy_config=BALANCED_CONFIG)
+        score = calculate_risk_score(state)
+        assert score == pytest.approx(0.5)
+
+    async def test_social_engineering_score(self) -> None:
+        """social_engineering adds 0.3."""
+        state = _make_state(intent="social_engineering", policy_config=BALANCED_CONFIG)
+        score = calculate_risk_score(state)
+        assert score == pytest.approx(0.3)
+
+    async def test_role_bypass_blocks_balanced(self) -> None:
+        """role_bypass (0.5) + encoded (0.3) = 0.8 > 0.7 → BLOCK."""
+        state = _make_state(
+            intent="role_bypass",
+            risk_flags={"encoded_content": True},
+            policy_config=BALANCED_CONFIG,
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "BLOCK"
+
+
+# ── NeMo Guardrails weight (Step 22d) ───────────────────────────────
+
+
+class TestNemoGuardrailsWeight:
+    """NeMo blocked signal contributes to risk score."""
+
+    async def test_nemo_blocked_adds_weight(self) -> None:
+        """nemo_blocked + nemo_role_bypass 0.85 → 0.85 * 0.7 = 0.595."""
+        state = _make_state(
+            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.85},
+            policy_config=BALANCED_CONFIG,
+        )
+        score = calculate_risk_score(state)
+        assert score == pytest.approx(0.85 * 0.7)
+
+    async def test_nemo_blocked_with_intent_blocks(self) -> None:
+        """role_bypass(0.5) + nemo(0.85*0.7=0.595) = 1.0(capped) > 0.7 → BLOCK."""
+        state = _make_state(
+            intent="role_bypass",
+            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.85},
+            policy_config=BALANCED_CONFIG,
+        )
+        result = await decision_node(state)
+        assert result["decision"] == "BLOCK"
+        assert result["risk_score"] == pytest.approx(1.0)
+
+    async def test_nemo_custom_weight(self) -> None:
+        """Custom nemo_weight=0.9 → nemo_role_bypass 0.85 * 0.9 = 0.765."""
+        config = {"thresholds": {"max_risk": 0.7, "nemo_weight": 0.9}}
+        state = _make_state(
+            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.85},
+            policy_config=config,
+        )
+        score = calculate_risk_score(state)
+        assert score == pytest.approx(0.85 * 0.9)
+
+    async def test_no_nemo_flag_no_weight(self) -> None:
+        """Without nemo_blocked flag, NeMo weight not applied."""
+        state = _make_state(
+            risk_flags={"nemo_role_bypass": 0.85},
+            policy_config=BALANCED_CONFIG,
+        )
+        score = calculate_risk_score(state)
+        assert score == pytest.approx(0.0)  # nemo_blocked not set
