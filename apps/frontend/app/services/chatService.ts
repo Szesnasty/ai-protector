@@ -64,7 +64,18 @@ export async function streamChat(
   })
 
   if (!response.ok) {
-    const errorBody = await response.json()
+    let errorBody: unknown
+    try {
+      errorBody = await response.json()
+    } catch {
+      errorBody = {
+        error: {
+          message: `Server error (${response.status} ${response.statusText})`,
+          type: 'server_error',
+          code: String(response.status),
+        },
+      }
+    }
     throw errorBody
   }
 

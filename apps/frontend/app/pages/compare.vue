@@ -91,6 +91,19 @@
         Go to <nuxt-link to="/settings" class="text-decoration-underline">Settings</nuxt-link> to add an API key.
       </v-alert>
 
+      <!-- Error banner -->
+      <v-alert
+        v-if="error"
+        type="error"
+        variant="tonal"
+        density="compact"
+        closable
+        class="mx-4 mt-2 mb-0"
+        @click:close="dismissError"
+      >
+        {{ error }}
+      </v-alert>
+
       <!-- Explainer bar -->
       <div class="compare-page__explainer px-4 py-2">
         <v-icon size="16" color="info" class="mr-1">mdi-information</v-icon>
@@ -181,6 +194,7 @@ const {
   isDirectStreaming,
   protectedDecision,
   timings,
+  error,
   config,
   phase,
   isBusy,
@@ -274,6 +288,10 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('visibilitychange', onVisibilityChange)
 })
+
+function dismissError() {
+  error.value = null
+}
 
 function handleAttackSend(prompt: string) {
   chatInputRef.value?.setText(prompt)

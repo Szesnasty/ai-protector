@@ -147,18 +147,19 @@ export function useCompareChat() {
       }
 
       const apiErr = err as ApiError
+      const errMsg = apiErr?.error?.message
+        ?? (err instanceof Error ? err.message : String(err))
+
       if (apiErr?.error?.message) {
         protectedDecision.value = extractBlockDecision(apiErr)
-        protectedMessages.value[protIdx] = {
-          role: 'assistant',
-          content: `⛔ Blocked: ${apiErr.error.message}`,
-          decision: protectedDecision.value ?? undefined,
-        }
-      } else {
-        if (!protectedMessages.value[protIdx]?.content) {
-          protectedMessages.value.splice(protIdx, 1)
-        }
       }
+
+      protectedMessages.value[protIdx] = {
+        role: 'assistant',
+        content: `⛔ ${errMsg}`,
+        decision: protectedDecision.value ?? undefined,
+      }
+      error.value = `Protected: ${errMsg}`
     }
 
     // ── Phase 2: Direct (unprotected) ───────────────────────────
@@ -199,16 +200,14 @@ export function useCompareChat() {
       }
 
       const apiErr = err as ApiError
-      if (apiErr?.error?.message) {
-        directMessages.value[dirIdx] = {
-          role: 'assistant',
-          content: `⚠️ Error: ${apiErr.error.message}`,
-        }
-      } else {
-        if (!directMessages.value[dirIdx]?.content) {
-          directMessages.value.splice(dirIdx, 1)
-        }
+      const errMsg = apiErr?.error?.message
+        ?? (err instanceof Error ? err.message : String(err))
+
+      directMessages.value[dirIdx] = {
+        role: 'assistant',
+        content: `⚠️ ${errMsg}`,
       }
+      if (!error.value) error.value = `Direct: ${errMsg}`
     }
 
     phase.value = 'idle'

@@ -72,6 +72,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "x-decision",
+        "x-intent",
+        "x-risk-score",
+        "x-pipeline",
+        "x-correlation-id",
+    ],
 )
 app.add_middleware(CorrelationIdMiddleware)
 
