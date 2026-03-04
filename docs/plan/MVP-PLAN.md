@@ -127,16 +127,16 @@
 
 ## Phase 9: Agent Security Hardening
 
-- [ ] **[Step 22 — NeMo Guardrails Integration](22-nemo-guardrails/SPEC.md)**
-  Integrate NVIDIA NeMo Guardrails (already in dependencies, unused) as a new parallel
-  scanner node. Colang 2.0 rails for 8 agent attack categories (role bypass, tool abuse,
-  exfiltration, social engineering, CoT manipulation, RAG poisoning, confused deputy,
-  cross-tool exploitation). Embedding-only mode (no LLM calls, ~20ms latency).
-  Expanded agent intent classifier with 70+ new patterns. Target: ≥70% agent pentest pass rate.
-  - [ ] 22a — NeMo Guardrails scanner node (lazy init, thread pool, error isolation)
-  - [ ] 22b — Colang Rails Library (11 flows, 100+ example messages, semantic matching)
-  - [ ] 22c — Agent Intent Expansion (4 new intents, decision weights, risk flags)
-  - [ ] 22d — Policy & Pipeline Integration (seed update, scanner wiring, Docker, pentest verification)
+- [x] **[Step 22 — NeMo Guardrails Integration](22-nemo-guardrails/SPEC.md)**
+  Integrate NVIDIA NeMo Guardrails as a new parallel scanner node. Colang 1.0 rails
+  for 11 attack categories (role bypass, tool abuse, exfiltration, social engineering,
+  CoT manipulation, RAG poisoning, confused deputy, cross-tool, excessive agency,
+  hallucination exploitation, supply chain). Embedding-only mode with FastEmbed
+  (zero LLM calls, ~7.5ms latency). Expanded agent intent classifier with 70+ patterns.
+  - [x] 22a — NeMo Guardrails scanner node (lazy init, thread pool, error isolation)
+  - [x] 22b — Colang Rails Library (11 flows, 100+ example messages, semantic matching)
+  - [x] 22c — Agent Intent Expansion (4 new intents, decision weights, risk flags)
+  - [x] 22d — Policy & Pipeline Integration (seed update, scanner wiring, Docker, pentest verification)
 
 ---
 
@@ -153,7 +153,7 @@
 | Enterprise Readiness | 17–19 | ⬜ Not started (specs written) |
 | Demo & Polish | 20 | 🟩 20 done |
 | OSS Maturity | 21 | 🟨 21a-f done, 21g-i pending (GitHub UI) |
-| Agent Security | 22 | ⬜ Not started (spec written) |
+| Agent Security | 22 | 🟩 22a 22b 22c 22d done |
 
 ---
 
