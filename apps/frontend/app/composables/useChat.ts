@@ -16,7 +16,7 @@ export const useChat = () => {
 
   const config = reactive({
     policy: 'balanced',
-    model: 'llama3.1:8b',
+    model: '',          // auto-selected by playground once models load
     temperature: 0.7,
     maxTokens: null as number | null,
   })
@@ -61,9 +61,12 @@ export const useChat = () => {
           },
           onError: (err: Error) => {
             error.value = err.message
-            // Remove empty assistant message if no content was streamed
+            // Show error in assistant message instead of removing
             if (!messages.value[assistantIdx]?.content) {
-              messages.value.splice(assistantIdx, 1)
+              messages.value[assistantIdx] = {
+                role: 'assistant',
+                content: `⚠️ ${err.message}`,
+              }
             }
             isStreaming.value = false
           },
@@ -96,11 +99,13 @@ export const useChat = () => {
         }
         error.value = apiErr.error.message
       } else {
-        // Unknown error
-        error.value = 'An unexpected error occurred'
-        if (!messages.value[assistantIdx]?.content) {
-          messages.value.splice(assistantIdx, 1)
+        // Unknown error — show in message bubble instead of silently removing
+        const errMsg = err instanceof Error ? err.message : String(err)
+        messages.value[assistantIdx] = {
+          role: 'assistant',
+          content: `⚠️ ${errMsg || 'An unexpected error occurred'}`,
         }
+        error.value = errMsg || 'An unexpected error occurred'
       }
     }
   }

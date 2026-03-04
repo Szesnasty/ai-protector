@@ -42,6 +42,13 @@ async def _check_redis() -> ServiceHealth:
 
 
 async def _check_ollama(base_url: str) -> ServiceHealth:
+    """Lightweight Ollama check — HEAD-like GET to /api/tags.
+
+    NOTE: Even though /api/tags is cheap, calling it every N seconds
+    from the frontend health poller can keep the Ollama model loaded in
+    memory, preventing the keep-alive timer from expiring.
+    Consider disabling this in production or using a longer interval.
+    """
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
             resp = await client.get(f"{base_url}/api/tags")

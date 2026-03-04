@@ -46,9 +46,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useChat } from '~/composables/useChat'
 import { useScenarios } from '~/composables/useScenarios'
+import { useModels } from '~/composables/useModels'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
@@ -56,9 +57,48 @@ definePageMeta({ title: 'Playground' })
 
 const { messages, isStreaming, lastDecision, error, config, send, clear, abort } = useChat()
 const { scenarios, isLoading: scenariosLoading } = useScenarios('playground')
+const { groupedModels, refreshAvailability } = useModels()
 
 const showScenarios = ref(true)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)
+
+/**
+ * Auto-select first available model:
+ * - prefer external models with API key over Ollama
+ * - re-evaluate when keys change
+ */
+watch(
+  groupedModels,
+  (models) => {
+    if (config.model) {
+      const current = models.find((m) => m.id === config.model)
+      if (current?.available) return
+    }
+    // Prefer external models (lower latency, no CPU burn)
+    const firstExternal = models.find((m) => m.available && m.provider !== 'ollama')
+    if (firstExternal) {
+      config.model = firstExternal.id
+      return
+    }
+    // Fallback to Ollama if no external keys
+    const firstAny = models.find((m) => m.available)
+    config.model = firstAny?.id ?? ''
+  },
+  { immediate: true },
+)
+
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') refreshAvailability()
+}
+
+onMounted(() => {
+  refreshAvailability()
+  window.addEventListener('visibilitychange', onVisibilityChange)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('visibilitychange', onVisibilityChange)
+})
 
 function handleAttackSend(prompt: string) {
   chatInputRef.value?.setText(prompt)
