@@ -105,6 +105,7 @@ async def chat_completions(
     request: Request,
     x_client_id: str | None = Header(default=None),
     x_policy: str | None = Header(default=None),
+    x_api_key: str | None = Header(default=None),
 ) -> ChatCompletionResponse | JSONResponse | StreamingResponse:
     """OpenAI-compatible chat completions with firewall pipeline."""
     correlation_id = request.headers.get("x-correlation-id", uuid.uuid4().hex)
@@ -113,6 +114,7 @@ async def chat_completions(
 
     messages = [m.model_dump(exclude_none=True) for m in body.messages]
     policy = x_policy or get_settings().default_policy
+    api_key = x_api_key  # From browser SessionStorage — never stored on server
 
     log = logger.bind(
         request_id=request_id,
@@ -135,6 +137,7 @@ async def chat_completions(
             temperature=body.temperature or get_settings().default_temperature,
             max_tokens=body.max_tokens,
             stream=True,
+            api_key=api_key,
         )
 
         if pre_result["decision"] == "BLOCK":
@@ -155,6 +158,7 @@ async def chat_completions(
             stream=True,
             temperature=body.temperature,
             max_tokens=body.max_tokens,
+            api_key=api_key,
         )
         generator = sse_stream(
             response=llm_stream,
@@ -188,6 +192,7 @@ async def chat_completions(
         temperature=body.temperature or get_settings().default_temperature,
         max_tokens=body.max_tokens,
         stream=False,
+        api_key=api_key,
     )
 
     latency_ms = int((time.perf_counter() - start) * 1000)

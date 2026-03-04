@@ -243,3 +243,15 @@ export interface IntentCount {
   count: number
   pct: number
 }
+
+// ─── Models catalog ───
+export interface ModelInfo {
+  id: string        // "gpt-4o" or "ollama/llama3.1:8b"
+  provider: string  // "openai", "anthropic", "google", "mistral", "ollama"
+  name: string      // "GPT-4o", "Llama 3.1 8B"
+  available?: boolean  // Set client-side: true if provider has a key or is ollama
+}
+
+export interface ModelsResponse {
+  models: ModelInfo[]
+}

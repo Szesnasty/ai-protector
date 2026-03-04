@@ -25,7 +25,7 @@ class PipelineState(TypedDict, total=False):
     temperature: float
     max_tokens: int | None
     stream: bool
-
+    api_key: str | None  # External provider key from x-api-key header (never stored)
     # ── Analysis (accumulated by nodes) ───────────────────────────────
     intent: str | None  # "qa" | "code_gen" | "tool_call" | "chitchat" | …
     intent_confidence: float  # 0.0–1.0

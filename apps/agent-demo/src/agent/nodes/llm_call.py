@@ -84,17 +84,27 @@ async def llm_call_node(state: AgentState) -> AgentState:
 
     start = time.perf_counter()
 
+    model_name = state.get("model", settings.default_model)
+    api_key = state.get("api_key")
+
+    # Format model for LiteLLM: use prefix routing through proxy
+    litellm_model = f"{settings.default_model_prefix}/{model_name}"
+
+    extra_headers: dict[str, str] = {
+        "x-client-id": f"agent-{session_id}",
+        "x-policy": policy,
+        "x-correlation-id": session_id,
+    }
+    if api_key:
+        extra_headers["x-api-key"] = api_key
+
     try:
         response = await acompletion(
-            model=f"{settings.default_model_prefix}/{settings.default_model}",
+            model=litellm_model,
             messages=messages,
             api_base=settings.proxy_base_url,
             api_key="not-needed",
-            extra_headers={
-                "x-client-id": f"agent-{session_id}",
-                "x-policy": policy,
-                "x-correlation-id": session_id,
-            },
+            extra_headers=extra_headers,
             temperature=settings.default_temperature,
             max_tokens=settings.default_max_tokens,
             timeout=120,

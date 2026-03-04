@@ -38,5 +38,6 @@ const manageItems: NavItem[] = [
   { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
   { title: 'Request Log', icon: 'mdi-format-list-bulleted', to: '/requests' },
   { title: 'Analytics', icon: 'mdi-chart-bar', to: '/analytics' },
+  { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>

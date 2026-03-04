@@ -14,9 +14,11 @@
         <agent-config
           :role="config.role"
           :policy="config.policy"
+          :model="config.model"
           :disabled="isLoading"
           @update:role="switchRole"
           @update:policy="config.policy = $event"
+          @update:model="config.model = $event"
           @new-conversation="newConversation"
         />
         <v-divider class="my-2" />

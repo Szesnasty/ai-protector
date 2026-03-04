@@ -80,6 +80,7 @@ async def run_pipeline(
     temperature: float,
     max_tokens: int | None,
     stream: bool,
+    api_key: str | None = None,
 ) -> PipelineState:
     """Run the firewall pipeline and return the final state."""
     policy_config = await get_policy_config(policy_name)
@@ -96,6 +97,7 @@ async def run_pipeline(
         "temperature": temperature,
         "max_tokens": max_tokens,
         "stream": stream,
+        "api_key": api_key,
     }
 
     result = await pipeline.ainvoke(initial_state)
@@ -142,6 +144,7 @@ async def run_pre_llm_pipeline(
     temperature: float,
     max_tokens: int | None,
     stream: bool,
+    api_key: str | None = None,
 ) -> PipelineState:
     """Run only the pre-LLM nodes (parse→intent→rules→decision).
 
@@ -162,6 +165,7 @@ async def run_pre_llm_pipeline(
         "temperature": temperature,
         "max_tokens": max_tokens,
         "stream": stream,
+        "api_key": api_key,
     }
 
     result = await _pre_llm_pipeline.ainvoke(initial_state)

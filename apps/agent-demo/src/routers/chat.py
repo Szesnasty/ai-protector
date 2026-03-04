@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 
 import structlog
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 
 from src.agent.graph import get_agent_graph
 from src.config import get_settings
@@ -22,7 +22,10 @@ router = APIRouter(tags=["agent"])
 
 
 @router.post("/agent/chat", response_model=AgentChatResponse)
-async def agent_chat(body: AgentChatRequest) -> AgentChatResponse:
+async def agent_chat(
+    body: AgentChatRequest,
+    x_api_key: str | None = Header(default=None),
+) -> AgentChatResponse:
     """Run the agent graph and return structured response."""
     settings = get_settings()
     start = time.perf_counter()
@@ -33,6 +36,8 @@ async def agent_chat(body: AgentChatRequest) -> AgentChatResponse:
         "user_role": body.user_role,
         "message": body.message,
         "policy": body.policy or settings.default_policy,
+        "model": body.model or settings.default_model,
+        "api_key": x_api_key,
     }
 
     # Run the agent graph

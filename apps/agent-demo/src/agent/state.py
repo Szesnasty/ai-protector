@@ -23,6 +23,8 @@ class AgentState(TypedDict, total=False):
     message: str  # Current user message
     chat_history: list[dict[str, str]]  # Previous conversation turns
     policy: str  # Policy name for proxy
+    model: str  # LLM model to use
+    api_key: str | None  # External provider API key (from browser)
 
     # ── Analysis ───────────────────────────────────────────
     intent: str  # greeting, order_query, knowledge_search, admin_action, unknown

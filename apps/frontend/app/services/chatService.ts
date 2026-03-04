@@ -1,4 +1,5 @@
 import { api } from './api'
+import { detectProviderClient, getKey } from '~/composables/useApiKeys'
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -34,11 +35,25 @@ export async function streamChat(
 ): Promise<Response> {
   const baseURL = import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
 
+  // Auto-inject x-api-key from browser storage if model requires an external provider
+  const model = options.body.model ?? ''
+  const apiKeyHeaders: Record<string, string> = {}
+  if (model) {
+    const provider = detectProviderClient(model)
+    if (provider !== 'ollama') {
+      const key = getKey(provider)
+      if (key) {
+        apiKeyHeaders['x-api-key'] = key
+      }
+    }
+  }
+
   const response = await fetch(`${baseURL}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'x-client-id': 'playground',
+      ...apiKeyHeaders,
       ...options.headers,
     },
     body: JSON.stringify({ ...options.body, stream: true }),

@@ -18,6 +18,7 @@ async def llm_call_node(state: PipelineState) -> PipelineState:
         stream=False,  # streaming handled separately at router level
         temperature=state.get("temperature", 0.7),
         max_tokens=state.get("max_tokens"),
+        api_key=state.get("api_key"),
     )
 
     usage = getattr(response, "usage", None)

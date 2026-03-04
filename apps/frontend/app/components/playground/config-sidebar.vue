@@ -18,16 +18,25 @@
         @update:model-value="updateField('policy', $event)"
       />
 
-      <v-text-field
+      <v-select
         :model-value="config.model"
+        :items="modelItems"
+        :loading="modelsLoading"
         :disabled="disabled"
         label="Model"
-        hint="Ollama model name"
         variant="outlined"
         density="compact"
         class="mb-4"
         @update:model-value="updateField('model', $event)"
-      />
+      >
+        <template #item="{ item, props: itemProps }">
+          <v-list-item
+            v-bind="itemProps"
+            :disabled="item.raw.disabled"
+            :subtitle="item.raw.disabled ? 'Add key in Settings' : item.raw.providerLabel"
+          />
+        </template>
+      </v-select>
 
       <v-slider
         :model-value="config.temperature"
@@ -58,6 +67,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
+import { useModels } from '~/composables/useModels'
 
 interface Config {
   policy: string
@@ -76,11 +86,29 @@ const emit = defineEmits<{
 }>()
 
 const { policies, isLoading } = usePolicies()
+const { groupedModels, isLoading: modelsLoading } = useModels()
 
 const policyItems = computed(() =>
   (policies.value ?? []).map((p) => ({
     title: p.name,
     value: p.name,
+  })),
+)
+
+const PROVIDER_LABELS: Record<string, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google AI',
+  mistral: 'Mistral',
+  ollama: 'Ollama (local)',
+}
+
+const modelItems = computed(() =>
+  (groupedModels.value ?? []).map((m) => ({
+    title: m.name,
+    value: m.id,
+    disabled: !m.available,
+    providerLabel: PROVIDER_LABELS[m.provider] ?? m.provider,
   })),
 )
 

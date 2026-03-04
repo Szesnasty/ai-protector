@@ -5,6 +5,7 @@ export interface AgentChatRequest {
   user_role: 'customer' | 'admin'
   session_id: string
   policy?: string
+  model?: string
 }
 
 export interface ToolCall {
