@@ -51,9 +51,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useAgentChat } from '~/composables/useAgentChat'
 import { useScenarios } from '~/composables/useScenarios'
+import { useModels } from '~/composables/useModels'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
@@ -71,8 +72,46 @@ const {
 } = useAgentChat()
 
 const { scenarios, isLoading: scenariosLoading } = useScenarios('agent')
+const { groupedModels, refreshAvailability } = useModels()
+
 const showScenarios = ref(true)
 const agentChatRef = ref<{ setText: (s: string) => void } | null>(null)
+
+/**
+ * Auto-select first available model:
+ * - prefer external models with API key over Ollama
+ * - re-evaluate when keys change
+ */
+watch(
+  groupedModels,
+  (models) => {
+    if (config.model) {
+      const current = models.find((m) => m.id === config.model)
+      if (current?.available) return
+    }
+    const firstExternal = models.find((m) => m.available && m.provider !== 'ollama')
+    if (firstExternal) {
+      config.model = firstExternal.id
+      return
+    }
+    const firstAny = models.find((m) => m.available)
+    config.model = firstAny?.id ?? ''
+  },
+  { immediate: true },
+)
+
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') refreshAvailability()
+}
+
+onMounted(() => {
+  refreshAvailability()
+  window.addEventListener('visibilitychange', onVisibilityChange)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('visibilitychange', onVisibilityChange)
+})
 
 function handleAttackSend(prompt: string) {
   agentChatRef.value?.setText(prompt)

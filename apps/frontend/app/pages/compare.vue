@@ -229,19 +229,17 @@ const PROVIDER_LABELS: Record<string, string> = {
   mistral: 'Mistral',
 }
 
-/** Only external providers — no Ollama in Compare mode. */
-const externalModels = computed(() =>
-  (groupedModels.value ?? []).filter((m) => m.provider !== 'ollama'),
-)
+/** All models available in Compare mode. */
+const allModels = computed(() => groupedModels.value ?? [])
 
-const hasExternalModels = computed(() => externalModels.value.length > 0)
+const hasExternalModels = computed(() => allModels.value.length > 0)
 
 const hasAvailableModel = computed(() =>
-  externalModels.value.some((m) => m.available),
+  allModels.value.some((m) => m.available),
 )
 
 const modelItems = computed(() =>
-  externalModels.value.map((m) => ({
+  allModels.value.map((m) => ({
     title: m.name,
     value: m.id,
     disabled: !m.available,
@@ -252,7 +250,7 @@ const modelItems = computed(() =>
 /** Whether the currently selected model has an API key. */
 const selectedModelAvailable = computed(() => {
   if (!config.model) return false
-  const m = externalModels.value.find((model) => model.id === config.model)
+  const m = allModels.value.find((model) => model.id === config.model)
   return m?.available ?? false
 })
 
@@ -263,16 +261,22 @@ const selectedModelAvailable = computed(() => {
  * - when models list changes (keys added/removed via refreshAvailability)
  */
 watch(
-  externalModels,
+  allModels,
   (models) => {
     // If current model is available, keep it
     if (config.model) {
       const current = models.find((m) => m.id === config.model)
       if (current?.available) return
     }
-    // Otherwise pick the first available
-    const first = models.find((m) => m.available)
-    config.model = first?.id ?? ''
+    // Prefer external models (lower latency, no CPU burn)
+    const firstExternal = models.find((m) => m.available && m.provider !== 'ollama')
+    if (firstExternal) {
+      config.model = firstExternal.id
+      return
+    }
+    // Fallback to Ollama if no external keys
+    const firstAny = models.find((m) => m.available)
+    config.model = firstAny?.id ?? ''
   },
   { immediate: true },
 )

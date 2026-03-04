@@ -10,7 +10,7 @@ export function useAgentChat() {
   const config = reactive({
     role: 'customer' as 'customer' | 'admin',
     policy: null as string | null,
-    model: 'llama3.1:8b' as string,
+    model: '' as string,
   })
 
   const sessionId = ref(generateSessionId())

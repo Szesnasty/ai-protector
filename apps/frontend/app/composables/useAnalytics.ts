@@ -32,30 +32,35 @@ export function useAnalytics() {
     queryKey: ['analytics', 'summary', selectedRange],
     queryFn: () => api.get<AnalyticsSummary>(`/v1/analytics/summary?hours=${selectedRange.value}`).then(r => r.data),
     refetchInterval: pollInterval,
+    refetchIntervalInBackground: false,
   })
 
   const { data: timeline, isLoading: timelineLoading, refetch: refetchTimeline } = useQuery<TimelineBucket[]>({
     queryKey: ['analytics', 'timeline', selectedRange],
     queryFn: () => api.get<TimelineBucket[]>(`/v1/analytics/timeline?hours=${selectedRange.value}`).then(r => r.data),
     refetchInterval: pollInterval,
+    refetchIntervalInBackground: false,
   })
 
   const { data: byPolicy, isLoading: byPolicyLoading, refetch: refetchByPolicy } = useQuery<PolicyStatsRow[]>({
     queryKey: ['analytics', 'by-policy', selectedRange],
     queryFn: () => api.get<PolicyStatsRow[]>(`/v1/analytics/by-policy?hours=${selectedRange.value}`).then(r => r.data),
     refetchInterval: pollInterval,
+    refetchIntervalInBackground: false,
   })
 
   const { data: topFlags, isLoading: topFlagsLoading, refetch: refetchTopFlags } = useQuery<RiskFlagCount[]>({
     queryKey: ['analytics', 'top-flags', selectedRange],
     queryFn: () => api.get<RiskFlagCount[]>(`/v1/analytics/top-flags?hours=${selectedRange.value}`).then(r => r.data),
     refetchInterval: pollInterval,
+    refetchIntervalInBackground: false,
   })
 
   const { data: intents, isLoading: intentsLoading, refetch: refetchIntents } = useQuery<IntentCount[]>({
     queryKey: ['analytics', 'intents', selectedRange],
     queryFn: () => api.get<IntentCount[]>(`/v1/analytics/intents?hours=${selectedRange.value}`).then(r => r.data),
     refetchInterval: pollInterval,
+    refetchIntervalInBackground: false,
   })
 
   function refreshAll() {

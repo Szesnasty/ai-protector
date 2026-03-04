@@ -74,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount } from 'vue'
 import type { RequestFilters } from '~/types/api'
 import type { Policy } from '~/types/api'
 
@@ -114,5 +115,10 @@ let intentTimeout: ReturnType<typeof setTimeout>
 watch(() => local.value.intent, () => {
   clearTimeout(intentTimeout)
   intentTimeout = setTimeout(() => emit('update:modelValue', { ...local.value }), 300)
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(searchTimeout)
+  clearTimeout(intentTimeout)
 })
 </script>
