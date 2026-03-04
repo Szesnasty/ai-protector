@@ -135,7 +135,7 @@
       <div class="px-4 py-2">
         <playground-chat-input
           ref="chatInputRef"
-          :disabled="isBusy || !hasAvailableModel"
+          :disabled="isBusy || !hasAvailableModel || !selectedModelAvailable"
           @send="send"
         />
       </div>
@@ -230,13 +230,30 @@ const modelItems = computed(() =>
   })),
 )
 
-/** Auto-select first available external model when models load. */
+/** Whether the currently selected model has an API key. */
+const selectedModelAvailable = computed(() => {
+  if (!config.model) return false
+  const m = externalModels.value.find((model) => model.id === config.model)
+  return m?.available ?? false
+})
+
+/**
+ * Auto-select first available external model:
+ * - on initial load (config.model is empty)
+ * - when currently selected model loses availability (key removed)
+ * - when models list changes (keys added/removed via refreshAvailability)
+ */
 watch(
   externalModels,
   (models) => {
-    if (config.model) return // user already picked something
+    // If current model is available, keep it
+    if (config.model) {
+      const current = models.find((m) => m.id === config.model)
+      if (current?.available) return
+    }
+    // Otherwise pick the first available
     const first = models.find((m) => m.available)
-    if (first) config.model = first.id
+    config.model = first?.id ?? ''
   },
   { immediate: true },
 )

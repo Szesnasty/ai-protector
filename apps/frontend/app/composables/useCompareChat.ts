@@ -19,6 +19,7 @@ import {
   extractPipelineDecision,
   extractBlockDecision,
 } from '~/services/chatService'
+import { detectProviderClient, getKey } from '~/composables/useApiKeys'
 import type { ChatMessage, PipelineDecision, ApiError } from '~/types/api'
 
 export interface CompareTimings {
@@ -62,6 +63,13 @@ export function useCompareChat() {
   async function send(text: string) {
     if (!config.model) {
       error.value = 'Select a model and add its API key in Settings first.'
+      return
+    }
+
+    // Verify API key exists for the selected model's provider
+    const provider = detectProviderClient(config.model)
+    if (provider !== 'ollama' && !getKey(provider)) {
+      error.value = `No API key for provider "${provider}". Add one in Settings → API Keys.`
       return
     }
 
