@@ -8,21 +8,26 @@
  * Models for providers with a browser-stored API key (or ollama) are "available".
  * Others are hidden from dropdowns.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { api } from '~/services/api'
 import type { ModelInfo, ModelsResponse } from '~/types/api'
 import { useApiKeys } from '~/composables/useApiKeys'
 
 /**
- * Module-level reactive trigger shared across all useModels() instances.
- * Bumping it forces `groupedModels` to recompute in EVERY component
- * that uses useModels() — not just the one that called refreshAvailability().
+ * Shared reactive trigger — lives inside a closure-safe getter so that
+ * Nuxt SSR cannot leak it between requests (it's only relevant client-side
+ * anyway, but this is the safe pattern).
  */
-const _keyVersion = ref(0)
+let _keyVersion: Ref<number> | null = null
+function getKeyVersion(): Ref<number> {
+  if (!_keyVersion) _keyVersion = ref(0)
+  return _keyVersion
+}
 
 export function useModels() {
   const { hasKeyForProvider } = useApiKeys()
+  const keyVersion = getKeyVersion()
 
   const { data: rawModels, isLoading, error, refetch } = useQuery<ModelInfo[]>({
     queryKey: ['models-catalog'],
@@ -32,12 +37,12 @@ export function useModels() {
 
   /** Force re-evaluation of model availability (e.g. after adding an API key). */
   function refreshAvailability() {
-    _keyVersion.value++
+    keyVersion.value++
   }
 
   /** All models with an `available` flag based on browser-stored keys. */
   const groupedModels = computed<ModelInfo[]>(() => {
-    _keyVersion.value // touch to create reactive dependency
+    keyVersion.value // touch to create reactive dependency
     if (!rawModels.value) return []
     return rawModels.value.map((m) => ({
       ...m,

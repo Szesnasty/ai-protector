@@ -25,16 +25,11 @@
         label="Model"
         variant="outlined"
         density="compact"
+        item-title="title"
+        item-value="value"
         class="mb-4"
         @update:model-value="$emit('update:model', $event)"
-      >
-        <template #item="{ item, props: itemProps }">
-          <v-list-item
-            v-bind="itemProps"
-            :subtitle="item.raw.providerLabel"
-          />
-        </template>
-      </v-select>
+      />
 
       <v-select
         :model-value="policy"
@@ -103,9 +98,8 @@ const modelItems = computed(() =>
   (groupedModels.value ?? [])
     .filter((m) => m.available)
     .map((m) => ({
-      title: m.name,
+      title: `${m.name}  ·  ${PROVIDER_LABELS[m.provider] ?? m.provider}`,
       value: m.id,
-      providerLabel: PROVIDER_LABELS[m.provider] ?? m.provider,
     })),
 )
 

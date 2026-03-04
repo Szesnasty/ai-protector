@@ -28,16 +28,11 @@
           label="Model"
           variant="outlined"
           density="compact"
+          item-title="title"
+          item-value="value"
           hide-details
           style="max-width: 240px"
-        >
-          <template #item="{ item, props: itemProps }">
-            <v-list-item
-              v-bind="itemProps"
-              :subtitle="item.raw.providerLabel"
-            />
-          </template>
-        </v-select>
+        />
 
         <!-- Phase indicator -->
         <v-chip
@@ -242,9 +237,8 @@ const modelItems = computed(() =>
   allModels.value
     .filter((m) => m.available)
     .map((m) => ({
-      title: m.name,
+      title: `${m.name}  ·  ${PROVIDER_LABELS[m.provider] ?? m.provider}`,
       value: m.id,
-      providerLabel: PROVIDER_LABELS[m.provider] ?? m.provider,
     })),
 )
 
