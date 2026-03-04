@@ -3,13 +3,14 @@
     <v-card-title class="text-subtitle-1">Scanner Nodes</v-card-title>
     <v-card-text>
       <div class="d-flex flex-wrap ga-2">
-        <v-tooltip v-for="node in AVAILABLE_NODES" :key="node.id" location="top">
+        <v-tooltip v-for="node in AVAILABLE_NODES" :key="node.id" location="top" max-width="320">
           <template #activator="{ props: tip }">
             <v-chip
               v-bind="tip"
               :color="isEnabled(node.id) ? 'primary' : undefined"
               :variant="isEnabled(node.id) ? 'flat' : 'outlined'"
               :prepend-icon="node.icon"
+              append-icon="mdi-information-outline"
               @click="toggleNode(node.id)"
             >
               {{ node.label }}
@@ -28,11 +29,11 @@
         <div class="d-flex justify-space-between text-body-2 mb-1">
           <span class="d-flex align-center ga-1">
             {{ slider.label }}
-            <v-tooltip location="top">
+            <v-tooltip location="top" max-width="320">
               <template #activator="{ props: tip }">
-                <v-icon v-bind="tip" size="x-small" color="grey">mdi-information-outline</v-icon>
+                <v-icon v-bind="tip" size="14" color="grey-darken-1" class="cursor-pointer">mdi-information-outline</v-icon>
               </template>
-              <span style="max-width: 280px; display: block;">{{ slider.tooltip }}</span>
+              <span>{{ slider.tooltip }}</span>
             </v-tooltip>
           </span>
           <span class="font-weight-bold">{{ getThreshold(slider.key).toFixed(2) }}</span>
@@ -58,11 +59,11 @@
         <div class="d-flex justify-space-between text-body-2 mb-1">
           <span class="d-flex align-center ga-1">
             {{ slider.label }}
-            <v-tooltip location="top">
+            <v-tooltip location="top" max-width="320">
               <template #activator="{ props: tip }">
-                <v-icon v-bind="tip" size="x-small" color="grey">mdi-information-outline</v-icon>
+                <v-icon v-bind="tip" size="14" color="grey-darken-1" class="cursor-pointer">mdi-information-outline</v-icon>
               </template>
-              <span style="max-width: 280px; display: block;">{{ slider.tooltip }}</span>
+              <span>{{ slider.tooltip }}</span>
             </v-tooltip>
           </span>
           <span class="font-weight-bold">{{ getThreshold(slider.key).toFixed(2) }}</span>
@@ -86,11 +87,11 @@
     <v-card-text>
       <div class="d-flex align-center ga-1 mb-2">
         <span class="text-body-2">PII Action</span>
-        <v-tooltip location="top">
+        <v-tooltip location="top" max-width="320">
           <template #activator="{ props: tip }">
-            <v-icon v-bind="tip" size="x-small" color="grey">mdi-information-outline</v-icon>
+            <v-icon v-bind="tip" size="14" color="grey-darken-1" class="cursor-pointer">mdi-information-outline</v-icon>
           </template>
-          <span style="max-width: 280px; display: block;">How to handle detected PII. Flag — log only. Mask — replace with placeholders like &lt;PERSON&gt;. Block — reject the request entirely.</span>
+          <span>How to handle detected PII. Flag — log only. Mask — replace with placeholders like &lt;PERSON&gt;. Block — reject the request entirely.</span>
         </v-tooltip>
       </div>
       <v-select
