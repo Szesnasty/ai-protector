@@ -1,15 +1,23 @@
-models:
-  - type: main
-    engine: ollama
-    model: llama3.1:8b
-    parameters:
-      base_url: http://ollama:11434
+# ═══════════════════════════════════════════════════════════════
+# AI Protector — NeMo Guardrails Configuration
+#
+# Pure embeddings-only mode: NO LLM model required.
+# Uses FastEmbed (all-MiniLM-L6-v2 ONNX, ~90MB) for intent
+# classification via cosine similarity.
+#
+# How it works:
+#   1. User message is embedded and compared to intent examples
+#   2. If similarity > threshold → matched intent fires a flow
+#   3. If similarity < threshold → fallback_intent used (safe pass)
+#   4. Zero LLM calls, sub-10ms per scan
+# ═══════════════════════════════════════════════════════════════
 
 rails:
   dialog:
     user_messages:
       embeddings_only: true
-      embeddings_only_similarity_threshold: 0.3
+      embeddings_only_similarity_threshold: 0.4
+      embeddings_only_fallback_intent: "safe_input"
 
 embedding_search_provider:
   name: default

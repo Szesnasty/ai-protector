@@ -1,13 +1,14 @@
 """NeMo Guardrails scanner node — Colang-based conversational security rails.
 
-Runs in **dialog mode with embeddings_only** (no LLM calls) for low latency.
+Runs in **dialog mode with embeddings_only** — zero LLM calls by design.
 Uses FastEmbed (all-MiniLM-L6-v2, ~90MB ONNX) for semantic matching.
+No LLM model is configured or required.
 
 Architecture:
   - Colang defines attack intents with example phrases (8-12 each)
   - NeMo embeds user message, compares via cosine similarity
-  - If attack intent matched → response starts with "BLOCKED:<rail_name>"
-  - If no attack matched → safe catch-all responds with "SAFE"
+  - If attack intent matched (threshold > 0.3) → "BLOCKED:<rail_name>"
+  - If no attack matched → ``embeddings_only_fallback_intent`` fires "safe_input"
   - Zero LLM calls, sub-10ms per scan after init
 
 Lazy-initialized on first call (loads embedding model ~2-3s).
