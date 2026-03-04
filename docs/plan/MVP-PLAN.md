@@ -125,6 +125,19 @@
   - [ ] 21h — Branch protection rules (GitHub UI)
   - [ ] 21i — Repository settings polish (topics, social preview, discussions)
 
+## Phase 9: Agent Security Hardening
+
+- [ ] **[Step 22 — NeMo Guardrails Integration](22-nemo-guardrails/SPEC.md)**
+  Integrate NVIDIA NeMo Guardrails (already in dependencies, unused) as a new parallel
+  scanner node. Colang 2.0 rails for 8 agent attack categories (role bypass, tool abuse,
+  exfiltration, social engineering, CoT manipulation, RAG poisoning, confused deputy,
+  cross-tool exploitation). Embedding-only mode (no LLM calls, ~20ms latency).
+  Expanded agent intent classifier with 70+ new patterns. Target: ≥70% agent pentest pass rate.
+  - [ ] 22a — NeMo Guardrails scanner node (lazy init, thread pool, error isolation)
+  - [ ] 22b — Colang Rails Library (11 flows, 100+ example messages, semantic matching)
+  - [ ] 22c — Agent Intent Expansion (4 new intents, decision weights, risk flags)
+  - [ ] 22d — Policy & Pipeline Integration (seed update, scanner wiring, Docker, pentest verification)
+
 ---
 
 ## Progress
@@ -140,6 +153,7 @@
 | Enterprise Readiness | 17–19 | ⬜ Not started (specs written) |
 | Demo & Polish | 20 | 🟩 20 done |
 | OSS Maturity | 21 | 🟨 21a-f done, 21g-i pending (GitHub UI) |
+| Agent Security | 22 | ⬜ Not started (spec written) |
 
 ---
 
