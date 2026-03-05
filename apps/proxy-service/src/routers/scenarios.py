@@ -15,7 +15,7 @@ router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
 _DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "scenarios"
 
-CatalogueKind = Literal["playground", "agent"]
+CatalogueKind = Literal["playground", "agent", "compare"]
 
 
 @lru_cache(maxsize=4)
@@ -33,5 +33,5 @@ def _load_catalogue(kind: str) -> list[dict]:
     summary="Get attack-scenario catalogue",
 )
 async def get_scenarios(kind: CatalogueKind) -> list[dict]:
-    """Return a scenario catalogue (``playground`` or ``agent``)."""
+    """Return a scenario catalogue (``playground``, ``agent``, or ``compare``)."""
     return _load_catalogue(kind)

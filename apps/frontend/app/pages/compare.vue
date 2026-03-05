@@ -98,25 +98,14 @@
         {{ error }}
       </v-alert>
 
-      <!-- Explainer bar -->
-      <div class="compare-page__explainer px-4 py-2">
-        <v-icon size="16" color="info" class="mr-1">mdi-information</v-icon>
-        <span class="text-caption">
-          Both panels send <strong>the same prompt</strong> to <strong>the same model</strong>.
-          The left panel routes through the <strong>AI Protector proxy</strong>
-          (intent detection, PII scan, guardrails, policy engine).
-          The right panel sends the request <strong>directly from your browser to the provider API</strong>
-          — no proxy, no scanning, zero protection.
-          This is the exact difference between <code>base_url="your-proxy"</code> and <code>base_url="api.openai.com"</code>.
-        </span>
-      </div>
+
       <v-divider />
     </div>
 
     <!-- Two-column panels -->
     <div class="compare-page__panels">
       <div class="compare-page__panel">
-        <compare-compare-panel
+        <compare-panel
           variant="protected"
           :messages="protectedMessages"
           :is-streaming="isProtectedStreaming"
@@ -128,7 +117,7 @@
       <v-divider vertical />
 
       <div class="compare-page__panel">
-        <compare-compare-panel
+        <compare-panel
           variant="direct"
           :messages="directMessages"
           :is-streaming="isDirectStreaming"
@@ -202,7 +191,7 @@ const {
   abort,
 } = useCompareChat()
 
-const { scenarios, isLoading: scenariosLoading } = useScenarios('playground')
+const { scenarios, isLoading: scenariosLoading } = useScenarios('compare')
 const { policies, isLoading: policiesLoading } = usePolicies()
 const { groupedModels, isLoading: modelsLoading, refreshAvailability } = useModels()
 
@@ -329,8 +318,10 @@ function handleAttackSend(prompt: string) {
   &__panel {
     flex: 1;
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   &__input {

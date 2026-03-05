@@ -34,7 +34,7 @@
         </div>
         <pre class="code-snippet__block"><span class="c-var">client</span> = <span class="c-fn">OpenAI</span>(
   <span class="c-key">api_key</span>=<span class="c-str">"sk-..."</span>,
-  <span class="c-key">base_url</span>=<span class="c-str">"{{ codeBaseUrl }}"</span>  <span class="c-comment">{{ codeComment }}</span>
+  <span class="c-key">base_url</span>=<span class="c-str">"<span class="c-url">{{ codeBaseUrl }}</span>"</span>  <span class="c-comment">{{ codeComment }}</span>
 )</pre>
       </div>
 
@@ -42,7 +42,7 @@
       <div class="compare-panel__endpoint mt-1">
         <code class="compare-panel__url">
           <v-icon size="12" class="mr-1">mdi-arrow-right-bold</v-icon>
-          POST {{ endpoint }}
+          POST <span class="compare-panel__url-highlight">{{ endpointBase }}</span>{{ endpointPath }}
         </code>
       </div>
 
@@ -90,24 +90,10 @@
       />
     </div>
 
-    <!-- Decision card (only for protected) -->
-    <div v-if="variant === 'protected' && decision" class="compare-panel__decision">
+    <!-- Decision card (protected panel) -->
+    <div v-if="props.decision" class="compare-panel__decision">
       <v-divider />
-      <compare-compare-decision-card :decision="decision" />
-    </div>
-
-    <!-- Direct panel: no-protection indicator when response received -->
-    <div v-if="variant === 'direct' && messages.length > 1 && !isStreaming" class="compare-panel__decision">
-      <v-divider />
-      <v-alert
-        type="warning"
-        variant="tonal"
-        density="compact"
-        class="ma-2"
-      >
-        <template #title>No pipeline analysis</template>
-        This response was not scanned. No intent detection, risk scoring, or policy enforcement was applied.
-      </v-alert>
+      <compare-decision-card :decision="props.decision" />
     </div>
   </div>
 </template>
@@ -135,6 +121,29 @@ const endpoint = computed(() => {
     : '/v1/chat/direct'
 })
 
+/** The base host portion of the endpoint (highlighted). */
+const endpointBase = computed(() => {
+  const url = endpoint.value
+  try {
+    const u = new URL(url)
+    return `${u.protocol}//${u.host}`
+  } catch {
+    // relative path — no base to highlight
+    return ''
+  }
+})
+
+/** The path portion of the endpoint (not highlighted). */
+const endpointPath = computed(() => {
+  const url = endpoint.value
+  try {
+    const u = new URL(url)
+    return u.pathname
+  } catch {
+    return url
+  }
+})
+
 /** Base URL for the code snippet. */
 const codeBaseUrl = computed(() => {
   if (props.variant === 'protected') {
@@ -147,8 +156,8 @@ const codeBaseUrl = computed(() => {
 
 const codeComment = computed(() =>
   props.variant === 'protected'
-    ? '# ← protected by AI Protector'
-    : '# ← your current, unprotected code',
+    ? '# 🔒 ONE LINE — YOU\'RE PROTECTED!'
+    : '# ⚠️ ZERO PROTECTION',
 )
 </script>
 
@@ -171,8 +180,8 @@ const codeComment = computed(() =>
 
   &__header {
     padding: 12px 16px;
-    flex-shrink: 0;
-    background: rgba(var(--v-theme-surface-variant), 0.3);
+    flex-shrink: 1;
+    overflow-y: auto;
   }
 
   &__badge {
@@ -193,6 +202,11 @@ const codeComment = computed(() =>
     letter-spacing: 0.02em;
   }
 
+  &__url-highlight {
+    color: #e879f9;
+    font-weight: 700;
+  }
+
   &__flow {
     line-height: 1.6;
   }
@@ -200,7 +214,7 @@ const codeComment = computed(() =>
   &__messages {
     flex: 1;
     overflow-y: auto;
-    min-height: 0;
+    min-height: 120px;
   }
 
   &__decision {
@@ -223,12 +237,12 @@ const codeComment = computed(() =>
 
   &__block {
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: 0.72rem;
-    line-height: 1.6;
+    font-size: 0.85rem;
+    line-height: 1.7;
     margin: 0;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: #1e1e2e;
-    color: #cdd6f4;
+    color: #e0e4f0;
     border-radius: 6px;
     overflow-x: auto;
     white-space: pre;
@@ -236,9 +250,10 @@ const codeComment = computed(() =>
 }
 
 // Syntax-highlight classes
-.c-var { color: #89b4fa; }
-.c-fn { color: #f9e2af; }
-.c-key { color: #a6e3a1; }
-.c-str { color: #a6e3a1; }
-.c-comment { color: #6c7086; font-style: italic; }
+.c-var { color: #7dd3fc; font-weight: 600; }
+.c-fn { color: #fde68a; font-weight: 600; }
+.c-key { color: #86efac; }
+.c-str { color: #86efac; }
+.c-url { color: #f0abfc; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.c-comment { color: #9ca3af; font-style: italic; }
 </style>

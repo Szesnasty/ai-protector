@@ -139,7 +139,12 @@ export function useCompareChat() {
         {
           onToken: (token: string) => {
             const msg = protectedMessages.value[protIdx]
-            if (msg) msg.content = (msg.content ?? '') + token
+            if (msg) {
+              protectedMessages.value.splice(protIdx, 1, {
+                ...msg,
+                content: (msg.content ?? '') + token,
+              })
+            }
           },
           onDone: () => {
             isProtectedStreaming.value = false
@@ -195,7 +200,12 @@ export function useCompareChat() {
     const directCallbacks = {
       onToken: (token: string) => {
         const msg = directMessages.value[dirIdx]
-        if (msg) msg.content = (msg.content ?? '') + token
+        if (msg) {
+          directMessages.value.splice(dirIdx, 1, {
+            ...msg,
+            content: (msg.content ?? '') + token,
+          })
+        }
       },
       onDone: () => {
         isDirectStreaming.value = false
