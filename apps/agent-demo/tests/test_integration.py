@@ -179,10 +179,10 @@ class TestScenario3CustomerSecrets:
 # ── Scenario 4: Admin secrets → allowed ─────────────────────
 
 class TestScenario4AdminSecrets:
-    """Admin asks for secrets → tool allowed, proxy ALLOW."""
+    """Admin asks for secrets → REQUIRE_CONFIRMATION (sensitive tool, RBAC spec 02)."""
 
     @pytest.mark.asyncio
-    async def test_admin_secrets_allowed(self):
+    async def test_admin_secrets_requires_confirmation(self):
         mock_resp = _mock_llm_response(
             content="Here are the internal configuration details.",
             decision="ALLOW",
@@ -200,12 +200,17 @@ class TestScenario4AdminSecrets:
             })
 
         assert "getInternalSecrets" in result.get("allowed_tools", [])
-        secrets_calls = [tc for tc in result.get("tool_calls", []) if tc["tool"] == "getInternalSecrets"]
-        assert len(secrets_calls) == 1
-        assert secrets_calls[0]["allowed"] is True
-        assert "MOCK_" in secrets_calls[0]["result"]
-        fw = result.get("firewall_decision", {})
-        assert fw["decision"] == "ALLOW"
+        # Gate should flag for confirmation
+        assert result.get("pending_confirmation") is not None
+        assert result["pending_confirmation"]["tool"] == "getInternalSecrets"
+        # Tool should NOT have been executed
+        secrets_calls = [
+            tc for tc in result.get("tool_calls", [])
+            if tc["tool"] == "getInternalSecrets" and tc.get("allowed") is True
+        ]
+        assert len(secrets_calls) == 0
+        # Response should ask for confirmation
+        assert "confirmation" in result.get("final_response", "").lower()
 
 
 # ── Scenario 5: Injection → RBAC + proxy BLOCK ──────────────

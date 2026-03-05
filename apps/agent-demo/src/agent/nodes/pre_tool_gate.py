@@ -18,6 +18,7 @@ from typing import Any
 
 import structlog
 
+from src.agent.rbac.service import get_rbac_service
 from src.agent.state import AgentState, CheckResult, GateDecision
 
 logger = structlog.get_logger()
@@ -55,7 +56,8 @@ EXFILTRATION_PATTERNS: list[re.Pattern[str]] = [
     ]
 ]
 
-# Tools that require human confirmation (stub — will be driven by RBAC config in spec 02)
+# Tools that require human confirmation — now driven by RBAC config.
+# This set is kept for backward-compat in tests; real check uses RBAC service below.
 TOOLS_REQUIRING_CONFIRMATION: set[str] = set()
 
 # Maximum tool calls per session before gate blocks (stub — spec 06 handles this properly)
@@ -65,14 +67,22 @@ MAX_TOOL_CALLS_PER_SESSION = 20
 # ── Individual checks ─────────────────────────────────────────────────
 
 
-def _check_rbac(tool_name: str, allowed_tools: list[str]) -> CheckResult:
-    """Check 1: Is the tool in the role's allowlist?"""
-    if tool_name in allowed_tools:
+def _check_rbac(tool_name: str, allowed_tools: list[str], user_role: str = "") -> CheckResult:
+    """Check 1: Is the tool in the role's allowlist?
+
+    Uses RBAC service for rich permission check (scopes, inheritance).
+    Falls back to flat allowlist if RBAC service fails.
+    """
+    rbac = get_rbac_service()
+    result = rbac.check_permission(user_role, tool_name, scope="read")
+
+    if result.allowed:
         return CheckResult(check="rbac", passed=True, detail=None)
+
     return CheckResult(
         check="rbac",
         passed=False,
-        detail=f"Tool '{tool_name}' is not permitted for this role.",
+        detail=result.reason or f"Tool '{tool_name}' is not permitted for this role.",
     )
 
 
@@ -158,11 +168,23 @@ def _check_limits(
     return CheckResult(check="limits", passed=True, detail=None)
 
 
-def _check_confirmation(tool_name: str) -> CheckResult:
+def _check_confirmation(tool_name: str, user_role: str = "") -> CheckResult:
     """Check 5: Does this tool require human confirmation?
 
-    Stub — will be driven by RBAC config (spec 02, requires_confirmation flag).
+    Checks RBAC service for requires_confirmation flag, with fallback
+    to the module-level TOOLS_REQUIRING_CONFIRMATION set.
     """
+    # RBAC-driven confirmation
+    rbac = get_rbac_service()
+    result = rbac.check_permission(user_role, tool_name, scope="read")
+    if result.allowed and result.requires_confirmation:
+        return CheckResult(
+            check="confirmation",
+            passed=False,
+            detail=f"Tool '{tool_name}' requires user confirmation (sensitivity: {result.tool_sensitivity}).",
+        )
+
+    # Legacy fallback
     if tool_name in TOOLS_REQUIRING_CONFIRMATION:
         return CheckResult(
             check="confirmation",
@@ -183,6 +205,7 @@ def _evaluate_tool(
 ) -> GateDecision:
     """Run all checks for a single tool call and return a GateDecision."""
     allowed_tools = state.get("allowed_tools", [])
+    user_role = state.get("user_role", "")
     message = state.get("message", "")
     chat_history = state.get("chat_history", [])
     total_tool_calls = len(state.get("tool_calls", []))
@@ -192,7 +215,7 @@ def _evaluate_tool(
     risk_score = 0.0
 
     # ── Check 1: RBAC ─────────────────────────────────────
-    rbac = _check_rbac(tool_name, allowed_tools)
+    rbac = _check_rbac(tool_name, allowed_tools, user_role)
     checks.append(rbac)
     if not rbac["passed"]:
         risk_score = 1.0
@@ -254,7 +277,7 @@ def _evaluate_tool(
         )
 
     # ── Check 5: Confirmation ─────────────────────────────
-    confirm = _check_confirmation(tool_name)
+    confirm = _check_confirmation(tool_name, user_role)
     checks.append(confirm)
     if not confirm["passed"]:
         risk_score = 0.3

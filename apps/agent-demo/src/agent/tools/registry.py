@@ -1,9 +1,14 @@
-"""Tool registry — RBAC configuration and tool dispatch."""
+"""Tool registry — tool dispatch and descriptions.
+
+RBAC configuration has moved to `src/agent/rbac/` (spec 02).
+This module retains tool function dispatch and descriptions.
+"""
 
 from __future__ import annotations
 
 from typing import Any, Callable
 
+from src.agent.rbac.service import get_rbac_service
 from src.agent.tools.kb import search_knowledge_base
 from src.agent.tools.orders import get_order_status
 from src.agent.tools.secrets import get_internal_secrets
@@ -22,16 +27,14 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     "getInternalSecrets": "Retrieve internal API keys and configuration. No args needed.",
 }
 
-# Role → allowed tool names
-ROLE_TOOLS: dict[str, list[str]] = {
-    "customer": ["searchKnowledgeBase", "getOrderStatus"],
-    "admin": ["searchKnowledgeBase", "getOrderStatus", "getInternalSecrets"],
-}
-
 
 def get_allowed_tools(user_role: str) -> list[str]:
-    """Return list of tool names allowed for the given role."""
-    return ROLE_TOOLS.get(user_role, [])
+    """Return list of tool names allowed for the given role.
+
+    Delegates to RBAC service (with inheritance resolution).
+    """
+    rbac = get_rbac_service()
+    return rbac.get_allowed_tools(user_role)
 
 
 def execute_tool(tool_name: str, args: dict[str, Any]) -> str:

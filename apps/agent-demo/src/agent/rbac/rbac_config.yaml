@@ -1,0 +1,40 @@
+# RBAC Configuration — Agent Tool Permissions
+#
+# Loaded at startup by the RBAC service.
+# Changes here take effect on next restart (no hot-reload yet).
+#
+# Inheritance: a role inherits all tools from its parent.
+# Explicit entries override inherited ones.
+# Default-deny: if a (role, tool) pair is not found → DENY.
+
+roles:
+  customer:
+    description: "End-user customer with read-only access to public tools"
+    tools:
+      searchKnowledgeBase:
+        scopes: [read]
+        sensitivity: low
+      getOrderStatus:
+        scopes: [read]
+        sensitivity: low
+
+  support:
+    description: "Support agent with access to customer profiles"
+    inherits: customer
+    tools:
+      getCustomerProfile:
+        scopes: [read]
+        sensitivity: medium
+
+  admin:
+    description: "System administrator with full access"
+    inherits: support
+    tools:
+      getInternalSecrets:
+        scopes: [read]
+        sensitivity: critical
+        requires_confirmation: true
+      issueRefund:
+        scopes: [write]
+        sensitivity: high
+        requires_confirmation: true

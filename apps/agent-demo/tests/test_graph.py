@@ -94,8 +94,8 @@ class TestGraphExecution:
                 assert tc["allowed"] is False
 
     @pytest.mark.asyncio
-    async def test_admin_can_access_secrets(self):
-        """Admin should be able to access secrets."""
+    async def test_admin_secrets_requires_confirmation(self):
+        """Admin asking for secrets should get REQUIRE_CONFIRMATION (sensitive tool)."""
         mock_response = AsyncMock()
         mock_response.choices = [AsyncMock()]
         mock_response.choices[0].message.content = "Here are the internal secrets."
@@ -111,10 +111,15 @@ class TestGraphExecution:
             })
 
         assert "getInternalSecrets" in result.get("allowed_tools", [])
-        secrets_calls = [tc for tc in result.get("tool_calls", []) if tc["tool"] == "getInternalSecrets"]
-        assert len(secrets_calls) == 1
-        assert secrets_calls[0]["allowed"] is True
-        assert "MOCK_DATABASE_URL" in secrets_calls[0]["result"]
+        # Gate should return REQUIRE_CONFIRMATION for getInternalSecrets
+        gate = result.get("gate_decisions", [])
+        assert len(gate) >= 1
+        secrets_gate = [g for g in gate if g["tool"] == "getInternalSecrets"]
+        assert len(secrets_gate) == 1
+        assert secrets_gate[0]["decision"] == "REQUIRE_CONFIRMATION"
+        # Response should ask for confirmation instead of returning secrets
+        assert result.get("pending_confirmation") is not None
+        assert "confirmation" in result.get("final_response", "").lower()
 
     @pytest.mark.asyncio
     async def test_order_query_flow(self):

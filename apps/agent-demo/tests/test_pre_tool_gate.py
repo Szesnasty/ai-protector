@@ -48,16 +48,16 @@ def _make_state(**overrides) -> AgentState:
 
 class TestCheckRBAC:
     def test_allowed_tool_passes(self):
-        result = _check_rbac("getOrderStatus", ["getOrderStatus", "searchKnowledgeBase"])
+        result = _check_rbac("getOrderStatus", ["getOrderStatus", "searchKnowledgeBase"], "customer")
         assert result["passed"] is True
 
     def test_disallowed_tool_fails(self):
-        result = _check_rbac("getInternalSecrets", ["getOrderStatus", "searchKnowledgeBase"])
+        result = _check_rbac("getInternalSecrets", ["getOrderStatus", "searchKnowledgeBase"], "customer")
         assert result["passed"] is False
-        assert "not permitted" in result["detail"]
+        assert "not in allowlist" in result["detail"]
 
     def test_empty_allowlist(self):
-        result = _check_rbac("getOrderStatus", [])
+        result = _check_rbac("getOrderStatus", [], "unknown_role")
         assert result["passed"] is False
 
 
@@ -200,15 +200,32 @@ class TestEvaluateTool:
         assert decision["risk_score"] == 0.8
 
     def test_confirmation_required(self):
-        """Test REQUIRE_CONFIRMATION path when a tool is in the confirmation set."""
+        """Test REQUIRE_CONFIRMATION via RBAC config (admin + getInternalSecrets)."""
+        state = _make_state(
+            user_role="admin",
+            allowed_tools=["searchKnowledgeBase", "getOrderStatus", "getInternalSecrets"],
+        )
+        decision = _evaluate_tool("getInternalSecrets", {}, state, 0)
+        assert decision["decision"] == "REQUIRE_CONFIRMATION"
+        assert decision["risk_score"] == 0.3
+
+    def test_confirmation_via_legacy_set(self):
+        """Test REQUIRE_CONFIRMATION via legacy TOOLS_REQUIRING_CONFIRMATION set."""
         TOOLS_REQUIRING_CONFIRMATION.add("sensitiveAction")
         try:
-            state = _make_state(allowed_tools=["sensitiveAction"])
-            decision = _evaluate_tool("sensitiveAction", {}, state, 0)
+            state = _make_state(
+                user_role="customer",
+                allowed_tools=["sensitiveAction"],
+            )
+            # sensitiveAction is in allowed_tools but not in RBAC config,
+            # so RBAC check blocks it. Test the legacy set still works for known tools.
+            # Use a customer tool + add it to the legacy set.
+            TOOLS_REQUIRING_CONFIRMATION.add("getOrderStatus")
+            decision = _evaluate_tool("getOrderStatus", {"order_id": "ORD-001"}, state, 0)
             assert decision["decision"] == "REQUIRE_CONFIRMATION"
-            assert decision["risk_score"] == 0.3
         finally:
             TOOLS_REQUIRING_CONFIRMATION.discard("sensitiveAction")
+            TOOLS_REQUIRING_CONFIRMATION.discard("getOrderStatus")
 
 
 # ────────────────────────────────────────────────────────────────────────
@@ -289,22 +306,19 @@ class TestPreToolGateNode:
         assert result["tool_plan"] == []
 
     def test_confirmation_sets_pending(self):
-        """REQUIRE_CONFIRMATION sets pending_confirmation on state."""
-        TOOLS_REQUIRING_CONFIRMATION.add("dangerousTool")
-        try:
-            state = _make_state(
-                allowed_tools=["dangerousTool", "getOrderStatus"],
-                tool_plan=[
-                    {"tool": "dangerousTool", "args": {"action": "delete"}},
-                    {"tool": "getOrderStatus", "args": {"order_id": "ORD-001"}},
-                ],
-            )
-            result = pre_tool_gate_node(state)
+        """REQUIRE_CONFIRMATION sets pending_confirmation on state (via RBAC config)."""
+        state = _make_state(
+            user_role="admin",
+            allowed_tools=["searchKnowledgeBase", "getOrderStatus", "getInternalSecrets"],
+            tool_plan=[
+                {"tool": "getInternalSecrets", "args": {}},
+                {"tool": "getOrderStatus", "args": {"order_id": "ORD-001"}},
+            ],
+        )
+        result = pre_tool_gate_node(state)
 
-            assert result["pending_confirmation"] is not None
-            assert result["pending_confirmation"]["tool"] == "dangerousTool"
-        finally:
-            TOOLS_REQUIRING_CONFIRMATION.discard("dangerousTool")
+        assert result["pending_confirmation"] is not None
+        assert result["pending_confirmation"]["tool"] == "getInternalSecrets"
 
     def test_exfiltration_message_blocks_tool(self):
         state = _make_state(
@@ -338,13 +352,24 @@ class TestPreToolGateNode:
         assert len(decision["checks"]) >= 1
         assert all("check" in c and "passed" in c for c in decision["checks"])
 
-    def test_admin_can_access_all_tools(self):
-        """Admin with full allowlist should pass RBAC."""
+    def test_admin_can_access_non_sensitive_tools(self):
+        """Admin with full allowlist should ALLOW non-sensitive tools."""
+        state = _make_state(
+            user_role="admin",
+            allowed_tools=["searchKnowledgeBase", "getOrderStatus", "getInternalSecrets"],
+            tool_plan=[{"tool": "getOrderStatus", "args": {"order_id": "ORD-001"}}],
+        )
+        result = pre_tool_gate_node(state)
+        assert result["gate_decisions"][0]["decision"] == "ALLOW"
+        assert len(result["tool_plan"]) == 1
+
+    def test_admin_secrets_requires_confirmation(self):
+        """Admin accessing getInternalSecrets should get REQUIRE_CONFIRMATION."""
         state = _make_state(
             user_role="admin",
             allowed_tools=["searchKnowledgeBase", "getOrderStatus", "getInternalSecrets"],
             tool_plan=[{"tool": "getInternalSecrets", "args": {}}],
         )
         result = pre_tool_gate_node(state)
-        assert result["gate_decisions"][0]["decision"] == "ALLOW"
-        assert len(result["tool_plan"]) == 1
+        assert result["gate_decisions"][0]["decision"] == "REQUIRE_CONFIRMATION"
+        assert result["pending_confirmation"] is not None
