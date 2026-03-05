@@ -9,6 +9,7 @@ from src.agent.nodes.intent import intent_node
 from src.agent.nodes.llm_call import llm_call_node
 from src.agent.nodes.memory import memory_node
 from src.agent.nodes.policy import policy_check_node
+from src.agent.nodes.post_tool_gate import post_tool_gate_node
 from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
 from src.agent.nodes.response import response_node
 from src.agent.nodes.tools import tool_executor_node, tool_router_node
@@ -77,6 +78,7 @@ def build_agent_graph() -> StateGraph:
     graph.add_node("tool_router", tool_router_node)
     graph.add_node("pre_tool_gate", pre_tool_gate_node)
     graph.add_node("tool_executor", tool_executor_node)
+    graph.add_node("post_tool_gate", post_tool_gate_node)
     graph.add_node("confirmation_response", _confirmation_response_node)
     graph.add_node("llm_call", llm_call_node)
     graph.add_node("memory", memory_node)
@@ -101,8 +103,9 @@ def build_agent_graph() -> StateGraph:
         "confirmation_response": "confirmation_response",
     })
 
-    # After tool execution → always go to LLM
-    graph.add_edge("tool_executor", "llm_call")
+    # After tool execution → post-tool gate → LLM
+    graph.add_edge("tool_executor", "post_tool_gate")
+    graph.add_edge("post_tool_gate", "llm_call")
 
     # Confirmation response → memory → END (returns to user)
     graph.add_edge("confirmation_response", "memory")

@@ -5,13 +5,30 @@ from __future__ import annotations
 from typing import Any, Literal, TypedDict
 
 
-class ToolCallRecord(TypedDict):
+class PostGateResult(TypedDict, total=False):
+    """Result of post-tool gate scanning on a single tool output."""
+
+    decision: str  # "PASS", "REDACT", "TRUNCATE", "BLOCK"
+    pii_entities: list[dict[str, Any]]  # [{type, start, end}]
+    pii_count: int
+    secrets_count: int
+    injection_score: float  # 0.0–1.0
+    injection_patterns: list[str]
+    original_length: int
+    sanitized_length: int
+    redactions_applied: int
+    reason: str | None
+
+
+class ToolCallRecord(TypedDict, total=False):
     """A single tool invocation record."""
 
     tool: str
     args: dict[str, Any]
     result: str
+    sanitized_result: str  # After post-tool gate (spec 03)
     allowed: bool
+    post_gate: PostGateResult | None  # Post-tool gate outcome (spec 03)
 
 
 class CheckResult(TypedDict):

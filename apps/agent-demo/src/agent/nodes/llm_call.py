@@ -47,13 +47,18 @@ def _build_messages(state: AgentState) -> list[dict[str, str]]:
     # Add current user message
     messages.append({"role": "user", "content": state.get("message", "")})
 
-    # Add tool results as context
+    # Add tool results as context (prefer sanitized output from post-tool gate)
     tool_calls = state.get("tool_calls", [])
     if tool_calls:
         tool_context_parts = []
         for tc in tool_calls:
             status = "✅" if tc["allowed"] else "❌ DENIED"
-            tool_context_parts.append(f"[Tool: {tc['tool']} {status}]\n{tc['result']}")
+            # Use sanitized_result when available (spec 03); fall back to raw result
+            result_text = tc.get("sanitized_result", tc.get("result", ""))
+            post_gate = tc.get("post_gate")
+            if post_gate and post_gate.get("decision") == "BLOCK":
+                status = "🛡️ BLOCKED"
+            tool_context_parts.append(f"[Tool: {tc['tool']} {status}]\n{result_text}")
 
         tool_context = "\n\n".join(tool_context_parts)
         messages.append({
