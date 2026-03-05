@@ -1,7 +1,7 @@
 <template>
   <v-card variant="flat" class="debug-panel">
     <v-card-title class="text-subtitle-1">
-      <v-icon start>mdi-bug</v-icon>
+      <v-icon class="main-icon" start>mdi-bug</v-icon>
       Pipeline Debug
     </v-card-title>
 
@@ -113,6 +113,9 @@ function flagColor(score: number): string {
 .debug-panel {
   padding: 8px 0;
 
+  .main-icon{
+    font-size: 24px;
+  }
   &__row {
     display: flex;
     justify-content: space-between;

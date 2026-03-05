@@ -2,7 +2,7 @@
   {
     "label": "Prompt Injection",
     "color": "red",
-    "icon": "💉",
+    "icon": "mdi-needle",
     "items": [
       {
         "label": "Ignore Instructions",
@@ -166,7 +166,7 @@
   {
     "label": "System Prompt Leaking",
     "color": "red-darken-3",
-    "icon": "🔍",
+    "icon": "mdi-text-search",
     "items": [
       {
         "label": "Repeat Above",
@@ -276,7 +276,7 @@
   {
     "label": "Jailbreak",
     "color": "orange",
-    "icon": "🔓",
+    "icon": "mdi-lock-open-variant-outline",
     "items": [
       {
         "label": "DAN Attack",
@@ -443,7 +443,7 @@
   {
     "label": "Cognitive Hacking",
     "color": "deep-purple",
-    "icon": "🧠",
+    "icon": "mdi-head-cog-outline",
     "items": [
       {
         "label": "Safe Space Justification",
@@ -532,7 +532,7 @@
   {
     "label": "PII / Sensitive Data",
     "color": "purple",
-    "icon": "🔒",
+    "icon": "mdi-shield-lock-outline",
     "items": [
       {
         "label": "PESEL Leak",
@@ -698,7 +698,7 @@
   {
     "label": "Data Exfiltration",
     "color": "blue",
-    "icon": "📤",
+    "icon": "mdi-database-export-outline",
     "items": [
       {
         "label": "Dump Emails",
@@ -809,7 +809,7 @@
   {
     "label": "Toxicity & Harmful",
     "color": "deep-orange",
-    "icon": "☠️",
+    "icon": "mdi-skull-outline",
     "items": [
       {
         "label": "Hate Speech Probe",
@@ -944,7 +944,7 @@
   {
     "label": "Misinformation",
     "color": "brown",
-    "icon": "📰",
+    "icon": "mdi-newspaper-variant-outline",
     "items": [
       {
         "label": "Fake Medical Advice",
@@ -1027,7 +1027,7 @@
   {
     "label": "Secrets Detection",
     "color": "amber",
-    "icon": "🔑",
+    "icon": "mdi-key-outline",
     "items": [
       {
         "label": "AWS Key in Prompt",
@@ -1163,7 +1163,7 @@
   {
     "label": "Obfuscation Attacks",
     "color": "teal",
-    "icon": "🎭",
+    "icon": "mdi-drama-masks",
     "items": [
       {
         "label": "ROT13 Encoded",
@@ -1310,7 +1310,7 @@
   {
     "label": "Few-Shot Manipulation",
     "color": "cyan",
-    "icon": "🎯",
+    "icon": "mdi-bullseye-arrow",
     "items": [
       {
         "label": "Misaligned Examples",
@@ -1382,7 +1382,7 @@
   {
     "label": "Multi-Language Attacks",
     "color": "indigo",
-    "icon": "🌐",
+    "icon": "mdi-translate",
     "items": [
       {
         "label": "Polish Injection",
@@ -1523,7 +1523,7 @@
   {
     "label": "Excessive Agency",
     "color": "pink",
-    "icon": "⚡",
+    "icon": "mdi-flash-outline",
     "items": [
       {
         "label": "Execute System Command",
@@ -1603,7 +1603,7 @@
   {
     "label": "Resource Exhaustion",
     "color": "grey",
-    "icon": "💣",
+    "icon": "mdi-bomb",
     "items": [
       {
         "label": "Infinite Loop Prompt",
@@ -1660,7 +1660,7 @@
   {
     "label": "Safe (ALLOW)",
     "color": "green",
-    "icon": "✅",
+    "icon": "mdi-shield-check-outline",
     "items": [
       {
         "label": "Normal Question",
@@ -1767,7 +1767,7 @@
   {
     "label": "Improper Output Handling",
     "color": "deep-purple",
-    "icon": "🖥️",
+    "icon": "mdi-monitor-eye",
     "items": [
       {
         "label": "XSS via LLM Output",
@@ -1884,7 +1884,7 @@
   {
     "label": "RAG Poisoning",
     "color": "teal",
-    "icon": "🗃️",
+    "icon": "mdi-database-alert-outline",
     "items": [
       {
         "label": "Hidden Text Injection",
@@ -1979,7 +1979,7 @@
   {
     "label": "Supply Chain Attacks",
     "color": "brown",
-    "icon": "📦",
+    "icon": "mdi-package-variant-closed",
     "items": [
       {
         "label": "Malicious Package Install",
@@ -2052,7 +2052,7 @@
   {
     "label": "Crescendo & Multi-Turn",
     "color": "indigo",
-    "icon": "📈",
+    "icon": "mdi-chart-timeline-variant",
     "items": [
       {
         "label": "Gradual Boundary Push",
@@ -2147,7 +2147,7 @@
   {
     "label": "Skeleton Key Attacks",
     "color": "grey-darken-3",
-    "icon": "🔑",
+    "icon": "mdi-key-outline",
     "items": [
       {
         "label": "Skeleton Key (Microsoft)",
@@ -2220,7 +2220,7 @@
   {
     "label": "Adversarial Suffixes",
     "color": "pink",
-    "icon": "🧬",
+    "icon": "mdi-dna",
     "items": [
       {
         "label": "GCG Suffix Attack",
@@ -2304,7 +2304,7 @@
   {
     "label": "Virtual Context Attacks",
     "color": "cyan",
-    "icon": "🎮",
+    "icon": "mdi-console",
     "items": [
       {
         "label": "Simulated Terminal",
@@ -2399,7 +2399,7 @@
   {
     "label": "Payload Splitting",
     "color": "lime",
-    "icon": "✂️",
+    "icon": "mdi-content-cut",
     "items": [
       {
         "label": "Two-Part Assembly",

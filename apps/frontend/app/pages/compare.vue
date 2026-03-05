@@ -156,7 +156,7 @@
       elevation="8"
       @click="showScenarios = !showScenarios"
     >
-      <v-icon>mdi-skull-crossbones</v-icon>
+      <v-icon color="red-lighten-1">mdi-skull-crossbones</v-icon>
       <v-tooltip activator="parent" location="left">Attack Scenarios</v-tooltip>
     </v-btn>
   </v-container>

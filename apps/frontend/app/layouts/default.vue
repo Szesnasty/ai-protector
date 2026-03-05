@@ -5,7 +5,7 @@
         class="d-md-none"
         @click="drawer = !drawer"
       />
-      <v-app-bar-title>AI Protector</v-app-bar-title>
+      <v-app-bar-title></v-app-bar-title>
 
       <template #append>
         <health-indicator />
@@ -18,12 +18,10 @@
     </v-app-bar>
 
     <v-navigation-drawer v-model="drawer">
-      <v-list-item
-        title="AI Protector"
-        subtitle="LLM Firewall"
-        prepend-icon="mdi-shield-check"
-        nav
-      />
+      <nuxt-link to="/playground" class="sidebar-logo-item d-block text-decoration-none">
+        <img :src="isDark ? '/logo-white.png' : '/logo.png'" alt="AI Protector" class="sidebar-logo" />
+        <div class="text-caption text-medium-emphasis mt-1">LLM Firewall</div>
+      </nuxt-link>
       <v-divider />
       <app-nav-drawer />
     </v-navigation-drawer>
@@ -46,5 +44,17 @@ const { isDark, toggle } = useAppTheme()
 // Ensure main content fills viewport
 .v-main {
   min-height: 100vh;
+}
+
+.sidebar-logo-item {
+  padding: 16px 16px 8px !important;
+  text-align: center;
+}
+
+.sidebar-logo {
+  width: 100%;
+  max-width: 140px;
+  height: auto;
+  object-fit: contain;
 }
 </style>

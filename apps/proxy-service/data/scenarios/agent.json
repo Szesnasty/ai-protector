@@ -2,7 +2,7 @@
   {
     "label": "Tool Abuse",
     "color": "red",
-    "icon": "🔧",
+    "icon": "mdi-wrench-outline",
     "items": [
       {
         "label": "Access Internal Secrets",
@@ -118,7 +118,7 @@
   {
     "label": "Role Bypass / Escalation",
     "color": "orange",
-    "icon": "👤",
+    "icon": "mdi-account-alert-outline",
     "items": [
       {
         "label": "Pretend Admin",
@@ -209,7 +209,7 @@
   {
     "label": "Prompt Injection (Agent)",
     "color": "red-darken-2",
-    "icon": "💉",
+    "icon": "mdi-needle",
     "items": [
       {
         "label": "Inject via User Input",
@@ -313,7 +313,7 @@
   {
     "label": "Social Engineering",
     "color": "yellow-darken-2",
-    "icon": "🧠",
+    "icon": "mdi-head-cog-outline",
     "items": [
       {
         "label": "Multi-turn Escalation",
@@ -421,7 +421,7 @@
   {
     "label": "PII via Agent",
     "color": "purple",
-    "icon": "🔒",
+    "icon": "mdi-shield-lock-outline",
     "items": [
       {
         "label": "Leak Customer Data",
@@ -515,7 +515,7 @@
   {
     "label": "Data Exfiltration (Agent)",
     "color": "blue",
-    "icon": "📤",
+    "icon": "mdi-database-export-outline",
     "items": [
       {
         "label": "Exfil via Tool",
@@ -605,7 +605,7 @@
   {
     "label": "Excessive Agency",
     "color": "pink",
-    "icon": "⚡",
+    "icon": "mdi-flash-outline",
     "items": [
       {
         "label": "Unauthorized Deletion",
@@ -695,7 +695,7 @@
   {
     "label": "Obfuscation (Agent)",
     "color": "teal",
-    "icon": "🎭",
+    "icon": "mdi-drama-masks",
     "items": [
       {
         "label": "Encoded Tool Call",
@@ -787,7 +787,7 @@
   {
     "label": "Multi-Turn Escalation",
     "color": "deep-orange",
-    "icon": "📈",
+    "icon": "mdi-chart-timeline-variant",
     "items": [
       {
         "label": "Gradual Trust Building",
@@ -860,7 +860,7 @@
   {
     "label": "Chain-of-Thought Attacks",
     "color": "deep-purple",
-    "icon": "🧩",
+    "icon": "mdi-puzzle-outline",
     "items": [
       {
         "label": "Reasoning Override",
@@ -928,7 +928,7 @@
   {
     "label": "Multi-Language (Agent)",
     "color": "indigo",
-    "icon": "🌐",
+    "icon": "mdi-translate",
     "items": [
       {
         "label": "Polish Tool Abuse",
@@ -1024,7 +1024,7 @@
   {
     "label": "Resource Exhaustion",
     "color": "grey",
-    "icon": "💣",
+    "icon": "mdi-bomb",
     "items": [
       {
         "label": "Infinite Tool Loop",
@@ -1073,7 +1073,7 @@
   {
     "label": "Safe (ALLOW)",
     "color": "green",
-    "icon": "✅",
+    "icon": "mdi-shield-check-outline",
     "items": [
       {
         "label": "Check Order Status",
@@ -1180,7 +1180,7 @@
   {
     "label": "RAG Poisoning (Agent)",
     "color": "teal",
-    "icon": "🗃️",
+    "icon": "mdi-database-alert-outline",
     "items": [
       {
         "label": "Poison Knowledge Base",
@@ -1264,7 +1264,7 @@
   {
     "label": "Confused Deputy",
     "color": "deep-orange",
-    "icon": "🤝",
+    "icon": "mdi-handshake-outline",
     "items": [
       {
         "label": "Privilege Escalation via Tool",
@@ -1348,7 +1348,7 @@
   {
     "label": "Cross-Tool Exploitation",
     "color": "purple",
-    "icon": "🔗",
+    "icon": "mdi-link-variant",
     "items": [
       {
         "label": "Tool Output to SQL",
@@ -1432,7 +1432,7 @@
   {
     "label": "Hallucination Exploitation",
     "color": "amber",
-    "icon": "💭",
+    "icon": "mdi-chat-processing-outline",
     "items": [
       {
         "label": "Fake API Endpoint",
@@ -1505,7 +1505,7 @@
   {
     "label": "Supply Chain via Tools",
     "color": "brown",
-    "icon": "📦",
+    "icon": "mdi-package-variant-closed",
     "items": [
       {
         "label": "Malicious Plugin Install",
@@ -1578,7 +1578,7 @@
   {
     "label": "Advanced Multi-Turn",
     "color": "indigo",
-    "icon": "🪜",
+    "icon": "mdi-stairs",
     "items": [
       {
         "label": "Crescendo via Tools",

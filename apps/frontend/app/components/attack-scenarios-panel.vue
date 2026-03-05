@@ -2,7 +2,7 @@
   <v-navigation-drawer
     :model-value="modelValue"
     location="right"
-    :width="300"
+    :width="400"
     :temporary="isMobile"
     :permanent="!isMobile && modelValue"
     @update:model-value="emit('update:modelValue', $event)"
@@ -11,7 +11,8 @@
       <!-- Header -->
       <div class="attack-panel__header">
         <div class="d-flex align-center ga-2">
-          <span class="text-h6">🎯 Attack Scenarios</span>
+          <v-icon size="x-small" class="mr-1">mdi-bullseye-arrow</v-icon>
+          <span class="text-subtitle-2">Attack Scenarios</span>
           <v-chip size="x-small" color="primary" variant="tonal">
             {{ totalCount }}
           </v-chip>
@@ -73,10 +74,10 @@
             v-for="group in filteredGroups"
             :key="group.label"
           >
-            <v-expansion-panel-title>
-              <div class="d-flex align-center ga-2">
-                <span>{{ group.icon }}</span>
-                <span class="text-body-2 font-weight-bold">{{ group.label }}</span>
+            <v-expansion-panel-title class="attack-panel__group-title">
+              <div class="d-flex align-center ga-2" style="min-width: 0">
+                <v-icon size="14" class="flex-shrink-0">{{ group.icon }}</v-icon>
+                <span class="text-caption font-weight-bold" style="word-break: break-word; white-space: normal; line-height: 1.3">{{ group.label }}</span>
                 <v-chip size="x-small" variant="tonal" :color="group.color">
                   {{ group.items.length }}
                 </v-chip>
@@ -85,18 +86,20 @@
 
             <v-expansion-panel-text>
               <div class="d-flex flex-column ga-2">
-                <v-btn
-                  v-for="item in group.items"
-                  :key="item.label"
-                  block
-                  variant="tonal"
-                  :color="group.color"
-                  class="attack-panel__scenario-btn text-left"
-                  @click="handleSend(item.prompt)"
-                >
+                <template v-for="item in group.items" :key="item.label">
+                  <v-tooltip location="start" :max-width="380" open-delay="300">
+                    <template #activator="{ props: tp }">
+                      <v-btn
+                        v-bind="tp"
+                        block
+                        variant="flat"
+                        class="attack-panel__scenario-btn text-left"
+                        :class="`attack-panel__scenario-btn--${(item.expectedDecision || '').toLowerCase()}`"
+                        @click="handleSend(item.prompt)"
+                      >
                   <div class="attack-panel__scenario-content">
                     <div class="d-flex align-center justify-space-between w-100">
-                      <span class="text-body-2">{{ item.label }}</span>
+                      <span class="text-caption" style="word-break: break-word; white-space: normal; line-height: 1.3">{{ item.label }}</span>
                       <v-chip
                         :color="decisionColor(item.expectedDecision)"
                         size="x-small"
@@ -117,7 +120,11 @@
                       />
                     </div>
                   </div>
-                </v-btn>
+                      </v-btn>
+                    </template>
+                    <div class="attack-panel__tooltip-prompt">{{ item.prompt }}</div>
+                  </v-tooltip>
+                </template>
               </div>
             </v-expansion-panel-text>
           </v-expansion-panel>
@@ -239,6 +246,7 @@ function handleSend(prompt: string) {
   display: flex;
   flex-direction: column;
   height: 100%;
+  padding-top: 16px;
 
   &__header {
     display: flex;
@@ -263,13 +271,53 @@ function handleSend(prompt: string) {
     padding: 8px;
   }
 
+  &__group-title {
+    padding: 8px 12px !important;
+    min-height: 36px !important;
+  }
+
   &__scenario-btn {
     height: auto !important;
-    min-height: 40px;
-    padding: 8px 12px !important;
+    min-height: 36px;
+    padding: 8px 12px 8px 14px !important;
     text-transform: none;
     letter-spacing: normal;
-    white-space: normal;
+    white-space: normwal;
+    word-break: break-word;
+    background: #fff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-left: 3px solid transparent;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+
+    :deep(.v-btn__content) {
+      justify-content: flex-start !important;
+      width: 100%;
+    }
+
+    &:hover {
+      background: #fafafa !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    &--block {
+      border-left-color: rgb(var(--v-theme-error));
+    }
+
+    &--modify {
+      border-left-color: rgb(var(--v-theme-warning));
+    }
+
+    &--allow {
+      border-left-color: rgb(var(--v-theme-success));
+    }
   }
 
   &__scenario-content {
@@ -282,6 +330,15 @@ function handleSend(prompt: string) {
     gap: 4px;
   }
 
+  &__tooltip-prompt {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   &__empty {
     display: flex;
     flex-direction: column;
@@ -289,5 +346,9 @@ function handleSend(prompt: string) {
     justify-content: center;
     padding: 32px 16px;
   }
+}
+
+:deep(.v-expansion-panel-text__wrapper) {
+  padding: 8px 8px 16px !important;
 }
 </style>

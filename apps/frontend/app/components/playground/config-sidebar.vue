@@ -1,7 +1,7 @@
 <template>
   <v-card variant="flat" class="config-sidebar">
     <v-card-title class="text-subtitle-1">
-      <v-icon start>mdi-cog</v-icon>
+      <v-icon class="main-icon" start>mdi-cog</v-icon>
       Configuration
     </v-card-title>
 
@@ -115,5 +115,9 @@ function updateField<K extends keyof Config>(key: K, value: Config[K]) {
 <style lang="scss" scoped>
 .config-sidebar {
   padding: 8px 0;
+
+  .main-icon {
+    font-size: 24px;
+  }
 }
 </style>

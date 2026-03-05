@@ -4,20 +4,26 @@
       v-for="item in navItems"
       :key="item.to"
       :to="item.to"
-      :prepend-icon="item.icon"
       :title="item.title"
       exact
-    />
+    >
+      <template #prepend>
+        <v-icon :icon="item.icon" size="18" />
+      </template>
+    </v-list-item>
     <v-divider class="my-2" />
     <v-list-subheader>Manage</v-list-subheader>
     <v-list-item
       v-for="item in manageItems"
       :key="item.to"
       :to="item.to"
-      :prepend-icon="item.icon"
       :title="item.title"
       exact
-    />
+    >
+      <template #prepend>
+        <v-icon :icon="item.icon" size="18" />
+      </template>
+    </v-list-item>
   </v-list>
 </template>
 
@@ -42,3 +48,5 @@ const manageItems: NavItem[] = [
   { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>
+
+
