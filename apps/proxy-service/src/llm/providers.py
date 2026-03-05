@@ -15,6 +15,7 @@ PROVIDER_RULES: list[tuple[str, str]] = [
     ("o1", "openai"),
     ("o3", "openai"),
     ("claude-", "anthropic"),
+    ("gemini-", "google"),
     ("mistral-", "mistral"),
     ("codestral", "mistral"),
 ]
