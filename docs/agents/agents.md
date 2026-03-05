@@ -146,9 +146,9 @@
 
 ---
 
-## 7. Agent Trace (evidence and step-by-step debugging)
+## ✅ 7. Agent Trace (evidence and step-by-step debugging)
 
-**Folder:** `07-agents-trace/`
+**Folder:** `07-agents-trace/` | **Commits:** `a995751` (Phase 1), `f5d643c` (Phase 2+3)
 
 **Goal:** give developers and users "proof" of what happened: why the agent did something, what the model proposed, what the firewall blocked. Without trace, you cannot tune policies or counter disputes like "it blocks for no reason".
 
@@ -277,7 +277,7 @@
 |--------|--------|-----------|
 | **Sprint 1** | 1 + 2 + 4 | Core: gate + RBAC + validation — the backbone of tool-calling protection | ✅ Done |
 | **Sprint 2** | 3 + 5 | Output: post-tool gate + anti-spoofing — closes the security loop | ✅ Done |
-| **Sprint 3** | 6 + 7 | Ops: limits + trace — cost control and debugging | 🟡 6 done, 7 next |
+| **Sprint 3** | 6 + 7 | Ops: limits + trace — cost control and debugging | ✅ Done |
 | **Sprint 4** | 8 + 9 + 10 | Quality: tests, performance, governance — enterprise maturity | ⏳ Not started |
 
 ---
@@ -294,7 +294,7 @@
 | 03 — Post-tool Gate | 3–4 days | New graph node + Presidio + injection detection in tool output | ✅ `608109e` |
 | 05 — Role Separation | 2 days | Sanitizer + message builder refactor; defense-in-depth (see spec 05 limitations) | ✅ `01ac16a` |
 | 06 — Limits/Budgets | 2 days | Counters + Redis rate limiting; straightforward | ✅ `c0acb8b` |
-| 07 — Agent Trace | 3–4 days | Phased: Phase 1 (~2d) in-memory, Phase 2 (~2-3d) DB/API, Phase 3 (~1d) Langfuse | ⏳ |
+| 07 — Agent Trace | 3–4 days | Phased: Phase 1 (~2d) in-memory, Phase 2 (~2-3d) DB/API, Phase 3 (~1d) Langfuse | ✅ `a995751` + `f5d643c` |
 | 08 — Deterministic Tests | 3–4 days | Runner + learning mode + Phase 1 scenarios (20 priority) | ⏳ |
 | 09 — Node Timings | 1–2 days | Extends existing `node_timings` dict; lightweight | ⏳ |
 | 10 — Data Boundary | 2–3 days | Policy config module consumed by spec 03; no new graph node | ⏳ |
