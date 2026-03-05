@@ -4,6 +4,7 @@
 > **Depends on:** 01 (Pre-tool Gate), 05 (Role Separation)
 > **Used by:** 10 (Data Boundary — provides disclosure policy consumed here)
 > **Sprint:** 2
+> **Status:** ✅ Implemented — `608109e`
 >
 > **Relationship with spec 10 (Data Boundary):** This spec handles **generic** security scanning
 > (PII detection, secrets, injection, size limits) — applied the same way regardless of user role.
@@ -164,19 +165,19 @@ class ToolCallRecord(TypedDict):
 
 ## 6. Implementation Steps
 
-- [ ] **6a.** Define `PostGateResult` data structure in `state.py`
-- [ ] **6b.** Extend `ToolCallRecord` with `sanitized_result` and `post_gate` fields
-- [ ] **6c.** Create `src/agent/nodes/post_tool_gate.py` with the gate node function
-- [ ] **6d.** Implement PII scanner (reuse/adapt Presidio from proxy-service)
-- [ ] **6e.** Implement secrets scanner (regex patterns + entropy check)
-- [ ] **6f.** Implement injection detector (pattern matching for instruction idioms)
-- [ ] **6g.** Implement data size check and truncation
-- [ ] **6h.** Wire `post_tool_gate` into agent graph between `tool_executor` and `llm_call`
-- [ ] **6i.** Update `llm_call_node` to use `sanitized_result` instead of raw `result`
-- [ ] **6j.** Add post-gate results to agent trace
-- [ ] **6k.** Write tests: PII redaction, secrets redaction, injection blocking, truncation
-- [ ] **6l.** Write tests: indirect prompt injection in KB articles
-- [ ] **6m.** Integration test: tool returns PII → model response does not contain PII
+- [x] **6a.** Define `PostGateResult` data structure in `state.py`
+- [x] **6b.** Extend `ToolCallRecord` with `sanitized_result` and `post_gate` fields
+- [x] **6c.** Create `src/agent/nodes/post_tool_gate.py` with the gate node function
+- [x] **6d.** Implement PII scanner (reuse/adapt Presidio from proxy-service)
+- [x] **6e.** Implement secrets scanner (regex patterns + entropy check)
+- [x] **6f.** Implement injection detector (pattern matching for instruction idioms)
+- [x] **6g.** Implement data size check and truncation
+- [x] **6h.** Wire `post_tool_gate` into agent graph between `tool_executor` and `llm_call`
+- [x] **6i.** Update `llm_call_node` to use `sanitized_result` instead of raw `result`
+- [x] **6j.** Add post-gate results to agent trace
+- [x] **6k.** Write tests: PII redaction, secrets redaction, injection blocking, truncation
+- [x] **6l.** Write tests: indirect prompt injection in KB articles
+- [x] **6m.** Integration test: tool returns PII → model response does not contain PII
 
 ---
 
@@ -196,12 +197,12 @@ class ToolCallRecord(TypedDict):
 
 ## 8. Definition of Done
 
-- [ ] `post_tool_gate` node exists and is wired into agent graph
-- [ ] PII detection works (Presidio) with configurable entity types
-- [ ] Secrets detection catches common patterns (API keys, tokens, passwords)
-- [ ] Injection detection catches instruction patterns in tool output
-- [ ] Truncation works for oversized output
-- [ ] `sanitized_result` is used by LLM (never raw `result`)
-- [ ] All decisions are recorded in trace
-- [ ] Tests pass for PASS/REDACT/TRUNCATE/BLOCK paths
-- [ ] At least 5 indirect prompt injection patterns are detected
+- [x] `post_tool_gate` node exists and is wired into agent graph
+- [x] PII detection works (Presidio) with configurable entity types
+- [x] Secrets detection catches common patterns (API keys, tokens, passwords)
+- [x] Injection detection catches instruction patterns in tool output
+- [x] Truncation works for oversized output
+- [x] `sanitized_result` is used by LLM (never raw `result`)
+- [x] All decisions are recorded in trace
+- [x] Tests pass for PASS/REDACT/TRUNCATE/BLOCK paths
+- [x] At least 5 indirect prompt injection patterns are detected

@@ -4,6 +4,7 @@
 > **Depends on:** none (standalone)
 > **Used by:** 03 (Post-tool Gate)
 > **Sprint:** 2
+> **Status:** ✅ Implemented — `01ac16a`
 
 ---
 
@@ -192,21 +193,21 @@ STRIP_CHARS = [
 
 ## 6. Implementation Steps
 
-- [ ] **6a.** Create `src/agent/security/sanitizer.py` with `sanitize_user_input()` function
-- [ ] **6b.** Implement role-spoofing pattern stripping
-- [ ] **6c.** Implement control character removal
-- [ ] **6d.** Implement whitespace normalization
-- [ ] **6e.** Create `src/agent/security/message_builder.py` with safe message construction
-- [ ] **6f.** Implement user input wrapping with `[USER_INPUT]` delimiters
-- [ ] **6g.** Implement tool output wrapping with `[TOOL_OUTPUT]` delimiters
-- [ ] **6h.** Refactor `llm_call_node` to use `message_builder` instead of direct concatenation
-- [ ] **6i.** Update system prompt template with anti-injection instructions
-- [ ] **6j.** Implement chat history sanitization (re-sanitize stored turns)
-- [ ] **6k.** Update `input_node` to sanitize user message on entry
-- [ ] **6l.** Write tests: role spoofing patterns are stripped
-- [ ] **6m.** Write tests: control characters are removed
-- [ ] **6n.** Write tests: tool output wrapped correctly
-- [ ] **6o.** Write tests: system prompt never contains user/tool data
+- [x] **6a.** Create `src/agent/security/sanitizer.py` with `sanitize_user_input()` function
+- [x] **6b.** Implement role-spoofing pattern stripping
+- [x] **6c.** Implement control character removal
+- [x] **6d.** Implement whitespace normalization
+- [x] **6e.** Create `src/agent/security/message_builder.py` with safe message construction
+- [x] **6f.** Implement user input wrapping with `[USER_INPUT]` delimiters
+- [x] **6g.** Implement tool output wrapping with `[TOOL_OUTPUT]` delimiters
+- [x] **6h.** Refactor `llm_call_node` to use `message_builder` instead of direct concatenation
+- [x] **6i.** Update system prompt template with anti-injection instructions
+- [x] **6j.** Implement chat history sanitization (re-sanitize stored turns)
+- [x] **6k.** Update `input_node` to sanitize user message on entry
+- [x] **6l.** Write tests: role spoofing patterns are stripped
+- [x] **6m.** Write tests: control characters are removed
+- [x] **6n.** Write tests: tool output wrapped correctly
+- [x] **6o.** Write tests: system prompt never contains user/tool data
 
 ---
 
@@ -250,12 +251,12 @@ STRIP_CHARS = [
 
 ## 9. Definition of Done
 
-- [ ] User input sanitizer strips role-spoofing patterns
-- [ ] Control characters are removed from user input
-- [ ] User messages are wrapped with `[USER_INPUT]` delimiters
-- [ ] Tool output is wrapped with `[TOOL_OUTPUT]` untrusted markers
-- [ ] System prompt is template-only — no user/tool data injected
-- [ ] `llm_call_node` uses safe message builder
-- [ ] Chat history is sanitized before inclusion
-- [ ] Tests pass for all spoofing/injection patterns
-- [ ] System prompt contains anti-instruction rules
+- [x] User input sanitizer strips role-spoofing patterns
+- [x] Control characters are removed from user input
+- [x] User messages are wrapped with `[USER_INPUT]` delimiters
+- [x] Tool output is wrapped with `[TOOL_OUTPUT]` untrusted markers
+- [x] System prompt is template-only — no user/tool data injected
+- [x] `llm_call_node` uses safe message builder
+- [x] Chat history is sanitized before inclusion
+- [x] Tests pass for all spoofing/injection patterns
+- [x] System prompt contains anti-instruction rules

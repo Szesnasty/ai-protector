@@ -4,6 +4,7 @@
 > **Depends on:** none (foundational)
 > **Used by:** 01 (Pre-tool Gate), 10 (Data Boundary)
 > **Sprint:** 1
+> **Status:** ✅ Implemented — `300f109`
 
 ---
 
@@ -191,18 +192,18 @@ roles:
 
 ## 6. Implementation Steps
 
-- [ ] **6a.** Define `ToolDefinition`, `ToolPermission`, `PermissionResult` data structures
-- [ ] **6b.** Create RBAC config schema (YAML) with default roles and tools
-- [ ] **6c.** Create `src/agent/rbac/service.py` with `check_permission()`, `get_allowed_tools()`, `get_role_config()`
-- [ ] **6d.** Implement role inheritance resolution
-- [ ] **6e.** Implement scope checking logic
-- [ ] **6f.** Implement `requires_confirmation` flag handling
-- [ ] **6g.** Replace hardcoded `ROLE_TOOLS` dict in `registry.py` with RBAC service calls
-- [ ] **6h.** Update `policy_check_node` to use RBAC service
-- [ ] **6i.** Update `tool_router_node` to filter by RBAC permissions
-- [ ] **6j.** Add RBAC config file with default roles (customer, support, admin)
-- [ ] **6k.** Write tests: permission resolution, inheritance, scope checks, confirmation flag
-- [ ] **6l.** Write tests: unknown role → default deny, inactive permission → deny
+- [x] **6a.** Define `ToolDefinition`, `ToolPermission`, `PermissionResult` data structures
+- [x] **6b.** Create RBAC config schema (YAML) with default roles and tools
+- [x] **6c.** Create `src/agent/rbac/service.py` with `check_permission()`, `get_allowed_tools()`, `get_role_config()`
+- [x] **6d.** Implement role inheritance resolution
+- [x] **6e.** Implement scope checking logic
+- [x] **6f.** Implement `requires_confirmation` flag handling
+- [x] **6g.** Replace hardcoded `ROLE_TOOLS` dict in `registry.py` with RBAC service calls
+- [x] **6h.** Update `policy_check_node` to use RBAC service
+- [x] **6i.** Update `tool_router_node` to filter by RBAC permissions
+- [x] **6j.** Add RBAC config file with default roles (customer, support, admin)
+- [x] **6k.** Write tests: permission resolution, inheritance, scope checks, confirmation flag
+- [x] **6l.** Write tests: unknown role → default deny, inactive permission → deny
 
 ---
 
@@ -223,11 +224,11 @@ roles:
 
 ## 8. Definition of Done
 
-- [ ] RBAC service exists with `check_permission()`, `get_allowed_tools()`, `get_role_config()`
-- [ ] Role inheritance works (support inherits customer's tools)
-- [ ] Scopes are checked (read/write/execute)
-- [ ] `requires_confirmation` flag is returned correctly
-- [ ] Default-deny policy: unknown role/tool → DENY
-- [ ] Hardcoded `ROLE_TOOLS` replaced with RBAC service
-- [ ] Config loaded from YAML file
-- [ ] All test scenarios pass
+- [x] RBAC service exists with `check_permission()`, `get_allowed_tools()`, `get_role_config()`
+- [x] Role inheritance works (support inherits customer's tools)
+- [x] Scopes are checked (read/write/execute)
+- [x] `requires_confirmation` flag is returned correctly
+- [x] Default-deny policy: unknown role/tool → DENY
+- [x] Hardcoded `ROLE_TOOLS` replaced with RBAC service
+- [x] Config loaded from YAML file
+- [x] All test scenarios pass

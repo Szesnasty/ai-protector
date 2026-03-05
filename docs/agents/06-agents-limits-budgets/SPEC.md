@@ -4,6 +4,7 @@
 > **Depends on:** 02 (RBAC — for per-role limits)
 > **Used by:** 01 (Pre-tool Gate)
 > **Sprint:** 3
+> **Status:** ✅ Implemented — `c0acb8b`
 
 ---
 
@@ -168,21 +169,21 @@ class AgentState(TypedDict, total=False):
 
 ## 6. Implementation Steps
 
-- [ ] **6a.** Define `LimitsConfig` data structure
-- [ ] **6b.** Create `src/agent/limits/service.py` with `check_limits()`, `update_counters()`
-- [ ] **6c.** Create default limits config per role (in RBAC config from point 2)
-- [ ] **6d.** Implement iteration cap check in agent graph loop
-- [ ] **6e.** Implement tool call counter (per request + per session)
-- [ ] **6f.** Implement token tracking after LLM calls
-- [ ] **6g.** Implement cost estimation (tokens × price)
-- [ ] **6h.** Implement rate limiting with Redis sliding window
-- [ ] **6i.** Implement safe completion response when limit hit
-- [ ] **6j.** Integrate limit checks into `pre_tool_gate` (point 1)
-- [ ] **6k.** Integrate limit checks into `input_node` (rate limits)
-- [ ] **6l.** Add limit events to agent trace
-- [ ] **6m.** Write tests: each limit type is enforced correctly
-- [ ] **6n.** Write tests: per-role overrides work
-- [ ] **6o.** Write tests: safe completion message on limit exceeded
+- [x] **6a.** Define `LimitsConfig` data structure
+- [x] **6b.** Create `src/agent/limits/service.py` with `check_limits()`, `update_counters()`
+- [x] **6c.** Create default limits config per role (in RBAC config from point 2)
+- [x] **6d.** Implement iteration cap check in agent graph loop
+- [x] **6e.** Implement tool call counter (per request + per session)
+- [x] **6f.** Implement token tracking after LLM calls
+- [x] **6g.** Implement cost estimation (tokens × price)
+- [x] **6h.** Implement rate limiting with Redis sliding window
+- [x] **6i.** Implement safe completion response when limit hit
+- [x] **6j.** Integrate limit checks into `pre_tool_gate` (point 1)
+- [x] **6k.** Integrate limit checks into `input_node` (rate limits)
+- [x] **6l.** Add limit events to agent trace
+- [x] **6m.** Write tests: each limit type is enforced correctly
+- [x] **6n.** Write tests: per-role overrides work
+- [x] **6o.** Write tests: safe completion message on limit exceeded
 
 ---
 
@@ -202,13 +203,13 @@ class AgentState(TypedDict, total=False):
 
 ## 8. Definition of Done
 
-- [ ] Iteration caps enforced (per request, per session)
-- [ ] Tool call limits enforced (per request, per session)
-- [ ] Token budget tracked and enforced per session
-- [ ] Cost estimation works per session
-- [ ] Rate limiting works per user (Redis)
-- [ ] Per-role limit overrides work
-- [ ] Safe completion message on limit exceeded
-- [ ] All limit events logged and added to trace
-- [ ] Infinite loop attacks are capped
-- [ ] Tests pass for all limit types
+- [x] Iteration caps enforced (per request, per session)
+- [x] Tool call limits enforced (per request, per session)
+- [x] Token budget tracked and enforced per session
+- [x] Cost estimation works per session
+- [x] Rate limiting works per user (Redis)
+- [x] Per-role limit overrides work
+- [x] Safe completion message on limit exceeded
+- [x] All limit events logged and added to trace
+- [x] Infinite loop attacks are capped
+- [x] Tests pass for all limit types

@@ -4,6 +4,7 @@
 > **Depends on:** none (standalone)
 > **Used by:** 01 (Pre-tool Gate)
 > **Sprint:** 1
+> **Status:** ✅ Implemented — `6bb8040`
 
 ---
 
@@ -176,17 +177,17 @@ TOOL_SCHEMAS: dict[str, type[BaseModel]] = {
 
 ## 6. Implementation Steps
 
-- [ ] **6a.** Create `src/agent/validation/schemas.py` with Pydantic models per tool
-- [ ] **6b.** Create `src/agent/validation/validator.py` with `validate_tool_args()` function
-- [ ] **6c.** Implement injection pattern scanning for string args
-- [ ] **6d.** Implement sanitization logic (trim, normalize, strip control chars)
-- [ ] **6e.** Create tool schema registry mapping tool names to Pydantic models
-- [ ] **6f.** Integrate validator into `pre_tool_gate` (called as check #3)
-- [ ] **6g.** Handle tools without schemas (warn + allow, or deny by default)
-- [ ] **6h.** Write tests: valid args pass, invalid types fail, regex mismatch fails
-- [ ] **6i.** Write tests: injection patterns in args are caught
-- [ ] **6j.** Write tests: sanitization (trimming, normalization)
-- [ ] **6k.** Write tests: extra/unexpected args are rejected
+- [x] **6a.** Create `src/agent/validation/schemas.py` with Pydantic models per tool
+- [x] **6b.** Create `src/agent/validation/validator.py` with `validate_tool_args()` function
+- [x] **6c.** Implement injection pattern scanning for string args
+- [x] **6d.** Implement sanitization logic (trim, normalize, strip control chars)
+- [x] **6e.** Create tool schema registry mapping tool names to Pydantic models
+- [x] **6f.** Integrate validator into `pre_tool_gate` (called as check #3)
+- [x] **6g.** Handle tools without schemas (warn + allow, or deny by default)
+- [x] **6h.** Write tests: valid args pass, invalid types fail, regex mismatch fails
+- [x] **6i.** Write tests: injection patterns in args are caught
+- [x] **6j.** Write tests: sanitization (trimming, normalization)
+- [x] **6k.** Write tests: extra/unexpected args are rejected
 
 ---
 
@@ -208,11 +209,11 @@ TOOL_SCHEMAS: dict[str, type[BaseModel]] = {
 
 ## 8. Definition of Done
 
-- [ ] Every tool has a Pydantic schema in the registry
-- [ ] `validate_tool_args()` validates types, formats, lengths, enums
-- [ ] Injection patterns are detected in string arguments
-- [ ] Sanitization works for near-valid args (trim, normalize)
-- [ ] Extra/unexpected fields are rejected
-- [ ] Validator is called by `pre_tool_gate`
-- [ ] All test scenarios pass
-- [ ] Tools without a schema log a warning (configurable: allow or deny)
+- [x] Every tool has a Pydantic schema in the registry
+- [x] `validate_tool_args()` validates types, formats, lengths, enums
+- [x] Injection patterns are detected in string arguments
+- [x] Sanitization works for near-valid args (trim, normalize)
+- [x] Extra/unexpected fields are rejected
+- [x] Validator is called by `pre_tool_gate`
+- [x] All test scenarios pass
+- [x] Tools without a schema log a warning (configurable: allow or deny)

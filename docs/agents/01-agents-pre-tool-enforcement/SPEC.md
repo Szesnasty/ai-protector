@@ -3,6 +3,7 @@
 > **Priority:** 1 (most critical)
 > **Depends on:** 02 (RBAC), 04 (Arg Validation), 06 (Limits)
 > **Sprint:** 1
+> **Status:** ✅ Implemented — `c99c3be`
 >
 > **Note on dependencies:** Points 01, 02, and 04 are developed in **parallel** during Sprint 1.
 > The pre-tool gate defines **interfaces** (e.g. `check_tool_permission()`, `validate_tool_args()`)
@@ -166,18 +167,18 @@ New conditional edge after `pre_tool_gate`:
 
 ## 7. Implementation Steps
 
-- [ ] **7a.** Define `GateDecision` and `CheckResult` data structures in `state.py`
-- [ ] **7b.** Create `src/agent/nodes/pre_tool_gate.py` with the gate node function
-- [ ] **7c.** Implement RBAC check (calls into RBAC service from point 2)
-- [ ] **7d.** Implement argument quick-check (basic pattern detection — full validation in point 4)
-- [ ] **7e.** Implement context risk heuristics (exfiltration, injection, escalation signals)
-- [ ] **7f.** Implement limits check (delegate to limits service from point 6)
-- [ ] **7g.** Wire `pre_tool_gate` into agent graph between `tool_router` and `tool_executor`
-- [ ] **7h.** Add conditional edge for `REQUIRE_CONFIRMATION` path
-- [ ] **7i.** Update `tool_executor_node` to respect `gate_decisions` (skip BLOCKED tools)
-- [ ] **7j.** Add gate decisions to agent trace
-- [ ] **7k.** Write tests: ALLOW/BLOCK/MODIFY/REQUIRE_CONFIRMATION paths
-- [ ] **7l.** Write tests: context risk detection scenarios
+- [x] **7a.** Define `GateDecision` and `CheckResult` data structures in `state.py`
+- [x] **7b.** Create `src/agent/nodes/pre_tool_gate.py` with the gate node function
+- [x] **7c.** Implement RBAC check (calls into RBAC service from point 2)
+- [x] **7d.** Implement argument quick-check (basic pattern detection — full validation in point 4)
+- [x] **7e.** Implement context risk heuristics (exfiltration, injection, escalation signals)
+- [x] **7f.** Implement limits check (delegate to limits service from point 6)
+- [x] **7g.** Wire `pre_tool_gate` into agent graph between `tool_router` and `tool_executor`
+- [x] **7h.** Add conditional edge for `REQUIRE_CONFIRMATION` path
+- [x] **7i.** Update `tool_executor_node` to respect `gate_decisions` (skip BLOCKED tools)
+- [x] **7j.** Add gate decisions to agent trace
+- [x] **7k.** Write tests: ALLOW/BLOCK/MODIFY/REQUIRE_CONFIRMATION paths
+- [x] **7l.** Write tests: context risk detection scenarios
 
 ---
 
@@ -198,12 +199,12 @@ New conditional edge after `pre_tool_gate`:
 
 ## 9. Definition of Done
 
-- [ ] `pre_tool_gate` node exists and is wired into agent graph
-- [ ] Gate runs RBAC, arg check, context risk, limits checks
-- [ ] ALLOW → tool executes normally
-- [ ] BLOCK → tool is skipped, reason recorded in trace
-- [ ] MODIFY → args are sanitized before execution
-- [ ] REQUIRE_CONFIRMATION → agent pauses and asks user
-- [ ] All gate decisions are recorded in `gate_decisions` on state
-- [ ] Tests pass for all 4 decision paths
-- [ ] Context risk catches at least: exfiltration, injection in args, escalation
+- [x] `pre_tool_gate` node exists and is wired into agent graph
+- [x] Gate runs RBAC, arg check, context risk, limits checks
+- [x] ALLOW → tool executes normally
+- [x] BLOCK → tool is skipped, reason recorded in trace
+- [x] MODIFY → args are sanitized before execution
+- [x] REQUIRE_CONFIRMATION → agent pauses and asks user
+- [x] All gate decisions are recorded in `gate_decisions` on state
+- [x] Tests pass for all 4 decision paths
+- [x] Context risk catches at least: exfiltration, injection in args, escalation

@@ -6,9 +6,9 @@
 
 ---
 
-## 1. Pre-tool Enforcement (gate before tool execution)
+## ✅ 1. Pre-tool Enforcement (gate before tool execution)
 
-**Folder:** `01-agents-pre-tool-enforcement/`
+**Folder:** `01-agents-pre-tool-enforcement/` | **Commit:** `c99c3be`
 
 **Goal:** prevent the agent from performing irreversible actions or exfiltrating data before you can react. This is the single most important control in agentic systems.
 
@@ -28,9 +28,9 @@
 
 ---
 
-## 2. RBAC + Tool Allowlist (tool-level permissions)
+## ✅ 2. RBAC + Tool Allowlist (tool-level permissions)
 
-**Folder:** `02-agents-rbac-allowlist/`
+**Folder:** `02-agents-rbac-allowlist/` | **Commit:** `300f109`
 
 **Goal:** constrain the agent's "agency" — ensure the agent cannot use tools that the user/role should not have access to. This is the most business-understandable control and provides real governance.
 
@@ -49,9 +49,9 @@
 
 ---
 
-## 3. Post-tool Enforcement (gate on tool output)
+## ✅ 3. Post-tool Enforcement (gate on tool output)
 
-**Folder:** `03-agents-post-tool-enforcement/`
+**Folder:** `03-agents-post-tool-enforcement/`  | **Commit:** `608109e`
 
 **Goal:** protect against a tool returning:
 - PII/secrets (which the agent would then repeat),
@@ -75,9 +75,9 @@
 
 ---
 
-## 4. Argument Validation & Schema Enforcement
+## ✅ 4. Argument Validation & Schema Enforcement
 
-**Folder:** `04-agents-argument-validation/`
+**Folder:** `04-agents-argument-validation/` | **Commit:** `6bb8040`
 
 **Goal:** block instruction injection and tool manipulation via arguments (a common vector: prompt injection in tool args). Also reduces tool errors and hallucinations.
 
@@ -97,9 +97,9 @@
 
 ---
 
-## 5. Message Role Separation: User vs Tool vs System (Anti-Spoofing)
+## ✅ 5. Message Role Separation: User vs Tool vs System (Anti-Spoofing)
 
-**Folder:** `05-agents-role-separation/`
+**Folder:** `05-agents-role-separation/` | **Commit:** `01ac16a`
 
 **Goal:** prevent user input or tool data from impersonating system instructions. This is the foundation of defense against spoofing and indirect prompt injection.
 
@@ -123,9 +123,9 @@
 
 ---
 
-## 6. Limits: Rate Limiting / Iteration Caps / Budget Caps
+## ✅ 6. Limits: Rate Limiting / Iteration Caps / Budget Caps
 
-**Folder:** `06-agents-limits-budgets/`
+**Folder:** `06-agents-limits-budgets/` | **Commit:** `c0acb8b`
 
 **Goal:** protect against Denial-of-Wallet and agent loops (attack or bug) that generate costs and system load.
 
@@ -275,10 +275,10 @@
 
 | Sprint | Points | Rationale |
 |--------|--------|-----------|
-| **Sprint 1** | 1 + 2 + 4 | Core: gate + RBAC + validation — the backbone of tool-calling protection |
-| **Sprint 2** | 3 + 5 | Output: post-tool gate + anti-spoofing — closes the security loop |
-| **Sprint 3** | 6 + 7 | Ops: limits + trace — cost control and debugging |
-| **Sprint 4** | 8 + 9 + 10 | Quality: tests, performance, governance — enterprise maturity |
+| **Sprint 1** | 1 + 2 + 4 | Core: gate + RBAC + validation — the backbone of tool-calling protection | ✅ Done |
+| **Sprint 2** | 3 + 5 | Output: post-tool gate + anti-spoofing — closes the security loop | ✅ Done |
+| **Sprint 3** | 6 + 7 | Ops: limits + trace — cost control and debugging | 🟡 6 done, 7 next |
+| **Sprint 4** | 8 + 9 + 10 | Quality: tests, performance, governance — enterprise maturity | ⏳ Not started |
 
 ---
 
@@ -286,18 +286,18 @@
 
 ### Effort Estimates
 
-| Spec | Effort | Notes |
-|------|--------|-------|
-| 01 — Pre-tool Gate | 3–4 days | Most complex; 5-check pipeline, 4 decision paths, graph rewiring |
-| 02 — RBAC Allowlist | 2–3 days | Extends existing `ROLE_TOOLS`; DB/YAML config, scopes, confirmation flags |
-| 04 — Arg Validation | 2 days | Pydantic schemas per tool + injection pattern scanning |
-| 03 — Post-tool Gate | 3–4 days | New graph node + Presidio + injection detection in tool output |
-| 05 — Role Separation | 2 days | Sanitizer + message builder refactor; defense-in-depth (see spec 05 limitations) |
-| 06 — Limits/Budgets | 2 days | Counters + Redis rate limiting; straightforward |
-| 07 — Agent Trace | 3–4 days | Phased: Phase 1 (~2d) in-memory, Phase 2 (~2-3d) DB/API, Phase 3 (~1d) Langfuse |
-| 08 — Deterministic Tests | 3–4 days | Runner + learning mode + Phase 1 scenarios (20 priority) |
-| 09 — Node Timings | 1–2 days | Extends existing `node_timings` dict; lightweight |
-| 10 — Data Boundary | 2–3 days | Policy config module consumed by spec 03; no new graph node |
+| Spec | Effort | Notes | Status |
+|------|--------|-------|--------|
+| 01 — Pre-tool Gate | 3–4 days | Most complex; 5-check pipeline, 4 decision paths, graph rewiring | ✅ `c99c3be` |
+| 02 — RBAC Allowlist | 2–3 days | Extends existing `ROLE_TOOLS`; DB/YAML config, scopes, confirmation flags | ✅ `300f109` |
+| 04 — Arg Validation | 2 days | Pydantic schemas per tool + injection pattern scanning | ✅ `6bb8040` |
+| 03 — Post-tool Gate | 3–4 days | New graph node + Presidio + injection detection in tool output | ✅ `608109e` |
+| 05 — Role Separation | 2 days | Sanitizer + message builder refactor; defense-in-depth (see spec 05 limitations) | ✅ `01ac16a` |
+| 06 — Limits/Budgets | 2 days | Counters + Redis rate limiting; straightforward | ✅ `c0acb8b` |
+| 07 — Agent Trace | 3–4 days | Phased: Phase 1 (~2d) in-memory, Phase 2 (~2-3d) DB/API, Phase 3 (~1d) Langfuse | ⏳ |
+| 08 — Deterministic Tests | 3–4 days | Runner + learning mode + Phase 1 scenarios (20 priority) | ⏳ |
+| 09 — Node Timings | 1–2 days | Extends existing `node_timings` dict; lightweight | ⏳ |
+| 10 — Data Boundary | 2–3 days | Policy config module consumed by spec 03; no new graph node | ⏳ |
 | **Total** | **~25–32 days** | One developer, sequential. With parallelization: **~18–22 days** (2 devs) |
 
 ### Sprint Breakdown with Parallelization
