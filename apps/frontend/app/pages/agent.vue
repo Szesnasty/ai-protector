@@ -55,6 +55,7 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useAgentChat } from '~/composables/useAgentChat'
 import { useScenarios } from '~/composables/useScenarios'
 import { useModels } from '~/composables/useModels'
+import { useRememberedModel } from '~/composables/useRememberedModel'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
@@ -73,32 +74,38 @@ const {
 
 const { scenarios, isLoading: scenariosLoading } = useScenarios('agent')
 const { groupedModels, refreshAvailability } = useModels()
+const rememberedModel = useRememberedModel('agent')
 
 const showScenarios = ref(true)
 const agentChatRef = ref<{ setText: (s: string) => void } | null>(null)
 
 /**
- * Auto-select first available model:
- * - prefer external models with API key over Ollama
- * - re-evaluate when keys change
+ * Auto-select model:
+ * 1. Restore remembered model from localStorage (if still available)
+ * 2. Otherwise pick first available external model
+ * 3. Fallback to Ollama
  */
 watch(
   groupedModels,
   (models) => {
+    const saved = rememberedModel.get()
+    if (saved) {
+      const mem = models.find((m) => m.id === saved && m.available)
+      if (mem) { config.model = mem.id; return }
+    }
     if (config.model) {
       const current = models.find((m) => m.id === config.model)
       if (current?.available) return
     }
     const firstExternal = models.find((m) => m.available && m.provider !== 'ollama')
-    if (firstExternal) {
-      config.model = firstExternal.id
-      return
-    }
+    if (firstExternal) { config.model = firstExternal.id; return }
     const firstAny = models.find((m) => m.available)
     config.model = firstAny?.id ?? ''
   },
   { immediate: true },
 )
+
+watch(() => config.model, (id) => rememberedModel.set(id))
 
 function onVisibilityChange() {
   if (document.visibilityState === 'visible') refreshAvailability()

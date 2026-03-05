@@ -50,6 +50,7 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useChat } from '~/composables/useChat'
 import { useScenarios } from '~/composables/useScenarios'
 import { useModels } from '~/composables/useModels'
+import { useRememberedModel } from '~/composables/useRememberedModel'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
@@ -58,34 +59,40 @@ definePageMeta({ title: 'Playground' })
 const { messages, isStreaming, lastDecision, error, config, send, clear, abort } = useChat()
 const { scenarios, isLoading: scenariosLoading } = useScenarios('playground')
 const { groupedModels, refreshAvailability } = useModels()
+const rememberedModel = useRememberedModel('playground')
 
 const showScenarios = ref(true)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)
 
 /**
- * Auto-select first available model:
- * - prefer external models with API key over Ollama
- * - re-evaluate when keys change
+ * Auto-select model:
+ * 1. Restore remembered model from localStorage (if still available)
+ * 2. Otherwise pick first available external model
+ * 3. Fallback to Ollama
  */
 watch(
   groupedModels,
   (models) => {
+    // Try remembered model first
+    const saved = rememberedModel.get()
+    if (saved) {
+      const mem = models.find((m) => m.id === saved && m.available)
+      if (mem) { config.model = mem.id; return }
+    }
     if (config.model) {
       const current = models.find((m) => m.id === config.model)
       if (current?.available) return
     }
-    // Prefer external models (lower latency, no CPU burn)
     const firstExternal = models.find((m) => m.available && m.provider !== 'ollama')
-    if (firstExternal) {
-      config.model = firstExternal.id
-      return
-    }
-    // Fallback to Ollama if no external keys
+    if (firstExternal) { config.model = firstExternal.id; return }
     const firstAny = models.find((m) => m.available)
     config.model = firstAny?.id ?? ''
   },
   { immediate: true },
 )
+
+// Persist model choice to localStorage
+watch(() => config.model, (id) => rememberedModel.set(id))
 
 function onVisibilityChange() {
   if (document.visibilityState === 'visible') refreshAvailability()

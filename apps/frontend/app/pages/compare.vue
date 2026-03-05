@@ -168,6 +168,7 @@ import { useCompareChat } from '~/composables/useCompareChat'
 import { useScenarios } from '~/composables/useScenarios'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
+import { useRememberedModel } from '~/composables/useRememberedModel'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
@@ -238,32 +239,35 @@ const selectedModelAvailable = computed(() => {
   return m?.available ?? false
 })
 
+const rememberedModel = useRememberedModel('compare')
+
 /**
- * Auto-select first available external model:
- * - on initial load (config.model is empty)
- * - when currently selected model loses availability (key removed)
- * - when models list changes (keys added/removed via refreshAvailability)
+ * Auto-select model:
+ * 1. Restore remembered model from localStorage (if still available)
+ * 2. Otherwise pick first available external model
+ * 3. Fallback to Ollama
  */
 watch(
   allModels,
   (models) => {
-    // If current model is available, keep it
+    const saved = rememberedModel.get()
+    if (saved) {
+      const mem = models.find((m) => m.id === saved && m.available)
+      if (mem) { config.model = mem.id; return }
+    }
     if (config.model) {
       const current = models.find((m) => m.id === config.model)
       if (current?.available) return
     }
-    // Prefer external models (lower latency, no CPU burn)
     const firstExternal = models.find((m) => m.available && m.provider !== 'ollama')
-    if (firstExternal) {
-      config.model = firstExternal.id
-      return
-    }
-    // Fallback to Ollama if no external keys
+    if (firstExternal) { config.model = firstExternal.id; return }
     const firstAny = models.find((m) => m.available)
     config.model = firstAny?.id ?? ''
   },
   { immediate: true },
 )
+
+watch(() => config.model, (id) => rememberedModel.set(id))
 
 /**
  * Re-check API key availability when user returns to this tab
