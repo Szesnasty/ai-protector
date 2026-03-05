@@ -22,20 +22,28 @@ PROVIDER_RULES: list[tuple[str, str]] = [
 
 # Static catalog of well-known external models
 EXTERNAL_MODELS: list[dict[str, str]] = [
+    # ── OpenAI ──
     {"id": "gpt-4o", "provider": "openai", "name": "GPT-4o"},
     {"id": "gpt-4o-mini", "provider": "openai", "name": "GPT-4o Mini"},
     {"id": "gpt-4-turbo", "provider": "openai", "name": "GPT-4 Turbo"},
+    {"id": "gpt-4", "provider": "openai", "name": "GPT-4"},
+    {"id": "gpt-3.5-turbo", "provider": "openai", "name": "GPT-3.5 Turbo"},
     {"id": "o1", "provider": "openai", "name": "o1"},
-    {"id": "o3-mini", "provider": "openai", "name": "o3-mini"},
+    {"id": "o1-mini", "provider": "openai", "name": "o1 Mini"},
+    {"id": "o3-mini", "provider": "openai", "name": "o3 Mini"},
+    # ── Anthropic ──
     {"id": "claude-sonnet-4-6", "provider": "anthropic", "name": "Claude Sonnet 4.6"},
     {"id": "claude-haiku-4-5", "provider": "anthropic", "name": "Claude Haiku 4.5"},
     {"id": "claude-opus-4-6", "provider": "anthropic", "name": "Claude Opus 4.6"},
+    # ── Google ──
+    {"id": "gemini-2.5-pro", "provider": "google", "name": "Gemini 2.5 Pro"},
     {"id": "gemini-2.5-flash", "provider": "google", "name": "Gemini 2.5 Flash"},
     {"id": "gemini-2.0-flash", "provider": "google", "name": "Gemini 2.0 Flash"},
-    {"id": "gemini-pro", "provider": "google", "name": "Gemini Pro"},
-    {"id": "mistral-large", "provider": "mistral", "name": "Mistral Large"},
-    {"id": "mistral-medium", "provider": "mistral", "name": "Mistral Medium"},
-    {"id": "codestral", "provider": "mistral", "name": "Codestral"},
+    {"id": "gemini-2.0-flash-lite", "provider": "google", "name": "Gemini 2.0 Flash Lite"},
+    # ── Mistral ──
+    {"id": "mistral-large-latest", "provider": "mistral", "name": "Mistral Large"},
+    {"id": "mistral-small-latest", "provider": "mistral", "name": "Mistral Small"},
+    {"id": "codestral-latest", "provider": "mistral", "name": "Codestral"},
 ]
 
 
