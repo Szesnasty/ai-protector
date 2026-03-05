@@ -1,0 +1,364 @@
+"""Pre-tool Enforcement Gate — security gate before tool execution.
+
+Spec: docs/agents/01-agents-pre-tool-enforcement/SPEC.md
+
+For EACH proposed tool call, runs a chain of checks (fail-fast):
+  1. RBAC allowlist — is the tool permitted for this role?
+  2. Argument validation — do args look reasonable? (injection patterns)
+  3. Context risk assessment — does the conversation suggest abuse?
+  4. Limits check — has the session exceeded budgets? (stub until spec 06)
+
+Returns a GateDecision per tool: ALLOW | BLOCK | MODIFY | REQUIRE_CONFIRMATION.
+"""
+
+from __future__ import annotations
+
+import re
+from typing import Any
+
+import structlog
+
+from src.agent.state import AgentState, CheckResult, GateDecision
+
+logger = structlog.get_logger()
+
+# ── Injection / abuse patterns in tool arguments ──────────────────────
+
+INJECTION_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"ignore\s+(all\s+)?previous\s+instructions",
+        r"you\s+are\s+now\b",
+        r"new\s+system\s+prompt",
+        r"reveal\s+(your\s+)?(system\s+)?prompt",
+        r"disregard\s+(all\s+)?(prior|previous|above)",
+        r"override\s+(all\s+)?rules",
+        r"act\s+as\s+(an?\s+)?unrestricted",
+        r"do\s+anything\s+now",
+        r"jailbreak",
+        r"<\|im_start\|>",
+        r"\[INST\]",
+        r"<<SYS>>",
+        r"###\s*(system|assistant)\s*:",
+    ]
+]
+
+# Patterns suggesting data exfiltration intent
+EXFILTRATION_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"(list|show|get|dump|export)\s+(all|every)\s+(user|customer|record|data|secret|key|password)",
+        r"(enumerate|extract|download)\s+.*\b(database|table|record)",
+        r"bulk\s+(export|download|extract)",
+        r"select\s+\*\s+from",
+        r"(DROP|DELETE|TRUNCATE|ALTER)\s+(TABLE|DATABASE)",
+    ]
+]
+
+# Tools that require human confirmation (stub — will be driven by RBAC config in spec 02)
+TOOLS_REQUIRING_CONFIRMATION: set[str] = set()
+
+# Maximum tool calls per session before gate blocks (stub — spec 06 handles this properly)
+MAX_TOOL_CALLS_PER_SESSION = 20
+
+
+# ── Individual checks ─────────────────────────────────────────────────
+
+
+def _check_rbac(tool_name: str, allowed_tools: list[str]) -> CheckResult:
+    """Check 1: Is the tool in the role's allowlist?"""
+    if tool_name in allowed_tools:
+        return CheckResult(check="rbac", passed=True, detail=None)
+    return CheckResult(
+        check="rbac",
+        passed=False,
+        detail=f"Tool '{tool_name}' is not permitted for this role.",
+    )
+
+
+def _check_args(tool_name: str, args: dict[str, Any]) -> CheckResult:
+    """Check 2: Do the arguments contain suspicious / injection patterns?"""
+    args_str = " ".join(str(v) for v in args.values())
+
+    for pattern in INJECTION_PATTERNS:
+        match = pattern.search(args_str)
+        if match:
+            return CheckResult(
+                check="schema",
+                passed=False,
+                detail=f"Injection pattern detected in args: '{match.group()}'",
+            )
+
+    # Basic length check — extremely long args are suspicious
+    if len(args_str) > 2000:
+        return CheckResult(
+            check="schema",
+            passed=False,
+            detail=f"Argument payload too large ({len(args_str)} chars, max 2000).",
+        )
+
+    return CheckResult(check="schema", passed=True, detail=None)
+
+
+def _check_context_risk(
+    tool_name: str,
+    args: dict[str, Any],
+    message: str,
+    chat_history: list[dict[str, str]],
+    blocked_count: int,
+) -> CheckResult:
+    """Check 3: Does the conversation context suggest abuse?
+
+    Heuristics:
+    - Exfiltration language in message + data-returning tool
+    - Injection patterns in the user message
+    - Repeated blocked attempts → escalation signal
+    """
+    risk_signals: list[str] = []
+    combined_text = message + " " + " ".join(str(v) for v in args.values())
+
+    # Exfiltration signals
+    for pattern in EXFILTRATION_PATTERNS:
+        if pattern.search(combined_text):
+            risk_signals.append(f"exfiltration: {pattern.pattern[:60]}")
+
+    # Injection signals in user message itself
+    for pattern in INJECTION_PATTERNS:
+        if pattern.search(message):
+            risk_signals.append(f"injection_in_message: {pattern.pattern[:60]}")
+
+    # Escalation: too many previous blocks in this session
+    if blocked_count >= 3:
+        risk_signals.append(f"escalation: {blocked_count} previous blocks in session")
+
+    if risk_signals:
+        return CheckResult(
+            check="context_risk",
+            passed=False,
+            detail=f"Risk signals: {'; '.join(risk_signals)}",
+        )
+
+    return CheckResult(check="context_risk", passed=True, detail=None)
+
+
+def _check_limits(
+    total_tool_calls: int,
+    iterations: int,
+) -> CheckResult:
+    """Check 4: Has the session exceeded rate/budget limits?
+
+    Stub implementation — full limits in spec 06.
+    """
+    if total_tool_calls >= MAX_TOOL_CALLS_PER_SESSION:
+        return CheckResult(
+            check="limits",
+            passed=False,
+            detail=f"Session tool call limit reached ({total_tool_calls}/{MAX_TOOL_CALLS_PER_SESSION}).",
+        )
+    return CheckResult(check="limits", passed=True, detail=None)
+
+
+def _check_confirmation(tool_name: str) -> CheckResult:
+    """Check 5: Does this tool require human confirmation?
+
+    Stub — will be driven by RBAC config (spec 02, requires_confirmation flag).
+    """
+    if tool_name in TOOLS_REQUIRING_CONFIRMATION:
+        return CheckResult(
+            check="confirmation",
+            passed=False,
+            detail=f"Tool '{tool_name}' requires user confirmation before execution.",
+        )
+    return CheckResult(check="confirmation", passed=True, detail=None)
+
+
+# ── Gate evaluation ───────────────────────────────────────────────────
+
+
+def _evaluate_tool(
+    tool_name: str,
+    args: dict[str, Any],
+    state: AgentState,
+    blocked_count: int,
+) -> GateDecision:
+    """Run all checks for a single tool call and return a GateDecision."""
+    allowed_tools = state.get("allowed_tools", [])
+    message = state.get("message", "")
+    chat_history = state.get("chat_history", [])
+    total_tool_calls = len(state.get("tool_calls", []))
+    iterations = state.get("iterations", 0)
+
+    checks: list[CheckResult] = []
+    risk_score = 0.0
+
+    # ── Check 1: RBAC ─────────────────────────────────────
+    rbac = _check_rbac(tool_name, allowed_tools)
+    checks.append(rbac)
+    if not rbac["passed"]:
+        risk_score = 1.0
+        return GateDecision(
+            tool=tool_name,
+            args=args,
+            decision="BLOCK",
+            reason=rbac["detail"],
+            checks=checks,
+            modified_args=None,
+            risk_score=risk_score,
+        )
+
+    # ── Check 2: Argument validation ──────────────────────
+    arg_check = _check_args(tool_name, args)
+    checks.append(arg_check)
+    if not arg_check["passed"]:
+        risk_score = 0.9
+        return GateDecision(
+            tool=tool_name,
+            args=args,
+            decision="BLOCK",
+            reason=arg_check["detail"],
+            checks=checks,
+            modified_args=None,
+            risk_score=risk_score,
+        )
+
+    # ── Check 3: Context risk ─────────────────────────────
+    ctx_risk = _check_context_risk(
+        tool_name, args, message, chat_history, blocked_count
+    )
+    checks.append(ctx_risk)
+    if not ctx_risk["passed"]:
+        risk_score = 0.8
+        return GateDecision(
+            tool=tool_name,
+            args=args,
+            decision="BLOCK",
+            reason=ctx_risk["detail"],
+            checks=checks,
+            modified_args=None,
+            risk_score=risk_score,
+        )
+
+    # ── Check 4: Limits ───────────────────────────────────
+    limits = _check_limits(total_tool_calls, iterations)
+    checks.append(limits)
+    if not limits["passed"]:
+        risk_score = 0.7
+        return GateDecision(
+            tool=tool_name,
+            args=args,
+            decision="BLOCK",
+            reason=limits["detail"],
+            checks=checks,
+            modified_args=None,
+            risk_score=risk_score,
+        )
+
+    # ── Check 5: Confirmation ─────────────────────────────
+    confirm = _check_confirmation(tool_name)
+    checks.append(confirm)
+    if not confirm["passed"]:
+        risk_score = 0.3
+        return GateDecision(
+            tool=tool_name,
+            args=args,
+            decision="REQUIRE_CONFIRMATION",
+            reason=confirm["detail"],
+            checks=checks,
+            modified_args=None,
+            risk_score=risk_score,
+        )
+
+    # ── All checks passed → ALLOW ─────────────────────────
+    return GateDecision(
+        tool=tool_name,
+        args=args,
+        decision="ALLOW",
+        reason=None,
+        checks=checks,
+        modified_args=None,
+        risk_score=risk_score,
+    )
+
+
+# ── Gate node ─────────────────────────────────────────────────────────
+
+
+def pre_tool_gate_node(state: AgentState) -> AgentState:
+    """Pre-tool enforcement gate — evaluates each proposed tool call.
+
+    Reads `tool_plan` from state, runs security checks on each,
+    and produces `gate_decisions`. Filters `tool_plan` to only
+    ALLOW/MODIFY decisions. Sets `pending_confirmation` if any tool
+    requires user approval.
+    """
+    tool_plan: list[dict[str, Any]] = state.get("tool_plan", [])
+    gate_decisions: list[GateDecision] = []
+    filtered_plan: list[dict[str, Any]] = []
+    pending_confirmation: dict[str, Any] | None = None
+    tool_calls = list(state.get("tool_calls", []))
+
+    # Count previously blocked calls in this session (for escalation detection)
+    blocked_count = sum(1 for tc in tool_calls if not tc.get("allowed", True))
+
+    for plan in tool_plan:
+        tool_name = plan.get("tool", "")
+        args = plan.get("args", {})
+
+        decision = _evaluate_tool(tool_name, args, state, blocked_count)
+        gate_decisions.append(decision)
+
+        if decision["decision"] == "ALLOW":
+            filtered_plan.append(plan)
+
+        elif decision["decision"] == "MODIFY":
+            # Use modified args
+            filtered_plan.append({
+                "tool": tool_name,
+                "args": decision["modified_args"] or args,
+            })
+
+        elif decision["decision"] == "BLOCK":
+            # Record the blocked tool call
+            tool_calls.append({
+                "tool": tool_name,
+                "args": args,
+                "result": f"Blocked by pre-tool gate: {decision['reason']}",
+                "allowed": False,
+            })
+            blocked_count += 1
+
+        elif decision["decision"] == "REQUIRE_CONFIRMATION":
+            # First confirmation request wins — pause the agent
+            if pending_confirmation is None:
+                pending_confirmation = {
+                    "tool": tool_name,
+                    "args": args,
+                    "reason": decision["reason"],
+                }
+
+        logger.info(
+            "pre_tool_gate",
+            tool=tool_name,
+            decision=decision["decision"],
+            reason=decision["reason"],
+            risk_score=decision["risk_score"],
+        )
+
+    logger.info(
+        "pre_tool_gate_summary",
+        total=len(tool_plan),
+        allowed=sum(1 for d in gate_decisions if d["decision"] == "ALLOW"),
+        blocked=sum(1 for d in gate_decisions if d["decision"] == "BLOCK"),
+        modified=sum(1 for d in gate_decisions if d["decision"] == "MODIFY"),
+        confirmations=sum(
+            1 for d in gate_decisions if d["decision"] == "REQUIRE_CONFIRMATION"
+        ),
+    )
+
+    return {
+        **state,
+        "tool_plan": filtered_plan,
+        "gate_decisions": gate_decisions,
+        "tool_calls": tool_calls,
+        "pending_confirmation": pending_confirmation,
+    }

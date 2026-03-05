@@ -9,6 +9,7 @@ from src.agent.nodes.intent import intent_node
 from src.agent.nodes.llm_call import llm_call_node
 from src.agent.nodes.memory import memory_node
 from src.agent.nodes.policy import policy_check_node
+from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
 from src.agent.nodes.response import response_node
 from src.agent.nodes.tools import tool_executor_node, tool_router_node
 from src.agent.state import AgentState
@@ -18,13 +19,42 @@ def _should_call_tools(state: AgentState) -> str:
     """Decide whether to execute tools or skip to LLM."""
     plan = state.get("tool_plan", [])
     if plan:
+        return "pre_tool_gate"
+    return "llm_call"
+
+
+def _after_gate(state: AgentState) -> str:
+    """Route after pre-tool gate based on decisions.
+
+    - If any tool needs confirmation → pause and ask user.
+    - If filtered plan still has tools → execute them.
+    - If all tools were blocked → skip to LLM (model answers without tools).
+    """
+    if state.get("pending_confirmation"):
+        return "confirmation_response"
+    plan = state.get("tool_plan", [])
+    if plan:
         return "tool_executor"
     return "llm_call"
 
 
-def _should_skip_llm(state: AgentState) -> str:
-    """After tool execution, always go to LLM for response generation."""
-    return "llm_call"
+def _confirmation_response_node(state: AgentState) -> AgentState:
+    """Build a response asking the user to confirm a sensitive tool call."""
+    pending = state.get("pending_confirmation", {})
+    tool_name = pending.get("tool", "unknown")
+    reason = pending.get("reason", "This tool requires confirmation.")
+    args = pending.get("args", {})
+
+    msg = (
+        f"⚠️ The action **{tool_name}** requires your confirmation before execution.\n"
+        f"Reason: {reason}\n"
+        f"Arguments: {args}\n\n"
+        f"Please confirm to proceed or cancel the action."
+    )
+    return {
+        **state,
+        "final_response": msg,
+    }
 
 
 def _check_blocked(state: AgentState) -> str:
@@ -45,7 +75,9 @@ def build_agent_graph() -> StateGraph:
     graph.add_node("intent", intent_node)
     graph.add_node("policy_check", policy_check_node)
     graph.add_node("tool_router", tool_router_node)
+    graph.add_node("pre_tool_gate", pre_tool_gate_node)
     graph.add_node("tool_executor", tool_executor_node)
+    graph.add_node("confirmation_response", _confirmation_response_node)
     graph.add_node("llm_call", llm_call_node)
     graph.add_node("memory", memory_node)
     graph.add_node("response", response_node)
@@ -56,14 +88,24 @@ def build_agent_graph() -> StateGraph:
     graph.add_edge("intent", "policy_check")
     graph.add_edge("policy_check", "tool_router")
 
-    # Conditional: tool_router → tool_executor (if tools planned) or llm_call (no tools)
+    # Conditional: tool_router → pre_tool_gate (if tools planned) or llm_call (no tools)
     graph.add_conditional_edges("tool_router", _should_call_tools, {
+        "pre_tool_gate": "pre_tool_gate",
+        "llm_call": "llm_call",
+    })
+
+    # After gate → execute, skip to LLM (all blocked), or ask confirmation
+    graph.add_conditional_edges("pre_tool_gate", _after_gate, {
         "tool_executor": "tool_executor",
         "llm_call": "llm_call",
+        "confirmation_response": "confirmation_response",
     })
 
     # After tool execution → always go to LLM
     graph.add_edge("tool_executor", "llm_call")
+
+    # Confirmation response → memory → END (returns to user)
+    graph.add_edge("confirmation_response", "memory")
 
     # After LLM → check if blocked
     graph.add_conditional_edges("llm_call", _check_blocked, {

@@ -67,7 +67,12 @@ def tool_router_node(state: AgentState) -> AgentState:
 
 
 def tool_executor_node(state: AgentState) -> AgentState:
-    """Execute planned tool calls and collect results."""
+    """Execute planned tool calls and collect results.
+
+    Only executes tools that passed the pre-tool gate (tool_plan is
+    already filtered by pre_tool_gate_node). The RBAC check here is
+    kept as a safety net.
+    """
     plans = state.get("tool_plan", [])
     allowed = state.get("allowed_tools", [])
     tool_calls: list[ToolCallRecord] = list(state.get("tool_calls", []))
@@ -77,6 +82,8 @@ def tool_executor_node(state: AgentState) -> AgentState:
         tool_name = plan["tool"]
         args = plan.get("args", {})
 
+        # Safety net — pre_tool_gate should have already filtered,
+        # but double-check RBAC as defense in depth.
         if tool_name not in allowed:
             tool_calls.append({
                 "tool": tool_name,
