@@ -39,7 +39,6 @@ EXTERNAL_MODELS: list[dict[str, str]] = [
     {"id": "gemini-2.5-pro", "provider": "google", "name": "Gemini 2.5 Pro"},
     {"id": "gemini-2.5-flash", "provider": "google", "name": "Gemini 2.5 Flash"},
     {"id": "gemini-2.0-flash", "provider": "google", "name": "Gemini 2.0 Flash"},
-    {"id": "gemini-2.0-flash-lite", "provider": "google", "name": "Gemini 2.0 Flash Lite"},
     # ── Mistral ──
     {"id": "mistral-large-latest", "provider": "mistral", "name": "Mistral Large"},
     {"id": "mistral-small-latest", "provider": "mistral", "name": "Mistral Small"},
