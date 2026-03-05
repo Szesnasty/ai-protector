@@ -90,3 +90,11 @@ class AgentState(TypedDict, total=False):
     # ── Metadata ───────────────────────────────────────────
     errors: list[str]
     node_timings: dict[str, float]
+
+    # ── Limits & budgets (spec 06) ─────────────────────────
+    session_tool_calls: int  # Cumulative tool calls in session
+    session_tokens_in: int  # Cumulative input tokens
+    session_tokens_out: int  # Cumulative output tokens
+    session_estimated_cost: float  # Estimated $ cost
+    session_turns: int  # Number of user messages in session
+    limit_exceeded: str | None  # Which limit was hit (None = OK)

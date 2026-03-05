@@ -16,6 +16,13 @@ from src.agent.nodes.tools import tool_executor_node, tool_router_node
 from src.agent.state import AgentState
 
 
+def _after_input(state: AgentState) -> str:
+    """Route after input: if limit exceeded, short-circuit to memory."""
+    if state.get("limit_exceeded"):
+        return "memory"
+    return "intent"
+
+
 def _should_call_tools(state: AgentState) -> str:
     """Decide whether to execute tools or skip to LLM."""
     plan = state.get("tool_plan", [])
@@ -59,7 +66,10 @@ def _confirmation_response_node(state: AgentState) -> AgentState:
 
 
 def _check_blocked(state: AgentState) -> str:
-    """After LLM call, check if response was blocked by firewall."""
+    """After LLM call, check if response was blocked by firewall or limits."""
+    # Limit exceeded after LLM call (token budget, spec 06)
+    if state.get("limit_exceeded"):
+        return "memory"
     fw = state.get("firewall_decision", {})
     if fw.get("decision") == "BLOCK":
         # Skip to memory (final_response already set by llm_call_node)
@@ -86,7 +96,12 @@ def build_agent_graph() -> StateGraph:
 
     # Wire edges
     graph.set_entry_point("input")
-    graph.add_edge("input", "intent")
+
+    # After input: check limits (spec 06) — short-circuit if exceeded
+    graph.add_conditional_edges("input", _after_input, {
+        "memory": "memory",
+        "intent": "intent",
+    })
     graph.add_edge("intent", "policy_check")
     graph.add_edge("policy_check", "tool_router")
 

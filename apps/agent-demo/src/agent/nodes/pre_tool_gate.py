@@ -18,6 +18,8 @@ from typing import Any
 
 import structlog
 
+from src.agent.limits.config import get_limits_for_role
+from src.agent.limits.service import get_limits_service
 from src.agent.rbac.service import get_rbac_service
 from src.agent.state import AgentState, CheckResult, GateDecision
 from src.agent.validation.validator import validate_tool_args
@@ -61,7 +63,7 @@ EXFILTRATION_PATTERNS: list[re.Pattern[str]] = [
 # This set is kept for backward-compat in tests; real check uses RBAC service below.
 TOOLS_REQUIRING_CONFIRMATION: set[str] = set()
 
-# Maximum tool calls per session before gate blocks (stub — spec 06 handles this properly)
+# Legacy constant kept for backward-compat in tests; real check uses LimitsService.
 MAX_TOOL_CALLS_PER_SESSION = 20
 
 
@@ -161,17 +163,56 @@ def _check_context_risk(
 def _check_limits(
     total_tool_calls: int,
     iterations: int,
+    session_id: str = "",
+    user_role: str = "customer",
+    request_tool_calls: int = 0,
 ) -> CheckResult:
     """Check 4: Has the session exceeded rate/budget limits?
 
-    Stub implementation — full limits in spec 06.
+    Uses LimitsService (spec 06) for per-role, per-request and per-session caps.
+    Falls back to legacy MAX_TOOL_CALLS_PER_SESSION if no session_id.
     """
-    if total_tool_calls >= MAX_TOOL_CALLS_PER_SESSION:
+    if not session_id:
+        # Legacy fallback (for tests that don't provide session_id)
+        if total_tool_calls >= MAX_TOOL_CALLS_PER_SESSION:
+            return CheckResult(
+                check="limits",
+                passed=False,
+                detail=f"Session tool call limit reached ({total_tool_calls}/{MAX_TOOL_CALLS_PER_SESSION}).",
+            )
+        return CheckResult(check="limits", passed=True, detail=None)
+
+    limits_svc = get_limits_service()
+    config = get_limits_for_role(user_role)
+
+    # Per-request + per-session tool call limits
+    result = limits_svc.check_tool_limits(
+        session_id=session_id,
+        config=config,
+        request_tool_calls=request_tool_calls,
+    )
+    if not result.allowed:
         return CheckResult(
             check="limits",
             passed=False,
-            detail=f"Session tool call limit reached ({total_tool_calls}/{MAX_TOOL_CALLS_PER_SESSION}).",
+            detail=(
+                f"{result.limit_type} reached "
+                f"({result.current_value}/{result.limit_value})."
+            ),
         )
+
+    # Token/cost budget check
+    budget_result = limits_svc.check_token_budget(session_id, config)
+    if not budget_result.allowed:
+        return CheckResult(
+            check="limits",
+            passed=False,
+            detail=(
+                f"{budget_result.limit_type} reached "
+                f"({budget_result.current_value}/{budget_result.limit_value})."
+            ),
+        )
+
     return CheckResult(check="limits", passed=True, detail=None)
 
 
@@ -217,6 +258,11 @@ def _evaluate_tool(
     chat_history = state.get("chat_history", [])
     total_tool_calls = len(state.get("tool_calls", []))
     iterations = state.get("iterations", 0)
+    session_id = state.get("session_id", "")
+    # request_tool_calls: tool calls executed so far in THIS request (from tool_plan)
+    request_tool_calls = sum(
+        1 for tc in state.get("tool_calls", []) if tc.get("allowed", False)
+    )
 
     checks: list[CheckResult] = []
     risk_score = 0.0
@@ -272,7 +318,12 @@ def _evaluate_tool(
         )
 
     # ── Check 4: Limits ───────────────────────────────────
-    limits = _check_limits(total_tool_calls, iterations)
+    limits = _check_limits(
+        total_tool_calls, iterations,
+        session_id=session_id,
+        user_role=user_role,
+        request_tool_calls=request_tool_calls,
+    )
     checks.append(limits)
     if not limits["passed"]:
         risk_score = 0.7
@@ -388,6 +439,14 @@ def pre_tool_gate_node(state: AgentState) -> AgentState:
             1 for d in gate_decisions if d["decision"] == "REQUIRE_CONFIRMATION"
         ),
     )
+
+    # Track allowed tool calls in limits service (spec 06)
+    allowed_count = len(filtered_plan)
+    if allowed_count > 0:
+        session_id = state.get("session_id", "")
+        if session_id:
+            limits_svc = get_limits_service()
+            limits_svc.increment_tool_calls(session_id, allowed_count)
 
     return {
         **state,

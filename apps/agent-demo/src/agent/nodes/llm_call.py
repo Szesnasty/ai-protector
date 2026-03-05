@@ -9,16 +9,76 @@ from __future__ import annotations
 import json
 import os
 import time
+from typing import Any
 
 import structlog
 from litellm import acompletion
 from litellm.exceptions import APIError
 
+from src.agent.limits.config import get_limits_for_role
+from src.agent.limits.service import get_limits_service
 from src.agent.security.message_builder import build_messages
 from src.agent.state import AgentState
 from src.config import get_settings
 
 logger = structlog.get_logger()
+
+
+def _track_tokens(response: Any, state: AgentState, model: str) -> dict:
+    """Extract token usage from LLM response and track in limits service.
+
+    Returns state dict additions for token counters.
+    """
+    try:
+        usage = getattr(response, "usage", None)
+        if not usage:
+            return {}
+
+        tokens_in = getattr(usage, "prompt_tokens", 0) or 0
+        tokens_out = getattr(usage, "completion_tokens", 0) or 0
+
+        # Guard against non-integer values (e.g. from mocks)
+        if not isinstance(tokens_in, (int, float)) or not isinstance(tokens_out, (int, float)):
+            return {}
+
+        tokens_in = int(tokens_in)
+        tokens_out = int(tokens_out)
+
+        if tokens_in == 0 and tokens_out == 0:
+            return {}
+
+        session_id = state.get("session_id", "")
+        if not session_id:
+            return {}
+
+        limits_svc = get_limits_service()
+        tracked = limits_svc.track_token_usage(session_id, tokens_in, tokens_out, model)
+
+        # Check budget after tracking
+        role = state.get("user_role", "customer")
+        config = get_limits_for_role(role)
+        budget_check = limits_svc.check_token_budget(session_id, config)
+
+        result: dict = {
+            "session_tokens_in": tracked["session_tokens_in"],
+            "session_tokens_out": tracked["session_tokens_out"],
+            "session_estimated_cost": tracked["session_estimated_cost"],
+        }
+
+        if not budget_check.allowed:
+            result["limit_exceeded"] = budget_check.limit_type
+            logger.warning(
+                "limit_exceeded_post_llm",
+                limit_type=budget_check.limit_type,
+                limit_value=budget_check.limit_value,
+                current_value=budget_check.current_value,
+                session_id=session_id,
+            )
+
+        return result
+    except (TypeError, ValueError, AttributeError):
+        # Gracefully handle unexpected response shapes (e.g. mocks)
+        return {}
 
 
 async def llm_call_node(state: AgentState) -> AgentState:
@@ -94,8 +154,12 @@ async def llm_call_node(state: AgentState) -> AgentState:
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         logger.info("llm_call_ok", elapsed_ms=elapsed_ms, response_len=len(llm_text))
 
+        # ── Token tracking (spec 06) ─────────────────────
+        token_state = _track_tokens(response, state, model_name)
+
         return {
             **state,
+            **token_state,
             "llm_messages": messages,
             "llm_response": llm_text,
             "firewall_decision": firewall_decision,
