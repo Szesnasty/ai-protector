@@ -1,4 +1,8 @@
-"""LLMCallNode — call LLM through proxy-service via LiteLLM."""
+"""LLMCallNode — call LLM through proxy-service via LiteLLM.
+
+Uses message_builder (spec 05) for safe message construction with
+role-separation, anti-spoofing delimiters and sanitization.
+"""
 
 from __future__ import annotations
 
@@ -10,63 +14,11 @@ import structlog
 from litellm import acompletion
 from litellm.exceptions import APIError
 
+from src.agent.security.message_builder import build_messages
 from src.agent.state import AgentState
-from src.agent.tools.registry import get_tools_description
 from src.config import get_settings
 
 logger = structlog.get_logger()
-
-SYSTEM_PROMPT = """You are a helpful Customer Support Copilot for an online store.
-You help customers with their questions about orders, products, returns, shipping, and more.
-
-You have access to the following tools (already called for you — results are included below):
-{tools_description}
-
-IMPORTANT RULES:
-- Be helpful, professional, and concise.
-- Use the tool results provided to answer the user's question accurately.
-- If no tool results are available, answer based on general knowledge or say you don't have the information.
-- Never make up order numbers, tracking URLs, or specific data — use only what the tools provide.
-- If a tool was denied due to access restrictions, politely explain you don't have access to that information.
-"""
-
-
-def _build_messages(state: AgentState) -> list[dict[str, str]]:
-    """Build the message list for the LLM call."""
-    allowed_tools = state.get("allowed_tools", [])
-    tools_desc = get_tools_description(allowed_tools)
-
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT.format(tools_description=tools_desc)},
-    ]
-
-    # Add chat history
-    for msg in state.get("chat_history", []):
-        messages.append(msg)
-
-    # Add current user message
-    messages.append({"role": "user", "content": state.get("message", "")})
-
-    # Add tool results as context (prefer sanitized output from post-tool gate)
-    tool_calls = state.get("tool_calls", [])
-    if tool_calls:
-        tool_context_parts = []
-        for tc in tool_calls:
-            status = "✅" if tc["allowed"] else "❌ DENIED"
-            # Use sanitized_result when available (spec 03); fall back to raw result
-            result_text = tc.get("sanitized_result", tc.get("result", ""))
-            post_gate = tc.get("post_gate")
-            if post_gate and post_gate.get("decision") == "BLOCK":
-                status = "🛡️ BLOCKED"
-            tool_context_parts.append(f"[Tool: {tc['tool']} {status}]\n{result_text}")
-
-        tool_context = "\n\n".join(tool_context_parts)
-        messages.append({
-            "role": "system",
-            "content": f"Tool execution results:\n\n{tool_context}\n\nUse these results to answer the user.",
-        })
-
-    return messages
 
 
 async def llm_call_node(state: AgentState) -> AgentState:
@@ -76,7 +28,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
     # Silence LiteLLM logs
     os.environ.setdefault("LITELLM_LOG", settings.litellm_log_level)
 
-    messages = _build_messages(state)
+    messages = build_messages(state)
     session_id = state.get("session_id", "unknown")
     policy = state.get("policy", settings.default_policy)
 
