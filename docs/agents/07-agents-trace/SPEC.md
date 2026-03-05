@@ -218,17 +218,17 @@ Trace is scope-creep-prone. Split into phases to deliver value incrementally:
 
 ### Phase 1 — In-memory trace + API response (Sprint 3, ~2 days)
 
-- [ ] **6a.** Define `AgentTrace`, `TraceIteration` data structures
-- [ ] **6b.** Create `src/agent/trace/accumulator.py` with `TraceAccumulator` class
-- [ ] **6c.** Update `input_node` to start trace
-- [ ] **6d.** Update `intent_node` to record intent
-- [ ] **6e.** Update `tool_router_node` to record tool plan
-- [ ] **6f.** Update `pre_tool_gate` to record gate decisions (when implemented)
-- [ ] **6g.** Update `tool_executor_node` to record tool results + timing
-- [ ] **6h.** Update `post_tool_gate` to record scan results (when implemented)
-- [ ] **6i.** Update `llm_call_node` to record LLM call details
-- [ ] **6j.** Return trace in `/agent/chat` response body (opt-in via `?include_trace=true`)
-- [ ] **6k.** Write tests: trace is built correctly across full agent flow
+- [x] **6a.** Define `AgentTrace`, `TraceIteration` data structures
+- [x] **6b.** Create `src/agent/trace/accumulator.py` with `TraceAccumulator` class
+- [x] **6c.** Update `input_node` to start trace
+- [x] **6d.** Update `intent_node` to record intent
+- [x] **6e.** Update `tool_router_node` to record tool plan
+- [x] **6f.** Update `pre_tool_gate` to record gate decisions (when implemented)
+- [x] **6g.** Update `tool_executor_node` to record tool results + timing
+- [x] **6h.** Update `post_tool_gate` to record scan results (when implemented)
+- [x] **6i.** Update `llm_call_node` to record LLM call details
+- [x] **6j.** Return trace in `/agent/chat` response body (opt-in via `?include_trace=true`)
+- [x] **6k.** Write tests: trace is built correctly across full agent flow
 
 **Deliverable:** every agent request produces a structured trace returned in the response.
 No persistence yet — trace lives in memory for the duration of the request.
@@ -269,13 +269,13 @@ No persistence yet — trace lives in memory for the duration of the request.
 ## 8. Definition of Done
 
 ### Phase 1 (MVP)
-- [ ] `TraceAccumulator` builds structured trace per request
-- [ ] Every node contributes to the trace
-- [ ] Pre-tool and post-tool gate decisions are recorded
-- [ ] Trace returned in API response
-- [ ] Node timings are recorded per node
-- [ ] Counters track iterations, tool calls, tokens, cost
-- [ ] Tests pass for full trace lifecycle
+- [x] `TraceAccumulator` builds structured trace per request
+- [x] Every node contributes to the trace
+- [x] Pre-tool and post-tool gate decisions are recorded
+- [x] Trace returned in API response
+- [x] Node timings are recorded per node
+- [x] Counters track iterations, tool calls, tokens, cost
+- [x] Tests pass for full trace lifecycle
 
 ### Phase 2
 - [ ] Trace is persisted to DB (JSONB)

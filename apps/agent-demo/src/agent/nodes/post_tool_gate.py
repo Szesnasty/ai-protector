@@ -20,6 +20,7 @@ from typing import Any
 import structlog
 
 from src.agent.state import AgentState, PostGateResult, ToolCallRecord
+from src.agent.trace.accumulator import TraceAccumulator
 
 logger = structlog.get_logger()
 
@@ -395,6 +396,7 @@ def post_tool_gate_node(state: AgentState) -> AgentState:
     """
     tool_calls: list[ToolCallRecord] = list(state.get("tool_calls", []))
     updated_calls: list[ToolCallRecord] = []
+    trace = TraceAccumulator(state.get("trace"))
 
     pass_count = 0
     redact_count = 0
@@ -417,6 +419,16 @@ def post_tool_gate_node(state: AgentState) -> AgentState:
             "post_gate": post_gate,
         }
         updated_calls.append(updated)
+
+        # Trace (spec 07)
+        trace.record_post_tool_decision(
+            tool=tc["tool"],
+            decision=post_gate.get("decision", "PASS"),
+            pii_count=post_gate.get("pii_count", 0),
+            secrets_count=post_gate.get("secrets_count", 0),
+            injection_score=post_gate.get("injection_score", 0.0),
+            reason=post_gate.get("reason"),
+        )
 
         # Counters
         match post_gate.get("decision"):
@@ -451,4 +463,5 @@ def post_tool_gate_node(state: AgentState) -> AgentState:
     return {
         **state,
         "tool_calls": updated_calls,
+        "trace": trace.data,
     }

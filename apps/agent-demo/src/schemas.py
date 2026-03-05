@@ -52,3 +52,4 @@ class AgentChatResponse(BaseModel):
     tools_called: list[ToolCallInfo] = Field(default_factory=list)
     agent_trace: AgentTrace = Field(default_factory=AgentTrace)
     firewall_decision: FirewallDecision = Field(default_factory=FirewallDecision)
+    trace: dict = Field(default_factory=dict, description="Structured agent trace (spec 07)")

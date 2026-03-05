@@ -5,6 +5,7 @@ from __future__ import annotations
 import structlog
 
 from src.agent.state import AgentState
+from src.agent.trace.accumulator import TraceAccumulator
 
 logger = structlog.get_logger()
 
@@ -81,10 +82,15 @@ def intent_node(state: AgentState) -> AgentState:
     message = state.get("message", "")
     intent, confidence = classify_intent(message)
 
+    # Trace (spec 07)
+    trace = TraceAccumulator(state.get("trace"))
+    trace.record_intent(intent, confidence)
+
     logger.info("intent_node", intent=intent, confidence=confidence, message_preview=message[:80])
 
     return {
         **state,
         "intent": intent,
         "intent_confidence": confidence,
+        "trace": trace.data,
     }

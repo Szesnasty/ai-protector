@@ -7,6 +7,7 @@ import structlog
 from src.agent.limits.service import get_limits_service
 from src.agent.security.sanitizer import sanitize_user_input
 from src.agent.state import AgentState
+from src.agent.trace.accumulator import TraceAccumulator
 from src.session import session_store
 
 logger = structlog.get_logger()
@@ -40,6 +41,16 @@ def input_node(state: AgentState) -> AgentState:
         limit_ok=limit_check.allowed,
     )
 
+    # ── Trace init (spec 07) ────────────────────────────
+    trace = TraceAccumulator()
+    trace.start(
+        session_id=session_id,
+        user_role=user_role,
+        policy=state.get("policy", ""),
+        model=state.get("model", ""),
+        user_message=sanitized_message,
+    )
+
     base_state: dict = {
         **state,
         "message": sanitized_message,
@@ -56,10 +67,13 @@ def input_node(state: AgentState) -> AgentState:
         "session_estimated_cost": usage["session_estimated_cost"],
         "session_turns": usage["session_turns"],
         "limit_exceeded": None,
+        # Trace (spec 07)
+        "trace": trace.data,
     }
 
     if not limit_check.allowed:
         base_state["limit_exceeded"] = limit_check.limit_type
         base_state["final_response"] = limit_check.message
+        trace.record_limit_hit(limit_check.limit_type or "unknown")
 
     return base_state

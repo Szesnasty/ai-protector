@@ -22,6 +22,7 @@ from src.agent.limits.config import get_limits_for_role
 from src.agent.limits.service import get_limits_service
 from src.agent.rbac.service import get_rbac_service
 from src.agent.state import AgentState, CheckResult, GateDecision
+from src.agent.trace.accumulator import TraceAccumulator
 from src.agent.validation.validator import validate_tool_args
 
 logger = structlog.get_logger()
@@ -381,6 +382,7 @@ def pre_tool_gate_node(state: AgentState) -> AgentState:
     filtered_plan: list[dict[str, Any]] = []
     pending_confirmation: dict[str, Any] | None = None
     tool_calls = list(state.get("tool_calls", []))
+    trace = TraceAccumulator(state.get("trace"))
 
     # Count previously blocked calls in this session (for escalation detection)
     blocked_count = sum(1 for tc in tool_calls if not tc.get("allowed", True))
@@ -391,6 +393,15 @@ def pre_tool_gate_node(state: AgentState) -> AgentState:
 
         decision = _evaluate_tool(tool_name, args, state, blocked_count)
         gate_decisions.append(decision)
+
+        # Trace (spec 07)
+        trace.record_pre_tool_decision(
+            tool=tool_name,
+            decision=decision["decision"],
+            reason=decision["reason"],
+            checks=decision["checks"],
+            risk_score=decision["risk_score"],
+        )
 
         if decision["decision"] == "ALLOW":
             filtered_plan.append(plan)
@@ -454,4 +465,5 @@ def pre_tool_gate_node(state: AgentState) -> AgentState:
         "gate_decisions": gate_decisions,
         "tool_calls": tool_calls,
         "pending_confirmation": pending_confirmation,
+        "trace": trace.data,
     }

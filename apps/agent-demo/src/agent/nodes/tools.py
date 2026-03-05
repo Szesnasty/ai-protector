@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import re
 
+import time
+
 import structlog
 
 from src.agent.state import AgentState, ToolCallRecord
 from src.agent.tools.registry import execute_tool
+from src.agent.trace.accumulator import TraceAccumulator
 
 logger = structlog.get_logger()
 
@@ -58,11 +61,17 @@ def tool_router_node(state: AgentState) -> AgentState:
     """Plan which tools to call based on intent and role."""
     plans = _select_tools_for_intent(state)
 
+    # Trace (spec 07)
+    trace = TraceAccumulator(state.get("trace"))
+    trace.start_iteration()
+    trace.record_tool_plan(plans)
+
     logger.info("tool_router_node", tool_count=len(plans), tools=[p["tool"] for p in plans])
 
     return {
         **state,
         "tool_plan": plans,
+        "trace": trace.data,
     }
 
 
@@ -77,6 +86,7 @@ def tool_executor_node(state: AgentState) -> AgentState:
     allowed = state.get("allowed_tools", [])
     tool_calls: list[ToolCallRecord] = list(state.get("tool_calls", []))
     iterations = state.get("iterations", 0)
+    trace = TraceAccumulator(state.get("trace"))
 
     for plan in plans:
         tool_name = plan["tool"]
@@ -95,13 +105,17 @@ def tool_executor_node(state: AgentState) -> AgentState:
             continue
 
         try:
+            t0 = time.perf_counter()
             result = execute_tool(tool_name, args)
+            dur_ms = int((time.perf_counter() - t0) * 1000)
             tool_calls.append({
                 "tool": tool_name,
                 "args": args,
                 "result": result,
                 "allowed": True,
             })
+            # Trace (spec 07)
+            trace.record_tool_execution(tool_name, args, result, dur_ms)
             logger.info("tool_executed", tool=tool_name, result_len=len(result))
         except Exception as e:
             error_msg = f"Tool error: {e}"
@@ -117,4 +131,5 @@ def tool_executor_node(state: AgentState) -> AgentState:
         **state,
         "tool_calls": tool_calls,
         "iterations": iterations + 1,
+        "trace": trace.data,
     }

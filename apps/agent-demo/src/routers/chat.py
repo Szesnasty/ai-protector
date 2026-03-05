@@ -77,6 +77,7 @@ async def agent_chat(
             risk_flags=fw.get("risk_flags", {}),
             blocked_reason=fw.get("blocked_reason"),
         ),
+        trace=result.get("trace", {}),
     )
 
     logger.info(

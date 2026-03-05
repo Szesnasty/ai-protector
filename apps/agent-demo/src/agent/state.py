@@ -98,3 +98,6 @@ class AgentState(TypedDict, total=False):
     session_estimated_cost: float  # Estimated $ cost
     session_turns: int  # Number of user messages in session
     limit_exceeded: str | None  # Which limit was hit (None = OK)
+
+    # ── Agent trace (spec 07) ──────────────────────────────
+    trace: dict[str, Any]  # Structured trace built by TraceAccumulator

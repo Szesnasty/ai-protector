@@ -19,6 +19,7 @@ from src.agent.limits.config import get_limits_for_role
 from src.agent.limits.service import get_limits_service
 from src.agent.security.message_builder import build_messages
 from src.agent.state import AgentState
+from src.agent.trace.accumulator import TraceAccumulator
 from src.config import get_settings
 
 logger = structlog.get_logger()
@@ -91,6 +92,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
     messages = build_messages(state)
     session_id = state.get("session_id", "unknown")
     policy = state.get("policy", settings.default_policy)
+    trace = TraceAccumulator(state.get("trace"))
 
     firewall_decision: dict = {
         "decision": "UNKNOWN",
@@ -157,12 +159,23 @@ async def llm_call_node(state: AgentState) -> AgentState:
         # ── Token tracking (spec 06) ─────────────────────
         token_state = _track_tokens(response, state, model_name)
 
+        # Trace (spec 07)
+        usage = getattr(response, "usage", None)
+        trace.record_llm_call(
+            messages_count=len(messages),
+            tokens_in=int(getattr(usage, "prompt_tokens", 0) or 0) if usage else 0,
+            tokens_out=int(getattr(usage, "completion_tokens", 0) or 0) if usage else 0,
+            duration_ms=elapsed_ms,
+            firewall=firewall_decision,
+        )
+
         return {
             **state,
             **token_state,
             "llm_messages": messages,
             "llm_response": llm_text,
             "firewall_decision": firewall_decision,
+            "trace": trace.data,
         }
 
     except APIError as e:
@@ -190,12 +203,20 @@ async def llm_call_node(state: AgentState) -> AgentState:
                     "blocked_reason": blocked_reason,
                 }
 
+            # Trace (spec 07)
+            trace.record_llm_call(
+                messages_count=len(messages),
+                duration_ms=elapsed_ms,
+                firewall=firewall_decision,
+            )
+
             return {
                 **state,
                 "llm_messages": messages,
                 "llm_response": "",
                 "firewall_decision": firewall_decision,
                 "final_response": f"I'm sorry, but I can't process that request. {blocked_reason}",
+                "trace": trace.data,
             }
 
         # Other API errors
@@ -207,6 +228,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
             "firewall_decision": firewall_decision,
             "errors": [*state.get("errors", []), error_msg],
             "final_response": "I'm experiencing technical difficulties. Please try again.",
+            "trace": trace.data,
         }
 
     except Exception as e:
@@ -220,4 +242,5 @@ async def llm_call_node(state: AgentState) -> AgentState:
             "firewall_decision": firewall_decision,
             "errors": [*state.get("errors", []), str(e)],
             "final_response": "I'm experiencing technical difficulties. Please try again.",
+            "trace": trace.data,
         }
