@@ -20,6 +20,7 @@ import structlog
 
 from src.agent.rbac.service import get_rbac_service
 from src.agent.state import AgentState, CheckResult, GateDecision
+from src.agent.validation.validator import validate_tool_args
 
 logger = structlog.get_logger()
 
@@ -86,28 +87,34 @@ def _check_rbac(tool_name: str, allowed_tools: list[str], user_role: str = "") -
     )
 
 
-def _check_args(tool_name: str, args: dict[str, Any]) -> CheckResult:
-    """Check 2: Do the arguments contain suspicious / injection patterns?"""
-    args_str = " ".join(str(v) for v in args.values())
+def _check_args(tool_name: str, args: dict[str, Any]) -> tuple[CheckResult, dict[str, Any] | None]:
+    """Check 2: Validate args against Pydantic schema + injection scan.
 
-    for pattern in INJECTION_PATTERNS:
-        match = pattern.search(args_str)
-        if match:
-            return CheckResult(
+    Returns (CheckResult, modified_args_or_None).
+    If SANITIZED, modified_args contains the cleaned arguments.
+    """
+    result = validate_tool_args(tool_name, args)
+
+    if result["decision"] == "VALID":
+        return CheckResult(check="schema", passed=True, detail=None), None
+
+    if result["decision"] == "SANITIZED":
+        return (
+            CheckResult(
                 check="schema",
-                passed=False,
-                detail=f"Injection pattern detected in args: '{match.group()}'",
-            )
-
-    # Basic length check — extremely long args are suspicious
-    if len(args_str) > 2000:
-        return CheckResult(
-            check="schema",
-            passed=False,
-            detail=f"Argument payload too large ({len(args_str)} chars, max 2000).",
+                passed=True,
+                detail=f"Args sanitized for '{tool_name}'",
+            ),
+            result["sanitized_args"],
         )
 
-    return CheckResult(check="schema", passed=True, detail=None)
+    # INVALID
+    errors_str = "; ".join(result["errors"][:3])  # Cap at 3 errors in message
+    if result["injection_detected"]:
+        detail = f"Injection in args for '{tool_name}': {errors_str}"
+    else:
+        detail = f"Invalid args for '{tool_name}': {errors_str}"
+    return CheckResult(check="schema", passed=False, detail=detail), None
 
 
 def _check_context_risk(
@@ -229,8 +236,8 @@ def _evaluate_tool(
             risk_score=risk_score,
         )
 
-    # ── Check 2: Argument validation ──────────────────────
-    arg_check = _check_args(tool_name, args)
+    # ── Check 2: Argument validation (schema + injection) ─────
+    arg_check, modified_args = _check_args(tool_name, args)
     checks.append(arg_check)
     if not arg_check["passed"]:
         risk_score = 0.9
@@ -244,9 +251,12 @@ def _evaluate_tool(
             risk_score=risk_score,
         )
 
+    # If args were sanitized, use the cleaned version going forward
+    effective_args = modified_args if modified_args is not None else args
+
     # ── Check 3: Context risk ─────────────────────────────
     ctx_risk = _check_context_risk(
-        tool_name, args, message, chat_history, blocked_count
+        tool_name, effective_args, message, chat_history, blocked_count
     )
     checks.append(ctx_risk)
     if not ctx_risk["passed"]:
@@ -291,14 +301,15 @@ def _evaluate_tool(
             risk_score=risk_score,
         )
 
-    # ── All checks passed → ALLOW ─────────────────────────
+    # ── All checks passed ─────────────────────────
+    decision = "MODIFY" if modified_args is not None else "ALLOW"
     return GateDecision(
         tool=tool_name,
         args=args,
-        decision="ALLOW",
-        reason=None,
+        decision=decision,
+        reason="Args sanitized" if decision == "MODIFY" else None,
         checks=checks,
-        modified_args=None,
+        modified_args=modified_args,
         risk_score=risk_score,
     )
 
