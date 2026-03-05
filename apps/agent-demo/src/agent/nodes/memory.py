@@ -6,6 +6,8 @@ import structlog
 
 from src.agent.state import AgentState
 from src.agent.trace.accumulator import TraceAccumulator
+from src.agent.trace.langfuse import send_trace_to_langfuse
+from src.agent.trace.store import get_trace_store
 from src.session import session_store
 
 logger = structlog.get_logger()
@@ -34,6 +36,11 @@ def memory_node(state: AgentState) -> AgentState:
             "estimated_cost": state.get("session_estimated_cost", 0.0),
         },
     )
+
+    # Persist trace to store (Phase 2) and Langfuse (Phase 3)
+    trace_dict = trace.to_dict()
+    get_trace_store().save(trace_dict)
+    send_trace_to_langfuse(trace_dict)
 
     logger.info(
         "memory_node",

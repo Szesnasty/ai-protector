@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config import get_settings
 from src.routers.chat import router as chat_router
 from src.routers.health import router as health_router
+from src.routers.traces import router as traces_router
 
 logger = structlog.get_logger()
 
@@ -52,3 +53,4 @@ app.add_middleware(
 # Routers
 app.include_router(health_router)
 app.include_router(chat_router)
+app.include_router(traces_router)

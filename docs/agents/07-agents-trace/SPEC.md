@@ -235,19 +235,19 @@ No persistence yet — trace lives in memory for the duration of the request.
 
 ### Phase 2 — DB persistence + REST API (Sprint 4, ~3 days)
 
-- [ ] **6l.** Create `agent_traces` DB table (JSONB storage)
-- [ ] **6m.** Update `memory_node` to persist trace to DB
-- [ ] **6n.** Create API endpoints: `GET /agent/traces`, `GET /agent/traces/{trace_id}`
-- [ ] **6o.** Add filters: `session_id`, `user_role`, `decision`, `date_from`, `date_to`, `has_blocks`
-- [ ] **6p.** Write tests: trace persistence, filters, pagination
+- [x] **6l.** Create `agent_traces` DB table (JSONB storage)
+- [x] **6m.** Update `memory_node` to persist trace to DB
+- [x] **6n.** Create API endpoints: `GET /agent/traces`, `GET /agent/traces/{trace_id}`
+- [x] **6o.** Add filters: `session_id`, `user_role`, `decision`, `date_from`, `date_to`, `has_blocks`
+- [x] **6p.** Write tests: trace persistence, filters, pagination
 
 **Deliverable:** traces are persisted and queryable via API.
 
 ### Phase 3 — Langfuse integration + export (Sprint 4, ~1 day)
 
-- [ ] **6q.** Add Langfuse trace integration (spans per node, optional)
-- [ ] **6r.** Create `GET /agent/traces/{trace_id}/export` — JSON incident bundle
-- [ ] **6s.** Write tests: trace export produces valid JSON
+- [x] **6q.** Add Langfuse trace integration (spans per node, optional)
+- [x] **6r.** Create `GET /agent/traces/{trace_id}/export` — JSON incident bundle
+- [x] **6s.** Write tests: trace export produces valid JSON
 
 **Deliverable:** traces visible in Langfuse; exportable as self-contained incident bundles.
 
@@ -278,11 +278,11 @@ No persistence yet — trace lives in memory for the duration of the request.
 - [x] Tests pass for full trace lifecycle
 
 ### Phase 2
-- [ ] Trace is persisted to DB (JSONB)
-- [ ] API endpoints work (list, detail) with filters
-- [ ] Tests pass for persistence and filters
+- [x] Trace is persisted to DB (JSONB)
+- [x] API endpoints work (list, detail) with filters
+- [x] Tests pass for persistence and filters
 
 ### Phase 3
-- [ ] Langfuse integration sends spans per node
-- [ ] Trace export produces valid, self-contained JSON
-- [ ] Export endpoint works
+- [x] Langfuse integration sends spans per node
+- [x] Trace export produces valid, self-contained JSON
+- [x] Export endpoint works
