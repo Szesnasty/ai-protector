@@ -42,7 +42,7 @@ async def llm_completion(
 
     Args:
         messages: OpenAI-format message list.
-        model: Model name (e.g. ``"gpt-4o"``, ``"claude-3.5-sonnet"``, ``"llama3.1:8b"``).
+        model: Model name (e.g. ``"gpt-4o"``, ``"claude-sonnet-4-6"``, ``"llama3.1:8b"``).
         stream: Whether to return an async streaming generator.
         temperature: Sampling temperature (0.0–2.0).
         max_tokens: Maximum tokens to generate.

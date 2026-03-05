@@ -28,9 +28,9 @@ class TestDetectProvider:
     @pytest.mark.parametrize(
         "model, expected",
         [
-            ("claude-3.5-sonnet", "anthropic"),
-            ("claude-3-haiku", "anthropic"),
-            ("anthropic/claude-3.5-sonnet", "anthropic"),
+            ("claude-sonnet-4-6", "anthropic"),
+            ("claude-haiku-4-5", "anthropic"),
+            ("anthropic/claude-sonnet-4-6", "anthropic"),
         ],
     )
     @pytest.mark.asyncio
@@ -96,11 +96,11 @@ class TestFormatLitellmModel:
 
     @pytest.mark.asyncio
     async def test_anthropic_adds_prefix(self) -> None:
-        assert format_litellm_model("claude-3.5-sonnet", "anthropic") == "anthropic/claude-3.5-sonnet"
+        assert format_litellm_model("claude-sonnet-4-6", "anthropic") == "anthropic/claude-sonnet-4-6"
 
     @pytest.mark.asyncio
     async def test_anthropic_already_prefixed(self) -> None:
-        assert format_litellm_model("anthropic/claude-3.5-sonnet", "anthropic") == "anthropic/claude-3.5-sonnet"
+        assert format_litellm_model("anthropic/claude-sonnet-4-6", "anthropic") == "anthropic/claude-sonnet-4-6"
 
     @pytest.mark.asyncio
     async def test_google_adds_prefix(self) -> None:

@@ -141,7 +141,7 @@ response = await acompletion(model=litellm_model, messages=..., **kwargs)
 | Model pattern | Provider | LiteLLM model format |
 |---------------|----------|---------------------|
 | `gpt-*`, `o1-*`, `o3-*` | openai | `gpt-4o` (as-is) |
-| `claude-*` | anthropic | `anthropic/claude-3.5-sonnet` |
+| `claude-*` | anthropic | `anthropic/claude-sonnet-4-6` |
 | `gemini/*` | google | `gemini/gemini-2.5-flash` (as-is) |
 | `mistral-*`, `codestral-*` | mistral | `mistral/mistral-large` |
 | `ollama/*` | ollama | `ollama/llama3.1:8b` (as-is) |
@@ -168,7 +168,7 @@ response = await acompletion(model=litellm_model, messages=..., **kwargs)
 | Provider | Models (examples) | Needs `api_base`? | Notes |
 |----------|------------------|-------------------|-------|
 | **openai** | gpt-4o, gpt-4o-mini, o1, o3-mini | No | LiteLLM default |
-| **anthropic** | claude-3.5-sonnet, claude-3-haiku | No | Prefix `anthropic/` |
+| **anthropic** | claude-sonnet-4-6, claude-haiku-4-5 | No | Prefix `anthropic/` |
 | **google** | gemini-2.5-flash, gemini-pro | No | Prefix `gemini/` |
 | **mistral** | mistral-large, codestral | No | Prefix `mistral/` |
 | **ollama** | llama3.1:8b, phi3:mini, etc. | Yes (local) | Always available, no key needed |

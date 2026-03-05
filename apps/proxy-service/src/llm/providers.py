@@ -26,9 +26,9 @@ EXTERNAL_MODELS: list[dict[str, str]] = [
     {"id": "gpt-4-turbo", "provider": "openai", "name": "GPT-4 Turbo"},
     {"id": "o1", "provider": "openai", "name": "o1"},
     {"id": "o3-mini", "provider": "openai", "name": "o3-mini"},
-    {"id": "claude-3.5-sonnet", "provider": "anthropic", "name": "Claude 3.5 Sonnet"},
-    {"id": "claude-3-haiku", "provider": "anthropic", "name": "Claude 3 Haiku"},
-    {"id": "claude-3-opus", "provider": "anthropic", "name": "Claude 3 Opus"},
+    {"id": "claude-sonnet-4-6", "provider": "anthropic", "name": "Claude Sonnet 4.6"},
+    {"id": "claude-haiku-4-5", "provider": "anthropic", "name": "Claude Haiku 4.5"},
+    {"id": "claude-opus-4-6", "provider": "anthropic", "name": "Claude Opus 4.6"},
     {"id": "gemini-2.5-flash", "provider": "google", "name": "Gemini 2.5 Flash"},
     {"id": "gemini-2.0-flash", "provider": "google", "name": "Gemini 2.0 Flash"},
     {"id": "gemini-pro", "provider": "google", "name": "Gemini Pro"},
@@ -55,7 +55,7 @@ def format_litellm_model(model: str, provider: str) -> str:
 
     LiteLLM expects certain prefixes:
     - OpenAI: ``"gpt-4o"`` (as-is, no prefix)
-    - Anthropic: ``"anthropic/claude-3.5-sonnet"`` (needs prefix if not present)
+    - Anthropic: ``"anthropic/claude-sonnet-4-6"`` (needs prefix if not present)
     - Google: ``"gemini/gemini-2.5-flash"`` (as-is if prefixed)
     - Ollama: ``"ollama/llama3.1:8b"`` (needs prefix if not present)
     """

@@ -38,7 +38,7 @@ async def test_models_endpoint_returns_catalog():
             # Check external models are present
             model_ids = [m["id"] for m in models]
             assert "gpt-4o" in model_ids
-            assert "claude-3.5-sonnet" in model_ids
+            assert "claude-sonnet-4-6" in model_ids
             assert "gemini-2.5-flash" in model_ids
 
             # Check ollama model is present

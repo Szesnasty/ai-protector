@@ -60,7 +60,7 @@ def format_litellm_model(model: str, provider: str) -> str:
     
     LiteLLM expects certain prefixes:
     - OpenAI: "gpt-4o" (as-is, no prefix)
-    - Anthropic: "anthropic/claude-3.5-sonnet" (needs prefix if not present)
+    - Anthropic: "anthropic/claude-sonnet-4-6" (needs prefix if not present)
     - Google: "gemini/gemini-2.5-flash" (as-is if prefixed)
     - Ollama: "ollama/llama3.1:8b" (needs prefix if not present)
     """
@@ -170,8 +170,8 @@ async def list_models() -> ModelsResponse:
     { "id": "gpt-4o",            "provider": "openai",    "name": "GPT-4o" },
     { "id": "gpt-4o-mini",       "provider": "openai",    "name": "GPT-4o Mini" },
     { "id": "o3-mini",           "provider": "openai",    "name": "o3-mini" },
-    { "id": "claude-3.5-sonnet", "provider": "anthropic", "name": "Claude 3.5 Sonnet" },
-    { "id": "claude-3-haiku",    "provider": "anthropic", "name": "Claude 3 Haiku" },
+    { "id": "claude-sonnet-4-6", "provider": "anthropic", "name": "Claude Sonnet 4.6" },
+    { "id": "claude-haiku-4-5",    "provider": "anthropic", "name": "Claude Haiku 4.5" },
     { "id": "gemini-2.5-flash",  "provider": "google",    "name": "Gemini 2.5 Flash" },
     { "id": "gemini-2.0-flash",  "provider": "google",    "name": "Gemini 2.0 Flash" },
     { "id": "mistral-large",     "provider": "mistral",   "name": "Mistral Large" },
@@ -217,14 +217,14 @@ app.include_router(models_router)
 | Test | Assertion |
 |------|-----------|
 | `test_detect_provider_openai` | `detect_provider("gpt-4o")` → `"openai"` |
-| `test_detect_provider_anthropic_prefixed` | `detect_provider("anthropic/claude-3.5-sonnet")` → `"anthropic"` |
-| `test_detect_provider_anthropic_bare` | `detect_provider("claude-3.5-sonnet")` → `"anthropic"` |
+| `test_detect_provider_anthropic_prefixed` | `detect_provider("anthropic/claude-sonnet-4-6")` → `"anthropic"` |
+| `test_detect_provider_anthropic_bare` | `detect_provider("claude-sonnet-4-6")` → `"anthropic"` |
 | `test_detect_provider_google` | `detect_provider("gemini/gemini-2.5-flash")` → `"google"` |
 | `test_detect_provider_ollama_explicit` | `detect_provider("ollama/llama3.1:8b")` → `"ollama"` |
 | `test_detect_provider_unknown_defaults_ollama` | `detect_provider("my-custom-model")` → `"ollama"` |
 | `test_format_litellm_openai` | `format_litellm_model("gpt-4o", "openai")` → `"gpt-4o"` |
 | `test_format_litellm_ollama` | `format_litellm_model("llama3.1:8b", "ollama")` → `"ollama/llama3.1:8b"` |
-| `test_format_litellm_anthropic` | `format_litellm_model("claude-3.5-sonnet", "anthropic")` → `"anthropic/claude-3.5-sonnet"` |
+| `test_format_litellm_anthropic` | `format_litellm_model("claude-sonnet-4-6", "anthropic")` → `"anthropic/claude-sonnet-4-6"` |
 | `test_llm_completion_ollama_no_key` | Mock acompletion: `api_base` passed, no `api_key` |
 | `test_llm_completion_openai_with_key` | Mock acompletion: `api_key` passed, no `api_base` |
 | `test_llm_completion_external_no_key_401` | No `api_key` + model "gpt-4o" → `LLMError(401)` |
