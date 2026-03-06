@@ -46,6 +46,32 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await seed_policies()
     await seed_denylist()
+
+    # ── Preload ML models in background (eliminates ~50 s cold-start) ──
+    import asyncio
+
+    async def _preload_scanners() -> None:
+        """Warm up heavy ML singletons so the first request is fast."""
+        try:
+            if settings.enable_llm_guard:
+                from src.pipeline.nodes.llm_guard import get_scanners
+                logger.info("preload_start", scanner="llm_guard")
+                await asyncio.to_thread(get_scanners, {})
+            if settings.enable_nemo_guardrails:
+                from src.pipeline.nodes.nemo_guardrails import get_rails
+                logger.info("preload_start", scanner="nemo_guardrails")
+                await asyncio.to_thread(get_rails)
+            if settings.enable_presidio:
+                from src.pipeline.nodes.presidio import get_analyzer, get_anonymizer
+                logger.info("preload_start", scanner="presidio")
+                await asyncio.to_thread(get_analyzer)
+                await asyncio.to_thread(get_anonymizer)
+            logger.info("preload_complete", msg="All ML models loaded")
+        except Exception:
+            logger.exception("preload_failed", msg="Non-fatal — models will lazy-load on first request")
+
+    asyncio.create_task(_preload_scanners())
+
     logger.info("proxy_ready")
 
     yield
