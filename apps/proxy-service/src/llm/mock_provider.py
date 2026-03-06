@@ -65,6 +65,25 @@ FALLBACK_RESPONSE = (
 MOCK_MODEL_ID = "mock-demo"
 
 
+class _Namespace:
+    """Lightweight dict-wrapper that supports both attribute and key access."""
+
+    def __init__(self, data: dict[str, Any]) -> None:
+        for k, v in data.items():
+            if isinstance(v, dict):
+                setattr(self, k, _Namespace(v))
+            elif isinstance(v, list):
+                setattr(self, k, [_Namespace(i) if isinstance(i, dict) else i for i in v])
+            else:
+                setattr(self, k, v)
+
+    def __getitem__(self, key: str) -> Any:  # noqa: ANN401
+        return getattr(self, key)
+
+    def get(self, key: str, default: Any = None) -> Any:  # noqa: ANN401
+        return getattr(self, key, default)
+
+
 def _pick_response(intent: str) -> str:
     """Pick a random fixture response for the given intent."""
     responses = MOCK_RESPONSES.get(intent, [FALLBACK_RESPONSE])
@@ -75,7 +94,7 @@ def mock_completion(
     messages: list[dict[str, Any]],
     intent: str = "",
     stream: bool = False,
-) -> dict[str, Any]:
+) -> Any:
     """Return a mock OpenAI-compatible completion response.
 
     Args:
@@ -84,32 +103,34 @@ def mock_completion(
         stream: Ignored here; use :func:`mock_completion_stream` for streaming.
 
     Returns:
-        Dict matching the OpenAI ``chat.completion`` response shape.
+        Object with attribute access matching LiteLLM ``ModelResponse`` shape.
     """
     content = _pick_response(intent)
 
     prompt_tokens = sum(len(m.get("content", "").split()) for m in messages)
     completion_tokens = len(content.split())
 
-    return {
-        "id": f"chatcmpl-mock-{int(time.time())}",
-        "object": "chat.completion",
-        "created": int(time.time()),
-        "model": MOCK_MODEL_ID,
-        "choices": [
-            {
-                "index": 0,
-                "message": {"role": "assistant", "content": content},
-                "finish_reason": "stop",
-            }
-        ],
-        "usage": {
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": prompt_tokens + completion_tokens,
-        },
-        "_mock": True,
-    }
+    return _Namespace(
+        {
+            "id": f"chatcmpl-mock-{int(time.time())}",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": MOCK_MODEL_ID,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": content},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            },
+            "_mock": True,
+        }
+    )
 
 
 class _MockDelta:
