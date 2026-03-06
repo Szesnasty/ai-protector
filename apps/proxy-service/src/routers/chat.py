@@ -159,6 +159,7 @@ async def chat_completions(
             temperature=body.temperature,
             max_tokens=body.max_tokens,
             api_key=api_key,
+            intent=pre_result.get("intent", ""),
         )
         generator = sse_stream(
             response=llm_stream,

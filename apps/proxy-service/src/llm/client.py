@@ -33,12 +33,20 @@ async def llm_completion(
     temperature: float | None = None,
     max_tokens: int | None = None,
     api_key: str | None = None,
+    intent: str = "",
 ) -> Any | AsyncGenerator[Any, None]:
     """Call any LLM provider via LiteLLM with automatic routing.
 
     Provider is detected from the model name (e.g. ``"gpt-4o"`` → OpenAI).
     For external providers the ``api_key`` parameter is required and comes
     from the ``x-api-key`` request header.  Ollama calls need no key.
+
+    In **demo mode** (``MODE=demo``) with no API key the call is routed to
+    :mod:`src.llm.mock_provider` which returns deterministic fixture
+    responses based on the pipeline's ``intent`` classification.
+
+    An API key always overrides demo mode — if the user pastes a key in
+    Settings → API Keys, the real provider is used regardless of MODE.
 
     Args:
         messages: OpenAI-format message list.
@@ -47,6 +55,7 @@ async def llm_completion(
         temperature: Sampling temperature (0.0–2.0).
         max_tokens: Maximum tokens to generate.
         api_key: API key from browser (``x-api-key`` header). Required for external providers.
+        intent: Pipeline intent classification (e.g. ``"qa"``, ``"code_gen"``). Used by MockProvider.
 
     Returns:
         Full response dict (non-streaming) or async generator (streaming).
@@ -62,6 +71,16 @@ async def llm_completion(
     if temperature is None:
         temperature = settings.default_temperature
 
+    # ── Demo mode (no API key) → MockProvider ─────────────────────
+    if not api_key and settings.mode == "demo":
+        from src.llm.mock_provider import mock_completion, mock_completion_stream
+
+        logger.info("mock_provider", intent=intent, stream=stream)
+        if stream:
+            return mock_completion_stream(messages, intent=intent)
+        return mock_completion(messages, intent=intent, stream=False)
+
+    # ── Real provider routing ─────────────────────────────────────
     provider = detect_provider(model)
     litellm_model = format_litellm_model(model, provider)
 

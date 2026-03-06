@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     max_sessions: int = 100
 
     # App
+    mode: str = "demo"  # "demo" | "real" — demo uses mock LLM when no API key
     log_level: str = "INFO"
     app_version: str = "0.1.0"
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]

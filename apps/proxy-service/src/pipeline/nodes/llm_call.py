@@ -19,6 +19,7 @@ async def llm_call_node(state: PipelineState) -> PipelineState:
         temperature=state.get("temperature", 0.7),
         max_tokens=state.get("max_tokens"),
         api_key=state.get("api_key"),
+        intent=state.get("intent", ""),
     )
 
     usage = getattr(response, "usage", None)

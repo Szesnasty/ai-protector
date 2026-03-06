@@ -86,6 +86,16 @@ async def llm_call_node(state: AgentState) -> AgentState:
     """Call LLM through the proxy-service firewall."""
     settings = get_settings()
 
+    api_key = state.get("api_key")
+
+    # ── Demo mode (no API key) → use agent mock directly ─────
+    if not api_key and settings.mode == "demo":
+        from src.agent.mock_llm import mock_agent_llm
+
+        return mock_agent_llm(state)
+
+    # ── Real provider (API key or real mode) ─────────────────
+
     # Silence LiteLLM logs
     os.environ.setdefault("LITELLM_LOG", settings.litellm_log_level)
 
@@ -104,7 +114,6 @@ async def llm_call_node(state: AgentState) -> AgentState:
     start = time.perf_counter()
 
     model_name = state.get("model", settings.default_model)
-    api_key = state.get("api_key")
 
     # Format model for LiteLLM: use prefix routing through proxy
     litellm_model = f"{settings.default_model_prefix}/{model_name}"
