@@ -115,11 +115,19 @@ async def health(
     services = {
         "db": await _check_db(db),
         "redis": await _check_redis(),
-        "ollama": await _check_ollama(settings.ollama_base_url),
-        "langfuse": await _check_langfuse(settings.langfuse_host),
     }
 
-    overall = "ok" if all(s.status == "ok" for s in services.values()) else "degraded"
+    # In demo mode Ollama and Langfuse are not started — skip checks
+    if settings.mode == "demo":
+        services["ollama"] = ServiceHealth(status="skipped")
+        services["langfuse"] = ServiceHealth(status="skipped")
+    else:
+        services["ollama"] = await _check_ollama(settings.ollama_base_url)
+        services["langfuse"] = await _check_langfuse(settings.langfuse_host)
+
+    overall = "ok" if all(
+        s.status in ("ok", "skipped") for s in services.values()
+    ) else "degraded"
 
     try:
         metrics = await _collect_metrics(db)
@@ -129,6 +137,7 @@ async def health(
 
     return HealthResponse(
         status=overall,
+        mode=settings.mode,
         services=services,
         version=settings.app_version,
         metrics=metrics,

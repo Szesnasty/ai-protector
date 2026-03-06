@@ -42,6 +42,7 @@ class HealthResponse(BaseModel):
     """Response for GET /health."""
 
     status: str  # "ok" | "degraded"
+    mode: str = "demo"  # "demo" | "real"
     services: dict[str, ServiceHealth]
     version: str
     metrics: SystemMetrics | None = None

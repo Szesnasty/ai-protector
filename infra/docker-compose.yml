@@ -1,5 +1,9 @@
-# AI Protector — Development Infrastructure
-# Usage: cd infra && docker compose up -d
+# AI Protector — Docker Compose
+#
+# Quick start:
+#   make demo    → demo mode (mock LLM, no Ollama)
+#   make up      → full stack (Ollama + real LLM)
+#   make dev     → infra only (apps run locally)
 
 services:
   # ── PostgreSQL + pgvector ─────────────────────────────
@@ -38,6 +42,7 @@ services:
   # ── Ollama ────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
+    profiles: ["full"]
     ports:
       - "11434:11434"
     volumes:
@@ -49,6 +54,7 @@ services:
   # Pinned to v2 — v3 requires ClickHouse + MinIO (overkill for local dev)
   langfuse:
     image: langfuse/langfuse:2
+    profiles: ["full"]
     ports:
       - "3001:3000"
     environment:
@@ -72,9 +78,12 @@ services:
   proxy-service:
     build:
       context: ../apps/proxy-service
+    profiles: ["demo", "full"]
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      MODE: ${MODE:-demo}
     depends_on:
       db:
         condition: service_healthy
@@ -86,6 +95,7 @@ services:
   agent-demo:
     build:
       context: ../apps/agent-demo
+    profiles: ["demo", "full"]
     ports:
       - "8002:8002"
     environment:
@@ -94,6 +104,7 @@ services:
       DEFAULT_MODEL_PREFIX: openai
       DEFAULT_POLICY: strict
       LITELLM_LOG_LEVEL: ERROR
+      MODE: ${MODE:-demo}
     depends_on:
       - proxy-service
     networks:
@@ -102,6 +113,7 @@ services:
   frontend:
     build:
       context: ../apps/frontend
+    profiles: ["demo", "full"]
     ports:
       - "3000:3000"
     environment:
@@ -118,7 +130,8 @@ services:
   model-pull:
     image: curlimages/curl:latest
     depends_on:
-      - ollama
+      ollama:
+        condition: service_started
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
