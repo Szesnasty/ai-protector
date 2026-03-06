@@ -46,7 +46,7 @@ export function useModels() {
     if (!rawModels.value) return []
     return rawModels.value.map((m) => ({
       ...m,
-      available: m.provider === 'ollama' || hasKeyForProvider(m.provider),
+      available: m.provider === 'ollama' || m.provider === 'mock' || hasKeyForProvider(m.provider),
     }))
   })
 

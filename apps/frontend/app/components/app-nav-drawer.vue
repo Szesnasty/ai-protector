@@ -1,33 +1,59 @@
 <template>
-  <v-list density="compact" nav>
-    <v-list-item
-      v-for="item in navItems"
-      :key="item.to"
-      :to="item.to"
-      :title="item.title"
-      exact
+  <div>
+    <v-chip
+      v-if="isDemo"
+      color="amber"
+      variant="tonal"
+      size="small"
+      class="mx-4 mt-2 mb-1"
+      prepend-icon="mdi-flask-outline"
     >
-      <template #prepend>
-        <v-icon :icon="item.icon" size="18" />
-      </template>
-    </v-list-item>
-    <v-divider class="my-2" />
-    <v-list-subheader>Manage</v-list-subheader>
-    <v-list-item
-      v-for="item in manageItems"
-      :key="item.to"
-      :to="item.to"
-      :title="item.title"
-      exact
-    >
-      <template #prepend>
-        <v-icon :icon="item.icon" size="18" />
-      </template>
-    </v-list-item>
-  </v-list>
+      Demo Mode
+      <v-tooltip activator="parent" location="bottom" max-width="320">
+        <div class="text-body-2">
+          <strong>LLM responses are simulated</strong> (mock provider).<br />
+          The security pipeline runs for real — NeMo Guardrails, Presidio PII
+          detection, custom rules, RBAC, and all agent gates are active.<br /><br />
+          <strong>Want real LLM responses?</strong> Go to
+          <em>Settings → API Keys</em> and paste an OpenAI or Anthropic key.
+        </div>
+      </v-tooltip>
+    </v-chip>
+
+    <v-list density="compact" nav>
+      <v-list-item
+        v-for="item in navItems"
+        :key="item.to"
+        :to="item.to"
+        :title="item.title"
+        exact
+      >
+        <template #prepend>
+          <v-icon :icon="item.icon" size="18" />
+        </template>
+      </v-list-item>
+      <v-divider class="my-2" />
+      <v-list-subheader>Manage</v-list-subheader>
+      <v-list-item
+        v-for="item in manageItems"
+        :key="item.to"
+        :to="item.to"
+        :title="item.title"
+        exact
+      >
+        <template #prepend>
+          <v-icon :icon="item.icon" size="18" />
+        </template>
+      </v-list-item>
+    </v-list>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { useAppMode } from '~/composables/useAppMode'
+
+const { isDemo } = useAppMode()
+
 interface NavItem {
   title: string
   icon: string

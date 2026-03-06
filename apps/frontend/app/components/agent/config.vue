@@ -62,6 +62,7 @@
 import { computed } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
+import { useAppMode } from '~/composables/useAppMode'
 
 defineProps<{
   role: 'customer' | 'admin'
@@ -79,6 +80,7 @@ defineEmits<{
 
 const { policies, isLoading: isPoliciesLoading } = usePolicies()
 const { groupedModels, isLoading: isModelsLoading } = useModels()
+const { isDemo } = useAppMode()
 
 const roleItems = [
   { title: 'Customer', value: 'customer' },
@@ -91,6 +93,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google AI',
   mistral: 'Mistral',
   ollama: 'Ollama (local)',
+  mock: 'Demo',
 }
 
 /** Only show models that are available (Ollama always + providers with key). */

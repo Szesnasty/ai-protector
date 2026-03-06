@@ -32,6 +32,11 @@
         @update:model-value="updateField('model', $event)"
       />
 
+      <p v-if="isDemo" class="text-caption text-medium-emphasis mt-n2 mb-4">
+        <v-icon size="x-small">mdi-key</v-icon>
+        Paste an API key in <router-link to="/settings">Settings</router-link> to use real models.
+      </p>
+
       <v-slider
         :model-value="config.temperature"
         :disabled="disabled"
@@ -62,6 +67,7 @@
 import { computed } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
+import { useAppMode } from '~/composables/useAppMode'
 
 interface Config {
   policy: string
@@ -81,6 +87,7 @@ const emit = defineEmits<{
 
 const { policies, isLoading } = usePolicies()
 const { groupedModels, isLoading: modelsLoading } = useModels()
+const { isDemo } = useAppMode()
 
 const policyItems = computed(() =>
   (policies.value ?? []).map((p) => ({
@@ -95,6 +102,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google AI',
   mistral: 'Mistral',
   ollama: 'Ollama (local)',
+  mock: 'Demo',
 }
 
 /** Only show models that are available (Ollama always + providers with key). */

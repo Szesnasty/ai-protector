@@ -33,11 +33,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAppTheme } from '~/composables/useAppTheme'
+import { useAppMode } from '~/composables/useAppMode'
 
 const drawer = ref(true)
 const { isDark, toggle } = useAppTheme()
+const { fetchMode } = useAppMode()
+
+onMounted(() => {
+  fetchMode()
+})
 </script>
 
 <style lang="scss" scoped>

@@ -39,6 +39,7 @@ function maskKey(key: string): string {
  */
 export function detectProviderClient(model: string): string {
   const m = model.toLowerCase()
+  if (m === 'demo') return 'mock'
   if (m.startsWith('gpt-') || m.startsWith('o1') || m.startsWith('o3')) return 'openai'
   if (m.startsWith('claude-') || m.startsWith('anthropic/')) return 'anthropic'
   if (m.startsWith('gemini/') || m.startsWith('gemini-')) return 'google'
