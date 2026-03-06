@@ -1,12 +1,10 @@
 name: CI
 
-# DISABLED — re-enable when CI is fixed
-# on:
-#   push:
-#     branches: [main]
-#   pull_request:
-#     branches: [main]
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -78,6 +76,7 @@ jobs:
         ports:
           - 6379:6379
     env:
+      MODE: real
       DATABASE_URL: postgresql+asyncpg://aip:aip_secret@localhost:5432/aip
       REDIS_URL: redis://localhost:6379/0
       LLM_BACKEND_URL: http://localhost:11434
@@ -100,6 +99,8 @@ jobs:
     defaults:
       run:
         working-directory: apps/agent-demo
+    env:
+      MODE: real
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
