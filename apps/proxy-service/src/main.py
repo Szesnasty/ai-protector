@@ -68,10 +68,16 @@ app = FastAPI(
 # -- Middleware --
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://frontend:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Content-Type",
+        "x-client-id",
+        "x-policy",
+        "x-api-key",
+        "x-correlation-id",
+    ],
     expose_headers=[
         "x-decision",
         "x-intent",
