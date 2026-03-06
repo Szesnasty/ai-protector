@@ -1,60 +1,89 @@
 # AI Protector
 
+Self-hosted **LLM Firewall** with an agentic security pipeline.
+Drop-in OpenAI-compatible proxy that scans, classifies, and enforces
+policies on every LLM request and response — in real time.
+
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Szesnasty/ai-protector/actions/workflows/codeql.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
-Self-hosted **LLM Firewall with an Agentic Security Pipeline** — an OpenAI-compatible proxy that scans, classifies, and enforces policies on every LLM request and response. Includes a demo agent app (Customer Support Copilot) to showcase both **building** and **securing** AI agents.
+> **Demo mode included** — runs without LLM models or API keys.
+> Security pipeline is real. LLM responses are simulated.
 
-## Highlights
-
-- **Policy Agent** — LangGraph-based firewall pipeline (not a dumb filter chain)
-- **Two-Level Security** — agent-level + proxy-level protection
-- **Agent Demo** — working tool-calling agent running behind the firewall
-- **Full Observability** — Langfuse tracing, structured logging, risk scoring
-- **260 Attack Scenarios** — one-click live demo of injection, jailbreak, PII, exfil, and more
-- **Local-first** — runs on Ollama (Llama 3.1 8B), no cloud keys needed
+<!-- TODO: Add screenshot before public launch -->
+<!-- ![AI Protector Dashboard](docs/assets/screenshot-dashboard.png) -->
 
 ---
 
 ## Quick Start
 
-> **Prerequisites:** [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/) (latest)
-
 ```bash
 git clone https://github.com/Szesnasty/ai-protector.git
 cd ai-protector
-make init        # builds all containers, pulls the LLM model (~4.7 GB first time)
+make demo
 ```
 
-That's it. Once done, open **http://localhost:3000**.
+Open **http://localhost:3000**. That's it.
+
+> **Requirements:** Docker & Docker Compose. No GPU, no API keys, no Ollama.
+
+### What to try first
+
+1. **Attack Scenarios** — click the ⚡ panel and run 358 pre-built attacks (injection, jailbreak, PII, exfiltration…)
+2. **Playground** — chat with the firewall and see real-time risk scoring
+3. **Agent Demo** — test a tool-calling agent with RBAC, pre/post tool gates, and budget limits
+4. **Analytics** — view blocked vs allowed requests, risk distribution, timeline
+
+### Want real LLM responses?
+
+| Option | Command | What you need |
+|--------|---------|---------------|
+| **API key** | Paste in Settings → API Keys | OpenAI / Anthropic / Google / Mistral key |
+| **Local LLM** | `make up` | 8 GB+ RAM, ~15 min first setup (pulls Llama 3.1 8B) |
 
 | Service | URL | Description |
 |---------|-----|-------------|
 | **Frontend** | http://localhost:3000 | Dashboard, Playground, Agent Demo, Analytics |
 | **Proxy API** | http://localhost:8000 | LLM Firewall (OpenAI-compatible) |
 | **Agent Demo** | http://localhost:8002 | Customer Support Copilot API |
-| **Langfuse** | http://localhost:3001 | LLM observability & tracing |
+| **Langfuse** | http://localhost:3001 | LLM observability & tracing (real mode only) |
 
-### Daily workflow
+---
 
-```bash
-make dev         # start all services (detached)
-make logs        # stream all logs
-make down        # stop everything
-make reset       # stop + wipe all data (volumes)
-make ps          # show running services
-make test        # run all tests
-make verify      # check all services are healthy
+## What it does
+
+**Two-level security model:**
+
+```
+Level 1: AGENT-LEVEL (inside the agent)
+  → RBAC, tool access control, argument validation, budget limits
+
+Level 2: PROXY-LEVEL (firewall — model-agnostic)
+  → Prompt injection, PII detection, jailbreak, toxicity, secrets, custom rules
 ```
 
-### Already have the images built?
+- **11-node LangGraph pipeline** — not a filter chain, an agentic firewall
+- **3 scanner backends** — Presidio (PII), LLM Guard (injection/toxicity), NeMo Guardrails (dialog rails)
+- **358 attack scenarios** — one-click tests for OWASP LLM Top 10
+- **OpenAI-compatible API** — change one URL to protect any existing app
+- **Full observability** — Langfuse tracing, structured logging, per-request risk scoring
+- **Agent security demo** — pre/post tool gates, RBAC, confirmation flows, budget caps
 
-```bash
-make dev         # starts everything, no rebuild needed
-```
+---
+
+## Demo mode vs Real mode
+
+| | **Demo** (`make demo`) | **Real** (`make up`) |
+|-|------------------------|----------------------|
+| Security pipeline | ✅ Real scanners | ✅ Real scanners |
+| LLM responses | Simulated (mock) | Real (Ollama / API key) |
+| Ollama | Not started | Running |
+| Langfuse tracing | Not started | Running |
+| GPU / API key | Not needed | Optional |
+| Best for | Evaluation, demos, CI | Development, production |
 
 ---
 
@@ -95,7 +124,7 @@ Level 2: PROXY-LEVEL (firewall — model-agnostic)
 
 ## Current Status
 
-348 tests passing across 3 apps:
+840 tests passing across 2 apps · demo mode runs with zero config:
 
 | Phase | Steps | Status |
 |-------|-------|--------|
@@ -104,8 +133,8 @@ Level 2: PROXY-LEVEL (firewall — model-agnostic)
 | Agent Demo (11–13) | Agent App, Firewall Integration, Agent Demo UI | ✅ Done |
 | Custom Rules (14) | OWASP LLM Top 10 rules, CRUD API, Pipeline Integration, Frontend Editor | ✅ Done |
 | Dashboard (15–16) | Policies CRUD UI, Request Log, Analytics (ECharts, KPIs, Timeline) | ✅ Done |
-| Enterprise Readiness (17–19) | Observe/Simulate Mode, Explainability, Replay Requests | ⬜ Specs written |
-| Demo & Polish (20) | Attack Scenarios Panel — 260 prompts (157 Playground + 103 Agent) | ✅ Done |
+| Demo & Polish (20) | Attack Scenarios Panel — 358 prompts (255 Playground + 103 Agent) | ✅ Done |
+| Go-Live | Mock provider, Docker profiles, demo mode UI, seed data, README | ✅ Done |
 
 See [mvp-diagram.md](mvp-diagram.md) for the full 20-step implementation plan.
 
@@ -117,7 +146,7 @@ See [mvp-diagram.md](mvp-diagram.md) for the full 20-step implementation plan.
 |-------|-------------|
 | **Frontend** | Nuxt 4 · Vuetify 4 · Vue Query · ECharts |
 | **Backend** | FastAPI · LangGraph · LiteLLM · Pydantic · SQLAlchemy |
-| **Security** | LLM Guard · Presidio · Custom Rules (OWASP LLM Top 10) |
+| **Security** | LLM Guard · Presidio · NeMo Guardrails · Custom Rules (OWASP LLM Top 10) |
 | **Infra** | Docker Compose · PostgreSQL 16 + pgvector · Redis 7 · Ollama · Langfuse |
 
 ---
@@ -127,26 +156,30 @@ See [mvp-diagram.md](mvp-diagram.md) for the full 20-step implementation plan.
 ```
 ai-protector/
 ├── apps/
-│   ├── proxy-service/         # Python — LLM Firewall (54 src files, 4700 LOC)
+│   ├── proxy-service/         # Python — LLM Firewall (63 src files, 5 800 LOC)
 │   │   ├── src/
 │   │   │   ├── pipeline/      # LangGraph StateGraph, 11 nodes
 │   │   │   ├── routers/       # FastAPI endpoints (chat, policies, rules, analytics)
 │   │   │   ├── models/        # SQLAlchemy ORM (Policy, Request, DenylistPhrase, SecurityRule)
 │   │   │   ├── schemas/       # Pydantic schemas (OpenAI-compatible)
 │   │   │   └── services/      # Business logic (logging, denylist, langfuse)
-│   │   └── tests/             # 348 tests (5700 LOC)
-│   ├── agent-demo/            # Python — Customer Support Copilot (24 files, 1200 LOC)
+│   │   └── tests/             # 419 tests (6 800 LOC)
+│   ├── agent-demo/            # Python — Customer Support Copilot (44 files, 4 700 LOC)
 │   │   └── src/agent/         # LangGraph agent, 4 tools, RBAC, session memory
-│   └── frontend/              # Nuxt 4 + Vuetify 4 (59 files, 7200 LOC)
+│   │   └── tests/             # 421 tests (5 000 LOC)
+│   └── frontend/              # Nuxt 4 + Vuetify 4 (73 files, 8 400 LOC)
 │       └── app/
-│           ├── pages/         # 7 pages (playground, agent, analytics, policies, rules, requests)
-│           ├── components/    # 30 Vue components
-│           └── composables/   # 11 composables (chat, analytics, policies, scenarios)
+│           ├── pages/         # 10 pages (playground, agent, analytics, policies, rules, requests…)
+│           ├── components/    # 33 Vue components
+│           └── composables/   # 16 composables (chat, analytics, policies, scenarios…)
+├── scripts/
+│   ├── pentest/               # Pen-test runner
+│   └── seed_demo.py           # Seed demo data (20 curated prompts)
 ├── infra/
-│   ├── docker-compose.yml     # 6 services + model-pull init container
+│   ├── docker-compose.yml     # Services with profiles (demo / full)
 │   └── scripts/               # verify-stack.sh, pull-model.sh
-├── docs/                      # 55 markdown files — specs, plans, roadmap
-└── Makefile                   # make init / dev / test / reset
+├── docs/                      # 60+ markdown files — specs, plans, roadmap
+└── Makefile                   # make demo / up / dev / test / seed
 ```
 
 ---
@@ -183,6 +216,7 @@ All config is in `infra/.env` (used by Docker Compose):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `MODE` | `demo` | App mode: `demo` (mock LLM) or `real` (Ollama / API key) |
 | `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@db:5432/ai_protector` | PostgreSQL connection |
 | `REDIS_URL` | `redis://redis:6379/0` | Redis connection |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama API URL |
@@ -198,24 +232,36 @@ If you prefer running the Python/Node apps natively for hot-reload:
 
 ```bash
 # 1. Start infrastructure only
-make dev-infra       # PostgreSQL, Redis, Ollama, Langfuse
+make dev             # PostgreSQL, Redis, Ollama, Langfuse
 
 # 2. Proxy service
 cd apps/proxy-service
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-uvicorn src.main:app --reload --port 8000
+MODE=real uvicorn src.main:app --reload --port 8000
 
 # 3. Agent demo
 cd apps/agent-demo
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-uvicorn src.main:app --reload --port 8002
+MODE=real uvicorn src.main:app --reload --port 8002
 
 # 4. Frontend
 cd apps/frontend
 npm install
 npm run dev          # http://localhost:3000
+```
+
+### Useful commands
+
+```bash
+make test            # run all tests (proxy + agent)
+make logs            # stream all container logs
+make down            # stop everything
+make reset           # stop + wipe all data (volumes)
+make ps              # show running services
+make seed            # populate demo data (20 curated prompts)
+make verify          # check all services are healthy
 ```
 
 ---
@@ -225,3 +271,24 @@ npm run dev          # http://localhost:3000
 - [MVP Spec](docs/MVP.spec.md) — architecture, two-level security model, implementation plan
 - [MVP Diagram](mvp-diagram.md) — 20-step plan with ASCII diagrams
 - [Roadmap](docs/ROADMAP.spec.md) — Red Team engine, adaptive policies, enterprise features
+- [Agents Security Docs](docs/agents/agents.md) — 10 agentic security patterns with specs
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community guidelines.
+
+---
+
+## Security
+
+Found a vulnerability? Please report it responsibly — see [SECURITY.md](SECURITY.md).
+
+---
+
+## License
+
+[MIT](LICENSE)
