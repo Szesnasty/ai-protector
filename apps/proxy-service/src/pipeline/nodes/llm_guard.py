@@ -8,6 +8,9 @@ Scanners:
 - InvisibleText: zero-width Unicode characters
 
 Scanners are lazy-initialized on first call (loads ML models ~500MB).
+When policy thresholds change the scanners are rebuilt automatically
+(hot-reload — no restart required).
+
 Each scanner runs via ``asyncio.to_thread()`` to avoid blocking the event loop.
 """
 
@@ -23,9 +26,22 @@ from src.pipeline.state import PipelineState
 
 logger = structlog.get_logger()
 
-# ── Lazy-initialized scanner singleton ────────────────────────────────
+# ── Lazy-initialized scanner singleton with threshold tracking ────────
 
 _scanners: list | None = None
+_active_thresholds: tuple[float, float] | None = None
+
+# Keys that affect scanner construction — trigger rebuild when changed.
+_DEFAULT_INJECTION = 0.5
+_DEFAULT_TOXICITY = 0.7
+
+
+def _extract_threshold_key(thresholds: dict) -> tuple[float, float]:
+    """Return the threshold values that affect scanner construction."""
+    return (
+        float(thresholds.get("injection_threshold", _DEFAULT_INJECTION)),
+        float(thresholds.get("toxicity_threshold", _DEFAULT_TOXICITY)),
+    )
 
 
 def _build_scanners(thresholds: dict) -> list:
@@ -43,10 +59,10 @@ def _build_scanners(thresholds: dict) -> list:
 
     return [
         PromptInjection(
-            threshold=thresholds.get("injection_threshold", 0.5),
+            threshold=thresholds.get("injection_threshold", _DEFAULT_INJECTION),
             match_type=PIMatchType.FULL,
         ),
-        Toxicity(threshold=thresholds.get("toxicity_threshold", 0.7)),
+        Toxicity(threshold=thresholds.get("toxicity_threshold", _DEFAULT_TOXICITY)),
         Secrets(),
         BanSubstrings(
             substrings=["SYSTEM:", "```system", "<|im_start|>system"],
@@ -58,19 +74,40 @@ def _build_scanners(thresholds: dict) -> list:
 
 
 def get_scanners(thresholds: dict) -> list:
-    """Return the cached scanner list, creating it on first call."""
-    global _scanners  # noqa: PLW0603
+    """Return scanners, rebuilding when thresholds change (hot-reload).
+
+    On first call: loads ML models (~35 s).
+    On subsequent calls with same thresholds: instant (returns cached).
+    On threshold change: rebuilds scanners (~2-3 s, models already in
+    memory so only the scanner objects are recreated).
+    """
+    global _scanners, _active_thresholds  # noqa: PLW0603
+    requested = _extract_threshold_key(thresholds)
+
     if _scanners is None:
         logger.info("llm_guard_init", msg="Loading LLM Guard scanners (first call)")
         _scanners = _build_scanners(thresholds)
+        _active_thresholds = requested
         logger.info("llm_guard_ready", scanner_count=len(_scanners))
+    elif requested != _active_thresholds:
+        logger.info(
+            "llm_guard_threshold_change",
+            old=_active_thresholds,
+            new=requested,
+            msg="Rebuilding scanners with new thresholds",
+        )
+        _scanners = _build_scanners(thresholds)
+        _active_thresholds = requested
+        logger.info("llm_guard_rebuilt", scanner_count=len(_scanners))
+
     return _scanners
 
 
 def reset_scanners() -> None:
     """Reset scanner singleton (for testing)."""
-    global _scanners  # noqa: PLW0603
+    global _scanners, _active_thresholds  # noqa: PLW0603
     _scanners = None
+    _active_thresholds = None
 
 
 # ── Node ──────────────────────────────────────────────────────────────

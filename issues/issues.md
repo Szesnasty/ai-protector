@@ -6,37 +6,29 @@ Tracked issues for the AI Protector project, prioritised by impact.
 
 ## Critical
 
-### ISS-001: LLM Guard threshold singleton — no hot-reload
+### ISS-001: ~~LLM Guard threshold singleton — no hot-reload~~ ✅ RESOLVED
 
 **Component:** `apps/proxy-service/src/pipeline/nodes/llm_guard.py`
 
-LLM Guard scanners are lazily initialised as a global singleton. Thresholds
-(`injection_threshold`, `toxicity_threshold`) are read from the policy config
-only on first call. Changing thresholds via the Policies UI has **no effect**
-until the proxy-service container is restarted.
+**Status:** Fixed. `get_scanners()` now tracks the thresholds used at init
+time (`_active_thresholds`). On every call, the requested thresholds are
+compared with the active ones — if they differ the scanners are rebuilt
+automatically. No container restart required.
 
-**Impact:** Users change sliders, click Save, and nothing changes. The UI
-promises configurability that is not delivered at runtime.
-
-**Fix:** Re-initialise scanners when thresholds differ from their init values,
-or pass thresholds per-scan call (LLM Guard supports per-call overrides for
-some scanners).
+**Commit:** `feat/go-live` branch
 
 ---
 
-### ISS-002: Cold start ~50 s on first request
+### ISS-002: ~~Cold start ~50 s on first request~~ ✅ RESOLVED
 
-**Component:** `apps/proxy-service/src/pipeline/nodes/llm_guard.py`,
-`apps/proxy-service/src/pipeline/nodes/nemo_guardrails.py`
+**Component:** `apps/proxy-service/src/main.py`
 
-The first request triggers lazy loading of LLM Guard transformer models
-(~500 MB) and the NeMo FastEmbed model (~90 MB). This adds ~45–55 s latency
-to the very first request after container start.
+**Status:** Fixed. ML models (LLM Guard, NeMo, Presidio) are now preloaded
+in the background via `asyncio.create_task(_preload_scanners())` during
+application startup. The server responds immediately; first real request
+latency dropped from ~50 s → ~0.9 s.
 
-**Impact:** First user interaction appears to hang. Demo experience suffers.
-
-**Fix:** Preload models during application startup (`lifespan` event) in a
-background thread so the first request hits warm scanners.
+**Commit:** `2434ec2`
 
 ---
 
