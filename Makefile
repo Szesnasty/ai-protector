@@ -1,4 +1,4 @@
-.PHONY: demo up dev init down pull-model lint format test verify
+.PHONY: demo up dev init down pull-model seed lint format test verify
 
 # ── Quick start ─────────────────────────────────────────
 # Demo (no Ollama, mock LLM):     make demo
@@ -41,6 +41,10 @@ dev:
 
 pull-model:
 	cd infra && docker compose --profile full --profile init run --rm model-pull
+
+seed:
+	@echo "🌱 Seeding demo data (20 requests)..."
+	@python3 scripts/seed_demo.py
 
 # ── Docker ──────────────────────────────────────────────
 down:
