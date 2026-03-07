@@ -144,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useApiKeys, PROVIDERS } from '~/composables/useApiKeys'
 import type { ProviderDef, StoredKey } from '~/composables/useApiKeys'
 

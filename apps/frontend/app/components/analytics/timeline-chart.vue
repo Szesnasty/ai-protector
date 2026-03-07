@@ -11,8 +11,9 @@
 </template>
 
 <script setup lang="ts">
-const VChart = defineAsyncComponent(() => import('vue-echarts'))
 import type { TimelineBucket } from '~/types/api'
+
+const VChart = defineAsyncComponent(() => import('vue-echarts'))
 
 const props = defineProps<{
   data: TimelineBucket[] | null | undefined

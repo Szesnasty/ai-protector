@@ -30,14 +30,16 @@ from src.pipeline.nodes.intent import classify_intent
 
 SCENARIOS_PATH = Path(__file__).resolve().parents[1] / "data" / "scenarios" / "playground.json"
 
-SUSPICIOUS_INTENTS = frozenset({
-    "jailbreak",
-    "system_prompt_extract",
-    "role_bypass",
-    "tool_abuse",
-    "agent_exfiltration",
-    "social_engineering",
-})
+SUSPICIOUS_INTENTS = frozenset(
+    {
+        "jailbreak",
+        "system_prompt_extract",
+        "role_bypass",
+        "tool_abuse",
+        "agent_exfiltration",
+        "social_engineering",
+    }
+)
 
 BALANCED_CONFIG: dict = {
     "thresholds": {"max_risk": 0.7, "injection_threshold": 0.5},
@@ -53,12 +55,14 @@ def _load_scenarios() -> list[tuple[str, str, str, str]]:
     for group in data:
         category = group["label"]
         for item in group.get("items", []):
-            items.append((
-                item.get("id", "?"),
-                category,
-                item.get("prompt", ""),
-                item.get("expectedDecision", "ALLOW"),
-            ))
+            items.append(
+                (
+                    item.get("id", "?"),
+                    category,
+                    item.get("prompt", ""),
+                    item.get("expectedDecision", "ALLOW"),
+                )
+            )
     return items
 
 
@@ -117,9 +121,7 @@ class TestSafeScenarios:
     )
     def test_intent_not_suspicious(self, scenario_id: str, category: str, prompt: str) -> None:
         intent, _conf = classify_intent(prompt.lower())
-        assert intent not in SUSPICIOUS_INTENTS, (
-            f"False positive: {scenario_id} ({category}) classified as '{intent}'"
-        )
+        assert intent not in SUSPICIOUS_INTENTS, f"False positive: {scenario_id} ({category}) classified as '{intent}'"
 
     @pytest.mark.parametrize(
         "scenario_id, category, prompt",
@@ -198,9 +200,7 @@ class TestMLGap:
     def test_keyword_detection(self, scenario_id: str, category: str, prompt: str) -> None:
         """Should be detected as suspicious — currently needs ML at runtime."""
         intent, _conf = classify_intent(prompt.lower())
-        assert intent in SUSPICIOUS_INTENTS, (
-            f"{scenario_id} ({category}) not detected by keywords (got '{intent}')"
-        )
+        assert intent in SUSPICIOUS_INTENTS, f"{scenario_id} ({category}) not detected by keywords (got '{intent}')"
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -214,14 +214,14 @@ def test_scenario_coverage_report() -> None:
     attacks = len(DETECTED_ATTACKS) + len(UNDETECTED_ATTACKS)
     rate = len(DETECTED_ATTACKS) / max(attacks, 1) * 100
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  OWASP SCENARIO COVERAGE — {total} scenarios")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  ALLOW scenarios:         {len(ALLOW_SCENARIOS):>4d}  (zero false-positives)")
     print(f"  Keyword-detected:        {len(DETECTED_ATTACKS):>4d}  (regression-guarded)")
     print(f"  ML-scanner-dependent:    {len(UNDETECTED_ATTACKS):>4d}  (xfail — runtime detection)")
-    print(f"  ────────────────────────────────")
+    print("  ────────────────────────────────")
     print(f"  Keyword detection rate:  {rate:>5.1f}%")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     assert total >= 200, f"Expected 200+ scenarios, got {total}"

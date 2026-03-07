@@ -42,7 +42,7 @@ export function useModels() {
 
   /** All models with an `available` flag based on browser-stored keys. */
   const groupedModels = computed<ModelInfo[]>(() => {
-    keyVersion.value // touch to create reactive dependency
+    void keyVersion.value // touch to create reactive dependency
     if (!rawModels.value) return []
     return rawModels.value.map((m) => ({
       ...m,

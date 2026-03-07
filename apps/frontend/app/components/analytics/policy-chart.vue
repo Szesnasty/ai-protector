@@ -36,8 +36,9 @@
 </template>
 
 <script setup lang="ts">
-const VChart = defineAsyncComponent(() => import('vue-echarts'))
 import type { PolicyStatsRow } from '~/types/api'
+
+const VChart = defineAsyncComponent(() => import('vue-echarts'))
 
 const props = defineProps<{
   data: PolicyStatsRow[] | null | undefined

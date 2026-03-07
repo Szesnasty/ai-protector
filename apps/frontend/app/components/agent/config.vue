@@ -80,7 +80,7 @@ defineEmits<{
 
 const { policies, isLoading: isPoliciesLoading } = usePolicies()
 const { groupedModels, isLoading: isModelsLoading } = useModels()
-const { isDemo } = useAppMode()
+const { isDemo: _isDemo } = useAppMode()
 
 const roleItems = [
   { title: 'Customer', value: 'customer' },

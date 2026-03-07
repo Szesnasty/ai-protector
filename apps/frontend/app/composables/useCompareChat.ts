@@ -211,7 +211,7 @@ export function useCompareChat() {
         isDirectStreaming.value = false
         timings.direct = Math.round(performance.now() - directStart)
       },
-      onError: (err: Error) => {
+      onError: (_err: Error) => {
         isDirectStreaming.value = false
         timings.direct = Math.round(performance.now() - directStart)
       },

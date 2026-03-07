@@ -75,8 +75,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount } from 'vue'
-import type { RequestFilters } from '~/types/api'
-import type { Policy } from '~/types/api'
+import type { RequestFilters, Policy } from '~/types/api'
 
 const props = defineProps<{
   modelValue: RequestFilters

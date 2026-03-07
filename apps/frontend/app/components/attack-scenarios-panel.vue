@@ -153,8 +153,6 @@ import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 import type { ScenarioGroup } from '~/types/scenarios'
 
-const ATTACK_SUBMIT_DELAY_MS = 300
-
 const props = defineProps<{
   scenarios: ScenarioGroup[]
   modelValue: boolean

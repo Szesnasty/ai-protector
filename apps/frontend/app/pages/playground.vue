@@ -52,11 +52,9 @@ import { useScenarios } from '~/composables/useScenarios'
 import { useModels } from '~/composables/useModels'
 import { useRememberedModel } from '~/composables/useRememberedModel'
 
-const ATTACK_SUBMIT_DELAY_MS = 300
-
 definePageMeta({ title: 'Playground' })
 
-const { messages, isStreaming, lastDecision, error, config, send, clear, abort } = useChat()
+const { messages, isStreaming, lastDecision, error: _error, config, send, clear: _clear, abort: _abort } = useChat()
 const { scenarios, isLoading: scenariosLoading } = useScenarios('playground')
 const { groupedModels, refreshAvailability } = useModels()
 const rememberedModel = useRememberedModel('playground')

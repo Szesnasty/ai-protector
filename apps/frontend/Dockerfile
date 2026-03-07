@@ -2,10 +2,10 @@
 FROM node:22-alpine AS builder
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install --no-audit --no-fund
+COPY package.json ./
+RUN npm pkg delete scripts.postinstall && npm install --no-audit --no-fund
 COPY . .
-RUN npm run build
+RUN npx nuxt prepare && npm run build
 
 # ── Stage 2: Runtime ────────────────────────────────────
 FROM node:22-alpine

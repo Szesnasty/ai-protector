@@ -3,7 +3,7 @@ import { api } from '~/services/api'
 import type { RequestDetail, RequestRead, PaginatedResponse, RequestFilters } from '~/types/api'
 
 export function useRequestLog() {
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const filters = ref<RequestFilters>({
     decision: null,
