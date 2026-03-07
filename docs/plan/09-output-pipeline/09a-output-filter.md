@@ -57,37 +57,37 @@ output_filter_results: dict     # {"pii_redacted": 3, "secrets_redacted": 1, "sy
 @timed_node("output_filter")
 async def output_filter_node(state: PipelineState) -> PipelineState:
     """Scan and redact LLM response content."""
-    
+
     llm_response = state.get("llm_response")
     if not llm_response:
         return state  # BLOCK path — no response to filter
-    
+
     content = llm_response["choices"][0]["message"]["content"]
     results = {"pii_redacted": 0, "secrets_redacted": 0, "system_leak": False}
     filtered = False
-    
+
     # 1. PII scan (Presidio)
     policy_config = state.get("policy_config", {})
     nodes = policy_config.get("nodes", [])
-    
+
     if "output_filter" in nodes:
         content, pii_count = await _redact_pii(content)
         results["pii_redacted"] = pii_count
         if pii_count > 0:
             filtered = True
-        
+
         # 2. Secrets scan
         content, secrets_count = _redact_secrets(content)
         results["secrets_redacted"] = secrets_count
         if secrets_count > 0:
             filtered = True
-        
+
         # 3. System prompt leak check
         if _contains_system_leak(content):
             results["system_leak"] = True
             content = _redact_system_leak(content)
             filtered = True
-    
+
     # Update response
     if filtered:
         new_response = _deep_copy_response(llm_response)
@@ -99,7 +99,7 @@ async def output_filter_node(state: PipelineState) -> PipelineState:
             "output_filter_results": results,
             "response_masked": True,
         }
-    
+
     return {**state, "output_filtered": False, "output_filter_results": results}
 ```
 
@@ -109,13 +109,13 @@ async def output_filter_node(state: PipelineState) -> PipelineState:
 async def _redact_pii(text: str) -> tuple[str, int]:
     """Run Presidio on output text, return (redacted_text, entity_count)."""
     from src.pipeline.nodes.presidio import get_analyzer, get_anonymizer
-    
+
     analyzer = get_analyzer()
     results = analyzer.analyze(text=text, language="en")
-    
+
     if not results:
         return text, 0
-    
+
     anonymizer = get_anonymizer()
     anonymized = anonymizer.anonymize(text=text, analyzer_results=results)
     return anonymized.text, len(results)

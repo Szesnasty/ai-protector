@@ -76,7 +76,7 @@ export function useCompareChat() {
 }
 ```
 
-**Key design**: Both streams fire simultaneously via `Promise.allSettled()`. 
+**Key design**: Both streams fire simultaneously via `Promise.allSettled()`.
 The user sees tokens appearing in both panels at the same time.
 
 ### 3. Compare Page
@@ -172,8 +172,8 @@ export async function streamChat(
   callbacks: StreamCallbacks,
 ): Promise<Response> {
   const baseURL = import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
-  const url = options.url 
-    ? `${baseURL}${options.url}` 
+  const url = options.url
+    ? `${baseURL}${options.url}`
     : `${baseURL}/v1/chat/completions`
   // ... rest remains the same
 }

@@ -102,9 +102,9 @@ Persistent chip visible on every page when in demo mode:
   <v-tooltip activator="parent" location="bottom" max-width="320">
     <div class="text-body-2">
       <strong>LLM responses are simulated</strong> (mock provider).<br />
-      The security pipeline runs for real — NeMo Guardrails, Presidio PII 
+      The security pipeline runs for real — NeMo Guardrails, Presidio PII
       detection, custom rules, RBAC, and all agent gates are active.<br /><br />
-      <strong>Want real LLM responses?</strong> Go to 
+      <strong>Want real LLM responses?</strong> Go to
       <em>Settings → API Keys</em> and paste an OpenAI or Anthropic key.
     </div>
   </v-tooltip>
@@ -139,11 +139,11 @@ Model selector dropdown in playground/agent shows models fetched from `/v1/model
 @router.get("/v1/models")
 async def list_models(settings: Settings = Depends(get_settings)):
     models = []
-    
+
     # Always include mock in demo mode
     if settings.mode == "demo":
         models.append({"id": "demo", "object": "model", "owned_by": "mock"})
-    
+
     # Try Ollama models (skip in demo mode or if Ollama unavailable)
     if settings.mode == "real":
         try:
@@ -151,10 +151,10 @@ async def list_models(settings: Settings = Depends(get_settings)):
             models.extend(ollama_models)
         except:
             pass
-    
+
     # Always include external models catalog
     models.extend(EXTERNAL_MODELS)
-    
+
     return {"object": "list", "data": models}
 ```
 

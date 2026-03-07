@@ -9,7 +9,7 @@ export function useAgentChat() {
 
   const config = reactive({
     role: 'customer' as 'customer' | 'admin',
-    policy: null as string | null,
+    policy: 'balanced' as string | null,
     model: '' as string,
   })
 

@@ -34,6 +34,22 @@ def calculate_risk_score(state: PipelineState) -> float:
         score += 0.5
     elif intent == "social_engineering":
         score += 0.3
+    elif intent == "harmful_content":
+        score += 0.6
+    elif intent == "misinformation":
+        score += 0.5
+    elif intent == "resource_exhaustion":
+        score += 0.4
+    elif intent == "supply_chain" or intent == "rag_poisoning" or intent == "pii_request":
+        score += 0.5
+    elif intent == "confused_deputy":
+        score += 0.4
+    elif intent == "template_injection":
+        score += 0.6
+    elif intent == "virtual_context":
+        score += 0.4
+    elif intent == "crescendo":
+        score += 0.5
 
     # Rule-based
     if flags.get("denylist_hit"):
@@ -110,7 +126,7 @@ async def decision_node(state: PipelineState) -> PipelineState:
         }
 
     # Risk threshold
-    if risk_score > max_risk:
+    if risk_score >= max_risk:
         return {
             **state,
             "decision": "BLOCK",
@@ -122,8 +138,31 @@ async def decision_node(state: PipelineState) -> PipelineState:
     if pii_action == "mask" and has_pii:
         return {**state, "decision": "MODIFY", "risk_score": risk_score}
 
-    # Suspicious but below threshold → MODIFY
+    # Suspicious intent detected → BLOCK (attack pattern identified)
     if state.get("risk_flags", {}).get("suspicious_intent"):
-        return {**state, "decision": "MODIFY", "risk_score": risk_score}
+        return {
+            **state,
+            "decision": "BLOCK",
+            "blocked_reason": f"Suspicious intent detected (risk {risk_score:.2f})",
+            "risk_score": risk_score,
+        }
+
+    # Secrets detected → BLOCK (API keys, tokens, connection strings etc.)
+    if state.get("risk_flags", {}).get("secrets"):
+        return {
+            **state,
+            "decision": "BLOCK",
+            "blocked_reason": "Secrets detected in input",
+            "risk_score": risk_score,
+        }
+
+    # NeMo rail triggered → BLOCK (semantic safety check)
+    if state.get("risk_flags", {}).get("nemo_blocked"):
+        return {
+            **state,
+            "decision": "BLOCK",
+            "blocked_reason": "NeMo guardrail triggered",
+            "risk_score": risk_score,
+        }
 
     return {**state, "decision": "ALLOW", "risk_score": risk_score}

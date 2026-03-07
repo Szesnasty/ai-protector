@@ -78,7 +78,7 @@ async def sanitize_conversation(
     max_total_chars: int = DEFAULT_MAX_TOTAL_CHARS,
 ) -> list[dict[str, Any]]:
     """Return a sanitized copy of the conversation.
-    
+
     1. Truncate to max_turns (keep system message + last N)
     2. Truncate individual messages that exceed max_chars
     3. Redact PII from all message contents
@@ -86,12 +86,12 @@ async def sanitize_conversation(
     """
     cleaned = _truncate_turns(messages, max_turns)
     cleaned = _truncate_messages(cleaned, max_chars_per_message)
-    
+
     if redact_pii:
         cleaned = await _redact_pii_from_messages(cleaned)
     if redact_secrets:
         cleaned = _redact_secrets_from_messages(cleaned)
-    
+
     cleaned = _enforce_total_limit(cleaned, max_total_chars)
     return cleaned
 ```
@@ -105,10 +105,10 @@ def _truncate_turns(
     """Keep system message(s) + last max_turns messages."""
     system_msgs = [m.copy() for m in messages if m["role"] == "system"]
     non_system = [m.copy() for m in messages if m["role"] != "system"]
-    
+
     if len(non_system) > max_turns:
         non_system = non_system[-max_turns:]
-    
+
     return system_msgs + non_system
 ```
 
@@ -135,11 +135,11 @@ def _truncate_messages(
 async def _redact_pii_from_messages(messages: list[dict]) -> list[dict]:
     """Run Presidio on each message content and anonymize."""
     from src.pipeline.nodes.presidio import get_analyzer, get_anonymizer
-    
+
     analyzer = get_analyzer()
     anonymizer = get_anonymizer()
     result = []
-    
+
     for msg in messages:
         m = msg.copy()
         content = m.get("content", "")
@@ -149,7 +149,7 @@ async def _redact_pii_from_messages(messages: list[dict]) -> list[dict]:
                 anonymized = anonymizer.anonymize(text=content, analyzer_results=entities)
                 m["content"] = anonymized.text
         result.append(m)
-    
+
     return result
 ```
 
@@ -181,14 +181,14 @@ def _enforce_total_limit(
     total = sum(len(m.get("content", "")) for m in messages)
     if total <= max_total_chars:
         return messages
-    
+
     system = [m for m in messages if m["role"] == "system"]
     non_system = [m for m in messages if m["role"] != "system"]
-    
+
     while non_system and total > max_total_chars:
         dropped = non_system.pop(0)
         total -= len(dropped.get("content", ""))
-    
+
     return system + non_system
 ```
 

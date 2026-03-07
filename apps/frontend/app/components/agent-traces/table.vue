@@ -68,10 +68,22 @@
     <!-- Status icons -->
     <template #item.status="{ item }">
       <div class="d-flex align-center ga-1">
-        <v-icon v-if="item.has_errors" icon="mdi-alert-circle" color="error" size="16" />
-        <v-icon v-if="item.limits_hit" icon="mdi-speedometer" color="warning" size="16" />
-        <v-icon v-if="item.tool_calls_blocked > 0" icon="mdi-shield-off" color="error" size="16" />
-        <v-icon v-if="!item.has_errors && !item.limits_hit && item.tool_calls_blocked === 0" icon="mdi-check-circle" color="success" size="16" />
+        <span v-if="item.has_errors">
+          <v-icon icon="mdi-alert-circle" color="error" size="16" />
+          <v-tooltip activator="parent" location="top">Agent encountered errors during execution</v-tooltip>
+        </span>
+        <span v-if="item.limits_hit">
+          <v-icon icon="mdi-speedometer" color="warning" size="16" />
+          <v-tooltip activator="parent" location="top">Rate or budget limit was reached</v-tooltip>
+        </span>
+        <span v-if="item.tool_calls_blocked > 0">
+          <v-icon icon="mdi-shield-off" color="error" size="16" />
+          <v-tooltip activator="parent" location="top">{{ item.tool_calls_blocked }} tool call{{ item.tool_calls_blocked > 1 ? 's' : '' }} blocked by security policy</v-tooltip>
+        </span>
+        <span v-if="!item.has_errors && !item.limits_hit && item.tool_calls_blocked === 0">
+          <v-icon icon="mdi-check-circle" color="success" size="16" />
+          <v-tooltip activator="parent" location="top">Request completed successfully — no security issues detected</v-tooltip>
+        </span>
       </div>
     </template>
 

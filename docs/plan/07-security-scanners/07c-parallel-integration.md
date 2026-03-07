@@ -72,7 +72,7 @@ Run LLM Guard and Presidio scanners **in parallel**, update the LangGraph pipeli
   ```python
   # Before (Step 06):
   #   parse → intent → rules → decision → ...
-  
+
   # After (Step 07):
   #   parse → intent → rules → scanners → decision → ...
 

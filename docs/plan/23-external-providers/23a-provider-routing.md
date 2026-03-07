@@ -45,7 +45,7 @@ PROVIDER_RULES: list[tuple[str, str]] = [
 
 def detect_provider(model: str) -> str:
     """Detect LLM provider from model name.
-    
+
     Returns "ollama" as default for unrecognized models (backward compatible).
     """
     model_lower = model.lower()
@@ -57,7 +57,7 @@ def detect_provider(model: str) -> str:
 
 def format_litellm_model(model: str, provider: str) -> str:
     """Format model name for LiteLLM.
-    
+
     LiteLLM expects certain prefixes:
     - OpenAI: "gpt-4o" (as-is, no prefix)
     - Anthropic: "anthropic/claude-sonnet-4-6" (needs prefix if not present)
@@ -155,7 +155,7 @@ The pipeline state/context needs to carry `api_key` so it reaches the LLM call n
 @router.get("/v1/models")
 async def list_models() -> ModelsResponse:
     """Return catalog of available models.
-    
+
     Static catalog of well-known external models
     + dynamic Ollama models (from Ollama API /api/tags).
     External models always listed — frontend knows which

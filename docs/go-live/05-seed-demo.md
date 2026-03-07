@@ -79,7 +79,7 @@ SEED_PROMPTS = [
 
 def seed():
     client = httpx.Client(timeout=30)
-    
+
     # Wait for proxy to be ready
     print("⏳ Waiting for proxy-service...")
     for _ in range(30):
@@ -93,11 +93,11 @@ def seed():
     else:
         print("❌ Proxy not available after 60s")
         sys.exit(1)
-    
+
     print(f"🌱 Seeding {len(SEED_PROMPTS)} requests...")
-    
+
     results = {"BLOCK": 0, "ALLOW": 0, "MODIFY": 0, "ERROR": 0}
-    
+
     for i, item in enumerate(SEED_PROMPTS, 1):
         try:
             r = client.post(
@@ -108,18 +108,18 @@ def seed():
                     "x-policy": item["policy"],
                 },
             )
-            
+
             decision = r.headers.get("x-decision", "ALLOW" if r.status_code == 200 else "BLOCK")
             results[decision] = results.get(decision, 0) + 1
             status = "✅" if r.status_code == 200 else "⛔"
             print(f"  [{i:2d}/{len(SEED_PROMPTS)}] {status} {decision:6s} {item['prompt'][:50]}...")
-            
+
         except Exception as e:
             results["ERROR"] += 1
             print(f"  [{i:2d}/{len(SEED_PROMPTS)}] ❌ ERROR: {e}")
-        
+
         time.sleep(0.3)  # Don't hammer the API
-    
+
     print(f"\n✅ Seed complete: {results}")
 
 

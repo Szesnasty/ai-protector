@@ -276,7 +276,7 @@ No structural change needed — `scanner_results` is already `dict[str, Any]`.
 ```
 First request:
   get_rails() → _rails_app is None → _build_rails() (~2-3s) → cache
-  
+
 Subsequent requests:
   get_rails() → return _rails_app (instant)
 ```

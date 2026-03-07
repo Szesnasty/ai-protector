@@ -100,9 +100,9 @@ services:
       - "8002:8002"
     environment:
       PROXY_BASE_URL: http://proxy-service:8000/v1
-      DEFAULT_MODEL: llama3.1:8b
+      DEFAULT_MODEL: llama3.2:3b
       DEFAULT_MODEL_PREFIX: openai
-      DEFAULT_POLICY: strict
+      DEFAULT_POLICY: balanced
       LITELLM_LOG_LEVEL: ERROR
       MODE: ${MODE:-demo}
     depends_on:
@@ -137,8 +137,8 @@ services:
       - |
         echo '⏳ Waiting for Ollama...'
         until curl -sf http://ollama:11434/api/tags >/dev/null 2>&1; do sleep 2; done
-        echo '📦 Pulling llama3.1:8b (first run only, ~4.7 GB)...'
-        curl -sf http://ollama:11434/api/pull -d '{"name": "llama3.1:8b"}' | while IFS= read -r line; do
+        echo '📦 Pulling llama3.2:3b (first run only, ~2.0 GB)...'
+        curl -sf http://ollama:11434/api/pull -d '{"name": "llama3.2:3b"}' | while IFS= read -r line; do
           status=$(echo "$$line" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
           [ -n "$$status" ] && printf "\r  %s" "$$status"
         done

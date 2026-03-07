@@ -95,7 +95,7 @@ When any limit is hit:
 1. Agent stops the current operation.
 2. Sets `final_response` to a safe completion message:
    ```
-   "I've reached the maximum number of operations for this request. 
+   "I've reached the maximum number of operations for this request.
     Please try a more specific question or start a new conversation."
    ```
 3. Logs the event:
@@ -152,14 +152,14 @@ class LimitsConfig(TypedDict):
 ```python
 class AgentState(TypedDict, total=False):
     # ... existing fields ...
-    
+
     # Counters (NEW)
     session_tool_calls: int       # Cumulative tool calls in session
     session_tokens_in: int        # Cumulative input tokens
     session_tokens_out: int       # Cumulative output tokens
     session_estimated_cost: float # Estimated $ cost
     session_turns: int            # Number of user messages
-    
+
     # Limit state (NEW)
     limits_config: LimitsConfig
     limit_exceeded: str | None    # Which limit was hit (None = OK)

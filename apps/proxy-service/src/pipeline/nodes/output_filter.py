@@ -19,9 +19,22 @@ import structlog
 
 from src.config import get_settings
 from src.pipeline.nodes import timed_node
-from src.pipeline.nodes.presidio import PII_ENTITIES, get_analyzer, get_anonymizer
+from src.pipeline.nodes.presidio import get_analyzer, get_anonymizer
 from src.pipeline.state import PipelineState
 from src.pipeline.utils.memory_hygiene import sanitize_conversation
+
+# Output-specific PII entities — only truly sensitive data that would
+# indicate real data leakage.  General entities like PERSON, DATE_TIME,
+# LOCATION, and NRP cause false positives on LLM output (public figures,
+# dates, places, nationalities are normal parts of responses).
+OUTPUT_PII_ENTITIES: list[str] = [
+    "EMAIL_ADDRESS",
+    "PHONE_NUMBER",
+    "CREDIT_CARD",
+    "US_SSN",
+    "IP_ADDRESS",
+    "IBAN_CODE",
+]
 
 logger = structlog.get_logger()
 
@@ -58,7 +71,7 @@ async def _redact_pii(text: str) -> tuple[str, int]:
             analyzer.analyze,
             text=text,
             language=settings.presidio_language,
-            entities=PII_ENTITIES,
+            entities=OUTPUT_PII_ENTITIES,
             score_threshold=settings.presidio_score_threshold,
         )
     except Exception as exc:

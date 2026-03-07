@@ -178,7 +178,7 @@ async def run_pipeline(
 ) -> PipelineState:
     """Run the full firewall pipeline including output filtering and logging."""
     # ... existing config loading ...
-    
+
     result = await pipeline.ainvoke(initial_state)
     # No need for external log_request() — logging_node handles it
     return result
@@ -191,14 +191,14 @@ async def run_pipeline(
 ```python
 class PipelineState(TypedDict, total=False):
     # ... existing fields ...
-    
+
     # Output filtering (09a)
     output_filtered: bool
     output_filter_results: dict
-    
+
     # Memory hygiene (09b)
     sanitized_messages: list[dict] | None
-    
+
     # (No new fields for logging — it reads existing state)
 ```
 

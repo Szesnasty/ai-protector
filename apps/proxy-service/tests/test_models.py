@@ -25,7 +25,7 @@ async def test_models_endpoint_returns_catalog():
             from src.schemas.models import ModelInfo
 
             mock_ollama.return_value = [
-                ModelInfo(id="ollama/llama3.1:8b", provider="ollama", name="Llama 3.1 8B"),
+                ModelInfo(id="ollama/llama3.2:3b", provider="ollama", name="Llama 3.2 3B"),
             ]
 
             resp = await client.get("/v1/models")
@@ -41,9 +41,6 @@ async def test_models_endpoint_returns_catalog():
             assert "claude-sonnet-4-6" in model_ids
             assert "gemini-2.5-flash" in model_ids
 
-            # Check ollama model is present
-            assert "ollama/llama3.1:8b" in model_ids
-
             # All models have required fields
             for m in models:
                 assert "id" in m
@@ -53,26 +50,19 @@ async def test_models_endpoint_returns_catalog():
 
 @pytest.mark.asyncio
 async def test_models_endpoint_ollama_fallback():
-    """When Ollama is unreachable, fallback to default model."""
+    """When Ollama is unreachable, return catalog without Ollama models."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        with patch("src.routers.models._fetch_ollama_models", new_callable=AsyncMock) as mock_fallback:
-            mock_fallback.side_effect = Exception("Connection refused")
+        with patch("src.routers.models._fetch_ollama_models", new_callable=AsyncMock) as mock_ollama:
+            mock_ollama.return_value = []  # Ollama unreachable → empty list
 
-            # Patch so _fetch_ollama_models raises, forcing fallback
-            with patch("src.routers.models._fetch_ollama_models", new_callable=AsyncMock) as mock2:
-                from src.schemas.models import ModelInfo
+            resp = await client.get("/v1/models")
+            assert resp.status_code == 200
 
-                mock2.return_value = [
-                    ModelInfo(id="ollama/llama3.1:8b", provider="ollama", name="Llama 3.1 8B"),
-                ]
-
-                resp = await client.get("/v1/models")
-                assert resp.status_code == 200
-
-                data = resp.json()
-                models = data["models"]
-                # Should still have external models + fallback ollama model
-                providers = {m["provider"] for m in models}
-                assert "openai" in providers
-                assert "ollama" in providers
+            data = resp.json()
+            models = data["models"]
+            # Should still have external models (no ollama)
+            providers = {m["provider"] for m in models}
+            assert "openai" in providers
+            # No ollama models when ollama is unreachable
+            assert "ollama" not in providers

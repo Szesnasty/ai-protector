@@ -175,7 +175,7 @@ MODE=demo
 
 ## 6. Health check adjustment
 
-In demo profile, `ollama` is not started. The health endpoint currently checks Ollama and would report `degraded`. 
+In demo profile, `ollama` is not started. The health endpoint currently checks Ollama and would report `degraded`.
 
 **Fix:** In demo mode, skip Ollama health check or report it as `"skipped"`:
 ```python

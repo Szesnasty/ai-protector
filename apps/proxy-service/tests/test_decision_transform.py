@@ -114,15 +114,15 @@ class TestDecisionNode:
         assert result["decision"] == "BLOCK"
         assert "Risk" in result["blocked_reason"]
 
-    async def test_modify_suspicious_intent(self) -> None:
+    async def test_block_suspicious_intent(self) -> None:
         state: PipelineState = {
             "intent": "system_prompt_extract",
             "risk_flags": {"suspicious_intent": 0.7},
             "policy_config": {"thresholds": {"max_risk": 0.7}},
         }  # type: ignore[typeddict-item]
-        # risk = 0.4 ≤ 0.7, but suspicious_intent flag → MODIFY
+        # risk = 0.4 ≤ 0.7, but suspicious_intent flag → BLOCK
         result = await decision_node(state)
-        assert result["decision"] == "MODIFY"
+        assert result["decision"] == "BLOCK"
 
     async def test_default_threshold(self) -> None:
         state: PipelineState = {

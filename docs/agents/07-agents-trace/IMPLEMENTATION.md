@@ -1,7 +1,7 @@
 # 07 — Agent Trace: Implementation Notes
 
-**Phase:** 1 — In-memory trace + API response  
-**Status:** ✅ Complete  
+**Phase:** 1 — In-memory trace + API response
+**Status:** ✅ Complete
 **Tests:** 31 new tests in `tests/test_trace.py` (385 total all passing)
 
 ---

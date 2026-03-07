@@ -1,6 +1,6 @@
 # 05 — Message Role Separation (Anti-Spoofing): Implementation Notes
 
-> **Branch:** `feat/agents-mode`  
+> **Branch:** `feat/agents-mode`
 > **Date:** 2025-07-24
 
 ---

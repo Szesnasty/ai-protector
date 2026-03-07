@@ -1,4 +1,4 @@
-.PHONY: demo up dev init down pull-model seed lint format test verify
+.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit
 
 # ── Quick start ─────────────────────────────────────────
 # Demo (no Ollama, mock LLM):     make demo
@@ -62,14 +62,27 @@ ps:
 
 # ── Lint ────────────────────────────────────────────────
 lint:
-	cd apps/proxy-service && ruff check src/ tests/
-	cd apps/agent-demo && ruff check src/ tests/
+	cd apps/proxy-service && ruff check src/ tests/ && ruff format --check src/ tests/
+	cd apps/agent-demo && ruff check src/ tests/ && ruff format --check src/ tests/
 	cd apps/frontend && npx eslint .
+
+lint-fix:
+	cd apps/proxy-service && ruff check --fix src/ tests/ && ruff format src/ tests/
+	cd apps/agent-demo && ruff check --fix src/ tests/ && ruff format src/ tests/
+	cd apps/frontend && npx eslint . --fix
 
 format:
 	cd apps/proxy-service && ruff format src/ tests/
 	cd apps/agent-demo && ruff format src/ tests/
 	cd apps/frontend && npx eslint . --fix
+
+# ── Pre-commit ──────────────────────────────────────────
+pre-commit-install:
+	pip install pre-commit && pre-commit install
+	@echo "✅  pre-commit hooks installed"
+
+pre-commit:
+	pre-commit run --all-files
 
 # ── Test ────────────────────────────────────────────────
 test:
@@ -78,6 +91,9 @@ test:
 
 test-cov:
 	cd apps/proxy-service && pytest tests/ -v --cov=src --cov-report=html
+
+test-scenarios:  ## Run 358 attack scenario deterministic tests (all scanners)
+	cd apps/proxy-service && pytest tests/test_scenario_deterministic.py -v --tb=short -x
 
 # ── Verify ──────────────────────────────────────────────
 verify:

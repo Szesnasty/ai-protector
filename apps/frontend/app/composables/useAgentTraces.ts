@@ -49,6 +49,8 @@ export function useAgentTraces() {
       return resp
     },
     placeholderData: (prev) => prev,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
 
   const items = computed<AgentTraceSummary[]>(() => data.value?.items ?? [])

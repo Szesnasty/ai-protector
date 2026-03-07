@@ -2,23 +2,52 @@
 
 **Ship agents with guardrails — not prayers.**
 
-Self-hosted LLM Firewall. OpenAI-compatible proxy that scans,
-classifies, and enforces security policies on every LLM request
-and response — before they reach the model and after they come back.
+Self-hosted LLM firewall and agent guardrails layer
+for teams shipping AI features to production.
+Inspect, score, and enforce deterministic security policies
+on every LLM request and response — no extra model calls.
+
+- **Block prompt injection** before it reaches the model
+- **Enforce tool access** by role, arguments, and session budget
+- **Redact secrets and PII** before responses leave the system
 
 ### Why this exists
 
 LLM apps fail at the edges: prompt injection, unsafe tool use, sensitive data leakage, and weak output controls.
 AI Protector adds **deterministic enforcement** before and after the model call, plus in-agent controls for tool use and budgets.
-Designed as a self-hosted security layer for teams shipping AI features into production.
+Designed as a deterministic security layer for production AI systems — not another wrapper around model APIs.
 
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-83%25-green)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
-<!-- 🎬 GIF demo coming soon -->
+> **🎬 Demo:** [See AI Protector block prompt injection, gate tool calls, and redact secrets in real time.](#demo-walkthrough)
+
 <!-- ![AI Protector Demo](docs/assets/hero.gif) -->
+
+---
+
+## Built for
+
+- **Teams shipping LLM features to production** — add a security layer without rewriting your app
+- **Agent builders** who need deterministic tool guardrails, not probabilistic safety
+- **Internal AI platforms** that want one protected, OpenAI-compatible endpoint for all teams
+
+---
+
+## Why not just…
+
+| Approach | Problem |
+|---|---|
+| System prompt instructions | Can be ignored, overridden, or leaked by the model |
+| LLM-as-judge | Non-deterministic, adds latency and cost, can be fooled by the same attacks |
+| Provider moderation | Doesn't control tool use, agent behavior, or custom business rules |
+| App-layer `if/else` checks | Gets duplicated across services, misses novel patterns, hard to audit |
+| No guardrails | Works until it doesn't — one prompt injection away from data leak |
+
+AI Protector enforces policy **deterministically at the proxy and agent level** — the protected LLM is the target, not the judge.
 
 ---
 
@@ -35,12 +64,17 @@ Level 2 — AGENT (inside the agent)
 ```
 
 The proxy sits between your app and the LLM provider. The agent layer
-runs inside your agent graph. Both levels cooperate, each catches what
+runs inside your agent graph. Both levels cooperate — each catches what
 the other can't.
 
-Enforcement is deterministic and explainable — rules, rails, and scanners.
-The protected LLM is the target, not the judge. No extra LLM calls are
-made for security decisions.
+---
+
+## Design principles
+
+- **Deterministic enforcement over LLM-as-judge** — security decisions are made by rules, scanners, and thresholds, never by asking another model
+- **Defense in depth** — proxy-level firewall + in-agent controls; each layer catches what the other can't
+- **Model-agnostic** — works with any LLM provider (OpenAI, Anthropic, Google, Mistral, Azure, Ollama) via a single endpoint
+- **Self-hosted by default** — runs entirely on your infrastructure; no external telemetry, no third-party dependencies for enforcement
 
 ---
 
@@ -67,6 +101,77 @@ Open **http://localhost:3000**. Done.
 2. **Playground** — chat through the firewall and watch real-time risk scoring
 3. **Agent Demo** — test a tool-calling agent with RBAC, pre/post tool gates, and budget limits
 4. **Analytics** — view blocked vs allowed, risk distribution, timeline
+
+---
+
+## Demo walkthrough
+
+AI Protector includes several demo surfaces for testing attacks,
+validating policies, and observing decisions end-to-end.
+
+<details>
+<summary><strong>Attack Scenarios</strong> — launch pre-built prompt injection, jailbreak, PII, and exfiltration tests</summary>
+
+<!-- ![Attack Scenarios](docs/assets/attack-scenarios.png) -->
+
+Fire 350+ pre-built attack scenarios against the proxy and see whether
+they are blocked, modified, or allowed. Each scenario is mapped to an
+OWASP LLM Top 10 category and helps validate policy thresholds quickly.
+
+**What you can inspect:**
+- Detected threat category and intent classification
+- Risk score breakdown and policy decision (BLOCK / MODIFY / ALLOW)
+- Scanner evidence and human-readable explanation
+
+</details>
+
+<details>
+<summary><strong>Playground</strong> — chat through the firewall with real-time risk scoring</summary>
+
+<!-- ![Playground](docs/assets/playground.png) -->
+
+Send any prompt through the full 9-node security pipeline and see the
+firewall's decision in real time. Switch between policies (fast, balanced,
+strict, paranoid) to compare how thresholds affect the outcome.
+
+**What you can inspect:**
+- Live risk score and scanner breakdown per message
+- Policy decision with full explanation
+- Side-by-side policy comparison (Compare mode)
+
+</details>
+
+<details>
+<summary><strong>Agent Demo</strong> — test a tool-calling agent with RBAC, budgets, and confirmation flows</summary>
+
+<!-- ![Agent Demo](docs/assets/agent-demo.png) -->
+
+Interact with a Customer Support Copilot that uses 5 tools gated by
+role-based access control. Switch roles (customer → support → admin)
+to see how permissions change what the agent can do.
+
+**What you can inspect:**
+- RBAC enforcement: which tools each role can call
+- Pre-tool gate: argument validation and permission checks
+- Post-tool gate: PII/secrets scanning on tool outputs
+- Budget limits: token and tool call caps per session
+
+</details>
+
+<details>
+<summary><strong>Analytics</strong> — view blocked vs allowed, risk distribution, and timeline</summary>
+
+<!-- ![Analytics](docs/assets/analytics.png) -->
+
+Dashboard with charts showing how the firewall is performing across all
+requests. Filter by time window, policy, or threat category.
+
+**What you can inspect:**
+- Blocked vs allowed ratio over time
+- Risk score distribution and intent breakdown
+- Per-category threat timeline
+
+</details>
 
 ---
 
@@ -176,7 +281,7 @@ Agent-specific risks (aligned with [OWASP Agentic AI Threats](https://genai.owas
 - **4 firewall policies** — fast, balanced, strict, paranoid (configurable thresholds)
 - **Agent security** — pre/post tool gates, RBAC, confirmation flows, budget caps
 - **Full observability** — Langfuse tracing, structured logging, per-request risk scoring
-- **800+ tests** across proxy and agent
+- **1 200+ tests** across proxy decisions, agent tool gating, and attack scenarios
 
 ---
 
@@ -226,7 +331,7 @@ Agent → IntentClassifier → PolicyCheck → ToolRouter
 | Option | Command | What you need |
 |--------|---------|---------------|
 | **API key** | Paste in Settings → API Keys | OpenAI / Anthropic / Google / Mistral / Azure key |
-| **Local LLM** | `make up` | 8 GB+ RAM, ~15 min first setup (pulls Llama 3.1 8B) |
+| **Local LLM** | `make up` | 4 GB+ RAM, ~5 min first setup (pulls Llama 3.2 3B, ~2 GB) |
 
 Provider routing is handled by LiteLLM — model names like
 `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-pro` are mapped to the right provider
@@ -244,7 +349,7 @@ All config lives in `infra/.env` (used by Docker Compose):
 | `DATABASE_URL` | `postgresql+asyncpg://…` | PostgreSQL connection |
 | `REDIS_URL` | `redis://redis:6379/0` | Redis connection |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama API |
-| `DEFAULT_MODEL` | `llama3.1:8b` | Default LLM model |
+| `DEFAULT_MODEL` | `llama3.2:3b` | Default LLM model |
 | `DEFAULT_POLICY` | `balanced` | Firewall policy (`fast` / `balanced` / `strict` / `paranoid`) |
 | `ENABLE_LANGFUSE` | `true` | Langfuse tracing |
 
@@ -258,8 +363,8 @@ ai-protector/
 │   ├── proxy-service/         # LLM Firewall — FastAPI, LangGraph, 9 pipeline nodes
 │   │   ├── src/pipeline/      # StateGraph nodes (parse, intent, rules, scanners, decision…)
 │   │   ├── src/routers/       # Endpoints: chat, policies, rules, analytics, health
-│   │   └── tests/             # 433 tests
-│   ├── agent-demo/            # Customer Support Copilot — LangGraph agent, 4 tools, RBAC
+│   │   └── tests/             # 809 tests
+│   ├── agent-demo/            # Customer Support Copilot — LangGraph agent, 5 tools, RBAC
 │   │   ├── src/agent/         # Nodes, tools, RBAC, traces, session memory
 │   │   └── tests/             # 421 tests
 │   └── frontend/              # Nuxt 4 + Vuetify 4 — 10 pages, 33 components
@@ -302,23 +407,61 @@ npm run dev          # http://localhost:3000
 Useful Makefile targets:
 
 ```bash
-make test            # run all tests (proxy + agent)
-make logs            # stream container logs
+make demo            # start demo mode (mock LLM, real scanners)
+make up              # start full stack (Ollama + real LLM)
+make init            # full stack + pull model (first-time setup)
+make dev             # infrastructure only (DB, Redis, Ollama, Langfuse)
 make down            # stop everything
-make reset           # stop + wipe all data
-make seed            # populate demo data
+make reset           # stop + wipe all data (volumes removed)
+make ps              # show running services
+make logs            # stream container logs
+make seed            # populate demo data (20 requests)
 make verify          # health-check all services
+make test            # run all tests (proxy + agent)
+make test-cov        # run proxy tests with HTML coverage report
+make lint            # ruff check + format check (both Python apps)
+make lint-fix        # auto-fix lint + formatting issues
+make pre-commit-install  # install git pre-commit hooks
 ```
 
 ---
 
 ## Trust & Privacy
 
+- **Content Security Policy** — every response includes a strict CSP header: `default-src 'self'`, `frame-ancestors 'none'`, dynamic `connect-src` scoped to configured API endpoints. `unsafe-inline` is required for `style-src` (Vuetify runtime styles) and `script-src` (Nuxt hydration) — acceptable for a self-hosted tool not exposed to the public internet.
+- **Security headers** — `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` disabling camera/microphone/geolocation/payment.
 - **Demo mode** — no API keys needed; the security pipeline runs with real scanners, LLM responses are simulated.
 - **API keys (real mode)** — stored in the browser only (sessionStorage by default, localStorage opt-in). The server never stores, logs, or caches them. A "Clear all keys" button is provided.
 - **Network** — the proxy runs locally via Docker. Requests go only to your selected LLM provider or local Ollama. No telemetry, no external calls.
 - **Logging** — API keys are never logged. Prompt logging can be disabled or redacted via policy configuration.
 - **Production recommendation** — for production deployments, use server-side secret management (Vault, KMS, env vars) and keep the proxy on an internal network.
+
+---
+
+## Quality signals
+
+| Metric | Value |
+|--------|-------|
+| Automated tests | 1 200+ (809 proxy + 421 agent) |
+| CI pipeline | lint, unit/integration tests, frontend build, Docker build |
+| Proxy-service coverage | ~83% line coverage |
+| Attack scenarios | 350+ across OWASP LLM Top 10 categories |
+
+---
+
+## Security posture
+
+AI Protector is an **application-layer security control** for LLM-powered systems.
+It enforces deterministic policies at the proxy and agent level.
+
+It does **not** replace:
+- **Model hardening** — fine-tuning, RLHF, safety training
+- **Infrastructure hardening** — network segmentation, TLS, secrets management
+- **Dependency security** — supply chain audits, SBOM, vulnerability scanning (Dependabot is enabled)
+- **Human review** — approval workflows for high-risk actions in production
+
+For architecture details see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+For a formal threat breakdown see [THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ---
 

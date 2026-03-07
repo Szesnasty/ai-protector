@@ -96,7 +96,7 @@ Define the `PipelineState` TypedDict that flows through all pipeline nodes, and 
       Always runs first. Initializes all accumulator fields.
       """
       messages = state["messages"]
-      
+
       # Extract last user message
       user_message = ""
       for msg in reversed(messages):

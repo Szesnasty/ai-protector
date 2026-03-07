@@ -33,6 +33,7 @@ logger = structlog.get_logger()
 
 _rails_app = None
 _rails_lock = threading.Lock()
+_scan_lock = threading.Lock()
 RAILS_DIR = Path(__file__).parent.parent / "rails"
 
 # All known rail names (must match BLOCKED:<name> in .co bot responses)
@@ -49,6 +50,7 @@ KNOWN_RAILS = frozenset(
         "excessive_agency",
         "hallucination_exploit",
         "supply_chain",
+        "system_sabotage",
     }
 )
 
@@ -95,6 +97,10 @@ def _scan_message(text: str) -> dict:
       - matched_rail: str | None (e.g. "role_bypass", "tool_abuse")
       - score: float (0.0-1.0)
       - bot_message: str | None
+
+    Serialised via ``_scan_lock`` — NeMo's LLMRails is NOT thread-safe;
+    concurrent calls corrupt internal conversation state and cause
+    false-positive classifications.
     """
     import asyncio as _asyncio
 
@@ -103,11 +109,14 @@ def _scan_message(text: str) -> dict:
 
     # NeMo's generate is sync internally but wraps async; we need a new loop
     # since we're running in a thread pool.
-    loop = _asyncio.new_event_loop()
-    try:
-        response = loop.run_until_complete(rails.generate_async(messages=messages))
-    finally:
-        loop.close()
+    # Lock prevents concurrent access — the singleton rails object leaks
+    # conversation state between threads without it.
+    with _scan_lock:
+        loop = _asyncio.new_event_loop()
+        try:
+            response = loop.run_until_complete(rails.generate_async(messages=messages))
+        finally:
+            loop.close()
 
     content = ""
     if isinstance(response, dict):

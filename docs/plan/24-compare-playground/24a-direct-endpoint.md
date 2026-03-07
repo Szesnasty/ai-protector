@@ -35,15 +35,15 @@ enable_direct_endpoint: bool = True  # Set False in production
 @router.post("/v1/chat/direct")
 async def chat_direct(body: ChatCompletionRequest, request: Request, ...):
     """Forward directly to LLM — NO scanning, NO policy, NO logging.
-    
+
     For Compare demo only.
     """
     if not settings.enable_direct_endpoint:
         raise HTTPException(404, "Direct endpoint disabled")
-    
+
     api_key = request.headers.get("x-api-key")  # From browser SessionStorage
     messages = [m.model_dump(exclude_none=True) for m in body.messages]
-    
+
     if body.stream:
         llm_stream = await llm_completion(
             messages=messages, model=body.model,
@@ -55,7 +55,7 @@ async def chat_direct(body: ChatCompletionRequest, request: Request, ...):
             media_type="text/event-stream",
             headers={"x-decision": "DIRECT"},
         )
-    
+
     # Non-streaming
     response = await llm_completion(..., api_key=api_key)
     return ChatCompletionResponse(...)

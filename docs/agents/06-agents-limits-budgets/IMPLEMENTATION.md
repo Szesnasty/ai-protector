@@ -1,6 +1,6 @@
 # 06 — Limits: Rate Limiting / Iteration Caps / Budget Caps — Implementation Notes
 
-> **Branch:** `feat/agents-mode`  
+> **Branch:** `feat/agents-mode`
 > **Date:** 2025-03-05
 
 ---

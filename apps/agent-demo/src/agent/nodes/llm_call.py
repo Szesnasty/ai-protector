@@ -114,11 +114,14 @@ async def _demo_llm_call(state: AgentState, settings: Any) -> AgentState:
         "risk_flags": {},
     }
 
-    # Send ONLY the raw user message for firewall scanning — the full
-    # agent context (system prompt w/ anti-injection rules, tool delimiters)
-    # triggers false-positives in the proxy's injection detector.
+    # Build proxy-safe messages: chat history + current user message.
+    # We strip the system prompt (anti-injection rules) and tool delimiters
+    # because those trigger false-positives in the proxy's injection detector.
+    # The proxy only scans the *last* user message (parse_node), so history
+    # is safe to include — and the LLM needs it for multi-turn context.
+    chat_history = state.get("chat_history", [])
     user_msg = state.get("message", "")
-    scan_messages = [{"role": "user", "content": user_msg}]
+    scan_messages = [*chat_history, {"role": "user", "content": user_msg}]
 
     try:
         proxy_resp = await acompletion(
@@ -208,7 +211,16 @@ async def _demo_llm_call(state: AgentState, settings: Any) -> AgentState:
 
 
 async def llm_call_node(state: AgentState) -> AgentState:
-    """Call LLM through the proxy-service firewall."""
+    """Call LLM through the proxy-service firewall.
+
+    Architecture:
+      1. Send chat history + current user message to proxy (without the agent
+         system prompt / tool delimiters which trigger false-positives).
+         The proxy scans only the last user message (parse_node) so history
+         is safe, and the LLM needs it for multi-turn context.
+      2. If BLOCK → honour it and stop.
+      3. If ALLOW → use the proxy's LLM response (which now has full context).
+    """
     settings = get_settings()
 
     api_key = state.get("api_key")
@@ -249,10 +261,19 @@ async def llm_call_node(state: AgentState) -> AgentState:
     if api_key:
         extra_headers["x-api-key"] = api_key
 
+    # ── Step 1: Firewall scan + LLM call via proxy ──────────────
+    # Send chat history + current user message (without the agent system
+    # prompt / tool delimiters which trigger false-positives).  The proxy
+    # only scans the *last* user message (parse_node) so history is safe,
+    # and the LLM needs it for multi-turn context.
+    chat_history = state.get("chat_history", [])
+    user_msg = state.get("message", "")
+    scan_messages = [*chat_history, {"role": "user", "content": user_msg}]
+
     try:
-        response = await acompletion(
+        scan_resp = await acompletion(
             model=litellm_model,
-            messages=messages,
+            messages=scan_messages,
             api_base=settings.proxy_base_url,
             api_key="not-needed",
             extra_headers=extra_headers,
@@ -261,38 +282,33 @@ async def llm_call_node(state: AgentState) -> AgentState:
             timeout=120,
         )
 
-        llm_text = response.choices[0].message.content or ""
-
-        # Try to extract firewall headers from response
-        # LiteLLM prefixes provider headers with "llm_provider-"
-        hidden = getattr(response, "_hidden_params", {})
+        # Extract firewall decision from proxy response headers
+        hidden = getattr(scan_resp, "_hidden_params", {})
         addl_headers = hidden.get("additional_headers", {}) if isinstance(hidden, dict) else {}
-        if addl_headers:
-            # Try both raw and llm_provider- prefixed header names
-            def _hdr(name: str) -> str:
-                return addl_headers.get(name, addl_headers.get(f"llm_provider-{name}", ""))
 
-            decision = _hdr("x-decision") or "ALLOW"
-            risk_score_str = _hdr("x-risk-score") or "0"
-            intent_val = _hdr("x-intent") or ""
+        def _hdr(name: str) -> str:
+            return addl_headers.get(name, addl_headers.get(f"llm_provider-{name}", ""))
 
-            firewall_decision = {
-                "decision": decision,
-                "risk_score": float(risk_score_str),
-                "intent": intent_val,
-                "risk_flags": {},
-            }
-        else:
-            firewall_decision["decision"] = "ALLOW"
+        firewall_decision = {
+            "decision": _hdr("x-decision") or "ALLOW",
+            "risk_score": float(_hdr("x-risk-score") or "0"),
+            "intent": _hdr("x-intent") or "",
+            "risk_flags": {},
+        }
+
+        # ── Step 2: Proxy returned ALLOW — use its LLM response ──
+        # The proxy already forwarded to the actual LLM provider, so we
+        # have a real response. Use it as the agent's LLM output.
+        llm_text = scan_resp.choices[0].message.content or ""
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         logger.info("llm_call_ok", elapsed_ms=elapsed_ms, response_len=len(llm_text))
 
         # ── Token tracking (spec 06) ─────────────────────
-        token_state = _track_tokens(response, state, model_name)
+        token_state = _track_tokens(scan_resp, state, model_name)
 
         # Trace (spec 07)
-        usage = getattr(response, "usage", None)
+        usage = getattr(scan_resp, "usage", None)
         trace.record_llm_call(
             messages_count=len(messages),
             tokens_in=int(getattr(usage, "prompt_tokens", 0) or 0) if usage else 0,

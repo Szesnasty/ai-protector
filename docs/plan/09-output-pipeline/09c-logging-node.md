@@ -85,7 +85,7 @@ async def create_trace(
     session_id: str | None = None,
 ) -> None:
     """Create a Langfuse trace with pipeline data.
-    
+
     Non-blocking. Errors are swallowed and logged.
     """
     client = get_langfuse()
@@ -143,12 +143,12 @@ from src.services.langfuse_client import create_trace, add_pipeline_spans
 @timed_node("logging")
 async def logging_node(state: PipelineState) -> PipelineState:
     """Write audit record to Postgres and send Langfuse trace.
-    
+
     Errors are swallowed — logging must never block the response.
     """
     # 1. Postgres audit log
     await log_request_from_state(state)
-    
+
     # 2. Langfuse trace
     trace = await create_trace(
         trace_id=state.get("request_id", ""),
@@ -172,13 +172,13 @@ async def logging_node(state: PipelineState) -> PipelineState:
         tags=_build_tags(state),
         user_id=state.get("client_id"),
     )
-    
+
     await add_pipeline_spans(
         trace,
         state.get("node_timings", {}),
         state,
     )
-    
+
     return state  # Logging doesn't modify state
 
 
@@ -226,7 +226,7 @@ Add a new function that takes `PipelineState` directly:
 ```python
 async def log_request_from_state(state: PipelineState) -> None:
     """Write audit row from full pipeline state.
-    
+
     Replaces the old log_request() for pipeline-integrated logging.
     Old function kept for backward compatibility with chat router.
     """

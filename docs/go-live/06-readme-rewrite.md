@@ -56,13 +56,13 @@ The README is thorough but optimized for someone who already decided to use the 
 ```markdown
 # AI Protector
 
-Self-hosted **LLM Firewall** with an agentic security pipeline. 
-Drop-in OpenAI-compatible proxy that scans, classifies, and enforces 
+Self-hosted **LLM Firewall** with an agentic security pipeline.
+Drop-in OpenAI-compatible proxy that scans, classifies, and enforces
 policies on every LLM request and response — in real time.
 
 [![CI](badge)](link) [![License: MIT](badge)](link) [![Python 3.12](badge)](link) [![Nuxt 4](badge)](link)
 
-> **Demo mode included** — runs without LLM models or API keys. 
+> **Demo mode included** — runs without LLM models or API keys.
 > Security pipeline is real. LLM responses are simulated.
 
 ![AI Protector Dashboard](docs/assets/screenshot-dashboard.png)

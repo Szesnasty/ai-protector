@@ -1,7 +1,7 @@
 # Spec 01 — Pre-tool Enforcement Gate: Implementation Notes
 
-> **Status:** Implemented  
-> **Commit:** `c99c3be` on `feat/agents-mode`  
+> **Status:** Implemented
+> **Commit:** `c99c3be` on `feat/agents-mode`
 > **Tests:** 35 new (93 total, all passing)
 
 ---

@@ -47,15 +47,8 @@ async def _fetch_ollama_models() -> list[ModelInfo]:
             return models
     except Exception:
         logger.debug("ollama_tags_unavailable", url=url)
-        # Fallback: return default model
-        settings = get_settings()
-        return [
-            ModelInfo(
-                id=f"ollama/{settings.default_model}",
-                provider="ollama",
-                name=settings.default_model,
-            )
-        ]
+        # Ollama not running — return empty list so no phantom models appear
+        return []
 
 
 @router.get("/v1/models", response_model=ModelsResponse)

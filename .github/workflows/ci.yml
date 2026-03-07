@@ -94,8 +94,6 @@ jobs:
       - name: Run tests with coverage
         run: >
           pytest tests/ -v --tb=short -x
-          --ignore=tests/test_models.py
-          --ignore=tests/test_hotreload.py
           --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml
       - name: Coverage summary
         if: always()
@@ -110,6 +108,25 @@ jobs:
         with:
           name: proxy-coverage
           path: apps/proxy-service/coverage.xml
+      - name: Generate coverage badge
+        if: github.ref == 'refs/heads/main' && always()
+        run: |
+          TOTAL=$(python -m coverage report --format=total 2>/dev/null || echo "0")
+          echo "COVERAGE_PCT=$TOTAL" >> "$GITHUB_ENV"
+          echo "Coverage: ${TOTAL}%"
+      - name: Upload coverage badge to Gist
+        if: github.ref == 'refs/heads/main' && always()
+        continue-on-error: true
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: ${{ vars.COVERAGE_GIST_ID }}
+          filename: coverage-badge.json
+          label: coverage
+          message: ${{ env.COVERAGE_PCT }}%
+          valColorRange: ${{ env.COVERAGE_PCT }}
+          minColorRange: 0
+          maxColorRange: 100
 
   test-agent:
     name: Test Agent Demo
