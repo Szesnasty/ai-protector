@@ -12,12 +12,27 @@ JAILBREAK_PATTERNS = [
     "ignore previous",
     "ignore all prior",
     "ignore your instructions",
+    "ignore all rules",
     "you are now",
     "pretend you are",
     "act as dan",
     "jailbreak",
     "bypass your",
     "override your",
+    "override safety",
+    "system override",
+    "developer mode",
+    "disable safety",
+    "no content policy",
+    "no rules",
+    "rules are void",
+    "god mode",
+    "machiavellian",
+    "no ethical",
+    "fallback mode",
+    "sudo ",
+    "unrestricted",
+    "uncensored",
 ]
 
 EXTRACTION_PATTERNS = [
@@ -27,6 +42,14 @@ EXTRACTION_PATTERNS = [
     "initial prompt",
     "show your instructions",
     "print your system",
+    "above this line",
+    "repeat everything",
+    "repeat all text",
+    "initialization text",
+    "rules you follow",
+    "role definition",
+    "hidden instructions",
+    "instructions you were given",
 ]
 
 CODE_PATTERNS = [
@@ -92,6 +115,13 @@ AGENT_TOOL_ABUSE_PATTERNS = [
     "run script",
     "system command",
     "shell access",
+    "production database",
+    "deploy to production",
+    "admin user",
+    "delete request",
+    "send an email",
+    "execute this",
+    "/etc/",
 ]
 
 AGENT_EXFILTRATION_PATTERNS = [
@@ -110,6 +140,13 @@ AGENT_EXFILTRATION_PATTERNS = [
     "copy to external",
     "export and send",
     "dump to external",
+    "conversation history",
+    "internal configuration",
+    "tracking pixel",
+    "internal state",
+    "send a copy",
+    "extract and list",
+    "send it via",
 ]
 
 AGENT_SOCIAL_ENGINEERING_PATTERNS = [
@@ -135,7 +172,6 @@ AGENT_SOCIAL_ENGINEERING_PATTERNS = [
 GREETING_PATTERNS = [
     "hello",
     "hi ",
-    "hey ",
     "how are you",
     "thanks",
     "bye",
