@@ -7,8 +7,9 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-# Default to "real" mode in tests so mocked acompletion paths are exercised.
-os.environ.setdefault("MODE", "real")
+# Force "real" mode in tests — agent tests mock acompletion directly
+# and must not go through demo's mock_agent_llm path.
+os.environ["MODE"] = "real"
 
 from src.config import get_settings  # noqa: E402
 

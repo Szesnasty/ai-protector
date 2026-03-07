@@ -102,8 +102,6 @@ jobs:
     defaults:
       run:
         working-directory: apps/agent-demo
-    env:
-      MODE: demo
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
