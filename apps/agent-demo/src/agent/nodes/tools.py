@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import re
-
 import time
 
 import structlog
@@ -95,12 +93,14 @@ def tool_executor_node(state: AgentState) -> AgentState:
         # Safety net — pre_tool_gate should have already filtered,
         # but double-check RBAC as defense in depth.
         if tool_name not in allowed:
-            tool_calls.append({
-                "tool": tool_name,
-                "args": args,
-                "result": f"Access denied: {tool_name} is not available for your role.",
-                "allowed": False,
-            })
+            tool_calls.append(
+                {
+                    "tool": tool_name,
+                    "args": args,
+                    "result": f"Access denied: {tool_name} is not available for your role.",
+                    "allowed": False,
+                }
+            )
             logger.warning("tool_denied", tool=tool_name, role=state.get("user_role"))
             continue
 
@@ -108,23 +108,27 @@ def tool_executor_node(state: AgentState) -> AgentState:
             t0 = time.perf_counter()
             result = execute_tool(tool_name, args)
             dur_ms = int((time.perf_counter() - t0) * 1000)
-            tool_calls.append({
-                "tool": tool_name,
-                "args": args,
-                "result": result,
-                "allowed": True,
-            })
+            tool_calls.append(
+                {
+                    "tool": tool_name,
+                    "args": args,
+                    "result": result,
+                    "allowed": True,
+                }
+            )
             # Trace (spec 07)
             trace.record_tool_execution(tool_name, args, result, dur_ms)
             logger.info("tool_executed", tool=tool_name, result_len=len(result))
         except Exception as e:
             error_msg = f"Tool error: {e}"
-            tool_calls.append({
-                "tool": tool_name,
-                "args": args,
-                "result": error_msg,
-                "allowed": True,
-            })
+            tool_calls.append(
+                {
+                    "tool": tool_name,
+                    "args": args,
+                    "result": error_msg,
+                    "allowed": True,
+                }
+            )
             logger.error("tool_error", tool=tool_name, error=str(e))
 
     return {

@@ -30,9 +30,7 @@ MAX_TOOL_OUTPUT_SIZE = 4000  # Characters — truncate above this
 
 PII_REPLACEMENT_TAG = "[PII:{entity_type}]"
 SECRET_REPLACEMENT = "[SECRET:REDACTED]"
-BLOCK_REPLACEMENT = (
-    "[BLOCKED: Tool output contained potentially unsafe content and was not forwarded.]"
-)
+BLOCK_REPLACEMENT = "[BLOCKED: Tool output contained potentially unsafe content and was not forwarded.]"
 
 # ── PII Patterns ──────────────────────────────────────────────────────
 # Lightweight regex-based PII detection (no Presidio dependency).
@@ -41,9 +39,7 @@ BLOCK_REPLACEMENT = (
 PII_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "EMAIL",
-        re.compile(
-            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
-        ),
+        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
     ),
     (
         "PHONE",
@@ -57,9 +53,7 @@ PII_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ),
     (
         "SSN",
-        re.compile(
-            r"\b\d{3}-\d{2}-\d{4}\b"
-        ),
+        re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
     ),
     (
         "CREDIT_CARD",
@@ -109,9 +103,7 @@ SECRETS_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ),
     (
         "JWT",
-        re.compile(
-            r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"
-        ),
+        re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
     ),
     (
         "CONNECTION_STRING",
@@ -133,57 +125,39 @@ SECRETS_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "ignore_instructions",
-        re.compile(
-            r"ignore\s+(all\s+)?previous\s+instructions", re.IGNORECASE
-        ),
+        re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.IGNORECASE),
     ),
     (
         "role_switch",
-        re.compile(
-            r"you\s+are\s+now\b", re.IGNORECASE
-        ),
+        re.compile(r"you\s+are\s+now\b", re.IGNORECASE),
     ),
     (
         "new_system_prompt",
-        re.compile(
-            r"new\s+system\s+prompt", re.IGNORECASE
-        ),
+        re.compile(r"new\s+system\s+prompt", re.IGNORECASE),
     ),
     (
         "reveal_prompt",
-        re.compile(
-            r"reveal\s+(your\s+)?(system\s+)?prompt", re.IGNORECASE
-        ),
+        re.compile(r"reveal\s+(your\s+)?(system\s+)?prompt", re.IGNORECASE),
     ),
     (
         "disregard",
-        re.compile(
-            r"disregard\s+(all\s+)?(prior|previous|above)", re.IGNORECASE
-        ),
+        re.compile(r"disregard\s+(all\s+)?(prior|previous|above)", re.IGNORECASE),
     ),
     (
         "override_rules",
-        re.compile(
-            r"override\s+(all\s+)?rules", re.IGNORECASE
-        ),
+        re.compile(r"override\s+(all\s+)?rules", re.IGNORECASE),
     ),
     (
         "act_as_unrestricted",
-        re.compile(
-            r"act\s+as\s+(an?\s+)?unrestricted", re.IGNORECASE
-        ),
+        re.compile(r"act\s+as\s+(an?\s+)?unrestricted", re.IGNORECASE),
     ),
     (
         "do_anything_now",
-        re.compile(
-            r"do\s+anything\s+now", re.IGNORECASE
-        ),
+        re.compile(r"do\s+anything\s+now", re.IGNORECASE),
     ),
     (
         "jailbreak",
-        re.compile(
-            r"\bjailbreak\b", re.IGNORECASE
-        ),
+        re.compile(r"\bjailbreak\b", re.IGNORECASE),
     ),
     (
         "special_token_im",
@@ -199,21 +173,15 @@ INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ),
     (
         "role_header",
-        re.compile(
-            r"###\s*(system|assistant)\s*:", re.IGNORECASE
-        ),
+        re.compile(r"###\s*(system|assistant)\s*:", re.IGNORECASE),
     ),
     (
         "pretend_to_be",
-        re.compile(
-            r"pretend\s+to\s+be\b", re.IGNORECASE
-        ),
+        re.compile(r"pretend\s+to\s+be\b", re.IGNORECASE),
     ),
     (
         "do_not_follow",
-        re.compile(
-            r"do\s+not\s+follow\s+(your\s+)?instructions", re.IGNORECASE
-        ),
+        re.compile(r"do\s+not\s+follow\s+(your\s+)?instructions", re.IGNORECASE),
     ),
 ]
 
@@ -234,12 +202,14 @@ def scan_pii(text: str) -> tuple[str, list[dict[str, Any]], int]:
 
     for entity_type, pattern in PII_PATTERNS:
         for match in pattern.finditer(text):
-            entities.append({
-                "type": entity_type,
-                "start": match.start(),
-                "end": match.end(),
-                "text_preview": match.group()[:4] + "***",
-            })
+            entities.append(
+                {
+                    "type": entity_type,
+                    "start": match.start(),
+                    "end": match.end(),
+                    "text_preview": match.group()[:4] + "***",
+                }
+            )
 
         replacement = f"[PII:{entity_type}]"
         redacted = pattern.sub(replacement, redacted)
@@ -295,9 +265,7 @@ def check_size(text: str, max_size: int = MAX_TOOL_OUTPUT_SIZE) -> tuple[str, bo
     if len(text) <= max_size:
         return text, False
 
-    truncated = text[:max_size] + (
-        f"\n[TRUNCATED: {len(text)} chars, showing first {max_size}]"
-    )
+    truncated = text[:max_size] + (f"\n[TRUNCATED: {len(text)} chars, showing first {max_size}]")
     return truncated, True
 
 

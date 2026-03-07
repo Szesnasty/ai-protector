@@ -81,58 +81,73 @@ class TestCreatePolicyValidation:
     @pytest.mark.asyncio
     async def test_valid_config_accepted(self, client: AsyncClient):
         name = f"val-ok-{uuid.uuid4().hex[:8]}"
-        resp = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {
-                "nodes": ["llm_guard"],
-                "thresholds": {"max_risk": 0.6},
+        resp = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {
+                    "nodes": ["llm_guard"],
+                    "thresholds": {"max_risk": 0.6},
+                },
             },
-        })
+        )
         assert resp.status_code == 201
 
     @pytest.mark.asyncio
     async def test_invalid_node_rejected(self, client: AsyncClient):
         name = f"val-bad-{uuid.uuid4().hex[:8]}"
-        resp = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {
-                "nodes": ["invalid_scanner"],
-                "thresholds": {"max_risk": 0.5},
+        resp = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {
+                    "nodes": ["invalid_scanner"],
+                    "thresholds": {"max_risk": 0.5},
+                },
             },
-        })
+        )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_max_risk_too_high_rejected(self, client: AsyncClient):
         name = f"val-risk-{uuid.uuid4().hex[:8]}"
-        resp = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {
-                "nodes": [],
-                "thresholds": {"max_risk": 5.0},
+        resp = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {
+                    "nodes": [],
+                    "thresholds": {"max_risk": 5.0},
+                },
             },
-        })
+        )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_bad_pii_action_rejected(self, client: AsyncClient):
         name = f"val-pii-{uuid.uuid4().hex[:8]}"
-        resp = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {
-                "nodes": [],
-                "thresholds": {"pii_action": "nuke"},
+        resp = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {
+                    "nodes": [],
+                    "thresholds": {"pii_action": "nuke"},
+                },
             },
-        })
+        )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_empty_config_uses_defaults(self, client: AsyncClient):
         name = f"val-empty-{uuid.uuid4().hex[:8]}"
-        resp = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {},
-        })
+        resp = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {},
+            },
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert data["config"] == {}  # stored as-is (validation passed)
@@ -140,10 +155,13 @@ class TestCreatePolicyValidation:
     @pytest.mark.asyncio
     async def test_missing_thresholds_accepted(self, client: AsyncClient):
         name = f"val-noth-{uuid.uuid4().hex[:8]}"
-        resp = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {"nodes": ["presidio"]},
-        })
+        resp = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {"nodes": ["presidio"]},
+            },
+        )
         assert resp.status_code == 201
 
 
@@ -154,59 +172,83 @@ class TestUpdatePolicyValidation:
     async def test_valid_config_update_accepted(self, client: AsyncClient):
         # Create first
         name = f"upd-ok-{uuid.uuid4().hex[:8]}"
-        cr = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {"nodes": [], "thresholds": {"max_risk": 0.9}},
-        })
+        cr = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {"nodes": [], "thresholds": {"max_risk": 0.9}},
+            },
+        )
         pid = cr.json()["id"]
 
-        resp = await client.patch(f"/v1/policies/{pid}", json={
-            "config": {"nodes": ["llm_guard", "presidio"], "thresholds": {"max_risk": 0.4}},
-        })
+        resp = await client.patch(
+            f"/v1/policies/{pid}",
+            json={
+                "config": {"nodes": ["llm_guard", "presidio"], "thresholds": {"max_risk": 0.4}},
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["config"]["nodes"] == ["llm_guard", "presidio"]
 
     @pytest.mark.asyncio
     async def test_invalid_config_update_rejected(self, client: AsyncClient):
         name = f"upd-bad-{uuid.uuid4().hex[:8]}"
-        cr = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {"nodes": []},
-        })
+        cr = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {"nodes": []},
+            },
+        )
         pid = cr.json()["id"]
 
-        resp = await client.patch(f"/v1/policies/{pid}", json={
-            "config": {"nodes": ["nonexistent"]},
-        })
+        resp = await client.patch(
+            f"/v1/policies/{pid}",
+            json={
+                "config": {"nodes": ["nonexistent"]},
+            },
+        )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_version_bumps_on_update(self, client: AsyncClient):
         name = f"ver-{uuid.uuid4().hex[:8]}"
-        cr = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {"nodes": []},
-        })
+        cr = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {"nodes": []},
+            },
+        )
         data = cr.json()
         assert data["version"] == 1
 
-        resp = await client.patch(f"/v1/policies/{data['id']}", json={
-            "description": "updated",
-        })
+        resp = await client.patch(
+            f"/v1/policies/{data['id']}",
+            json={
+                "description": "updated",
+            },
+        )
         assert resp.json()["version"] == 2
 
     @pytest.mark.asyncio
     async def test_updated_at_changes_on_patch(self, client: AsyncClient):
         name = f"ts-{uuid.uuid4().hex[:8]}"
-        cr = await client.post("/v1/policies", json={
-            "name": name,
-            "config": {"nodes": []},
-        })
+        cr = await client.post(
+            "/v1/policies",
+            json={
+                "name": name,
+                "config": {"nodes": []},
+            },
+        )
         original = cr.json()
 
-        resp = await client.patch(f"/v1/policies/{original['id']}", json={
-            "description": "timestamp test",
-        })
+        resp = await client.patch(
+            f"/v1/policies/{original['id']}",
+            json={
+                "description": "timestamp test",
+            },
+        )
         updated = resp.json()
         assert updated["updated_at"] is not None
         # updated_at should be >= created_at

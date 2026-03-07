@@ -87,9 +87,7 @@ async def create_policy(
 
     existing = await db.execute(select(Policy).where(Policy.name == body.name))
     if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=409, detail=f"Policy '{body.name}' already exists"
-        )
+        raise HTTPException(status_code=409, detail=f"Policy '{body.name}' already exists")
 
     policy = Policy(**body.model_dump())
     db.add(policy)
@@ -144,9 +142,7 @@ async def delete_policy(
         raise HTTPException(status_code=404, detail="Policy not found")
 
     if policy.name in BUILTIN_POLICIES:
-        raise HTTPException(
-            status_code=403, detail="Cannot delete built-in policy"
-        )
+        raise HTTPException(status_code=403, detail="Cannot delete built-in policy")
 
     policy.is_active = False
     await db.commit()

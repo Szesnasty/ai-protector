@@ -5,16 +5,18 @@ Revises: b1e2f3a4c5d6
 Create Date: 2025-01-15 12:00:00.000000
 
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
+
+import sqlalchemy as sa
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "c3d4e5f6a7b8"
-down_revision: Union[str, None] = "b1e2f3a4c5d6"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "b1e2f3a4c5d6"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -31,9 +33,7 @@ def upgrade() -> None:
         "denylist_phrases",
         sa.Column("description", sa.String(256), nullable=False, server_default=""),
     )
-    op.create_index(
-        "ix_denylist_phrases_category", "denylist_phrases", ["category"]
-    )
+    op.create_index("ix_denylist_phrases_category", "denylist_phrases", ["category"])
 
 
 def downgrade() -> None:

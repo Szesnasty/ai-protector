@@ -51,7 +51,9 @@ async def sse_stream(
             return
         logged = True
         latency_ms = int((time.perf_counter() - start_time) * 1000) if start_time else 0
-        logger.info("stream_complete", request_id=request_id, model=model, approx_tokens=token_count, latency_ms=latency_ms)
+        logger.info(
+            "stream_complete", request_id=request_id, model=model, approx_tokens=token_count, latency_ms=latency_ms
+        )
         try:
             await log_request(
                 client_id=client_id,

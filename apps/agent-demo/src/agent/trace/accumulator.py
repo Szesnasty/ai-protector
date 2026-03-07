@@ -10,7 +10,7 @@ serialized to JSON at the end.
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -38,9 +38,7 @@ class TraceAccumulator:
         # Restore internal bookkeeping from existing dict
         iterations = self._trace.get("iterations", [])
         self._iteration_count: int = len(iterations)
-        self._current_iteration: dict[str, Any] | None = (
-            iterations[-1] if iterations else None
-        )
+        self._current_iteration: dict[str, Any] | None = iterations[-1] if iterations else None
         self._start_time: float | None = self._trace.get("_perf_start")
 
     # ── Lifecycle ─────────────────────────────────────────
@@ -65,7 +63,7 @@ class TraceAccumulator:
                 "trace_id": str(uuid4()),
                 "session_id": session_id,
                 "request_id": request_id or str(uuid4()),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "user_role": user_role,
                 "policy": policy,
                 "model": model,
@@ -120,10 +118,7 @@ class TraceAccumulator:
 
     def record_tool_plan(self, plans: list[dict[str, Any]]) -> None:
         it = self._ensure_iteration()
-        it["tool_plan"] = [
-            {"tool": p.get("tool", ""), "args": p.get("args", {})}
-            for p in plans
-        ]
+        it["tool_plan"] = [{"tool": p.get("tool", ""), "args": p.get("args", {})} for p in plans]
 
     # ── Pre-tool gate ─────────────────────────────────────
 
@@ -169,9 +164,7 @@ class TraceAccumulator:
                 "duration_ms": duration_ms,
             }
         )
-        self._trace.setdefault("counters", {})["tool_calls"] = (
-            self._trace.get("counters", {}).get("tool_calls", 0) + 1
-        )
+        self._trace.setdefault("counters", {})["tool_calls"] = self._trace.get("counters", {}).get("tool_calls", 0) + 1
 
     # ── Post-tool gate ────────────────────────────────────
 
@@ -247,9 +240,7 @@ class TraceAccumulator:
             self._trace.setdefault("counters", {}).update(counters_override)
         self._trace.setdefault("counters", {})["iterations"] = self._iteration_count
         if self._start_time is not None:
-            self._trace["total_duration_ms"] = int(
-                (time.perf_counter() - self._start_time) * 1000
-            )
+            self._trace["total_duration_ms"] = int((time.perf_counter() - self._start_time) * 1000)
 
     # ── Serialization ─────────────────────────────────────
 

@@ -251,10 +251,12 @@ class TestHelpers:
         assert len(result) == 100
 
     def test_scanner_summary(self):
-        state = _base_state(scanner_results={
-            "llm_guard": {"is_valid": True, "score": 0.9, "raw_output": "..."},
-            "presidio": {"pii_action": "mask", "entities": [1, 2, 3]},
-        })
+        state = _base_state(
+            scanner_results={
+                "llm_guard": {"is_valid": True, "score": 0.9, "raw_output": "..."},
+                "presidio": {"pii_action": "mask", "entities": [1, 2, 3]},
+            }
+        )
         summary = _scanner_summary(state)
         assert summary["llm_guard"] == {"is_valid": True, "score": 0.9}
         assert summary["presidio"] == {"pii_action": "mask"}

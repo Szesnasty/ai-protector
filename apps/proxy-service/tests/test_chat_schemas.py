@@ -18,9 +18,7 @@ class TestChatCompletionRequest:
     """Validate ChatCompletionRequest parsing and constraints."""
 
     def test_minimal_valid(self):
-        req = ChatCompletionRequest(
-            messages=[ChatMessage(role="user", content="Hello")]
-        )
+        req = ChatCompletionRequest(messages=[ChatMessage(role="user", content="Hello")])
         assert req.model == "llama3.1:8b"
         assert req.stream is False
         assert req.temperature == 0.7
@@ -51,9 +49,7 @@ class TestChatCompletionRequest:
 
     def test_rejects_no_user_message(self):
         with pytest.raises(ValidationError, match="role 'user' is required"):
-            ChatCompletionRequest(
-                messages=[ChatMessage(role="system", content="system only")]
-            )
+            ChatCompletionRequest(messages=[ChatMessage(role="system", content="system only")])
 
     def test_rejects_temperature_too_low(self):
         with pytest.raises(ValidationError):

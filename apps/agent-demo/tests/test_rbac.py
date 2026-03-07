@@ -6,15 +6,13 @@ requires_confirmation flag, default-deny, unknown roles.
 
 from __future__ import annotations
 
-import textwrap
 import tempfile
+import textwrap
 from pathlib import Path
 
 import pytest
 
-from src.agent.rbac.models import PermissionResult
 from src.agent.rbac.service import RBACService, get_rbac_service, reset_rbac_service
-
 
 # ── Helpers ───────────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@ window (``hours`` query parameter, default 24, range 1–720).
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, literal_column, select, text
@@ -30,9 +30,10 @@ router = APIRouter(tags=["analytics"])
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _cutoff(hours: float) -> datetime:
     """Return the UTC cutoff timestamp for *hours* ago."""
-    return datetime.now(timezone.utc) - timedelta(hours=hours)
+    return datetime.now(UTC) - timedelta(hours=hours)
 
 
 BUCKET_MAP: dict[str, int] = {
@@ -47,19 +48,19 @@ BUCKET_MAP: dict[str, int] = {
 
 def _auto_bucket_seconds(hours: float) -> int:
     """Pick a reasonable bucket size in seconds for a given lookback window."""
-    if hours <= 0.25:      # ≤ 15 min  → 1-minute buckets
+    if hours <= 0.25:  # ≤ 15 min  → 1-minute buckets
         return 60
-    if hours <= 1:         # ≤ 1 h     → 2-minute buckets
+    if hours <= 1:  # ≤ 1 h     → 2-minute buckets
         return 120
-    if hours <= 6:         # ≤ 6 h     → 5-minute buckets
+    if hours <= 6:  # ≤ 6 h     → 5-minute buckets
         return 300
-    if hours <= 24:        # ≤ 24 h    → 15-minute buckets
+    if hours <= 24:  # ≤ 24 h    → 15-minute buckets
         return 900
-    if hours <= 72:        # ≤ 3 d     → 1-hour buckets
+    if hours <= 72:  # ≤ 3 d     → 1-hour buckets
         return 3600
-    if hours <= 336:       # ≤ 14 d    → 6-hour buckets
+    if hours <= 336:  # ≤ 14 d    → 6-hour buckets
         return 21600
-    return 86400           # else      → 1-day buckets
+    return 86400  # else      → 1-day buckets
 
 
 def _epoch_bucket(seconds: int):
@@ -77,6 +78,7 @@ def _epoch_bucket(seconds: int):
 # 1. Summary KPIs
 # ---------------------------------------------------------------------------
 
+
 @router.get("/analytics/summary", response_model=AnalyticsSummary)
 async def get_summary(
     hours: float = Query(24, ge=0.05, le=720),
@@ -84,17 +86,14 @@ async def get_summary(
 ) -> AnalyticsSummary:
     cutoff = _cutoff(hours)
 
-    q = (
-        select(
-            func.count().label("total"),
-            func.count().filter(Request.decision == "BLOCK").label("blocked"),
-            func.count().filter(Request.decision == "MODIFY").label("modified"),
-            func.count().filter(Request.decision == "ALLOW").label("allowed"),
-            func.coalesce(func.avg(Request.risk_score), 0).label("avg_risk"),
-            func.coalesce(func.avg(Request.latency_ms), 0).label("avg_latency"),
-        )
-        .where(Request.created_at >= cutoff)
-    )
+    q = select(
+        func.count().label("total"),
+        func.count().filter(Request.decision == "BLOCK").label("blocked"),
+        func.count().filter(Request.decision == "MODIFY").label("modified"),
+        func.count().filter(Request.decision == "ALLOW").label("allowed"),
+        func.coalesce(func.avg(Request.risk_score), 0).label("avg_risk"),
+        func.coalesce(func.avg(Request.latency_ms), 0).label("avg_latency"),
+    ).where(Request.created_at >= cutoff)
     row = (await db.execute(q)).one()
 
     total = row.total or 0
@@ -124,6 +123,7 @@ async def get_summary(
 # ---------------------------------------------------------------------------
 # 2. Timeline (zero-filled buckets)
 # ---------------------------------------------------------------------------
+
 
 @router.get("/analytics/timeline", response_model=list[TimelineBucket])
 async def get_timeline(
@@ -165,6 +165,7 @@ async def get_timeline(
 # ---------------------------------------------------------------------------
 # 3. By-policy breakdown
 # ---------------------------------------------------------------------------
+
 
 @router.get("/analytics/by-policy", response_model=list[PolicyStats])
 async def get_by_policy(
@@ -210,6 +211,7 @@ async def get_by_policy(
 # 4. Top risk flags
 # ---------------------------------------------------------------------------
 
+
 @router.get("/analytics/top-flags", response_model=list[RiskFlagCount])
 async def get_top_flags(
     hours: float = Query(24, ge=0.05, le=720),
@@ -247,6 +249,7 @@ async def get_top_flags(
 # ---------------------------------------------------------------------------
 # 5. Intent distribution
 # ---------------------------------------------------------------------------
+
 
 @router.get("/analytics/intents", response_model=list[IntentCount])
 async def get_intents(

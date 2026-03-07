@@ -32,8 +32,13 @@ DEFAULT_POLICIES = [
         "description": "Full pipeline — adds Presidio PII + NeMo Guardrails + ML Judge.",
         "config": {
             "nodes": [
-                "llm_guard", "presidio", "nemo_guardrails", "ml_judge",
-                "output_filter", "memory_hygiene", "logging",
+                "llm_guard",
+                "presidio",
+                "nemo_guardrails",
+                "ml_judge",
+                "output_filter",
+                "memory_hygiene",
+                "logging",
             ],
             "thresholds": {"max_risk": 0.5, "injection_threshold": 0.3, "pii_action": "mask", "nemo_weight": 0.8},
         },
@@ -43,8 +48,14 @@ DEFAULT_POLICIES = [
         "description": "Maximum security — canary tokens + NeMo Guardrails + full audit logging.",
         "config": {
             "nodes": [
-                "llm_guard", "presidio", "nemo_guardrails", "ml_judge",
-                "canary", "output_filter", "memory_hygiene", "logging",
+                "llm_guard",
+                "presidio",
+                "nemo_guardrails",
+                "ml_judge",
+                "canary",
+                "output_filter",
+                "memory_hygiene",
+                "logging",
             ],
             "thresholds": {
                 "max_risk": 0.3,
@@ -86,62 +97,138 @@ async def seed_policies() -> None:
 
 DEFAULT_DENYLIST: list[dict] = [
     # --- intent:* (override intent classifier) ---
-    {"phrase": r"(?i)(ignore|forget|disregard)\s+(all\s+)?(previous\s+)?instructions",
-     "category": "intent:jailbreak", "action": "block", "severity": "critical", "is_regex": True,
-     "description": "Jailbreak: instruction override attempts"},
-    {"phrase": r"(?i)\bDAN\b|do anything now",
-     "category": "intent:jailbreak", "action": "block", "severity": "critical", "is_regex": True,
-     "description": "Jailbreak: DAN (Do Anything Now) pattern"},
-    {"phrase": r"(?i)(act|pretend|behave)\s+as\s+(an?\s+)?(evil|unfiltered|unrestricted)",
-     "category": "intent:jailbreak", "action": "block", "severity": "critical", "is_regex": True,
-     "description": "Jailbreak: persona hijack (evil/unfiltered)"},
-    {"phrase": r"(?i)(extract|dump|list)\s+(all\s+)?(emails?|passwords?|secrets?|credentials?)",
-     "category": "intent:extraction", "action": "block", "severity": "high", "is_regex": True,
-     "description": "Data extraction: attempts to dump sensitive data"},
-    {"phrase": r"(?i)send\s+(data|info|results?)\s+to\s+https?://",
-     "category": "intent:exfiltration", "action": "block", "severity": "critical", "is_regex": True,
-     "description": "Data exfiltration: attempts to send data to external URLs"},
-
+    {
+        "phrase": r"(?i)(ignore|forget|disregard)\s+(all\s+)?(previous\s+)?instructions",
+        "category": "intent:jailbreak",
+        "action": "block",
+        "severity": "critical",
+        "is_regex": True,
+        "description": "Jailbreak: instruction override attempts",
+    },
+    {
+        "phrase": r"(?i)\bDAN\b|do anything now",
+        "category": "intent:jailbreak",
+        "action": "block",
+        "severity": "critical",
+        "is_regex": True,
+        "description": "Jailbreak: DAN (Do Anything Now) pattern",
+    },
+    {
+        "phrase": r"(?i)(act|pretend|behave)\s+as\s+(an?\s+)?(evil|unfiltered|unrestricted)",
+        "category": "intent:jailbreak",
+        "action": "block",
+        "severity": "critical",
+        "is_regex": True,
+        "description": "Jailbreak: persona hijack (evil/unfiltered)",
+    },
+    {
+        "phrase": r"(?i)(extract|dump|list)\s+(all\s+)?(emails?|passwords?|secrets?|credentials?)",
+        "category": "intent:extraction",
+        "action": "block",
+        "severity": "high",
+        "is_regex": True,
+        "description": "Data extraction: attempts to dump sensitive data",
+    },
+    {
+        "phrase": r"(?i)send\s+(data|info|results?)\s+to\s+https?://",
+        "category": "intent:exfiltration",
+        "action": "block",
+        "severity": "critical",
+        "is_regex": True,
+        "description": "Data exfiltration: attempts to send data to external URLs",
+    },
     # --- owasp_llm (OWASP LLM Top 10 mapping) ---
-    {"phrase": r"(?i)(system\s+prompt|your\s+(instructions|rules|prompt))",
-     "category": "owasp_sensitive_disclosure", "action": "block", "severity": "high", "is_regex": True,
-     "description": "OWASP LLM02: Sensitive information disclosure (system prompt leak)"},
-    {"phrase": r"(?i)(run|execute)\s+(command|shell|bash|cmd|script)",
-     "category": "owasp_excessive_agency", "action": "block", "severity": "critical", "is_regex": True,
-     "description": "OWASP LLM08: Excessive agency (command execution)"},
-    {"phrase": r"(?i)(delete|drop|truncate|rm\s+-rf)\s+",
-     "category": "owasp_excessive_agency", "action": "score_boost", "severity": "high", "is_regex": True,
-     "description": "OWASP LLM08: Destructive action keywords"},
-
+    {
+        "phrase": r"(?i)(system\s+prompt|your\s+(instructions|rules|prompt))",
+        "category": "owasp_sensitive_disclosure",
+        "action": "block",
+        "severity": "high",
+        "is_regex": True,
+        "description": "OWASP LLM02: Sensitive information disclosure (system prompt leak)",
+    },
+    {
+        "phrase": r"(?i)(run|execute)\s+(command|shell|bash|cmd|script)",
+        "category": "owasp_excessive_agency",
+        "action": "block",
+        "severity": "critical",
+        "is_regex": True,
+        "description": "OWASP LLM08: Excessive agency (command execution)",
+    },
+    {
+        "phrase": r"(?i)(delete|drop|truncate|rm\s+-rf)\s+",
+        "category": "owasp_excessive_agency",
+        "action": "score_boost",
+        "severity": "high",
+        "is_regex": True,
+        "description": "OWASP LLM08: Destructive action keywords",
+    },
     # --- pii_* (PII / compliance) ---
-    {"phrase": r"\b\d{11}\b",
-     "category": "pii_pesel", "action": "block", "severity": "critical", "is_regex": True,
-     "description": "PII Poland: PESEL number (11 digits)"},
-    {"phrase": r"\b\d{3}-\d{3}-\d{2}-\d{2}\b",
-     "category": "pii_nip", "action": "block", "severity": "high", "is_regex": True,
-     "description": "PII Poland: NIP tax number (XXX-XXX-XX-XX)"},
-    {"phrase": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",
-     "category": "pii_creditcard", "action": "block", "severity": "critical", "is_regex": True,
-     "description": "PII: Credit card number pattern (16 digits)"},
-    {"phrase": r"(?i)\b[A-Z]{2}\d{2}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b",
-     "category": "pii_iban", "action": "block", "severity": "high", "is_regex": True,
-     "description": "PII: IBAN bank account number"},
-
+    {
+        "phrase": r"\b\d{11}\b",
+        "category": "pii_pesel",
+        "action": "block",
+        "severity": "critical",
+        "is_regex": True,
+        "description": "PII Poland: PESEL number (11 digits)",
+    },
+    {
+        "phrase": r"\b\d{3}-\d{3}-\d{2}-\d{2}\b",
+        "category": "pii_nip",
+        "action": "block",
+        "severity": "high",
+        "is_regex": True,
+        "description": "PII Poland: NIP tax number (XXX-XXX-XX-XX)",
+    },
+    {
+        "phrase": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",
+        "category": "pii_creditcard",
+        "action": "block",
+        "severity": "critical",
+        "is_regex": True,
+        "description": "PII: Credit card number pattern (16 digits)",
+    },
+    {
+        "phrase": r"(?i)\b[A-Z]{2}\d{2}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b",
+        "category": "pii_iban",
+        "action": "block",
+        "severity": "high",
+        "is_regex": True,
+        "description": "PII: IBAN bank account number",
+    },
     # --- brand / legal ---
-    {"phrase": r"(?i)\b(use|try|switch\s+to)\s+(chatgpt|gpt-?4|gemini|grok|claude)\b",
-     "category": "brand_competitor", "action": "flag", "severity": "low", "is_regex": True,
-     "description": "Brand: competitor product mention (monitoring)"},
-    {"phrase": r"(?i)\b(lawsuit|litigation|sued|legal\s+action)\b",
-     "category": "legal_risk", "action": "flag", "severity": "medium", "is_regex": True,
-     "description": "Legal: litigation-related keywords (monitoring)"},
-
+    {
+        "phrase": r"(?i)\b(use|try|switch\s+to)\s+(chatgpt|gpt-?4|gemini|grok|claude)\b",
+        "category": "brand_competitor",
+        "action": "flag",
+        "severity": "low",
+        "is_regex": True,
+        "description": "Brand: competitor product mention (monitoring)",
+    },
+    {
+        "phrase": r"(?i)\b(lawsuit|litigation|sued|legal\s+action)\b",
+        "category": "legal_risk",
+        "action": "flag",
+        "severity": "medium",
+        "is_regex": True,
+        "description": "Legal: litigation-related keywords (monitoring)",
+    },
     # --- general ---
-    {"phrase": r"(?i)\b(admin|root|sudo)\b.*\b(password|access|credentials?)\b",
-     "category": "privilege_escalation", "action": "score_boost", "severity": "high", "is_regex": True,
-     "description": "Privilege escalation: admin access requests"},
-    {"phrase": r"(?i)\.onion\b",
-     "category": "exfiltration", "action": "score_boost", "severity": "medium", "is_regex": True,
-     "description": "Tor hidden service URL (potential exfiltration channel)"},
+    {
+        "phrase": r"(?i)\b(admin|root|sudo)\b.*\b(password|access|credentials?)\b",
+        "category": "privilege_escalation",
+        "action": "score_boost",
+        "severity": "high",
+        "is_regex": True,
+        "description": "Privilege escalation: admin access requests",
+    },
+    {
+        "phrase": r"(?i)\.onion\b",
+        "category": "exfiltration",
+        "action": "score_boost",
+        "severity": "medium",
+        "is_regex": True,
+        "description": "Tor hidden service URL (potential exfiltration channel)",
+    },
 ]
 
 # Policies that get denylist phrases (not "fast")
@@ -153,11 +240,7 @@ async def seed_denylist() -> None:
     async with async_session() as session:
         created = 0
         for policy_name in DENYLIST_POLICY_NAMES:
-            stmt = (
-                select(Policy)
-                .where(Policy.name == policy_name)
-                .options(joinedload(Policy.denylist_phrases))
-            )
+            stmt = select(Policy).where(Policy.name == policy_name).options(joinedload(Policy.denylist_phrases))
             result = await session.execute(stmt)
             policy = result.unique().scalar_one_or_none()
             if policy is None:

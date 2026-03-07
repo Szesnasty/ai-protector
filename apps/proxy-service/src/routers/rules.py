@@ -151,11 +151,7 @@ async def list_rules(
     """List all custom security rules."""
     canonical = await _get_canonical_policy(db)
 
-    stmt = (
-        select(DenylistPhrase)
-        .where(DenylistPhrase.policy_id == canonical.id)
-        .order_by(DenylistPhrase.created_at)
-    )
+    stmt = select(DenylistPhrase).where(DenylistPhrase.policy_id == canonical.id).order_by(DenylistPhrase.created_at)
 
     if category:
         stmt = stmt.where(DenylistPhrase.category.like(f"{category}%"))
@@ -163,10 +159,7 @@ async def list_rules(
         stmt = stmt.where(DenylistPhrase.action == action)
     if search:
         pattern = f"%{search}%"
-        stmt = stmt.where(
-            DenylistPhrase.phrase.ilike(pattern)
-            | DenylistPhrase.description.ilike(pattern)
-        )
+        stmt = stmt.where(DenylistPhrase.phrase.ilike(pattern) | DenylistPhrase.description.ilike(pattern))
 
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -187,9 +180,7 @@ async def create_rule(
         try:
             re.compile(body.phrase)
         except re.error as exc:
-            raise HTTPException(
-                status_code=422, detail=f"Invalid regex: {exc}"
-            ) from exc
+            raise HTTPException(status_code=422, detail=f"Invalid regex: {exc}") from exc
 
     rule = DenylistPhrase(policy_id=canonical.id, **body.model_dump())
     db.add(rule)
@@ -231,9 +222,7 @@ async def update_rule(
         try:
             re.compile(new_phrase)
         except re.error as exc:
-            raise HTTPException(
-                status_code=422, detail=f"Invalid regex: {exc}"
-            ) from exc
+            raise HTTPException(status_code=422, detail=f"Invalid regex: {exc}") from exc
 
     for key, value in update_data.items():
         setattr(rule, key, value)
@@ -283,9 +272,7 @@ async def bulk_import_rules(
     canonical = await _get_canonical_policy(db)
     policies = await _get_scanning_policies(db)
 
-    stmt = select(DenylistPhrase.phrase).where(
-        DenylistPhrase.policy_id == canonical.id
-    )
+    stmt = select(DenylistPhrase.phrase).where(DenylistPhrase.policy_id == canonical.id)
     result = await db.execute(stmt)
     existing_phrases = {row[0] for row in result.all()}
 
@@ -325,11 +312,7 @@ async def export_rules(
     """Export all custom security rules as JSON."""
     canonical = await _get_canonical_policy(db)
 
-    stmt = (
-        select(DenylistPhrase)
-        .where(DenylistPhrase.policy_id == canonical.id)
-        .order_by(DenylistPhrase.created_at)
-    )
+    stmt = select(DenylistPhrase).where(DenylistPhrase.policy_id == canonical.id).order_by(DenylistPhrase.created_at)
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -345,11 +328,7 @@ async def test_rules(
     """Test all custom rules against sample text."""
     canonical = await _get_canonical_policy(db)
 
-    stmt = (
-        select(DenylistPhrase)
-        .where(DenylistPhrase.policy_id == canonical.id)
-        .order_by(DenylistPhrase.created_at)
-    )
+    stmt = select(DenylistPhrase).where(DenylistPhrase.policy_id == canonical.id).order_by(DenylistPhrase.created_at)
     result = await db.execute(stmt)
     rules = result.scalars().all()
 

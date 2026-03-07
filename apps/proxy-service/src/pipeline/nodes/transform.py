@@ -49,9 +49,7 @@ async def transform_node(state: PipelineState) -> PipelineState:
                 for e in presidio["entities"]
             ]
             messages = [msg.copy() for msg in state["messages"]]
-            messages = await mask_pii_in_messages(
-                messages, state.get("user_message", ""), analyzer_results
-            )
+            messages = await mask_pii_in_messages(messages, state.get("user_message", ""), analyzer_results)
             response_masked = True
         except Exception:
             logger.exception("transform_pii_masking_error")

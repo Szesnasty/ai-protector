@@ -12,25 +12,65 @@ logger = structlog.get_logger()
 # ── Intent patterns ──────────────────────────────────────
 
 GREETING_PATTERNS = [
-    "hello", " hi ", "hi!", "hey", "good morning", "good afternoon", "good evening",
-    "howdy", "greetings", "what's up", "hola",
+    "hello",
+    " hi ",
+    "hi!",
+    "hey",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "howdy",
+    "greetings",
+    "what's up",
+    "hola",
 ]
 
 ORDER_PATTERNS = [
-    "order", "ord-", "tracking", "shipment", "delivery", "where is my",
-    "order status", "shipped", "delivered", "package",
+    "order",
+    "ord-",
+    "tracking",
+    "shipment",
+    "delivery",
+    "where is my",
+    "order status",
+    "shipped",
+    "delivered",
+    "package",
 ]
 
 KB_PATTERNS = [
-    "return", "refund", "shipping", "payment", "warranty", "contact",
-    "account", "product", "discount", "coupon", "privacy", "support",
-    "policy", "how do", "how to", "what is", "tell me about", "info",
-    "faq", "help",
+    "return",
+    "refund",
+    "shipping",
+    "payment",
+    "warranty",
+    "contact",
+    "account",
+    "product",
+    "discount",
+    "coupon",
+    "privacy",
+    "support",
+    "policy",
+    "how do",
+    "how to",
+    "what is",
+    "tell me about",
+    "info",
+    "faq",
+    "help",
 ]
 
 ADMIN_PATTERNS = [
-    "secret", "internal", "api key", "credentials", "config",
-    "database", "admin", "confidential", "restricted",
+    "secret",
+    "internal",
+    "api key",
+    "credentials",
+    "config",
+    "database",
+    "admin",
+    "confidential",
+    "restricted",
 ]
 
 

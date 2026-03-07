@@ -83,9 +83,7 @@ def _scanner_summary(state: PipelineState) -> dict:
     for scanner_name, data in results.items():
         if isinstance(data, dict):
             summary[scanner_name] = {
-                k: v
-                for k, v in data.items()
-                if k in ("is_valid", "score", "pii_action", "entity_count", "pii_count")
+                k: v for k, v in data.items() if k in ("is_valid", "score", "pii_action", "entity_count", "pii_count")
             }
     return summary
 

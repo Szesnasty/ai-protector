@@ -121,9 +121,7 @@ class RBACService:
 
     # ── Public API ────────────────────────────────────────────────
 
-    def check_permission(
-        self, role: str, tool: str, scope: str = "read"
-    ) -> PermissionResult:
+    def check_permission(self, role: str, tool: str, scope: str = "read") -> PermissionResult:
         """Check if a role can use a tool with the given scope.
 
         Resolution order:

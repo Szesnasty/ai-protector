@@ -8,7 +8,6 @@ import pytest
 
 from src.pipeline.nodes.nemo_guardrails import (
     KNOWN_RAILS,
-    _scan_message,
     get_rails,
     nemo_guardrails_node,
     reset_rails,
@@ -261,9 +260,14 @@ class TestKnownRails:
 
     def test_all_agent_rails_present(self):
         expected = {
-            "role_bypass", "tool_abuse", "exfiltration",
-            "social_engineering", "cot_manipulation", "rag_poisoning",
-            "confused_deputy", "cross_tool",
+            "role_bypass",
+            "tool_abuse",
+            "exfiltration",
+            "social_engineering",
+            "cot_manipulation",
+            "rag_poisoning",
+            "confused_deputy",
+            "cross_tool",
         }
         assert expected.issubset(KNOWN_RAILS)
 
@@ -371,6 +375,6 @@ class TestParallelScannersIncludeNemo:
             "scanner_results": {},
             "errors": [],
         }
-        result = await parallel_scanners_node(state)
+        await parallel_scanners_node(state)
 
         mock_nemo.assert_not_awaited()

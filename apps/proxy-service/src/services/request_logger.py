@@ -28,9 +28,7 @@ async def _resolve_policy_id(policy_name: str) -> uuid.UUID | None:
         return _policy_cache[policy_name]
 
     async with async_session() as session:
-        result = await session.execute(
-            select(Policy.id).where(Policy.name == policy_name)
-        )
+        result = await session.execute(select(Policy.id).where(Policy.name == policy_name))
         row = result.scalar_one_or_none()
         if row is not None:
             _policy_cache[policy_name] = row

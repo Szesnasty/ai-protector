@@ -12,7 +12,6 @@ from src.llm.mock_provider import (
     mock_completion_stream,
 )
 
-
 # ── mock_completion (non-streaming) ──────────────────────────
 
 
@@ -123,7 +122,7 @@ class TestModeRouting:
         monkeypatch.setenv("MODE", "demo")
 
         # Clear cached settings
-        from src.config import Settings, get_settings
+        from src.config import get_settings
 
         get_settings.cache_clear()
 

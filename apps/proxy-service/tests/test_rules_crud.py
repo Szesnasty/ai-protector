@@ -1,4 +1,4 @@
-"""Tests for CRUD operations on /v1/policies/{policy_id}/rules endpoints."""
+"""Tests for CRUD operations on /v1/rules endpoints."""
 
 from __future__ import annotations
 
@@ -18,15 +18,7 @@ async def client():
         yield ac
 
 
-async def _get_balanced_policy_id(client: AsyncClient) -> str:
-    """Return the ID of the 'balanced' policy."""
-    resp = await client.get("/v1/policies")
-    policies = resp.json()
-    balanced = next(p for p in policies if p["name"] == "balanced")
-    return balanced["id"]
-
-
-async def _create_rule(client: AsyncClient, policy_id: str, **overrides) -> dict:
+async def _create_rule(client: AsyncClient, **overrides) -> dict:
     """Create a test rule and return the response JSON."""
     body = {
         "phrase": f"test-phrase-{uuid.uuid4().hex[:8]}",
@@ -36,7 +28,7 @@ async def _create_rule(client: AsyncClient, policy_id: str, **overrides) -> dict
         "description": "Test rule",
         **overrides,
     }
-    resp = await client.post(f"/v1/policies/{policy_id}/rules", json=body)
+    resp = await client.post("/v1/rules", json=body)
     assert resp.status_code == 201
     return resp.json()
 
@@ -47,8 +39,7 @@ async def _create_rule(client: AsyncClient, policy_id: str, **overrides) -> dict
 @pytest.mark.asyncio
 async def test_list_rules_returns_seed_data(client: AsyncClient):
     """GET /v1/policies/{id}/rules should return seed rules with new fields."""
-    pid = await _get_balanced_policy_id(client)
-    resp = await client.get(f"/v1/policies/{pid}/rules")
+    resp = await client.get("/v1/rules")
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)
@@ -66,8 +57,7 @@ async def test_list_rules_returns_seed_data(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_list_rules_filter_by_category(client: AsyncClient):
     """Filter rules by category prefix."""
-    pid = await _get_balanced_policy_id(client)
-    resp = await client.get(f"/v1/policies/{pid}/rules", params={"category": "intent:"})
+    resp = await client.get("/v1/rules", params={"category": "intent:"})
     assert resp.status_code == 200
     data = resp.json()
     assert all(r["category"].startswith("intent:") for r in data)
@@ -76,8 +66,7 @@ async def test_list_rules_filter_by_category(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_list_rules_filter_by_action(client: AsyncClient):
     """Filter rules by action."""
-    pid = await _get_balanced_policy_id(client)
-    resp = await client.get(f"/v1/policies/{pid}/rules", params={"action": "flag"})
+    resp = await client.get("/v1/rules", params={"action": "flag"})
     assert resp.status_code == 200
     data = resp.json()
     assert all(r["action"] == "flag" for r in data)
@@ -86,28 +75,19 @@ async def test_list_rules_filter_by_action(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_list_rules_search(client: AsyncClient):
     """Search rules by phrase or description."""
-    pid = await _get_balanced_policy_id(client)
-    resp = await client.get(f"/v1/policies/{pid}/rules", params={"search": "DAN"})
+    resp = await client.get("/v1/rules", params={"search": "DAN"})
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) >= 1
 
 
 @pytest.mark.asyncio
-async def test_list_rules_404_missing_policy(client: AsyncClient):
-    """Listing rules for a non-existent policy returns 404."""
-    fake_id = str(uuid.uuid4())
-    resp = await client.get(f"/v1/policies/{fake_id}/rules")
-    assert resp.status_code == 404
-
-
 # ── CREATE ───────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
 async def test_create_rule(client: AsyncClient):
     """POST a new rule and verify response."""
-    pid = await _get_balanced_policy_id(client)
     body = {
         "phrase": "hack the system",
         "category": "intent:jailbreak",
@@ -115,7 +95,7 @@ async def test_create_rule(client: AsyncClient):
         "severity": "critical",
         "description": "Custom: hack keyword",
     }
-    resp = await client.post(f"/v1/policies/{pid}/rules", json=body)
+    resp = await client.post("/v1/rules", json=body)
     assert resp.status_code == 201
     data = resp.json()
     assert data["phrase"] == "hack the system"
@@ -123,7 +103,7 @@ async def test_create_rule(client: AsyncClient):
     assert data["action"] == "block"
     assert data["severity"] == "critical"
     assert data["description"] == "Custom: hack keyword"
-    assert data["policy_id"] == pid
+    assert data["policy_id"]  # policy_id is set
     assert "id" in data
     assert "created_at" in data
 
@@ -131,22 +111,20 @@ async def test_create_rule(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_create_rule_invalid_regex(client: AsyncClient):
     """Creating a rule with invalid regex returns 422."""
-    pid = await _get_balanced_policy_id(client)
     body = {
         "phrase": "[invalid(regex",
         "is_regex": True,
         "category": "general",
     }
-    resp = await client.post(f"/v1/policies/{pid}/rules", json=body)
+    resp = await client.post("/v1/rules", json=body)
     assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
 async def test_create_rule_defaults(client: AsyncClient):
     """Creating a rule with minimal fields uses defaults."""
-    pid = await _get_balanced_policy_id(client)
     body = {"phrase": "test default fields"}
-    resp = await client.post(f"/v1/policies/{pid}/rules", json=body)
+    resp = await client.post("/v1/rules", json=body)
     assert resp.status_code == 201
     data = resp.json()
     assert data["action"] == "block"
@@ -162,11 +140,10 @@ async def test_create_rule_defaults(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_update_rule(client: AsyncClient):
     """PATCH a rule and verify changes."""
-    pid = await _get_balanced_policy_id(client)
-    rule = await _create_rule(client, pid)
+    rule = await _create_rule(client)
 
     resp = await client.patch(
-        f"/v1/policies/{pid}/rules/{rule['id']}",
+        f"/v1/rules/{rule['id']}",
         json={"severity": "high", "description": "Updated description"},
     )
     assert resp.status_code == 200
@@ -180,10 +157,9 @@ async def test_update_rule(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_update_rule_not_found(client: AsyncClient):
     """Updating a non-existent rule returns 404."""
-    pid = await _get_balanced_policy_id(client)
     fake_id = str(uuid.uuid4())
     resp = await client.patch(
-        f"/v1/policies/{pid}/rules/{fake_id}",
+        f"/v1/rules/{fake_id}",
         json={"severity": "low"},
     )
     assert resp.status_code == 404
@@ -195,14 +171,13 @@ async def test_update_rule_not_found(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_delete_rule(client: AsyncClient):
     """DELETE a rule returns 204."""
-    pid = await _get_balanced_policy_id(client)
-    rule = await _create_rule(client, pid)
+    rule = await _create_rule(client)
 
-    resp = await client.delete(f"/v1/policies/{pid}/rules/{rule['id']}")
+    resp = await client.delete(f"/v1/rules/{rule['id']}")
     assert resp.status_code == 204
 
     # Verify it's gone
-    resp2 = await client.get(f"/v1/policies/{pid}/rules")
+    resp2 = await client.get("/v1/rules")
     ids = {r["id"] for r in resp2.json()}
     assert rule["id"] not in ids
 
@@ -210,9 +185,8 @@ async def test_delete_rule(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_delete_rule_not_found(client: AsyncClient):
     """Deleting a non-existent rule returns 404."""
-    pid = await _get_balanced_policy_id(client)
     fake_id = str(uuid.uuid4())
-    resp = await client.delete(f"/v1/policies/{pid}/rules/{fake_id}")
+    resp = await client.delete(f"/v1/rules/{fake_id}")
     assert resp.status_code == 404
 
 
@@ -222,13 +196,12 @@ async def test_delete_rule_not_found(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_bulk_import(client: AsyncClient):
     """Bulk import creates rules and skips duplicates."""
-    pid = await _get_balanced_policy_id(client)
     rules = [
         {"phrase": f"bulk-{uuid.uuid4().hex[:6]}", "category": "general", "action": "block", "severity": "high"},
         {"phrase": f"bulk-{uuid.uuid4().hex[:6]}", "category": "general", "action": "flag", "severity": "low"},
     ]
     resp = await client.post(
-        f"/v1/policies/{pid}/rules/import",
+        "/v1/rules/import",
         json={"rules": rules},
     )
     assert resp.status_code == 201
@@ -238,7 +211,7 @@ async def test_bulk_import(client: AsyncClient):
 
     # Import again — should skip
     resp2 = await client.post(
-        f"/v1/policies/{pid}/rules/import",
+        "/v1/rules/import",
         json={"rules": rules},
     )
     data2 = resp2.json()
@@ -252,13 +225,12 @@ async def test_bulk_import(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_rule_test_endpoint(client: AsyncClient):
     """Test rules against sample text."""
-    pid = await _get_balanced_policy_id(client)
 
     # Create a simple rule
-    await _create_rule(client, pid, phrase="evil plan", is_regex=False, action="block")
+    await _create_rule(client, phrase="evil plan", is_regex=False, action="block")
 
     resp = await client.post(
-        f"/v1/policies/{pid}/rules/test",
+        "/v1/rules/test",
         json={"text": "I have an evil plan to hack"},
     )
     assert resp.status_code == 200
@@ -270,10 +242,9 @@ async def test_rule_test_endpoint(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_rule_test_regex(client: AsyncClient):
     """Test regex rules return match details."""
-    pid = await _get_balanced_policy_id(client)
 
     await _create_rule(
-        client, pid,
+        client,
         phrase=r"(?i)\bhack\b",
         is_regex=True,
         action="block",
@@ -281,7 +252,7 @@ async def test_rule_test_regex(client: AsyncClient):
     )
 
     resp = await client.post(
-        f"/v1/policies/{pid}/rules/test",
+        "/v1/rules/test",
         json={"text": "I will hack the system"},
     )
     assert resp.status_code == 200
@@ -298,8 +269,7 @@ async def test_rule_test_regex(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_export_rules(client: AsyncClient):
     """Export returns all rules as JSON array."""
-    pid = await _get_balanced_policy_id(client)
-    resp = await client.get(f"/v1/policies/{pid}/rules/export")
+    resp = await client.get("/v1/rules/export")
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)

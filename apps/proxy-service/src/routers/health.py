@@ -85,6 +85,7 @@ async def _collect_metrics(db: AsyncSession) -> SystemMetrics:
     # Total requests from DB
     try:
         from src.models.request import Request
+
         result = await db.execute(select(func.count()).select_from(Request))
         total_requests = result.scalar() or 0
     except Exception:
@@ -125,9 +126,7 @@ async def health(
         services["ollama"] = await _check_ollama(settings.ollama_base_url)
         services["langfuse"] = await _check_langfuse(settings.langfuse_host)
 
-    overall = "ok" if all(
-        s.status in ("ok", "skipped") for s in services.values()
-    ) else "degraded"
+    overall = "ok" if all(s.status in ("ok", "skipped") for s in services.values()) else "degraded"
 
     try:
         metrics = await _collect_metrics(db)

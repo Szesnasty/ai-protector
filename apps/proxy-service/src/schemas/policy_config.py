@@ -9,19 +9,21 @@ from pydantic import BaseModel, Field, field_validator
 # Node names that may appear in the policy ``nodes`` list.
 # Core pipeline nodes (parse, intent, rules, decision, transform, llm) always
 # run and should NOT appear here — this set covers optional scanners / extensions.
-VALID_NODES: frozenset[str] = frozenset({
-    # Scanners
-    "llm_guard",
-    "presidio",
-    "nemo_guardrails",
-    "ml_judge",
-    # Output pipeline
-    "output_filter",
-    "memory_hygiene",
-    "logging",
-    # Extensions
-    "canary",
-})
+VALID_NODES: frozenset[str] = frozenset(
+    {
+        # Scanners
+        "llm_guard",
+        "presidio",
+        "nemo_guardrails",
+        "ml_judge",
+        # Output pipeline
+        "output_filter",
+        "memory_hygiene",
+        "logging",
+        # Extensions
+        "canary",
+    }
+)
 
 
 class ThresholdsSchema(BaseModel):

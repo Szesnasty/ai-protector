@@ -5,7 +5,6 @@ from __future__ import annotations
 import structlog
 
 from src.agent.state import AgentState
-from src.agent.trace.accumulator import TraceAccumulator
 
 logger = structlog.get_logger()
 

@@ -14,9 +14,7 @@ class DenylistPhrase(UUIDMixin, TimestampMixin, Base):
     """Blocked phrase / pattern attached to a policy."""
 
     __tablename__ = "denylist_phrases"
-    __table_args__ = (
-        Index("ix_denylist_phrases_category", "category"),
-    )
+    __table_args__ = (Index("ix_denylist_phrases_category", "category"),)
 
     policy_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("policies.id", ondelete="CASCADE"),

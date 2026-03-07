@@ -98,25 +98,37 @@ def build_agent_graph() -> StateGraph:
     graph.set_entry_point("input")
 
     # After input: check limits (spec 06) — short-circuit if exceeded
-    graph.add_conditional_edges("input", _after_input, {
-        "memory": "memory",
-        "intent": "intent",
-    })
+    graph.add_conditional_edges(
+        "input",
+        _after_input,
+        {
+            "memory": "memory",
+            "intent": "intent",
+        },
+    )
     graph.add_edge("intent", "policy_check")
     graph.add_edge("policy_check", "tool_router")
 
     # Conditional: tool_router → pre_tool_gate (if tools planned) or llm_call (no tools)
-    graph.add_conditional_edges("tool_router", _should_call_tools, {
-        "pre_tool_gate": "pre_tool_gate",
-        "llm_call": "llm_call",
-    })
+    graph.add_conditional_edges(
+        "tool_router",
+        _should_call_tools,
+        {
+            "pre_tool_gate": "pre_tool_gate",
+            "llm_call": "llm_call",
+        },
+    )
 
     # After gate → execute, skip to LLM (all blocked), or ask confirmation
-    graph.add_conditional_edges("pre_tool_gate", _after_gate, {
-        "tool_executor": "tool_executor",
-        "llm_call": "llm_call",
-        "confirmation_response": "confirmation_response",
-    })
+    graph.add_conditional_edges(
+        "pre_tool_gate",
+        _after_gate,
+        {
+            "tool_executor": "tool_executor",
+            "llm_call": "llm_call",
+            "confirmation_response": "confirmation_response",
+        },
+    )
 
     # After tool execution → post-tool gate → LLM
     graph.add_edge("tool_executor", "post_tool_gate")
@@ -126,10 +138,14 @@ def build_agent_graph() -> StateGraph:
     graph.add_edge("confirmation_response", "memory")
 
     # After LLM → check if blocked
-    graph.add_conditional_edges("llm_call", _check_blocked, {
-        "memory": "memory",
-        "response": "response",
-    })
+    graph.add_conditional_edges(
+        "llm_call",
+        _check_blocked,
+        {
+            "memory": "memory",
+            "response": "response",
+        },
+    )
 
     graph.add_edge("response", "memory")
     graph.add_edge("memory", END)

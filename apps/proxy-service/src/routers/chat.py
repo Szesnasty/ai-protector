@@ -14,7 +14,6 @@ from src.llm.client import llm_completion
 from src.llm.streaming import sse_stream
 from src.pipeline.runner import run_pipeline, run_pre_llm_pipeline
 from src.pipeline.state import PipelineState
-from src.services.request_logger import log_request_from_state
 from src.schemas.chat import (
     ChatChoice,
     ChatCompletionRequest,
@@ -22,6 +21,7 @@ from src.schemas.chat import (
     ChatMessage,
     Usage,
 )
+from src.services.request_logger import log_request_from_state
 
 logger = structlog.get_logger()
 

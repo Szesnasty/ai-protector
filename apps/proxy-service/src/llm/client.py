@@ -89,10 +89,7 @@ async def llm_completion(
         kwargs["api_base"] = settings.ollama_base_url
     else:
         if not api_key:
-            raise LLMError(
-                f"API key required for provider '{provider}'. "
-                f"Add your key in Settings → API Keys."
-            )
+            raise LLMError(f"API key required for provider '{provider}'. Add your key in Settings → API Keys.")
         kwargs["api_key"] = api_key
 
     logger.debug(

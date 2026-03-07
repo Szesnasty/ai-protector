@@ -196,10 +196,7 @@ def _check_limits(
         return CheckResult(
             check="limits",
             passed=False,
-            detail=(
-                f"{result.limit_type} reached "
-                f"({result.current_value}/{result.limit_value})."
-            ),
+            detail=(f"{result.limit_type} reached ({result.current_value}/{result.limit_value})."),
         )
 
     # Token/cost budget check
@@ -208,10 +205,7 @@ def _check_limits(
         return CheckResult(
             check="limits",
             passed=False,
-            detail=(
-                f"{budget_result.limit_type} reached "
-                f"({budget_result.current_value}/{budget_result.limit_value})."
-            ),
+            detail=(f"{budget_result.limit_type} reached ({budget_result.current_value}/{budget_result.limit_value})."),
         )
 
     return CheckResult(check="limits", passed=True, detail=None)
@@ -261,9 +255,7 @@ def _evaluate_tool(
     iterations = state.get("iterations", 0)
     session_id = state.get("session_id", "")
     # request_tool_calls: tool calls executed so far in THIS request (from tool_plan)
-    request_tool_calls = sum(
-        1 for tc in state.get("tool_calls", []) if tc.get("allowed", False)
-    )
+    request_tool_calls = sum(1 for tc in state.get("tool_calls", []) if tc.get("allowed", False))
 
     checks: list[CheckResult] = []
     risk_score = 0.0
@@ -302,9 +294,7 @@ def _evaluate_tool(
     effective_args = modified_args if modified_args is not None else args
 
     # ── Check 3: Context risk ─────────────────────────────
-    ctx_risk = _check_context_risk(
-        tool_name, effective_args, message, chat_history, blocked_count
-    )
+    ctx_risk = _check_context_risk(tool_name, effective_args, message, chat_history, blocked_count)
     checks.append(ctx_risk)
     if not ctx_risk["passed"]:
         risk_score = 0.8
@@ -320,7 +310,8 @@ def _evaluate_tool(
 
     # ── Check 4: Limits ───────────────────────────────────
     limits = _check_limits(
-        total_tool_calls, iterations,
+        total_tool_calls,
+        iterations,
         session_id=session_id,
         user_role=user_role,
         request_tool_calls=request_tool_calls,
@@ -408,19 +399,23 @@ def pre_tool_gate_node(state: AgentState) -> AgentState:
 
         elif decision["decision"] == "MODIFY":
             # Use modified args
-            filtered_plan.append({
-                "tool": tool_name,
-                "args": decision["modified_args"] or args,
-            })
+            filtered_plan.append(
+                {
+                    "tool": tool_name,
+                    "args": decision["modified_args"] or args,
+                }
+            )
 
         elif decision["decision"] == "BLOCK":
             # Record the blocked tool call
-            tool_calls.append({
-                "tool": tool_name,
-                "args": args,
-                "result": f"Blocked by pre-tool gate: {decision['reason']}",
-                "allowed": False,
-            })
+            tool_calls.append(
+                {
+                    "tool": tool_name,
+                    "args": args,
+                    "result": f"Blocked by pre-tool gate: {decision['reason']}",
+                    "allowed": False,
+                }
+            )
             blocked_count += 1
 
         elif decision["decision"] == "REQUIRE_CONFIRMATION":
@@ -446,9 +441,7 @@ def pre_tool_gate_node(state: AgentState) -> AgentState:
         allowed=sum(1 for d in gate_decisions if d["decision"] == "ALLOW"),
         blocked=sum(1 for d in gate_decisions if d["decision"] == "BLOCK"),
         modified=sum(1 for d in gate_decisions if d["decision"] == "MODIFY"),
-        confirmations=sum(
-            1 for d in gate_decisions if d["decision"] == "REQUIRE_CONFIRMATION"
-        ),
+        confirmations=sum(1 for d in gate_decisions if d["decision"] == "REQUIRE_CONFIRMATION"),
     )
 
     # Track allowed tool calls in limits service (spec 06)

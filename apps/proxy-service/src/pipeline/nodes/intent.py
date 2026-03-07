@@ -201,8 +201,14 @@ async def intent_node(state: PipelineState) -> PipelineState:
 
     risk_flags = {**state.get("risk_flags", {})}
     if intent in (
-        "jailbreak", "system_prompt_extract", "extraction", "exfiltration",
-        "role_bypass", "tool_abuse", "agent_exfiltration", "social_engineering",
+        "jailbreak",
+        "system_prompt_extract",
+        "extraction",
+        "exfiltration",
+        "role_bypass",
+        "tool_abuse",
+        "agent_exfiltration",
+        "social_engineering",
     ):
         risk_flags["suspicious_intent"] = confidence
 

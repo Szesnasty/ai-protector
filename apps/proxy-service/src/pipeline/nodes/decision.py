@@ -63,8 +63,11 @@ def calculate_risk_score(state: PipelineState) -> float:
     # NeMo Guardrails signals
     if flags.get("nemo_blocked"):
         nemo_score = max(
-            (v for k, v in flags.items()
-             if k.startswith("nemo_") and k != "nemo_blocked" and isinstance(v, (int, float))),
+            (
+                v
+                for k, v in flags.items()
+                if k.startswith("nemo_") and k != "nemo_blocked" and isinstance(v, (int, float))
+            ),
             default=0.0,
         )
         score += float(nemo_score) * thresholds.get("nemo_weight", 0.7)

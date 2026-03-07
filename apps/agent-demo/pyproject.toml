@@ -35,6 +35,17 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "UP", "B", "SIM"]
+ignore = [
+    "B007",   # unused-loop-control-variable (test style)
+    "B008",   # function-call-in-default-argument (FastAPI Depends)
+    "B017",   # assert-raises-exception (test style)
+    "E501",   # line-too-long (handled by formatter)
+    "SIM102", # collapsible-if (readability)
+    "SIM108", # if-else-block-instead-of-if-exp (readability)
+    "SIM115", # open-file-with-context-handler (tempfile pattern)
+    "SIM117", # multiple-with-statements (readability)
+    "UP042",  # replace-str-enum (StrEnum migration)
+]
 
 [tool.ruff.format]
 quote-style = "double"

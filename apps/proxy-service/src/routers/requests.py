@@ -12,7 +12,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
-from src.models.policy import Policy
 from src.models.request import Request
 from src.schemas.request import PaginatedResponse, RequestDetail, RequestRead
 

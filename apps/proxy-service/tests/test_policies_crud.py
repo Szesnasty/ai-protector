@@ -145,11 +145,14 @@ async def test_create_policy(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_create_policy_duplicate_name(client: AsyncClient):
     """POST /v1/policies with duplicate name should return 409."""
-    resp = await client.post("/v1/policies", json={
-        "name": "balanced",
-        "description": "duplicate",
-        "config": {},
-    })
+    resp = await client.post(
+        "/v1/policies",
+        json={
+            "name": "balanced",
+            "description": "duplicate",
+            "config": {},
+        },
+    )
     assert resp.status_code == 409
     assert "already exists" in resp.json()["detail"].lower()
 
@@ -263,9 +266,7 @@ async def test_update_invalidates_redis_cache(client: AsyncClient):
             json={"description": "trigger cache invalidation"},
         )
         assert resp.status_code == 200
-        mock_redis_client.delete.assert_called_once_with(
-            f"policy_config:{created['name']}"
-        )
+        mock_redis_client.delete.assert_called_once_with(f"policy_config:{created['name']}")
 
 
 @pytest.mark.asyncio
@@ -280,6 +281,4 @@ async def test_delete_invalidates_redis_cache(client: AsyncClient):
 
         resp = await client.delete(f"/v1/policies/{pid}")
         assert resp.status_code == 204
-        mock_redis_client.delete.assert_called_once_with(
-            f"policy_config:{created['name']}"
-        )
+        mock_redis_client.delete.assert_called_once_with(f"policy_config:{created['name']}")

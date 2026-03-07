@@ -18,12 +18,9 @@ Covers:
 from __future__ import annotations
 
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from src.agent.trace.accumulator import TraceAccumulator
-
 
 # ── Unit: TraceAccumulator ────────────────────────────────────────────
 
@@ -102,10 +99,12 @@ class TestTraceToolPlan:
         t = TraceAccumulator()
         t.start(session_id="s1")
         t.start_iteration()
-        t.record_tool_plan([
-            {"tool": "getOrderStatus", "args": {"order_id": "ORD-123"}},
-            {"tool": "searchKnowledgeBase", "args": {"query": "refund"}},
-        ])
+        t.record_tool_plan(
+            [
+                {"tool": "getOrderStatus", "args": {"order_id": "ORD-123"}},
+                {"tool": "searchKnowledgeBase", "args": {"query": "refund"}},
+            ]
+        )
         plans = t.data["iterations"][0]["tool_plan"]
         assert len(plans) == 2
         assert plans[0]["tool"] == "getOrderStatus"
@@ -369,7 +368,10 @@ class TestNodeTraceIntegration:
         # RBAC: allow getOrderStatus
         rbac = MagicMock()
         rbac.check_permission.return_value = MagicMock(
-            allowed=True, requires_confirmation=False, reason=None, tool_sensitivity="low",
+            allowed=True,
+            requires_confirmation=False,
+            reason=None,
+            tool_sensitivity="low",
         )
         mock_rbac.return_value = rbac
 
@@ -524,9 +526,7 @@ class TestTraceEndToEnd:
 
         # 3. Tool router — iteration 1
         trace.start_iteration()
-        trace.record_tool_plan([
-            {"tool": "getOrderStatus", "args": {"order_id": "ORD-123"}}
-        ])
+        trace.record_tool_plan([{"tool": "getOrderStatus", "args": {"order_id": "ORD-123"}}])
 
         # 4. Pre-tool gate
         trace.record_pre_tool_decision(

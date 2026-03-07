@@ -24,8 +24,8 @@ class DenylistHit:
 
     phrase: str
     category: str
-    action: str       # "block" | "flag" | "score_boost"
-    severity: str     # "low" | "medium" | "high" | "critical"
+    action: str  # "block" | "flag" | "score_boost"
+    severity: str  # "low" | "medium" | "high" | "critical"
     is_regex: bool
     description: str
 
@@ -33,11 +33,7 @@ class DenylistHit:
 async def _load_phrases_from_db(policy_name: str) -> list[dict]:
     """Load denylist phrases for *policy_name* directly from the DB."""
     async with async_session() as session:
-        stmt = (
-            select(Policy)
-            .where(Policy.name == policy_name)
-            .options(joinedload(Policy.denylist_phrases))
-        )
+        stmt = select(Policy).where(Policy.name == policy_name).options(joinedload(Policy.denylist_phrases))
         result = await session.execute(stmt)
         policy = result.unique().scalar_one_or_none()
         if policy is None:
@@ -96,12 +92,14 @@ async def check_denylist(text: str, policy_name: str) -> list[DenylistHit]:
             if phrase_str.lower() in text_lower:
                 matched = True
         if matched:
-            hits.append(DenylistHit(
-                phrase=phrase_str,
-                category=p.get("category", "general"),
-                action=p.get("action", "block"),
-                severity=p.get("severity", "medium"),
-                is_regex=p.get("is_regex", False),
-                description=p.get("description", ""),
-            ))
+            hits.append(
+                DenylistHit(
+                    phrase=phrase_str,
+                    category=p.get("category", "general"),
+                    action=p.get("action", "block"),
+                    severity=p.get("severity", "medium"),
+                    is_regex=p.get("is_regex", False),
+                    description=p.get("description", ""),
+                )
+            )
     return hits

@@ -36,19 +36,21 @@ _rails_lock = threading.Lock()
 RAILS_DIR = Path(__file__).parent.parent / "rails"
 
 # All known rail names (must match BLOCKED:<name> in .co bot responses)
-KNOWN_RAILS = frozenset({
-    "role_bypass",
-    "tool_abuse",
-    "exfiltration",
-    "social_engineering",
-    "cot_manipulation",
-    "rag_poisoning",
-    "confused_deputy",
-    "cross_tool",
-    "excessive_agency",
-    "hallucination_exploit",
-    "supply_chain",
-})
+KNOWN_RAILS = frozenset(
+    {
+        "role_bypass",
+        "tool_abuse",
+        "exfiltration",
+        "social_engineering",
+        "cot_manipulation",
+        "rag_poisoning",
+        "confused_deputy",
+        "cross_tool",
+        "excessive_agency",
+        "hallucination_exploit",
+        "supply_chain",
+    }
+)
 
 
 def _build_rails():

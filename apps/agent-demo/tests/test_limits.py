@@ -13,7 +13,6 @@ Covers:
 from __future__ import annotations
 
 import time
-from unittest.mock import patch
 
 import pytest
 
@@ -27,12 +26,9 @@ from src.agent.limits.service import (
     LIMIT_EXCEEDED_MESSAGE,
     LIMIT_OK,
     RATE_LIMIT_MESSAGE,
-    LimitCheckResult,
     LimitsService,
-    SessionUsage,
     get_limits_service,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════
 # LimitsConfig
@@ -43,7 +39,7 @@ class TestLimitsConfig:
     """Test limits configuration and per-role defaults."""
 
     def test_default_limits_match_customer(self):
-        assert DEFAULT_LIMITS == ROLE_LIMITS["customer"]
+        assert ROLE_LIMITS["customer"] == DEFAULT_LIMITS
 
     def test_customer_limits(self):
         cfg = get_limits_for_role("customer")
@@ -420,6 +416,7 @@ class TestInputNodeLimits:
     def setup_method(self):
         # Reset limits service singleton
         import src.agent.limits.service as svc_mod
+
         svc_mod._service = LimitsService()
         self.svc = svc_mod._service
 
@@ -445,17 +442,21 @@ class TestInputNodeLimits:
         # Exhaust per-minute rate limit for customer (10/min)
         # input_node uses session_id as user_id, so use same session_id
         for i in range(10):
-            input_node({
-                "session_id": "rl-same",
-                "message": "hi",
-                "user_role": "customer",
-            })
+            input_node(
+                {
+                    "session_id": "rl-same",
+                    "message": "hi",
+                    "user_role": "customer",
+                }
+            )
 
-        result = input_node({
-            "session_id": "rl-same",
-            "message": "hi again",
-            "user_role": "customer",
-        })
+        result = input_node(
+            {
+                "session_id": "rl-same",
+                "message": "hi again",
+                "user_role": "customer",
+            }
+        )
         assert result["limit_exceeded"] == "max_requests_per_minute"
         assert result["final_response"] == RATE_LIMIT_MESSAGE
 
@@ -467,11 +468,13 @@ class TestInputNodeLimits:
         # Admin has 40/min, send 11 requests (customer limit is 10)
         # Use same session_id so rate limiter sees same user
         for i in range(11):
-            result = input_node({
-                "session_id": "admin-rl",
-                "message": "check",
-                "user_role": "admin",
-            })
+            result = input_node(
+                {
+                    "session_id": "admin-rl",
+                    "message": "check",
+                    "user_role": "admin",
+                }
+            )
         # 11th request should still pass for admin
         assert result.get("limit_exceeded") is None
 
@@ -504,6 +507,7 @@ class TestPreToolGateLimits:
 
     def setup_method(self):
         import src.agent.limits.service as svc_mod
+
         svc_mod._service = LimitsService()
         self.svc = svc_mod._service
 
@@ -687,6 +691,7 @@ class TestEdgeCases:
 
     def test_singleton_returns_same_instance(self):
         import src.agent.limits.service as svc_mod
+
         svc_mod._service = None
         s1 = get_limits_service()
         s2 = get_limits_service()

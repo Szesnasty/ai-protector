@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -71,7 +71,7 @@ async def export_trace(trace_id: str) -> dict:
 
     return {
         "trace_id": trace.get("trace_id"),
-        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "exported_at": datetime.now(UTC).isoformat(),
         "session_id": trace.get("session_id"),
         "user_role": trace.get("user_role"),
         "policy": trace.get("policy"),

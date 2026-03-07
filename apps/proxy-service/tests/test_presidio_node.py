@@ -80,9 +80,11 @@ class TestEmailDetection:
     @pytest.mark.asyncio
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_email_detected(self, mock_get):
-        mock_get.return_value = _mock_analyzer([
-            _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
-        ])
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
+            ]
+        )
         state = _base_state("My email is john@example.com")
         result = await presidio_node(state)
 
@@ -100,9 +102,11 @@ class TestPhoneDetection:
     @pytest.mark.asyncio
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_phone_detected(self, mock_get):
-        mock_get.return_value = _mock_analyzer([
-            _mock_result("PHONE_NUMBER", 14, 22, score=0.75),
-        ])
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("PHONE_NUMBER", 14, 22, score=0.75),
+            ]
+        )
         state = _base_state("Call me at 555-0123")
         result = await presidio_node(state)
 
@@ -116,9 +120,11 @@ class TestSSNDetection:
     @pytest.mark.asyncio
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_ssn_detected(self, mock_get):
-        mock_get.return_value = _mock_analyzer([
-            _mock_result("US_SSN", 10, 21, score=0.85),
-        ])
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("US_SSN", 10, 21, score=0.85),
+            ]
+        )
         state = _base_state("My SSN is 123-45-6789")
         result = await presidio_node(state)
 
@@ -148,11 +154,13 @@ class TestMultiplePII:
     @pytest.mark.asyncio
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_multiple_entities(self, mock_get):
-        mock_get.return_value = _mock_analyzer([
-            _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
-            _mock_result("PHONE_NUMBER", 40, 52, score=0.75),
-            _mock_result("PERSON", 0, 10, score=0.8),
-        ])
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
+                _mock_result("PHONE_NUMBER", 40, 52, score=0.75),
+                _mock_result("PERSON", 0, 10, score=0.8),
+            ]
+        )
         state = _base_state("John Smith john@example.com call me at 555-012-3456")
         result = await presidio_node(state)
 
@@ -172,9 +180,11 @@ class TestMaskAction:
     @patch("src.pipeline.nodes.presidio.get_anonymizer")
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_mask_produces_modified_messages(self, mock_analyzer, mock_anonymizer):
-        mock_analyzer.return_value = _mock_analyzer([
-            _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
-        ])
+        mock_analyzer.return_value = _mock_analyzer(
+            [
+                _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
+            ]
+        )
         mock_anonymizer.return_value = _mock_anonymizer("My email is <EMAIL_ADDRESS>")
 
         state = _base_state("My email is john@example.com", pii_action="mask")
@@ -188,9 +198,11 @@ class TestMaskAction:
     @patch("src.pipeline.nodes.presidio.get_anonymizer")
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_mask_does_not_mutate_original(self, mock_analyzer, mock_anonymizer):
-        mock_analyzer.return_value = _mock_analyzer([
-            _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
-        ])
+        mock_analyzer.return_value = _mock_analyzer(
+            [
+                _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
+            ]
+        )
         mock_anonymizer.return_value = _mock_anonymizer("My email is <EMAIL_ADDRESS>")
 
         original_messages = [{"role": "user", "content": "My email is john@example.com"}]
@@ -207,9 +219,11 @@ class TestMaskAction:
     @pytest.mark.asyncio
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_flag_no_modified_messages(self, mock_get):
-        mock_get.return_value = _mock_analyzer([
-            _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
-        ])
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
+            ]
+        )
         state = _base_state("My email is john@example.com", pii_action="flag")
         result = await presidio_node(state)
 
@@ -255,9 +269,11 @@ class TestErrorHandling:
     @patch("src.pipeline.nodes.presidio.get_anonymizer")
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_masking_error_handled(self, mock_analyzer, mock_anonymizer):
-        mock_analyzer.return_value = _mock_analyzer([
-            _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
-        ])
+        mock_analyzer.return_value = _mock_analyzer(
+            [
+                _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
+            ]
+        )
         mock_anonymizer.side_effect = RuntimeError("anonymizer failed")
 
         state = _base_state("My email is john@example.com", pii_action="mask")
@@ -305,9 +321,11 @@ class TestPreservesExisting:
     @pytest.mark.asyncio
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_preserves_existing_flags(self, mock_get):
-        mock_get.return_value = _mock_analyzer([
-            _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
-        ])
+        mock_get.return_value = _mock_analyzer(
+            [
+                _mock_result("EMAIL_ADDRESS", 12, 28, score=0.95),
+            ]
+        )
         state = _base_state(
             "My email is john@example.com",
             risk_flags={"injection": 0.8},

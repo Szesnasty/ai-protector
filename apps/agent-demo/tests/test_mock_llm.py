@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from src.agent.mock_llm import (
     GENERAL_RESPONSES,
     mock_agent_llm,
@@ -33,18 +31,14 @@ class TestMockAgentLlm:
         assert result["firewall_decision"]["decision"] == "ALLOW"
 
     def test_tool_call_triggered_by_order_keyword(self) -> None:
-        state = _base_state(
-            messages=[{"role": "user", "content": "Check my order status please"}]
-        )
+        state = _base_state(messages=[{"role": "user", "content": "Check my order status please"}])
         result = mock_agent_llm(state)
 
         # Should return empty content (tool call scenario)
         assert result["llm_response"] == ""
 
     def test_tool_call_triggered_by_return_keyword(self) -> None:
-        state = _base_state(
-            messages=[{"role": "user", "content": "What is your return policy?"}]
-        )
+        state = _base_state(messages=[{"role": "user", "content": "What is your return policy?"}])
         result = mock_agent_llm(state)
 
         # return keyword triggers searchKnowledgeBase

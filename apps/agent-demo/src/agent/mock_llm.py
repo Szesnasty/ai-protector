@@ -169,7 +169,7 @@ def mock_agent_llm(state: AgentState) -> AgentState:
         response = _build_mock_response(content)
 
     # ── Case 2: user message triggers a tool call ────────────
-    elif (tool_spec := _detect_tool_call(user_content)):
+    elif tool_spec := _detect_tool_call(user_content):
         tool_call_obj = {
             "id": f"call_mock_{int(time.time())}",
             "type": "function",
@@ -188,7 +188,7 @@ def mock_agent_llm(state: AgentState) -> AgentState:
         content = random.choice(GENERAL_RESPONSES)
         response = _build_mock_response(content)
 
-    elapsed_ms = int((time.perf_counter() - start) * 1000)
+    int((time.perf_counter() - start) * 1000)
 
     # Build minimal firewall decision
     firewall_decision = {

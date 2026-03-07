@@ -20,7 +20,6 @@ from src.agent.validation.schemas import (
 )
 from src.agent.validation.validator import validate_tool_args
 
-
 # ══════════════════════════════════════════════════════════════════════
 # Schema Registry
 # ══════════════════════════════════════════════════════════════════════
@@ -91,7 +90,7 @@ class TestSanitizeString:
         result = _sanitize_string("hello\x00world\x07!", 100)
         assert "\x00" not in result
         assert "\x07" not in result
-        assert "helloworld!" == result
+        assert result == "helloworld!"
 
     def test_preserves_newline_tab(self):
         result = _sanitize_string("line1\nline2\ttab", 100)
@@ -257,18 +256,14 @@ class TestValidateToolArgs:
     # ── Sanitization cases ──────────────────────────────────
 
     def test_whitespace_trimmed(self):
-        result = validate_tool_args(
-            "searchKnowledgeBase", {"query": "  shipping info  "}
-        )
+        result = validate_tool_args("searchKnowledgeBase", {"query": "  shipping info  "})
         assert result["valid"] is True
         # Query was trimmed → SANITIZED
         if result["decision"] == "SANITIZED":
             assert result["sanitized_args"]["query"] == "shipping info"
 
     def test_control_chars_stripped(self):
-        result = validate_tool_args(
-            "searchKnowledgeBase", {"query": "hello\x00world"}
-        )
+        result = validate_tool_args("searchKnowledgeBase", {"query": "hello\x00world"})
         assert result["valid"] is True
 
     # ── Unknown tool ────────────────────────────────────────

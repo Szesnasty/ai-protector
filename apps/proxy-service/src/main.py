@@ -55,14 +55,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         try:
             if settings.enable_llm_guard:
                 from src.pipeline.nodes.llm_guard import get_scanners
+
                 logger.info("preload_start", scanner="llm_guard")
                 await asyncio.to_thread(get_scanners, {})
             if settings.enable_nemo_guardrails:
                 from src.pipeline.nodes.nemo_guardrails import get_rails
+
                 logger.info("preload_start", scanner="nemo_guardrails")
                 await asyncio.to_thread(get_rails)
             if settings.enable_presidio:
                 from src.pipeline.nodes.presidio import get_analyzer, get_anonymizer
+
                 logger.info("preload_start", scanner="presidio")
                 await asyncio.to_thread(get_analyzer)
                 await asyncio.to_thread(get_anonymizer)

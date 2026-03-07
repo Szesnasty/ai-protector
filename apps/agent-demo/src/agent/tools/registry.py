@@ -6,7 +6,8 @@ This module retains tool function dispatch and descriptions.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from src.agent.rbac.service import get_rbac_service
 from src.agent.tools.kb import search_knowledge_base

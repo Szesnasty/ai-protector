@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, model_validator
 
 # ── Request ──────────────────────────────────────────────────────────
 
+
 class ChatMessage(BaseModel):
     """A single chat message."""
 
@@ -40,6 +41,7 @@ class ChatCompletionRequest(BaseModel):
 
 # ── Response (non-streaming) ────────────────────────────────────────
 
+
 class ChatChoice(BaseModel):
     """A single completion choice."""
 
@@ -69,6 +71,7 @@ class ChatCompletionResponse(BaseModel):
 
 # ── Response (streaming chunks) ─────────────────────────────────────
 
+
 class ChatCompletionChunkDelta(BaseModel):
     """Delta content within a streaming chunk."""
 
@@ -95,6 +98,7 @@ class ChatCompletionChunk(BaseModel):
 
 
 # ── Error ────────────────────────────────────────────────────────────
+
 
 class ErrorDetail(BaseModel):
     """Structured error detail matching OpenAI format."""

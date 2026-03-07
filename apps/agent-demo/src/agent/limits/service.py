@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import structlog
@@ -40,10 +40,7 @@ LIMIT_EXCEEDED_MESSAGE = (
     "Please try a more specific question or start a new conversation."
 )
 
-RATE_LIMIT_MESSAGE = (
-    "You're sending requests too quickly. "
-    "Please wait a moment and try again."
-)
+RATE_LIMIT_MESSAGE = "You're sending requests too quickly. Please wait a moment and try again."
 
 
 # ── Session usage tracker ────────────────────────────────────────────
@@ -135,9 +132,7 @@ class LimitsService:
 
         # Cost estimation
         pricing = TOKEN_PRICING.get(model, TOKEN_PRICING["default"])
-        cost = (tokens_in / 1000 * pricing["input"]) + (
-            tokens_out / 1000 * pricing["output"]
-        )
+        cost = (tokens_in / 1000 * pricing["input"]) + (tokens_out / 1000 * pricing["output"])
         usage.estimated_cost += cost
 
         logger.info(
@@ -166,9 +161,7 @@ class LimitsService:
 
     # ── Limit checks ─────────────────────────────────────────────
 
-    def check_turn_limit(
-        self, session_id: str, config: LimitsConfig
-    ) -> LimitCheckResult:
+    def check_turn_limit(self, session_id: str, config: LimitsConfig) -> LimitCheckResult:
         """Check if session has exceeded max turns."""
         usage = self.get_or_create_session(session_id)
         if usage.turns >= config.max_turns_per_session:
@@ -218,9 +211,7 @@ class LimitsService:
 
         return LIMIT_OK
 
-    def check_token_budget(
-        self, session_id: str, config: LimitsConfig
-    ) -> LimitCheckResult:
+    def check_token_budget(self, session_id: str, config: LimitsConfig) -> LimitCheckResult:
         """Check if session has exceeded token or cost budgets."""
         usage = self.get_or_create_session(session_id)
 
@@ -249,9 +240,7 @@ class LimitsService:
 
     # ── Rate limiting (in-memory sliding window) ─────────────────
 
-    def check_rate_limit(
-        self, user_id: str, config: LimitsConfig
-    ) -> LimitCheckResult:
+    def check_rate_limit(self, user_id: str, config: LimitsConfig) -> LimitCheckResult:
         """Check per-user rate limits using in-memory sliding window.
 
         Checks both per-minute and per-hour windows.
@@ -333,9 +322,7 @@ class LimitsService:
         self.increment_turn(session_id)
         return LIMIT_OK
 
-    def _log_limit_exceeded(
-        self, result: LimitCheckResult, session_id: str, role: str
-    ) -> None:
+    def _log_limit_exceeded(self, result: LimitCheckResult, session_id: str, role: str) -> None:
         """Log a limit exceeded event."""
         logger.warning(
             "limit_exceeded",

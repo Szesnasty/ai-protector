@@ -19,6 +19,7 @@ SEVERITY_SCORE = {"low": 0.1, "medium": 0.2, "high": 0.3, "critical": 0.5}
 
 # ── Pattern helpers ───────────────────────────────────────────────────
 
+
 def contains_encoded_content(text: str) -> bool:
     """Detect base64 or hex-encoded content used for obfuscation."""
     # Base64 pattern (>40 chars of base64 alphabet)
@@ -38,6 +39,7 @@ def excessive_special_chars(text: str) -> bool:
 
 # ── Node ──────────────────────────────────────────────────────────────
 
+
 @timed_node("rules")
 async def rules_node(state: PipelineState) -> PipelineState:
     """Run deterministic rule checks and populate rules_matched / risk_flags."""
@@ -55,12 +57,14 @@ async def rules_node(state: PipelineState) -> PipelineState:
             risk_flags["denylist_hit"] = True
         elif hit.action == "flag":
             custom_flags = risk_flags.get("custom_flags", [])
-            custom_flags.append({
-                "phrase": hit.phrase,
-                "category": hit.category,
-                "severity": hit.severity,
-                "description": hit.description,
-            })
+            custom_flags.append(
+                {
+                    "phrase": hit.phrase,
+                    "category": hit.category,
+                    "severity": hit.severity,
+                    "description": hit.description,
+                }
+            )
             risk_flags["custom_flags"] = custom_flags
         elif hit.action == "score_boost":
             boost = SEVERITY_SCORE.get(hit.severity, 0.2)

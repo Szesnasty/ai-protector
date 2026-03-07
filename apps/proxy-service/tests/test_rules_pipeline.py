@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.pipeline.nodes.rules import rules_node, SEVERITY_SCORE
+from src.pipeline.nodes.rules import SEVERITY_SCORE, rules_node
 from src.services.denylist import DenylistHit
 
 

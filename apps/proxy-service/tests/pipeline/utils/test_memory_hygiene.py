@@ -93,9 +93,7 @@ class TestTurnTruncation:
     async def test_30_msgs_truncated(self):
         msgs = _msgs(15)  # 1 system + 30 non-system
         assert len(msgs) == 31
-        result = await sanitize_conversation(
-            msgs, redact_pii=False, redact_secrets=False, max_turns=DEFAULT_MAX_TURNS
-        )
+        result = await sanitize_conversation(msgs, redact_pii=False, redact_secrets=False, max_turns=DEFAULT_MAX_TURNS)
         # 1 system + 20 non-system
         assert len(result) == 21
         assert result[0]["role"] == "system"
@@ -131,10 +129,12 @@ class TestPIIRedaction:
     @patch("src.pipeline.nodes.presidio.get_anonymizer")
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_email_redacted(self, mock_get, mock_anon_get):
-        mock_get.return_value = _mock_analyzer([
-            [_mock_result("EMAIL_ADDRESS", 12, 28)],  # user message
-            [],                                         # assistant message
-        ])
+        mock_get.return_value = _mock_analyzer(
+            [
+                [_mock_result("EMAIL_ADDRESS", 12, 28)],  # user message
+                [],  # assistant message
+            ]
+        )
         mock_anon_get.return_value = _mock_anonymizer(["My email is <EMAIL_ADDRESS>."])
 
         msgs = [
@@ -244,9 +244,11 @@ class TestMixedRedaction:
     @patch("src.pipeline.nodes.presidio.get_analyzer")
     async def test_mixed(self, mock_get, mock_anon_get):
         key = "sk-" + "c" * 30
-        mock_get.return_value = _mock_analyzer([
-            [_mock_result("EMAIL_ADDRESS", 0, 16)],
-        ])
+        mock_get.return_value = _mock_analyzer(
+            [
+                [_mock_result("EMAIL_ADDRESS", 0, 16)],
+            ]
+        )
         # After PII redaction, the text still contains the secret
         mock_anon_get.return_value = _mock_anonymizer([f"<EMAIL_ADDRESS> key={key}"])
 

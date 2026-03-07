@@ -430,9 +430,7 @@ class TestCrossPolicyComparison:
         """Jailbreak+encoded: ALLOW on fast (0.9 threshold), BLOCK on balanced (0.7)."""
         flags = {"encoded_content": True}
         # 0.6 + 0.3 = 0.9
-        result_fast = await decision_node(
-            _make_state(intent="jailbreak", risk_flags=flags, policy_config=FAST_CONFIG)
-        )
+        result_fast = await decision_node(_make_state(intent="jailbreak", risk_flags=flags, policy_config=FAST_CONFIG))
         assert result_fast["decision"] == "ALLOW"
 
         result_balanced = await decision_node(

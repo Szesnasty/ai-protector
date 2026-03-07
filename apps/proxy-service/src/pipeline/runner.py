@@ -43,9 +43,7 @@ async def get_policy_config(policy_name: str) -> dict:
 
     # DB lookup
     async with async_session() as session:
-        result = await session.execute(
-            select(Policy.config).where(Policy.name == policy_name)
-        )
+        result = await session.execute(select(Policy.config).where(Policy.name == policy_name))
         config = result.scalar_one_or_none()
 
     if config is None:

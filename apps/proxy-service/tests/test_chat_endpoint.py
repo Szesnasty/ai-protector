@@ -247,7 +247,7 @@ class TestStreaming:
 
         for line in resp.text.split("\n"):
             if line.startswith("data:") and line != "data: [DONE]":
-                payload = line[len("data: "):]
+                payload = line[len("data: ") :]
                 chunk = json.loads(payload)
                 assert chunk["object"] == "chat.completion.chunk"
                 assert "choices" in chunk

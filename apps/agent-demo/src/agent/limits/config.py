@@ -5,7 +5,7 @@ Spec: docs/agents/06-agents-limits-budgets/SPEC.md
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

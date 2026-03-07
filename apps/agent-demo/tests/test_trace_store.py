@@ -10,7 +10,7 @@ Covers:
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -18,7 +18,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.agent.trace.store import TraceStore, get_trace_store
-
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -53,7 +52,9 @@ def _make_trace(
             "iteration": 1,
             "tool_plan": [{"tool": "getOrderStatus", "args": {"order_id": "ORD-1"}}],
             "pre_tool_decisions": [{"tool": "getOrderStatus", "decision": "ALLOW"}],
-            "tool_executions": [{"tool": "getOrderStatus", "result_preview": "{}", "duration_ms": 10, "result_length": 2}],
+            "tool_executions": [
+                {"tool": "getOrderStatus", "result_preview": "{}", "duration_ms": 10, "result_length": 2}
+            ],
             "post_tool_decisions": [{"tool": "getOrderStatus", "decision": "PASS"}],
             "llm_call": {"tokens_in": 100, "tokens_out": 45, "duration_ms": 800, "messages_count": 4},
             "firewall_decision": {"decision": "ALLOW", "risk_score": 0.05},
@@ -64,7 +65,7 @@ def _make_trace(
         "trace_id": trace_id or str(uuid4()),
         "session_id": session_id,
         "request_id": str(uuid4()),
-        "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
+        "timestamp": timestamp or datetime.now(UTC).isoformat(),
         "user_role": user_role,
         "policy": "default",
         "model": model,
@@ -140,9 +141,13 @@ class TestTraceStoreFilter:
         store.save(_make_trace(trace_id="t2", session_id="s1", user_role="admin"))
         store.save(_make_trace(trace_id="t3", session_id="s2", user_role="customer", blocked=2))
         store.save(_make_trace(trace_id="t4", session_id="s3", user_role="admin", fw_block=True))
-        store.save(_make_trace(
-            trace_id="t5", session_id="s4", timestamp="2026-01-01T00:00:00+00:00",
-        ))
+        store.save(
+            _make_trace(
+                trace_id="t5",
+                session_id="s4",
+                timestamp="2026-01-01T00:00:00+00:00",
+            )
+        )
         return store
 
     def test_filter_session_id(self):
@@ -219,6 +224,7 @@ class TestTraceStoreFilter:
 @pytest.fixture
 def client():
     from src.main import app
+
     return TestClient(app)
 
 
@@ -332,10 +338,10 @@ class TestTracesEndpoints:
 
 class TestLangfuseIntegration:
     def test_send_disabled_by_default(self):
-        from src.agent.trace.langfuse import send_trace_to_langfuse, _langfuse_available, _langfuse_client
-
         # Reset module state
         import src.agent.trace.langfuse as lf_mod
+        from src.agent.trace.langfuse import send_trace_to_langfuse
+
         lf_mod._langfuse_available = None
         lf_mod._langfuse_client = None
 
@@ -346,6 +352,7 @@ class TestLangfuseIntegration:
     @patch("src.agent.trace.langfuse.Langfuse", create=True)
     def test_send_with_mock_langfuse(self, mock_langfuse_cls):
         import src.agent.trace.langfuse as lf_mod
+
         lf_mod._langfuse_available = None
         lf_mod._langfuse_client = None
 
@@ -367,6 +374,7 @@ class TestLangfuseIntegration:
 
     def test_send_handles_exception(self):
         import src.agent.trace.langfuse as lf_mod
+
         lf_mod._langfuse_available = None
         lf_mod._langfuse_client = None
 
