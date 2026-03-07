@@ -14,6 +14,8 @@ venv/
 .ruff_cache/
 htmlcov/
 .coverage
+.coverage.*
+coverage.xml
 *.so
 
 # ==== Node / Frontend ====
@@ -24,6 +26,7 @@ node_modules/
 .cache/
 dist/
 *.tsbuildinfo
+.eslintcache
 
 # ==== Docker ====
 docker-compose.override.yml
@@ -41,6 +44,13 @@ docker-compose.override.yml
 *~
 .DS_Store
 Thumbs.db
+
+# ==== Logs ====
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # ==== Ollama models (local dev) ====
 ollama_models/
