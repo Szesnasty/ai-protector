@@ -2,12 +2,18 @@
 
 **Ship agents with guardrails — not prayers.**
 
-Self-hosted LLM Firewall with an agentic security pipeline.
-OpenAI-compatible proxy that scans, classifies, and enforces policies
-on every LLM request and response — in real time.
+Self-hosted LLM Firewall. OpenAI-compatible proxy that scans,
+classifies, and enforces security policies on every LLM request
+and response — before they reach the model and after they come back.
+
+### Why this exists
+
+LLM apps fail at the edges: prompt injection, unsafe tool use, sensitive data leakage, and weak output controls.
+AI Protector adds **deterministic enforcement** before and after the model call, plus in-agent controls for tool use and budgets.
+Designed as a self-hosted security layer for teams shipping AI features into production.
 
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
@@ -133,6 +139,31 @@ OpenAI, Anthropic, Google Gemini, Mistral, Azure, Ollama.
 | Secret exposure | Custom rules | API keys, tokens, passwords in prompts |
 | Dialog policy | NeMo Guardrails | Topic drift, off-topic, prohibited topics |
 | OWASP LLM Top 10 | All of the above | 350+ scenario tests covering all categories |
+
+---
+
+## OWASP LLM Top 10 Coverage
+
+Mapped to [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/):
+
+| OWASP ID | Risk | AI Protector Control |
+|----------|------|---------------------|
+| LLM01 | Prompt Injection | LLM Guard scanner, denylist rules, intent classification, risk scoring |
+| LLM02 | Insecure Output Handling | OutputFilterNode — PII redaction, secrets stripping, system prompt leak detection |
+| LLM03 | Training Data Poisoning | Out of scope (model-level concern) |
+| LLM04 | Model Denial of Service | Request length limits, message count caps, agent-level token/cost budgets |
+| LLM05 | Supply Chain Vulnerabilities | Out of scope (dependency-level concern; Dependabot enabled) |
+| LLM06 | Sensitive Information Disclosure | Presidio PII scanner (10 entity types), secrets detection, output filtering |
+| LLM07 | Insecure Plugin Design | Agent RBAC, pre-tool gate, argument validation, post-tool output scanning |
+| LLM08 | Excessive Agency | Tool allowlists, role-based access, budget limits, confirmation flows |
+| LLM09 | Overreliance | Out of scope (UX-level concern) |
+| LLM10 | Model Theft | Out of scope (infrastructure-level concern) |
+
+Agent-specific risks (aligned with [OWASP Agentic AI Threats](https://genai.owasp.org/)):
+- **Tool misuse** → pre-tool gate with RBAC + argument schema validation
+- **Data exfiltration** → post-tool output scanning + PII/secrets redaction
+- **Excessive agency** → budget caps (tokens, tool calls, cost), role scoping
+- **Cross-tool chaining** → per-tool confirmation flows, tool call limits
 
 ---
 
@@ -291,6 +322,16 @@ make verify          # health-check all services
 
 ---
 
+## Known Limitations
+
+- **Semantic attacks** — static rules and pattern-based scanners can miss novel semantic injection techniques that don't match known patterns. Defense-in-depth (multiple scanner layers) mitigates but does not eliminate this.
+- **No formal tool verification** — tool behavior is gated by RBAC and argument validation, but the system does not verify what a tool *actually does* at runtime.
+- **Domain-specific tuning required** — default thresholds work for general use. Production deployments need threshold calibration per domain to balance false positives vs missed threats.
+- **Provider behavior variance** — different LLM providers respond differently to the same prompt. A policy tuned for one model may need adjustment for another.
+- **Single-node deployment** — current architecture is designed for single-instance deployment. Horizontal scaling and HA are not yet implemented.
+
+---
+
 ## Contributing
 
 Contributions welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
@@ -307,8 +348,7 @@ Found a vulnerability? Report it responsibly — see [SECURITY.md](SECURITY.md).
 
 ## License
 
-[AGPL-3.0](LICENSE) — free to use, modify, and distribute.
-If you deploy a modified version as a network service, you must release your source code.
+[Apache-2.0](LICENSE) — free to use, modify, and distribute.
 
 ---
 
