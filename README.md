@@ -13,8 +13,8 @@ policies on every LLM request and response — in real time.
 > **Demo mode included** — runs without LLM models or API keys.
 > Security pipeline is real. LLM responses are simulated.
 
-<!-- TODO: Add screenshot before public launch -->
-<!-- ![AI Protector Dashboard](docs/assets/screenshot-dashboard.png) -->
+<!-- 🎬 GIF demo coming soon — Compare → Agent Trace → Request Log → Analytics -->
+<!-- ![AI Protector Demo](docs/assets/hero.gif) -->
 
 ---
 
@@ -41,8 +41,10 @@ Open **http://localhost:3000**. That's it.
 
 | Option | Command | What you need |
 |--------|---------|---------------|
-| **API key** | Paste in Settings → API Keys | OpenAI / Anthropic / Google / Mistral key |
+| **API key** | Paste in Settings → API Keys | OpenAI / Anthropic / Google Gemini / Mistral / Azure key |
 | **Local LLM** | `make up` | 8 GB+ RAM, ~15 min first setup (pulls Llama 3.1 8B) |
+
+> **Multi-provider out of the box** — the proxy auto-detects provider from the model name (`gpt-4o` → OpenAI, `claude-sonnet-4-6` → Anthropic, `gemini-2.5-pro` → Google, etc.). Just paste a key and go.
 
 | Service | URL | Description |
 |---------|-----|-------------|
@@ -65,10 +67,10 @@ Level 2: PROXY-LEVEL (firewall — model-agnostic)
   → Prompt injection, PII detection, jailbreak, toxicity, secrets, custom rules
 ```
 
-- **11-node LangGraph pipeline** — not a filter chain, an agentic firewall
+- **9-node LangGraph pipeline** — not a filter chain, an agentic firewall
 - **3 scanner backends** — Presidio (PII), LLM Guard (injection/toxicity), NeMo Guardrails (dialog rails)
 - **358 attack scenarios** — one-click tests for OWASP LLM Top 10
-- **OpenAI-compatible API** — change one URL to protect any existing app
+- **OpenAI-compatible API** — works with OpenAI, Anthropic, Google Gemini, Mistral, Azure, and Ollama
 - **Full observability** — Langfuse tracing, structured logging, per-request risk scoring
 - **Agent security demo** — pre/post tool gates, RBAC, confirmation flows, budget caps
 
@@ -133,7 +135,7 @@ Level 2: PROXY-LEVEL (firewall — model-agnostic)
 | Agent Demo (11–13) | Agent App, Firewall Integration, Agent Demo UI | ✅ Done |
 | Custom Rules (14) | OWASP LLM Top 10 rules, CRUD API, Pipeline Integration, Frontend Editor | ✅ Done |
 | Dashboard (15–16) | Policies CRUD UI, Request Log, Analytics (ECharts, KPIs, Timeline) | ✅ Done |
-| Demo & Polish (20) | Attack Scenarios Panel — 358 prompts (255 Playground + 103 Agent) | ✅ Done |
+| Demo & Polish (20) | Attack Scenarios Panel — 358 prompts (216 Playground + 142 Agent) | ✅ Done |
 | Go-Live | Mock provider, Docker profiles, demo mode UI, seed data, README | ✅ Done |
 
 See [mvp-diagram.md](mvp-diagram.md) for the full 20-step implementation plan.
@@ -158,7 +160,7 @@ ai-protector/
 ├── apps/
 │   ├── proxy-service/         # Python — LLM Firewall (63 src files, 5 800 LOC)
 │   │   ├── src/
-│   │   │   ├── pipeline/      # LangGraph StateGraph, 11 nodes
+│   │   │   ├── pipeline/      # LangGraph StateGraph, 9 nodes
 │   │   │   ├── routers/       # FastAPI endpoints (chat, policies, rules, analytics)
 │   │   │   ├── models/        # SQLAlchemy ORM (Policy, Request, DenylistPhrase, SecurityRule)
 │   │   │   ├── schemas/       # Pydantic schemas (OpenAI-compatible)
