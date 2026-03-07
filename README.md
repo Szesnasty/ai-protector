@@ -6,7 +6,7 @@ policies on every LLM request and response — in real time.
 
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Szesnasty/ai-protector/actions/workflows/codeql.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/codeql.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
@@ -293,4 +293,4 @@ Found a vulnerability? Please report it responsibly — see [SECURITY.md](SECURI
 
 ## License
 
-[MIT](LICENSE)
+[AGPL-3.0](LICENSE) — free to use, modify, and distribute. If you deploy a modified version as a network service, you must make your source code available.
