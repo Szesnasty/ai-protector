@@ -241,6 +241,22 @@ async def test_delete_builtin_policy_forbidden(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_update_builtin_policy_forbidden(client: AsyncClient):
+    """PATCH on built-in policy should return 403 — read-only."""
+    resp = await client.get("/v1/policies")
+    for name in ("fast", "balanced", "strict", "paranoid"):
+        policy = next((p for p in resp.json() if p["name"] == name), None)
+        if policy is None:
+            continue
+        patch_resp = await client.patch(
+            f"/v1/policies/{policy['id']}",
+            json={"description": "hacked"},
+        )
+        assert patch_resp.status_code == 403, f"Expected 403 for built-in '{name}'"
+        assert "read-only" in patch_resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
 async def test_delete_not_found(client: AsyncClient):
     """DELETE with unknown UUID should return 404."""
     fake_id = str(uuid.uuid4())

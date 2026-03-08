@@ -43,8 +43,13 @@
     </v-card-text>
 
     <v-card-actions>
-      <v-btn size="small" variant="text" prepend-icon="mdi-pencil" @click="$emit('edit', policy)">
-        Edit
+      <v-btn
+        size="small"
+        variant="text"
+        :prepend-icon="isBuiltin ? 'mdi-eye' : 'mdi-pencil'"
+        @click="$emit('edit', policy)"
+      >
+        {{ isBuiltin ? 'View' : 'Edit' }}
       </v-btn>
       <v-spacer />
       <v-btn

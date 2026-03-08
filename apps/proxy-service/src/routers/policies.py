@@ -107,6 +107,9 @@ async def update_policy(
     if policy is None:
         raise HTTPException(status_code=404, detail="Policy not found")
 
+    if policy.name in BUILTIN_POLICIES:
+        raise HTTPException(status_code=403, detail="Built-in policies are read-only")
+
     update_data = body.model_dump(exclude_unset=True)
     if not update_data:
         return policy

@@ -11,6 +11,7 @@
               :variant="isEnabled(node.id) ? 'flat' : 'outlined'"
               :prepend-icon="node.icon"
               append-icon="mdi-information-outline"
+              :disabled="props.disabled"
               @click="toggleNode(node.id)"
             >
               {{ node.label }}
@@ -46,6 +47,7 @@
           :color="sliderColor(getThreshold(slider.key))"
           hide-details
           density="compact"
+          :disabled="props.disabled"
           @update:model-value="setThreshold(slider.key, $event as number)"
         />
       </div>
@@ -76,6 +78,7 @@
           color="primary"
           hide-details
           density="compact"
+          :disabled="props.disabled"
           @update:model-value="setThreshold(slider.key, $event as number)"
         />
       </div>
@@ -101,6 +104,7 @@
         variant="outlined"
         density="compact"
         hide-details
+        :disabled="props.disabled"
         class="mb-3"
         @update:model-value="setThreshold('pii_action', $event)"
       />
@@ -110,6 +114,7 @@
         color="primary"
         density="compact"
         hide-details
+        :disabled="props.disabled"
         @update:model-value="setThreshold('enable_canary', $event)"
       />
     </v-card-text>
@@ -122,7 +127,7 @@ interface PolicyConfig {
   thresholds: Record<string, unknown>
 }
 
-const props = defineProps<{ modelValue: PolicyConfig }>()
+const props = defineProps<{ modelValue: PolicyConfig; disabled?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [val: PolicyConfig] }>()
 
 const AVAILABLE_NODES = [

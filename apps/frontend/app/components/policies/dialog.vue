@@ -6,7 +6,14 @@
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <v-card>
-      <v-card-title>{{ isEdit ? 'Edit Policy' : 'Create Policy' }}</v-card-title>
+      <v-card-title>
+        <div class="d-flex align-center ga-2">
+          {{ isBuiltin ? 'View Policy' : isEdit ? 'Edit Policy' : 'Create Policy' }}
+          <v-chip v-if="isBuiltin" size="x-small" color="warning" variant="tonal" prepend-icon="mdi-lock">
+            Read-only
+          </v-chip>
+        </div>
+      </v-card-title>
       <v-card-text>
         <v-text-field
           v-model="form.name"
@@ -24,6 +31,7 @@
           density="compact"
           rows="2"
           auto-grow
+          :disabled="isBuiltin"
           class="mb-3"
         />
         <v-switch
@@ -32,15 +40,19 @@
           color="primary"
           density="compact"
           hide-details
+          :disabled="isBuiltin"
           class="mb-4"
         />
 
-        <policies-config-editor v-model="form.config" />
+        <policies-config-editor v-model="form.config" :disabled="isBuiltin" />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="$emit('update:modelValue', false)">Cancel</v-btn>
+        <v-btn variant="text" @click="$emit('update:modelValue', false)">
+          {{ isBuiltin ? 'Close' : 'Cancel' }}
+        </v-btn>
         <v-btn
+          v-if="!isBuiltin"
           color="primary"
           variant="flat"
           :loading="saving"
