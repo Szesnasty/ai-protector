@@ -36,7 +36,47 @@
 // ── Global v-card-title font size (18px) + margin ──────────────
 .v-card-title {
   font-size: 18px !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 4px !important;
+}
+
+// ── Global v-card border-radius (12px) ─────────────────────────
+.v-card {
+  border-radius: 12px !important;
+}
+
+// ── Global button border-radius (12px) ─────────────────────────
+.v-btn {
+  border-radius: 12px !important;
+}
+
+// ── Action button – solid teal background ──────────────────────
+.btn-action {
+  background-color: rgb(var(--v-theme-secondary)) !important;
+  color: #fff !important;
+
+  &:hover {
+    filter: brightness(1.15);
+  }
+
+  &:disabled,
+  &.v-btn--disabled {
+    opacity: 0.5;
+  }
+}
+
+.btn-action--danger {
+  background-color: rgb(var(--v-theme-error)) !important;
+  color: #fff !important;
+
+  &:hover {
+    filter: brightness(1.15);
+  }
+}
+
+// ── Dialog card – subtle white border ──────────────────────────
+.v-dialog > .v-overlay__content > .v-card {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
 
 // ── Active parent row highlight when expanded ──────────────────

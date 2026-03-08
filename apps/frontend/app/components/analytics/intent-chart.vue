@@ -15,6 +15,7 @@
 
 <script setup lang="ts">
 import type { IntentCount } from '~/types/api'
+import { CHART } from '~/utils/colors'
 
 const VChart = defineAsyncComponent(() => import('vue-echarts'))
 
@@ -23,18 +24,7 @@ const props = defineProps<{
   loading: boolean
 }>()
 
-const INTENT_COLORS = [
-  '#2196F3',
-  '#4CAF50',
-  '#F44336',
-  '#FF9800',
-  '#9C27B0',
-  '#00BCD4',
-  '#795548',
-  '#607D8B',
-  '#E91E63',
-  '#3F51B5',
-]
+const INTENT_COLORS = CHART.intents
 
 const chartOption = computed(() => {
   const items = props.data ?? []

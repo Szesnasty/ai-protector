@@ -13,30 +13,42 @@
     density="comfortable"
     hover
     class="elevation-1 rounded"
+    :row-props="rowProps"
     @update:sort-by="onSort"
+    @click:row="onRowClick"
   >
-    <!-- Time -->
+    <!-- Expand toggle -->
+    <template #item.data-table-expand="{ internalItem, isExpanded }">
+      <v-btn
+        :icon="isExpanded(internalItem) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+        variant="text"
+        size="x-small"
+        density="compact"
+      />
+    </template>
+
+    <!-- Cell: Time -->
     <template #item.created_at="{ item }">
       <span class="text-caption text-no-wrap">{{ formatTime(item.created_at) }}</span>
     </template>
 
-    <!-- Client -->
+    <!-- Cell: Client -->
     <template #item.client_id="{ item }">
       <span class="text-caption font-weight-medium">{{ truncate(item.client_id, 12) }}</span>
     </template>
 
-    <!-- Policy -->
+    <!-- Cell: Policy -->
     <template #item.policy_name="{ item }">
       <v-chip size="x-small" variant="tonal" color="primary">{{ item.policy_name || '—' }}</v-chip>
     </template>
 
-    <!-- Intent -->
+    <!-- Cell: Intent -->
     <template #item.intent="{ item }">
       <v-chip v-if="item.intent" size="x-small" variant="outlined">{{ item.intent }}</v-chip>
       <span v-else class="text-medium-emphasis">—</span>
     </template>
 
-    <!-- Decision -->
+    <!-- Cell: Decision -->
     <template #item.decision="{ item }">
       <v-chip
         :color="decisionColor(item.decision)"
@@ -48,7 +60,7 @@
       </v-chip>
     </template>
 
-    <!-- Risk -->
+    <!-- Cell: Risk -->
     <template #item.risk_score="{ item }">
       <div class="d-flex align-center ga-2" style="min-width: 100px;">
         <v-progress-linear
@@ -62,12 +74,12 @@
       </div>
     </template>
 
-    <!-- Latency -->
+    <!-- Cell: Latency -->
     <template #item.latency_ms="{ item }">
       <span class="text-caption">{{ item.latency_ms != null ? `${item.latency_ms}ms` : '—' }}</span>
     </template>
 
-    <!-- Tokens -->
+    <!-- Cell: Tokens -->
     <template #item.tokens_in="{ item }">
       <span class="text-caption">
         {{ item.tokens_in ?? '—' }}→{{ item.tokens_out ?? '—' }}
@@ -76,7 +88,7 @@
 
     <!-- Expanded row -->
     <template #expanded-row="{ columns, item }">
-      <tr>
+      <tr class="expanded-detail-row">
         <td :colspan="columns.length" class="pa-0">
           <requests-detail-row
             :detail="detailCache[item.id] ?? null"
@@ -98,6 +110,7 @@
 
 <script setup lang="ts">
 import type { RequestRead, RequestDetail } from '~/types/api'
+import { decisionColor as _dc, riskColor as _rc } from '~/utils/colors'
 
 const props = defineProps<{
   items: RequestRead[]
@@ -154,6 +167,19 @@ function onSort(sortBy: Array<{ key: string; order: string }>) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowProps({ item }: { item: any }) {
+  return {
+    class: expanded.value.includes(item.id) ? 'expanded-parent-row' : '',
+    style: 'cursor: pointer',
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function onRowClick(_e: Event, { toggleExpand, internalItem }: { item: any; toggleExpand: (item: any) => void; internalItem: any }) {
+  toggleExpand(internalItem)
+}
+
 // Lazy‐load detail when row expands
 watch(expanded, async (ids) => {
   for (const id of ids) {
@@ -186,16 +212,29 @@ function truncate(s: string, len: number) {
 }
 
 function decisionColor(d: string) {
-  if (d === 'ALLOW') return 'success'
-  if (d === 'MODIFY') return 'warning'
-  if (d === 'BLOCK') return 'error'
-  return 'grey'
+  return _dc(d)
 }
 
 function riskColor(score: number | null) {
-  if (score == null) return 'grey'
-  if (score < 0.3) return 'success'
-  if (score < 0.6) return 'warning'
-  return 'error'
+  return _rc(score)
 }
 </script>
+
+<style lang="scss" scoped>
+.expanded-parent-row {
+  background: rgba(var(--v-theme-primary), 0.04) !important;
+  border-left: 3px solid rgb(var(--v-theme-primary));
+
+  td:first-child {
+    padding-left: 13px; // compensate for border
+  }
+}
+
+.expanded-detail-row {
+  background: rgba(var(--v-theme-on-surface), 0.015);
+
+  > td {
+    border-bottom: 2px solid rgba(var(--v-theme-primary), 0.12) !important;
+  }
+}
+</style>

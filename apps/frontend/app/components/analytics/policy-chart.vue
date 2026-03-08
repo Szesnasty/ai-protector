@@ -37,6 +37,7 @@
 
 <script setup lang="ts">
 import type { PolicyStatsRow } from '~/types/api'
+import { CHART, policyColor } from '~/utils/colors'
 
 const VChart = defineAsyncComponent(() => import('vue-echarts'))
 
@@ -46,18 +47,10 @@ const props = defineProps<{
 }>()
 
 const COLOR_MAP: Record<string, string> = {
-  fast: '#4CAF50',
-  balanced: '#FFC107',
-  strict: '#FF9800',
-  paranoid: '#F44336',
-}
-
-function policyColor(name: string): string {
-  if (name === 'fast') return 'success'
-  if (name === 'balanced') return 'warning'
-  if (name === 'strict') return 'orange'
-  if (name === 'paranoid') return 'error'
-  return 'grey'
+  fast: CHART.policyFast,
+  balanced: CHART.policyBalanced,
+  strict: CHART.policyStrict,
+  paranoid: CHART.policyParanoid,
 }
 
 const chartOption = computed(() => {
@@ -78,19 +71,21 @@ const chartOption = computed(() => {
     xAxis: {
       type: 'value',
       max: 100,
-      axisLabel: { formatter: '{value}%' },
+      axisLabel: { formatter: '{value}%', color: CHART.axisLabel },
+      splitLine: { lineStyle: { color: CHART.gridLine } },
     },
     yAxis: {
       type: 'category',
       data: items.map(p => p.policy_name),
       inverse: true,
+      axisLabel: { color: CHART.axisLabel },
     },
     series: [
       {
         type: 'bar',
         data: items.map(p => ({
           value: +(p.block_rate * 100).toFixed(1),
-          itemStyle: { color: COLOR_MAP[p.policy_name] ?? '#9E9E9E' },
+          itemStyle: { color: COLOR_MAP[p.policy_name] ?? CHART.policyDefault },
         })),
         barWidth: 18,
         label: {

@@ -141,36 +141,23 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AgentTrace, FirewallDecision } from '~/types/agent'
+import { decisionColor as _dc, riskColor as _rc, flagColor as _fc } from '~/utils/colors'
 
 const props = defineProps<{
   trace: AgentTrace | null
   decision: FirewallDecision | null
 }>()
 
-const decisionColor = computed(() => {
-  switch (props.decision?.decision) {
-    case 'ALLOW': return 'success'
-    case 'MODIFY': return 'warning'
-    case 'BLOCK': return 'error'
-    default: return 'grey'
-  }
-})
+const decisionColor = computed(() => _dc(props.decision?.decision))
 
-const riskColor = computed(() => {
-  const score = props.decision?.risk_score ?? 0
-  if (score >= 0.7) return 'error'
-  if (score >= 0.3) return 'warning'
-  return 'success'
-})
+const riskColor = computed(() => _rc(props.decision?.risk_score))
 
 const hasFlags = computed(() =>
   props.decision?.risk_flags && Object.keys(props.decision.risk_flags).length > 0,
 )
 
 function flagColor(score: number): string {
-  if (score >= 0.7) return 'error'
-  if (score >= 0.3) return 'warning'
-  return 'grey'
+  return _fc('', score)
 }
 
 const blockedLabel = computed(() => {

@@ -107,6 +107,7 @@
 
 <script setup lang="ts">
 import type { Rule, RuleAction } from '~/types/api'
+import { actionColor as _actionColor, severityColor as _severityColor } from '~/utils/colors'
 
 const props = defineProps<{
   rules: Rule[]
@@ -181,13 +182,11 @@ const filteredRules = computed(() => {
 })
 
 function actionColor(action: RuleAction): string {
-  const map: Record<string, string> = { block: 'error', flag: 'warning', score_boost: 'info' }
-  return map[action] ?? 'default'
+  return _actionColor(action)
 }
 
 function severityColor(severity: string): string {
-  const map: Record<string, string> = { critical: 'error', high: 'orange', medium: 'warning', low: 'grey' }
-  return map[severity] ?? 'default'
+  return _severityColor(severity)
 }
 </script>
 

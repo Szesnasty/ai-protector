@@ -17,7 +17,7 @@
           class="mb-3"
         />
 
-        <v-btn color="primary" variant="flat" :loading="testing" :disabled="!testText" block class="mb-4" @click="runTest">
+        <v-btn class="btn-action mb-4" :loading="testing" :disabled="!testText" block @click="runTest">
           <v-icon start>mdi-test-tube</v-icon>
           Test
         </v-btn>
@@ -62,6 +62,7 @@
 
 <script setup lang="ts">
 import type { Rule, RuleTestResult } from '~/types/api'
+import { actionColor as _actionColor } from '~/utils/colors'
 
 const props = defineProps<{
   modelValue: boolean
@@ -92,8 +93,7 @@ function close() {
 }
 
 function actionColor(action: string): string {
-  const map: Record<string, string> = { block: 'error', flag: 'warning', score_boost: 'info' }
-  return map[action] ?? 'default'
+  return _actionColor(action)
 }
 </script>
 

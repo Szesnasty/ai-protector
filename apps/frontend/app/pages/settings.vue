@@ -6,9 +6,37 @@
           <v-icon start>mdi-cog</v-icon>
           Settings
         </h1>
-        <p class="text-body-2 text-medium-emphasis mb-6">
-          API keys are stored in your browser only. We never send them to our server for storage.
+        <p class="text-body-2 text-medium-emphasis mb-4">
+          Your API keys let AI Protector call LLM providers on your behalf.
         </p>
+
+        <!-- Security explainer -->
+        <v-card variant="tonal" color="primary" class="mb-6 security-explainer">
+          <v-card-text class="py-3 px-4">
+            <div class="d-flex align-center mb-2">
+              <v-icon icon="mdi-shield-lock" size="20" class="mr-2" />
+              <span class="text-subtitle-2 font-weight-bold">How we protect your keys</span>
+            </div>
+            <div class="security-points">
+              <div class="d-flex align-start ga-2 mb-1">
+                <v-icon icon="mdi-database-off" size="14" class="mt-1 flex-shrink-0" />
+                <span class="text-body-2"><strong>Never stored on our server</strong> — keys live only in your browser's sessionStorage (or localStorage if you choose "Remember")</span>
+              </div>
+              <div class="d-flex align-start ga-2 mb-1">
+                <v-icon icon="mdi-file-hidden" size="14" class="mt-1 flex-shrink-0" />
+                <span class="text-body-2"><strong>Never logged</strong> — our server logs record the model, latency, and decision, but never your API key</span>
+              </div>
+              <div class="d-flex align-start ga-2 mb-1">
+                <v-icon icon="mdi-arrow-right-bold" size="14" class="mt-1 flex-shrink-0" />
+                <span class="text-body-2"><strong>Pass-through only</strong> — your key is forwarded directly to the LLM provider in a single request and immediately discarded</span>
+              </div>
+              <div class="d-flex align-start ga-2">
+                <v-icon icon="mdi-web-lock" size="14" class="mt-1 flex-shrink-0" />
+                <span class="text-body-2"><strong>CSP-restricted</strong> — Content Security Policy headers prevent your browser from sending data anywhere except our proxy and the known LLM APIs</span>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
 
         <!-- Provider cards -->
         <v-card
@@ -105,7 +133,7 @@
           <v-checkbox
             v-model="addRemember"
             label="Remember on this device"
-            hint="Uses localStorage instead of sessionStorage — persists across browser sessions"
+            hint="Saves to localStorage — survives browser restarts. Otherwise saved to sessionStorage and cleared when you close the tab."
             persistent-hint
             density="compact"
           />
@@ -116,8 +144,7 @@
             density="compact"
             class="mt-3"
           >
-            <v-icon start size="small">mdi-lock</v-icon>
-            Your key is stored in this browser only and never sent to our server for storage.
+            Your key is sent to {{ addProvider?.name }} via our proxy in the <code>x-api-key</code> header, used for a single LLM call, then discarded. It is never written to any database or log file.
           </v-alert>
         </v-card-text>
 
@@ -125,8 +152,7 @@
           <v-spacer />
           <v-btn variant="text" @click="addDialog = false">Cancel</v-btn>
           <v-btn
-            color="primary"
-            variant="flat"
+            class="btn-action"
             :disabled="!addKeyValue || addKeyValue.length < 5"
             @click="handleSave"
           >
@@ -193,3 +219,18 @@ function handleRemove(providerId: string, providerName: string) {
   snackbar.value = true
 }
 </script>
+
+<style lang="scss" scoped>
+.security-explainer {
+  .security-points {
+    padding-left: 28px;
+  }
+
+  code {
+    font-size: 0.8em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(var(--v-theme-on-surface), 0.08);
+  }
+}
+</style>

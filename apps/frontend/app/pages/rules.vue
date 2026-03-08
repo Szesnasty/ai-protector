@@ -65,7 +65,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="showDeleteConfirm = false">Cancel</v-btn>
-          <v-btn color="error" variant="flat" :loading="deleting" @click="onDelete">Delete</v-btn>
+          <v-btn class="btn-action--danger" prepend-icon="mdi-delete" :loading="deleting" @click="onDelete">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

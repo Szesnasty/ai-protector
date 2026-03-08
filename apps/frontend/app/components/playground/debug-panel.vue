@@ -11,7 +11,16 @@
 
     <v-card-text v-else>
       <!-- Decision badge -->
-      <div class="debug-panel__row mb-3">
+      <div v-if="decision.decision === 'BLOCK'" class="block-verdict mb-3">
+        <div class="d-flex align-center ga-2">
+          <v-icon icon="mdi-shield-off" color="error" size="20" />
+          <span class="text-body-1 font-weight-bold text-error">BLOCKED</span>
+        </div>
+        <div v-if="decision.blockedReason" class="text-caption mt-1" style="color: rgba(var(--v-theme-error), 0.8);">
+          {{ blockedLabel }}
+        </div>
+      </div>
+      <div v-else class="debug-panel__row mb-3">
         <span class="text-caption text-grey">Decision</span>
         <v-chip
           :color="decisionColor"
@@ -99,35 +108,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { PipelineDecision } from '~/types/api'
+import { decisionColor as _dc, riskColor as _rc, flagColor as _fc } from '~/utils/colors'
 
 const props = defineProps<{
   decision: PipelineDecision | null
 }>()
 
-const decisionColor = computed(() => {
-  switch (props.decision?.decision) {
-    case 'ALLOW': return 'success'
-    case 'MODIFY': return 'warning'
-    case 'BLOCK': return 'error'
-    default: return 'grey'
-  }
-})
+const decisionColor = computed(() => _dc(props.decision?.decision))
 
-const riskColor = computed(() => {
-  const score = props.decision?.riskScore ?? 0
-  if (score >= 0.7) return 'error'
-  if (score >= 0.3) return 'warning'
-  return 'success'
-})
+const riskColor = computed(() => _rc(props.decision?.riskScore))
 
 const hasFlags = computed(() =>
   props.decision?.riskFlags && Object.keys(props.decision.riskFlags).length > 0,
 )
 
 function flagColor(score: number): string {
-  if (score >= 0.7) return 'error'
-  if (score >= 0.3) return 'warning'
-  return 'grey'
+  return _fc('', score)
 }
 
 const blockedLabel = computed(() => {
@@ -193,5 +189,12 @@ const triggeredControls = computed(() => {
   .block-alert {
     border-left: 3px solid rgb(var(--v-theme-error));
   }
+}
+
+.block-verdict {
+  padding: 8px 12px;
+  background: rgba(var(--v-theme-error), 0.08);
+  border-radius: 8px;
+  border-left: 3px solid rgb(var(--v-theme-error));
 }
 </style>

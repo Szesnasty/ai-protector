@@ -2,14 +2,25 @@
   <v-row>
     <v-col v-for="card in cards" :key="card.label" cols="12" sm="6" md="4" lg>
       <v-skeleton-loader v-if="loading" type="card" />
-      <v-card v-else variant="outlined" class="h-100">
+      <v-card
+        v-else
+        variant="outlined"
+        class="h-100"
+        :class="{ 'kpi-block-rate': card.accent }"
+      >
         <v-card-text class="d-flex align-center">
           <v-avatar :color="card.color" variant="tonal" size="48" class="mr-4">
             <v-icon :icon="card.icon" />
           </v-avatar>
           <div>
             <div class="text-caption text-medium-emphasis">{{ card.label }}</div>
-            <div class="text-h5 font-weight-bold">{{ card.value }}</div>
+            <div
+              class="font-weight-bold"
+              :class="card.accent ? 'text-h4' : 'text-h5'"
+              :style="card.accent ? { color: 'rgb(var(--v-theme-error))' } : {}"
+            >
+              {{ card.value }}
+            </div>
             <div v-if="card.subtitle" class="text-caption text-medium-emphasis">{{ card.subtitle }}</div>
           </div>
         </v-card-text>
@@ -42,6 +53,7 @@ const cards = computed(() => {
       color: 'error',
       value: s ? `${(s.block_rate * 100).toFixed(1)}%` : '0%',
       subtitle: s ? `${s.blocked} blocked` : undefined,
+      accent: true,
     },
     {
       label: 'Modified',
@@ -67,3 +79,10 @@ const cards = computed(() => {
   ]
 })
 </script>
+
+<style scoped>
+.kpi-block-rate {
+  border-color: rgba(var(--v-theme-error), 0.3) !important;
+  border-top: 3px solid rgb(var(--v-theme-error)) !important;
+}
+</style>

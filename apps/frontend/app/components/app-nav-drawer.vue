@@ -120,6 +120,7 @@ const manageItems: NavItem[] = [
 }
 
 :deep(.nav-item--active) {
+  border-radius: 12px !important;
   background: rgb(var(--v-theme-secondary)) !important;
   color: rgb(var(--v-theme-on-secondary)) !important;
 

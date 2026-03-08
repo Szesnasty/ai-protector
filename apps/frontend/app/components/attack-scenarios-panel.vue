@@ -150,6 +150,7 @@
 import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 import type { ScenarioGroup } from '~/types/scenarios'
+import { decisionColor as _dc } from '~/utils/colors'
 
 const props = defineProps<{
   scenarios: ScenarioGroup[]
@@ -218,12 +219,7 @@ const filteredGroups = computed(() => {
 const expandedPanels = ref<number[]>([])
 
 function decisionColor(decision: string) {
-  switch (decision) {
-    case 'BLOCK': return 'error'
-    case 'MODIFY': return 'warning'
-    case 'ALLOW': return 'success'
-    default: return 'grey'
-  }
+  return _dc(decision)
 }
 
 function handleSend(prompt: string) {

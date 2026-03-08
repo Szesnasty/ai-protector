@@ -53,10 +53,10 @@
         </v-btn>
         <v-btn
           v-if="!isBuiltin"
-          color="primary"
-          variant="flat"
+          class="btn-action"
           :loading="saving"
           :disabled="!form.name"
+          prepend-icon="mdi-content-save"
           @click="save"
         >
           Save

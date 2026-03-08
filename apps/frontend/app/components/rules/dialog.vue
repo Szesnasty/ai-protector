@@ -79,7 +79,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="close">Cancel</v-btn>
-        <v-btn color="primary" variant="flat" :disabled="!isValid" :loading="saving" @click="save">
+        <v-btn class="btn-action" :disabled="!isValid" :loading="saving" @click="save">
           {{ isEdit ? 'Update' : 'Create' }}
         </v-btn>
       </v-card-actions>

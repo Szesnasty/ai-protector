@@ -12,6 +12,7 @@
 
 <script setup lang="ts">
 import type { TimelineBucket } from '~/types/api'
+import { CHART } from '~/utils/colors'
 
 const VChart = defineAsyncComponent(() => import('vue-echarts'))
 
@@ -53,13 +54,15 @@ const chartOption = computed(() => {
       type: 'category',
       data: labels,
       axisTick: { show: false },
-      axisLine: { lineStyle: { color: '#e0e0e0' } },
+      axisLine: { lineStyle: { color: CHART.axisLine } },
+      axisLabel: { color: CHART.axisLabel },
     },
     yAxis: {
       type: 'value',
       minInterval: 1,
       axisLine: { show: false },
-      splitLine: { lineStyle: { type: 'dashed', color: '#f0f0f0' } },
+      axisLabel: { color: CHART.axisLabel },
+      splitLine: { lineStyle: { type: 'dashed', color: CHART.gridLine } },
     },
     series: [
       {
@@ -69,16 +72,17 @@ const chartOption = computed(() => {
         smooth: true,
         areaStyle: { opacity: 0.08 },
         lineStyle: { width: 2 },
-        itemStyle: { color: '#2196F3' },
+        itemStyle: { color: CHART.total },
       },
       {
         name: 'Blocked',
         type: 'line',
         data: items.map(b => b.blocked),
         smooth: true,
-        areaStyle: { opacity: 0.15 },
-        lineStyle: { width: 2 },
-        itemStyle: { color: '#F44336' },
+        areaStyle: { opacity: 0.18 },
+        lineStyle: { width: 3 },
+        itemStyle: { color: CHART.blocked },
+        symbolSize: 8,
       },
       {
         name: 'Modified',
@@ -86,7 +90,7 @@ const chartOption = computed(() => {
         data: items.map(b => b.modified),
         smooth: true,
         lineStyle: { width: 2, type: 'dashed' },
-        itemStyle: { color: '#FF9800' },
+        itemStyle: { color: CHART.modified },
       },
     ],
   }

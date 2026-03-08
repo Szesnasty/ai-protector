@@ -28,24 +28,12 @@
 
 <script setup lang="ts">
 import type { RiskFlagCount } from '~/types/api'
+import { analyticsFlagColor } from '~/utils/colors'
 
 defineProps<{
   data: RiskFlagCount[] | null | undefined
   loading: boolean
 }>()
-
-const FLAG_COLORS: Record<string, string> = {
-  denylist_hit: 'error',
-  denylist: 'error',
-  promptinjection: 'deep-orange',
-  injection: 'deep-orange',
-  pii_detected: 'orange',
-  pii: 'orange',
-  pii_count: 'orange',
-  toxicity: 'amber',
-  secrets: 'purple',
-  suspicious_intent: 'warning',
-}
 
 function formatFlagName(flag: string): string {
   return flag
@@ -55,6 +43,6 @@ function formatFlagName(flag: string): string {
 }
 
 function flagColor(flag: string): string {
-  return FLAG_COLORS[flag] ?? 'grey'
+  return analyticsFlagColor(flag)
 }
 </script>

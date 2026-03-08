@@ -21,11 +21,12 @@ export default defineNuxtConfig({
         themes: {
           dark: {
             colors: {
-              primary: '#7986CB',
+              primary: '#7C8FD4',
               secondary: '#4DB6AC',
-              error: '#EF5350',
-              warning: '#FFB74D',
-              success: '#81C784',
+              info: '#38BDF8',
+              error: '#EF4444',
+              warning: '#F59E0B',
+              success: '#22C55E',
               background: '#1A1A2E',
               surface: '#252540',
               'surface-bright': '#333352',
@@ -36,11 +37,12 @@ export default defineNuxtConfig({
           },
           light: {
             colors: {
-              primary: '#3F51B5',
+              primary: '#4F5FB5',
               secondary: '#009688',
-              error: '#F44336',
-              warning: '#FF9800',
-              success: '#4CAF50',
+              info: '#0EA5E9',
+              error: '#DC2626',
+              warning: '#D97706',
+              success: '#16A34A',
               background: '#F5F5F5',
               surface: '#FFFFFF',
               'surface-bright': '#FFFFFF',

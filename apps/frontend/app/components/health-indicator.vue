@@ -126,23 +126,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useHealth } from '~/composables/useHealth'
+import { healthStatusColor as _healthStatusColor, resourceBarColor as _resourceBarColor } from '~/utils/colors'
 
 const { status, services, metrics, lastChecked, isLoading } = useHealth()
 
-const dotColor = computed(() => {
-  switch (status.value) {
-    case 'ok': return 'success'
-    case 'degraded': return 'warning'
-    case 'error': return 'error'
-    case 'loading': return 'grey'
-    default: return 'grey'
-  }
-})
+const dotColor = computed(() => _healthStatusColor(status.value))
 
 function barColor(percent: number): string {
-  if (percent >= 90) return 'error'
-  if (percent >= 70) return 'warning'
-  return 'success'
+  return _resourceBarColor(percent)
 }
 
 function formatUptime(seconds: number): string {

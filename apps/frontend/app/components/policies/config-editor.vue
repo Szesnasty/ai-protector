@@ -122,6 +122,8 @@
 </template>
 
 <script setup lang="ts">
+import { sliderColor as _sliderColor } from '~/utils/colors'
+
 interface PolicyConfig {
   nodes: string[]
   thresholds: Record<string, unknown>
@@ -183,8 +185,6 @@ function setThreshold(key: string, value: unknown) {
 }
 
 function sliderColor(val: number) {
-  if (val < 0.5) return 'success'
-  if (val < 0.8) return 'warning'
-  return 'error'
+  return _sliderColor(val)
 }
 </script>

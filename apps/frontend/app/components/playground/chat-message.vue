@@ -80,6 +80,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ChatMessage } from '~/types/api'
+import { decisionColor as _dc, riskColor as _rc, riskTextColor as _rtc, flagColor as _fc, intentLabel as _il } from '~/utils/colors'
 
 const props = defineProps<{
   message: ChatMessage
@@ -98,54 +99,20 @@ const cardColor = computed(() => {
   return props.message.role === 'user' ? 'surface-variant' : 'primary'
 })
 
-const decisionColor = computed(() => {
-  switch (decision.value?.decision) {
-    case 'ALLOW': return 'success'
-    case 'MODIFY': return 'warning'
-    case 'BLOCK': return 'error'
-    default: return 'grey'
-  }
-})
+const decisionColor = computed(() => _dc(decision.value?.decision))
 
-const riskColor = computed(() => {
-  const score = decision.value?.riskScore ?? 0
-  if (score >= 0.7) return 'error'
-  if (score >= 0.3) return 'warning'
-  return 'success'
-})
+const riskColor = computed(() => _rc(decision.value?.riskScore))
 
-const riskTextColor = computed(() => {
-  const score = decision.value?.riskScore ?? 0
-  if (score >= 0.7) return 'text-error'
-  if (score >= 0.3) return 'text-warning'
-  return 'text-success'
-})
+const riskTextColor = computed(() => _rtc(decision.value?.riskScore))
 
 const hasFlags = computed(() =>
   decision.value?.riskFlags && Object.keys(decision.value.riskFlags).length > 0,
 )
 
-const decisionLabel = computed(() => {
-  const intent = decision.value?.intent ?? 'unknown'
-  const labels: Record<string, string> = {
-    prompt_injection: 'prompt injection attempt',
-    jailbreak: 'jailbreak attempt',
-    agent_exfiltration: 'attempted data exfiltration',
-    data_leak: 'data leak attempt',
-    social_engineering: 'social engineering attempt',
-    system_sabotage: 'system sabotage attempt',
-    pii_leak: 'PII exposure detected',
-    harmful_content: 'harmful content detected',
-    off_topic: 'off-topic request blocked',
-    suspicious_intent: 'suspicious intent detected',
-  }
-  return labels[intent] ?? intent.replace(/_/g, ' ')
-})
+const decisionLabel = computed(() => _il(decision.value?.intent))
 
 function flagColor(score: number): string {
-  if (score >= 0.7) return 'error'
-  if (score >= 0.3) return 'warning'
-  return 'grey'
+  return _fc('', score)
 }
 </script>
 

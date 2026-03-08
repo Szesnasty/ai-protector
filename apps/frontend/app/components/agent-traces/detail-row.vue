@@ -266,6 +266,7 @@
 
 <script setup lang="ts">
 import type { AgentTraceDetail, TraceIteration } from '~/types/agentTrace'
+import { decisionColor as _dc } from '~/utils/colors'
 
 const props = defineProps<{
   detail: AgentTraceDetail | null
@@ -375,11 +376,7 @@ function iterHasBlock(iter: TraceIteration): boolean {
 }
 
 function decisionColor(d: string) {
-  if (d === 'ALLOW') return 'success'
-  if (d === 'MODIFY') return 'warning'
-  if (d === 'BLOCK') return 'error'
-  if (d === 'REDACT') return 'orange'
-  return 'grey'
+  return _dc(d)
 }
 
 function shortId(id: unknown): string {

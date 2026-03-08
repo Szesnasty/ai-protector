@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 import type { Policy } from '~/types/api'
+import { policyColor as _policyColor } from '~/utils/colors'
 
 const props = defineProps<{ policy: Policy }>()
 defineEmits<{
@@ -78,7 +79,7 @@ defineEmits<{
 const BUILTIN = new Set(['fast', 'balanced', 'strict', 'paranoid'])
 const isBuiltin = computed(() => BUILTIN.has(props.policy.name))
 
-const COLORS: Record<string, string> = {
+const _COLORS: Record<string, string> = {
   fast: 'success',
   balanced: 'warning',
   strict: 'orange',
@@ -91,7 +92,7 @@ const ICONS: Record<string, string> = {
   paranoid: 'mdi-shield-lock',
 }
 
-const cardColor = computed(() => COLORS[props.policy.name] ?? 'primary')
+const cardColor = computed(() => _policyColor(props.policy.name))
 const policyIcon = computed(() => ICONS[props.policy.name] ?? 'mdi-shield')
 
 const config = computed(() => props.policy.config as { nodes?: string[]; thresholds?: { max_risk?: number } } | undefined)
