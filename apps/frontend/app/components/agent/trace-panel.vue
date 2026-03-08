@@ -2,7 +2,7 @@
   <v-card variant="flat" class="agent-trace-panel">
     <!-- Agent Trace section -->
     <v-card-title class="text-subtitle-1">
-      <v-icon start>mdi-chart-timeline-variant</v-icon>
+      <v-icon start size="20">mdi-chart-timeline-variant</v-icon>
       Agent Trace
     </v-card-title>
 
@@ -52,7 +52,7 @@
 
     <!-- Firewall Decision section -->
     <v-card-title class="text-subtitle-1">
-      <v-icon start>mdi-shield-search</v-icon>
+      <v-icon start size="20">mdi-shield-search</v-icon>
       Firewall Decision
     </v-card-title>
 
@@ -155,6 +155,10 @@ function flagColor(score: number): string {
 <style lang="scss" scoped>
 .agent-trace-panel {
   padding: 8px 0;
+
+  :deep(.v-chip) {
+    font-size: 12px !important;
+  }
 }
 
 .trace-row {

@@ -11,8 +11,8 @@
       <!-- Header -->
       <div class="attack-panel__header">
         <div class="d-flex align-center ga-2">
-          <v-icon size="x-small" class="mr-1">mdi-bullseye-arrow</v-icon>
-          <span class="text-subtitle-2">Attack Scenarios</span>
+          <v-icon size="20" class="mr-1">mdi-bullseye-arrow</v-icon>
+          <span style="font-size: 16px; font-weight: 600">Attack Scenarios</span>
           <v-chip size="x-small" color="primary" variant="tonal">
             {{ totalCount }}
           </v-chip>
@@ -39,7 +39,7 @@
       </div>
 
       <!-- Tag filter -->
-      <div v-if="allTags.length" class="attack-panel__tags px-3 pb-2">
+      <div v-if="allTags.length" class="attack-panel__tags px-3 pb-3 pt-3">
         <v-autocomplete
           v-model="selectedTags"
           :items="allTags"
@@ -74,7 +74,7 @@
           >
             <v-expansion-panel-title class="attack-panel__group-title">
               <div class="d-flex align-center ga-2" style="min-width: 0">
-                <v-icon size="14" class="flex-shrink-0">{{ group.icon }}</v-icon>
+                <v-icon size="20" class="flex-shrink-0">{{ group.icon }}</v-icon>
                 <span class="text-caption font-weight-bold" style="word-break: break-word; white-space: normal; line-height: 1.3">{{ group.label }}</span>
                 <v-chip size="x-small" variant="tonal" :color="group.color">
                   {{ group.items.length }}
@@ -248,13 +248,11 @@ function handleSend(prompt: string) {
   }
 
   &__search {
-    padding: 0 12px 8px;
+    padding: 0 12px 16px;
   }
 
   &__tags {
     padding: 0 12px 8px;
-    max-height: 120px;
-    overflow-y: auto;
   }
 
   &__body {
@@ -274,10 +272,10 @@ function handleSend(prompt: string) {
     padding: 8px 12px 8px 14px !important;
     text-transform: none;
     letter-spacing: normal;
-    white-space: normwal;
+    white-space: normal;
     word-break: break-word;
-    background: #fff !important;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgb(var(--v-theme-surface)) !important;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     border-left: 3px solid transparent;
     border-radius: 8px !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -289,7 +287,7 @@ function handleSend(prompt: string) {
     }
 
     &:hover {
-      background: #fafafa !important;
+      background: rgba(var(--v-theme-on-surface), 0.04) !important;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
       transform: translateY(-1px);
     }
@@ -342,5 +340,9 @@ function handleSend(prompt: string) {
 
 :deep(.v-expansion-panel-text__wrapper) {
   padding: 8px 8px 16px !important;
+}
+
+.attack-panel :deep(.v-chip) {
+  font-size: 12px !important;
 }
 </style>

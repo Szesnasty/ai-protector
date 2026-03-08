@@ -63,7 +63,7 @@
           type="error"
           density="compact"
           variant="tonal"
-          class="mt-1"
+          class="mt-3"
         >
           {{ decision.blockedReason }}
         </v-alert>
@@ -143,10 +143,20 @@ function flagColor(score: number): string {
 
   &__bubble {
     max-width: 75%;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
   }
 }
 
 .decision-details {
   font-size: 0.8rem;
+
+  :deep(.v-chip) {
+    font-size: 12px !important;
+  }
+
+  :deep(.v-alert__prepend .v-icon) {
+    color: rgb(var(--v-theme-error)) !important;
+  }
 }
 </style>

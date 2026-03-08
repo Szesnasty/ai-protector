@@ -123,6 +123,8 @@ const decisionColor = computed(() => {
 
   &__bubble {
     max-width: 100%;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
   }
 }
 </style>

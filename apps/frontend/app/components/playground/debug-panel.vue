@@ -112,6 +112,9 @@ function flagColor(score: number): string {
 <style lang="scss" scoped>
 .debug-panel {
   padding: 8px 0;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+  background: rgb(var(--v-theme-surface));
 
   .main-icon{
     font-size: 24px;
@@ -120,6 +123,10 @@ function flagColor(score: number): string {
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  :deep(.v-chip) {
+    font-size: 12px !important;
   }
 }
 </style>

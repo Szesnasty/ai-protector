@@ -14,16 +14,17 @@
       </v-tooltip>
     </v-chip>
 
-    <v-list density="compact" nav>
+    <v-list density="compact" nav color="primary">
       <v-list-item
         v-for="item in navItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
+        active-class="nav-item--active"
         exact
       >
         <template #prepend>
-          <v-icon :icon="item.icon" size="18" />
+          <v-icon :icon="item.icon" size="20" />
         </template>
       </v-list-item>
       <v-divider class="my-2" />
@@ -33,10 +34,11 @@
         :key="item.to"
         :to="item.to"
         :title="item.title"
+        active-class="nav-item--active"
         exact
       >
         <template #prepend>
-          <v-icon :icon="item.icon" size="18" />
+          <v-icon :icon="item.icon" size="20" />
         </template>
       </v-list-item>
     </v-list>
@@ -111,3 +113,22 @@ const manageItems: NavItem[] = [
   { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>
+
+<style lang="scss" scoped>
+:deep(.v-list-item-title) {
+  font-size: 16px !important;
+}
+
+:deep(.nav-item--active) {
+  background: rgb(var(--v-theme-secondary)) !important;
+  color: rgb(var(--v-theme-on-secondary)) !important;
+
+  .v-list-item__overlay {
+    opacity: 0 !important;
+  }
+
+  .v-icon {
+    color: rgb(var(--v-theme-on-primary)) !important;
+  }
+}
+</style>

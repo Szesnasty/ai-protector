@@ -14,6 +14,7 @@
         label="Policy level"
         variant="outlined"
         density="compact"
+        hide-details
         class="mb-4"
         @update:model-value="updateField('policy', $event)"
       />
@@ -26,6 +27,7 @@
         label="Model"
         variant="outlined"
         density="compact"
+        hide-details
         item-title="title"
         item-value="value"
         class="mb-4"
@@ -45,6 +47,7 @@
         :max="2"
         :step="0.1"
         thumb-label
+        hide-details
         class="mb-4"
         @update:model-value="updateField('temperature', $event)"
       />
@@ -55,9 +58,11 @@
         label="Max tokens"
         placeholder="Default (model limit)"
         type="number"
+        min="1"
         variant="outlined"
         density="compact"
-        @update:model-value="updateField('maxTokens', $event ? Number($event) : null)"
+        hide-details
+        @update:model-value="updateField('maxTokens', $event ? Math.max(1, Number($event)) : null)"
       />
     </v-card-text>
   </v-card>
@@ -119,6 +124,9 @@ function updateField<K extends keyof Config>(key: K, value: Config[K]) {
 <style lang="scss" scoped>
 .config-sidebar {
   padding: 8px 0;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+  background: rgb(var(--v-theme-surface));
 
   .main-icon {
     font-size: 24px;

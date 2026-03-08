@@ -1,7 +1,7 @@
 <template>
   <v-card variant="flat" class="agent-config">
     <v-card-title class="text-subtitle-1">
-      <v-icon start>mdi-cog</v-icon>
+      <v-icon start size="20">mdi-cog</v-icon>
       Agent Config
     </v-card-title>
 
@@ -13,6 +13,7 @@
         label="User Role"
         variant="outlined"
         density="compact"
+        hide-details
         class="mb-4"
         @update:model-value="$emit('update:role', $event)"
       />
@@ -25,6 +26,7 @@
         label="Model"
         variant="outlined"
         density="compact"
+        hide-details
         item-title="title"
         item-value="value"
         class="mb-4"
@@ -39,6 +41,7 @@
         label="Policy"
         variant="outlined"
         density="compact"
+        hide-details
         clearable
         class="mb-4"
         @update:model-value="$emit('update:policy', $event)"
@@ -113,5 +116,8 @@ const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
 <style lang="scss" scoped>
 .agent-config {
   padding: 8px 0;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+  background: rgb(var(--v-theme-surface));
 }
 </style>

@@ -21,7 +21,6 @@
           @update:model="config.model = $event"
           @new-conversation="newConversation"
         />
-        <v-divider class="my-2" />
         <agent-trace-panel
           :trace="lastTrace"
           :decision="lastFirewallDecision"
@@ -141,9 +140,12 @@ function handleAttackSend(prompt: string) {
   }
 
   &__sidebar {
-    border-left: 1px solid rgb(var(--v-border-color));
     height: 100%;
     overflow-y: auto;
+    padding: 16px 8px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 }
 

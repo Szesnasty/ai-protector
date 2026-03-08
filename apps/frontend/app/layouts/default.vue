@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar density="compact" elevation="1">
+    <v-app-bar density="compact" elevation="0" class="app-bar--shadow">
       <v-app-bar-nav-icon
         class="d-md-none"
         @click="drawer = !drawer"
@@ -17,12 +17,12 @@
       </template>
     </v-app-bar>
 
-    <v-navigation-drawer v-model="drawer">
+    <v-navigation-drawer v-model="drawer" width="280">
       <nuxt-link to="/playground" class="sidebar-logo-item d-block text-decoration-none">
         <img :src="isDark ? '/logo-white.png' : '/logo.png'" alt="AI Protector" class="sidebar-logo" />
-        <div class="text-caption text-medium-emphasis mt-1">LLM Firewall</div>
+        <div class="text-caption text-secondary mt-1">LLM Firewall</div>
       </nuxt-link>
-      <v-divider />
+      <v-divider color="primary" thickness="2" />
       <app-nav-drawer />
     </v-navigation-drawer>
 
@@ -62,5 +62,9 @@ onMounted(() => {
   max-width: 140px;
   height: auto;
   object-fit: contain;
+}
+
+.app-bar--shadow {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
 </style>

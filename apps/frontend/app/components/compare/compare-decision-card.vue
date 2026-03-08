@@ -101,5 +101,9 @@ function flagColor(score: number): string {
 <style lang="scss" scoped>
 .compare-decision-card {
   background: rgba(var(--v-theme-surface-variant), 0.2);
+
+  :deep(.v-chip) {
+    font-size: 12px !important;
+  }
 }
 </style>

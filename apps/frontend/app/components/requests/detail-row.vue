@@ -145,3 +145,9 @@ function flagColor(key: string, val: unknown): string {
   return 'grey'
 }
 </script>
+
+<style lang="scss" scoped>
+:deep(.v-chip) {
+  font-size: 12px !important;
+}
+</style>
