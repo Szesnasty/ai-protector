@@ -49,6 +49,9 @@
     <template #item.tool_calls_count="{ item }">
       <div class="d-flex align-center ga-1">
         <span class="text-caption">{{ item.tool_calls_count }}</span>
+        <v-chip v-if="item.firewall_blocked" size="x-small" color="error" variant="flat">
+          blocked
+        </v-chip>
         <v-chip v-if="item.tool_calls_blocked > 0" size="x-small" color="error" variant="flat">
           {{ item.tool_calls_blocked }} blocked
         </v-chip>
@@ -76,11 +79,15 @@
           <v-icon icon="mdi-speedometer" color="warning" size="16" />
           <v-tooltip activator="parent" location="top">Rate or budget limit was reached</v-tooltip>
         </span>
+        <span v-if="item.firewall_blocked">
+          <v-icon icon="mdi-shield-lock" color="error" size="16" />
+          <v-tooltip activator="parent" location="top">Request blocked by the LLM Firewall — prompt was rejected before reaching the model</v-tooltip>
+        </span>
         <span v-if="item.tool_calls_blocked > 0">
           <v-icon icon="mdi-shield-off" color="error" size="16" />
           <v-tooltip activator="parent" location="top">{{ item.tool_calls_blocked }} tool call{{ item.tool_calls_blocked > 1 ? 's' : '' }} blocked by security policy</v-tooltip>
         </span>
-        <span v-if="!item.has_errors && !item.limits_hit && item.tool_calls_blocked === 0">
+        <span v-if="!item.has_errors && !item.limits_hit && !item.firewall_blocked && item.tool_calls_blocked === 0">
           <v-icon icon="mdi-check-circle" color="success" size="16" />
           <v-tooltip activator="parent" location="top">Request completed successfully — no security issues detected</v-tooltip>
         </span>

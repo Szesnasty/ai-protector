@@ -125,6 +125,12 @@ class TraceStore:
 def _summarize(trace: dict[str, Any]) -> dict[str, Any]:
     """Create a lightweight summary of a trace for list responses."""
     counters = trace.get("counters", {})
+
+    # Detect firewall-level blocks (LLM request blocked before any tools ran)
+    firewall_blocked = any(
+        (it.get("firewall_decision") or {}).get("decision") == "BLOCK" for it in trace.get("iterations", [])
+    )
+
     return {
         "trace_id": trace.get("trace_id", ""),
         "session_id": trace.get("session_id", ""),
@@ -136,6 +142,7 @@ def _summarize(trace: dict[str, Any]) -> dict[str, Any]:
         "iterations_count": counters.get("iterations", 0),
         "tool_calls_count": counters.get("tool_calls", 0),
         "tool_calls_blocked": counters.get("tool_calls_blocked", 0),
+        "firewall_blocked": firewall_blocked,
         "tokens_in": counters.get("tokens_in", 0),
         "tokens_out": counters.get("tokens_out", 0),
         "has_errors": len(trace.get("errors", [])) > 0,

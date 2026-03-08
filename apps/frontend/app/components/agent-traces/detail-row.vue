@@ -273,7 +273,9 @@ function iterToolCount(iter: TraceIteration): number {
 }
 
 function iterHasBlock(iter: TraceIteration): boolean {
-  return (iter.pre_tool_decisions ?? []).some((d) => d.decision === 'BLOCK')
+  const preToolBlock = (iter.pre_tool_decisions ?? []).some((d) => d.decision === 'BLOCK')
+  const firewallBlock = iter.firewall_decision?.decision === 'BLOCK'
+  return preToolBlock || firewallBlock
 }
 
 function decisionColor(d: string) {
