@@ -105,8 +105,8 @@ User must be able to: add tools, mark read/write/sensitive, assign roles, set de
 - [ ] **Default-deny:** If tool not in role's permission set → DENY (already works in code, must persist to DB)
 - [ ] **UI — Tools & Access tab:** Tools table with inline edit, roles table, permission matrix grid (role × tool)
 - [ ] **UI — Wizard step 2-3:** Tool registration form + role mapping
-- [ ] **Hot reload:** RBAC config changes apply without restart (watch file or poll DB)
-- [ ] **Test:** Register tool via API → assign to role → check_permission returns ALLOW; unassigned → DENY
+- [ ] **Publish config:** Explicit "Publish config" button in UI (or `POST /agents/:id/publish`) triggers runtime reload of RBAC + limits. No watch/poll magic — user controls when changes go live. This prevents accidental partial configs from being picked up mid-edit.
+- [ ] **Test:** Register tool via API → assign to role → publish → check_permission returns ALLOW; unassigned → DENY
 
 ---
 
@@ -138,6 +138,8 @@ After configuration, user must get a real artifact: rbac.yaml, limits config, ba
 - [ ] **UI — Integration tab:** Shows generated configs with copy/download
 - [ ] **Test:** Register agent with 3 tools + 2 roles → generate config → YAML is valid and contains all tools/roles → download works
 
+> **Architectural principle — source of truth:** The database is the source of truth inside AI Protector. Generated files (rbac.yaml, limits.yaml, policy.yaml, .env.protector, etc.) are **deployment artifacts** derived from DB state — not the other way around. The UI edits the DB; the "Generate" / "Download" actions produce files from DB state. This prevents UI ↔ YAML ↔ runtime divergence.
+
 ---
 
 ### Req 4: Working integration kit
@@ -145,6 +147,8 @@ After configuration, user must get a real artifact: rbac.yaml, limits config, ba
 Generated code that user copies into their project. This is the most important v1 deliverable.
 
 > **⚠️ HIGHEST RISK:** This is the heart of the product and the hardest part of v1. The integration kit generator is not a "medium task" — it IS the main product. Scope guard for v1: generate only (1) LangGraph wrapper, (2) raw Python wrapper, (3) proxy-only mode, (4) config download, (5) smoke tests. Do not attempt advanced templating, multi-framework magic, or perfect code generation. Ship working files, iterate later.
+>
+> **Template-based, not generated:** In v1, all generated code is **template-based with parameter substitution** (Jinja2 or string interpolation), not semantic code generation. The generator fills in agent name, tool list, role names, thresholds — it does NOT reason about framework structure or produce novel code. This prevents scope creep into "AI generates your integration" territory.
 
 #### Current state
 
@@ -169,6 +173,14 @@ Generated code that user copies into their project. This is the most important v
 - [ ] **Env vars:** `.env.protector` with all required variables
 - [ ] **Test file:** `test_security.py` with 4 smoke tests (RBAC block, injection block, PII redact, confirmation trigger)
 - [ ] **Download all:** .zip with all files, README with integration instructions
+- [ ] **Max 7 files in kit:** The integration kit contains exactly these files — no more:
+  1. `rbac.yaml` — role-tool permission matrix
+  2. `limits.yaml` — per-role rate limits, token budgets, cost caps
+  3. `policy.yaml` — scanner toggles, thresholds, redaction mode
+  4. `protected_agent.py` (or `langgraph_protection.py`) — wrapper code for the chosen framework
+  5. `.env.protector` — all required env vars
+  6. `test_security.py` — smoke tests (RBAC, injection, PII, limits)
+  7. `README.md` — integration instructions, what each file does, how to run tests
 - [ ] **UI — Wizard step 5:** Integration kit preview with per-file copy/download
 - [ ] **UI — Integration tab:** Same content, accessible after wizard
 - [ ] **Test:** Generate kit → extract → run `pytest test_security.py` → 4 tests pass
@@ -205,6 +217,7 @@ User must see after integration: unauthorized → BLOCK, PII → REDACT, injecti
 - [ ] **UI — Validation tab:** Full validation history, re-run button, scorecard
 - [ ] **Over-budget WARN:** Limits check returns WARN (not just BLOCK) when budget is close to exhaustion
 - [ ] **Source of truth:** Validation tests run against the **generated config + AI Protector runtime** (gates, RBAC service, limits service), NOT against the user's live agent. This means: tests prove that the policy model works correctly. They do NOT prove that the user integrated it correctly. The UI must clearly state: "These tests validate your AI Protector configuration. To verify end-to-end integration, use the smoke tests in your integration kit." This distinction prevents users from thinking "I tested my agent" when they only tested the policy model.
+- [ ] **Test properties:** Basic pack tests must be: (a) **deterministic** — same config → same results, no LLM randomness in basic pack, (b) **versioned** — each test has a version number, results reference test version, (c) **tied to policy pack version** — when the policy pack changes, the test pack version bumps. This enables cross-version comparison ("did v1.2 of finance pack break anything?").
 - [ ] **Test:** Register agent with demo config → run validation → all 12 basic tests pass
 
 ---
@@ -236,6 +249,7 @@ Nobody wants hard blocks on day one. Progressive rollout is critical for adoptio
 - [ ] **Trace tagging:** Every trace includes `rollout_mode` field showing which mode was active
 - [ ] **Stats API:** `GET /agents/:id/stats` returns observe-mode stats (would-be-blocked count, false positive rate)
 - [ ] **Promotion readiness:** `GET /agents/:id/promotion-readiness` checks criteria (min days, FP rate, latency)
+- [ ] **False positive rate — definition:** FP rate is computed from three sources: (a) **manual review labels** — operator marks a blocked/redacted event as "false positive" in UI, (b) **dismissed incidents** — incidents that the operator dismisses without action are counted as likely FPs, (c) **observed-but-allowed** — in observe mode, events that `would_block: true` but were allowed through and caused no downstream incident. Without a concrete definition, promotion readiness criteria ("FP rate < 5%") is unmeasurable.
 - [ ] **UI — Rollout tab:** Mode selector (observe/warn/enforce), promotion readiness checklist, stats, promote/rollback buttons
 - [ ] **UI — Wizard step 7:** Set initial rollout mode (defaults to observe)
 - [ ] **Test:** Set agent to observe → trigger block → tool call proceeds → trace shows `would_block: true`; switch to enforce → same trigger → tool call blocked
@@ -354,6 +368,34 @@ The current Agent Demo (`/agent`) becomes:
 **Option B:** Separate "Showcase" section — risk of confusing demo with real onboarding
 
 The demo agent code in `apps/agent-demo/` remains the reference implementation that all generated integration kits are based on.
+
+---
+
+## Release gate tiers
+
+Not everything ships at once. Split deliverables into what blocks the release vs what ships right after.
+
+### Core release gate (must ship for v1 launch)
+
+- Agent CRUD API + DB model (Req 1)
+- Tools + roles CRUD API + DB model (Req 2)
+- Publish config flow (Req 2)
+- Config generation from agent profile (Req 3)
+- Integration kit — template-based, max 7 files (Req 4)
+- Validation runner — basic pack, 12 tests (Req 5)
+- Per-agent traces with DB persistence (Req 7)
+- Frontend: Agents list, New Agent wizard (7 steps), Agent detail with tabs
+- Sidebar restructure (Agents section)
+
+### Ship right after (v1.1 — days, not weeks)
+
+- Observe / warn / enforce modes (Req 6)
+- Promotion readiness + FP rate computation (Req 6)
+- Richer stats per agent (blocked/redacted/allowed breakdown)
+- Rollback sophistication (rollback to previous mode with reason audit)
+- Advanced validation packs beyond "basic"
+
+> **Rationale:** The core gate delivers the magic moment ("I secured my agent"). Rollout modes are critical for production adoption but don't block the initial "is this product useful?" answer. Shipping rollout as v1.1 within days ensures it's not deprioritized.
 
 ---
 
