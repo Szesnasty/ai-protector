@@ -97,9 +97,25 @@
       </template>
 
       <template #item.actions="{ item }">
-        <v-btn icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', item)" />
-        <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', item)" />
-        <v-btn icon="mdi-test-tube" size="small" variant="text" color="info" @click="$emit('test', item)" />
+        <!-- Desktop: inline buttons -->
+        <div class="actions-inline">
+          <v-btn icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', item)" />
+          <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', item)" />
+          <v-btn icon="mdi-test-tube" size="small" variant="text" @click="$emit('test', item)" />
+        </div>
+        <!-- Mobile: overflow menu -->
+        <div class="actions-overflow">
+          <v-menu location="bottom end">
+            <template #activator="{ props: menuProps }">
+              <v-btn icon="mdi-dots-vertical" size="small" variant="text" v-bind="menuProps" />
+            </template>
+            <v-list density="compact" min-width="140">
+              <v-list-item prepend-icon="mdi-pencil" title="Edit" @click="$emit('edit', item)" />
+              <v-list-item prepend-icon="mdi-test-tube" title="Test" @click="$emit('test', item)" />
+              <v-list-item prepend-icon="mdi-delete" title="Delete" class="text-error" @click="$emit('delete', item)" />
+            </v-list>
+          </v-menu>
+        </div>
       </template>
     </v-data-table>
   </div>
@@ -194,5 +210,23 @@ function severityColor(severity: string): string {
 .text-mono {
   font-family: 'Roboto Mono', monospace;
   font-size: 0.8rem;
+}
+
+/* ── Responsive actions: inline ≥960 px, overflow <960 px ── */
+.actions-inline {
+  display: flex;
+  gap: 2px;
+}
+.actions-overflow {
+  display: none;
+}
+
+@media (max-width: 959px) {
+  .actions-inline {
+    display: none;
+  }
+  .actions-overflow {
+    display: flex;
+  }
 }
 </style>

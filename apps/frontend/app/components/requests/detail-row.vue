@@ -156,7 +156,7 @@
             <div class="scanner-card">
               <div class="d-flex align-center justify-space-between mb-1">
                 <span class="text-caption font-weight-bold">Filter Results</span>
-                <v-chip size="x-small" variant="tonal" label color="info">Applied</v-chip>
+                <v-chip size="x-small" variant="tonal" label>Applied</v-chip>
               </div>
               <v-expand-transition>
                 <div v-if="expandedOutput">
@@ -389,7 +389,7 @@ function getScannerFinding(result: unknown): string | null {
   align-items: center;
   gap: 2px;
   margin-top: 4px;
-  color: rgba(var(--v-theme-primary), 0.8);
+  color: rgba(var(--v-theme-on-surface), 0.5);
   background: none;
   border: none;
   cursor: pointer;

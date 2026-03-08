@@ -15,7 +15,9 @@
     "@tanstack/vue-query": "^5.92.9",
     "@vee-validate/zod": "^4.15.1",
     "axios": "^1.13.6",
+    "dompurify": "^3.3.2",
     "echarts": "^6.0.0",
+    "marked": "^17.0.4",
     "nuxt": "^4.3.1",
     "pinia": "^3.0.4",
     "vee-validate": "^4.15.1",
@@ -28,6 +30,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
+    "@types/dompurify": "^3.0.5",
     "eslint": "^9.39.3",
     "sass-embedded": "^1.97.3"
   }

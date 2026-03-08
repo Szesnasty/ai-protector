@@ -2,7 +2,6 @@
   <v-app>
     <v-app-bar density="compact" elevation="0" class="app-bar--shadow">
       <v-app-bar-nav-icon
-        class="d-md-none"
         @click="drawer = !drawer"
       />
       <v-app-bar-title></v-app-bar-title>

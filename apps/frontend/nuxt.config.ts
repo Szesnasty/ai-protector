@@ -3,6 +3,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  // SPA mode — this is a dashboard app with no SEO needs.
+  // Avoids hydration mismatches from browser-only APIs
+  // (DOMPurify, localStorage, sessionStorage) used throughout.
+  ssr: false,
+
   modules: [
     'vuetify-nuxt-module',
     '@pinia/nuxt',

@@ -32,7 +32,7 @@
       </div>
       <div style="min-width: 100px">
         <span class="text-caption text-medium-emphasis d-block" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px">Risk</span>
-        <div class="d-flex align-center ga-1">
+        <div v-if="decision.decision !== 'BLOCK'" class="d-flex align-center ga-1">
           <v-progress-linear
             :model-value="decision.riskScore * 100"
             :color="riskColor"
@@ -42,6 +42,7 @@
           />
           <span class="text-caption font-weight-medium">{{ (decision.riskScore * 100).toFixed(0) }}%</span>
         </div>
+        <span v-else class="text-caption font-weight-medium text-medium-emphasis">Policy triggered</span>
       </div>
     </div>
 
@@ -121,10 +122,11 @@ function flagColor(score: number): string {
   .blocked-reason {
     display: flex;
     align-items: center;
-    color: rgb(var(--v-theme-error));
+    color: rgba(var(--v-theme-on-surface), 0.7);
     padding: 4px 8px;
-    background: rgba(var(--v-theme-error), 0.06);
+    background: rgba(var(--v-theme-on-surface), 0.04);
     border-radius: 4px;
+    border-left: 2px solid rgba(var(--v-theme-on-surface), 0.15);
   }
 
   :deep(.v-chip) {

@@ -1,6 +1,6 @@
 <template>
   <v-chip
-    :color="props.tool.allowed ? 'success' : 'error'"
+    :color="chipColor"
     :variant="expanded ? 'flat' : 'tonal'"
     size="small"
     label
@@ -8,7 +8,7 @@
     @click="expanded = !expanded"
   >
     <v-icon start size="14">
-      {{ props.tool.allowed ? 'mdi-check-circle' : 'mdi-close-circle' }}
+      {{ chipIcon }}
     </v-icon>
     <span class="text-caption font-weight-medium">{{ props.tool.tool }}</span>
     <v-icon end size="14">
@@ -20,7 +20,7 @@
     <v-card
       v-if="expanded"
       variant="outlined"
-      :color="props.tool.allowed ? 'success' : 'error'"
+      :color="chipColor"
       class="tool-call-chip__details mt-1"
       density="compact"
     >
@@ -48,12 +48,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { ToolCall } from '~/types/agent'
 
 const props = defineProps<{
   tool: ToolCall
+  verdict?: string
 }>()
+
+/** Tool chip color logic:
+ *  - Tool blocked by RBAC → always red (error)
+ *  - Tool allowed + overall ALLOW → green (success)
+ *  - Tool allowed + overall BLOCK → neutral amber (ran, but request was blocked)
+ */
+const chipColor = computed(() => {
+  if (!props.tool.allowed) return 'error'
+  if (props.verdict?.toLowerCase() === 'block') return 'blue-grey'
+  return 'success'
+})
+
+const chipIcon = computed(() => {
+  if (!props.tool.allowed) return 'mdi-close-circle'
+  if (props.verdict?.toLowerCase() === 'block') return 'mdi-minus-circle-outline'
+  return 'mdi-check-circle'
+})
 
 const expanded = ref(false)
 </script>

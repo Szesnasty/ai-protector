@@ -127,11 +127,11 @@ export function severityColor(severity: string): string {
 export function policyColor(name: string): string {
   const map: Record<string, string> = {
     fast: 'success',
-    balanced: 'warning',
-    strict: 'orange',
+    balanced: 'primary',
+    strict: 'warning',
     paranoid: 'error',
   }
-  return map[name] ?? 'primary'
+  return map[name] ?? 'grey'
 }
 
 // ─── Chart hex colors ──────────────────────────────────────

@@ -9,7 +9,7 @@
       <v-card-title>
         <div class="d-flex align-center ga-2">
           {{ isBuiltin ? 'View Policy' : isEdit ? 'Edit Policy' : 'Create Policy' }}
-          <v-chip v-if="isBuiltin" size="x-small" color="warning" variant="tonal" prepend-icon="mdi-lock">
+          <v-chip v-if="isBuiltin" size="x-small" variant="tonal" prepend-icon="mdi-lock">
             Read-only
           </v-chip>
         </div>

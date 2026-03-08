@@ -32,7 +32,7 @@ const total = computed(() => data.value?.total ?? 0)
         </p>
       </div>
       <v-spacer />
-      <v-chip v-if="hasActiveFilters" color="primary" variant="tonal" size="small" class="mr-2">
+      <v-chip v-if="hasActiveFilters" variant="tonal" size="small" class="mr-2">
         Filtered
       </v-chip>
     </div>

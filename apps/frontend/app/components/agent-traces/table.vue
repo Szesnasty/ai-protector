@@ -21,7 +21,6 @@
     <!-- Role -->
     <template #item.user_role="{ item }">
       <v-chip
-        :color="item.user_role === 'admin' ? 'warning' : 'info'"
         size="x-small"
         variant="tonal"
       >

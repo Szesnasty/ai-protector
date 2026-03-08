@@ -129,6 +129,9 @@
           </v-chip>
         </div>
         <v-spacer />
+        <v-btn size="x-small" variant="tonal" class="mr-1" @click="showScenarios = true">
+          Change
+        </v-btn>
         <v-btn
           icon="mdi-close"
           size="x-small"
@@ -143,9 +146,8 @@
     <div v-if="showParityBar" class="compare-page__parity-bar">
       <div class="d-flex align-center ga-2 px-4 py-2">
         <v-icon size="16" color="success">mdi-check-circle</v-icon>
-        <span class="text-caption font-weight-bold" style="color: rgb(var(--v-theme-success))">Same safe result</span>
-        <span class="text-caption text-medium-emphasis">&mdash;</span>
-        <span class="text-caption text-medium-emphasis">Protected path added security checks with no behavior change</span>
+        <span class="text-caption font-weight-bold" style="color: rgb(var(--v-theme-success))">Same result</span>
+        <span class="text-caption text-medium-emphasis">— protection added zero-overhead security checks</span>
       </div>
       <v-divider />
     </div>
@@ -162,8 +164,6 @@
           :compare-mode="compareMode"
         />
       </div>
-
-      <v-divider vertical />
 
       <div class="compare-page__panel">
         <compare-panel
@@ -182,10 +182,9 @@
     <div v-else class="compare-page__panels compare-page__empty">
       <div class="text-center">
         <v-icon size="56" color="grey-darken-1" class="mb-3">mdi-compare</v-icon>
-        <p class="text-h6 text-grey-lighten-1 mb-1">Compare Protected vs Direct</p>
+        <p class="text-h6 text-grey-lighten-1 mb-1">Compare protected vs direct model behavior</p>
         <p class="text-body-2 text-medium-emphasis mb-5" style="max-width: 480px">
-          Run a prompt injection or jailbreak scenario to see how AI Protector
-          blocks threats while the direct path lets them through.
+          Run the same scenario through AI Protector and an unprotected model path to see the difference in blocking, output, and policy enforcement.
         </p>
         <div class="d-flex flex-wrap justify-center ga-2">
           <v-chip
@@ -222,7 +221,7 @@
           </v-chip>
         </div>
         <p class="text-caption text-medium-emphasis mt-4">
-          Or type any prompt below to compare safe request parity.
+          Choose a scenario or enter a prompt below to compare both paths side by side.
         </p>
       </div>
     </div>
@@ -250,12 +249,13 @@
     <v-btn
       icon
       size="large"
-      :color="showScenarios ? 'error' : 'surface-variant'"
+      :color="showScenarios ? 'primary' : 'surface-variant'"
       class="compare-page__fab"
+      :class="{ 'compare-page__fab--idle': !showScenarios }"
       elevation="8"
       @click="showScenarios = !showScenarios"
     >
-      <v-icon color="red-lighten-1">mdi-skull-crossbones</v-icon>
+      <v-icon color="red-darken-2">mdi-skull-crossbones</v-icon>
       <v-tooltip activator="parent" location="left">Attack Scenarios</v-tooltip>
     </v-btn>
   </v-container>
@@ -297,7 +297,7 @@ const { scenarios, isLoading: scenariosLoading } = useScenarios('compare')
 const { policies, isLoading: policiesLoading } = usePolicies()
 const { groupedModels, isLoading: modelsLoading, refreshAvailability } = useModels()
 
-const showScenarios = ref(true)
+const showScenarios = ref(false)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)
 const activeScenario = ref<import('~/types/scenarios').ScenarioItem | null>(null)
 
@@ -415,6 +415,7 @@ function handleManualSend(prompt: string) {
 
 function handleAttackSend(prompt: string, scenario: import('~/types/scenarios').ScenarioItem) {
   activeScenario.value = scenario
+  showScenarios.value = false
   chatInputRef.value?.setText(prompt)
   setTimeout(() => send(prompt), ATTACK_SUBMIT_DELAY_MS)
 }
@@ -436,7 +437,7 @@ function handleAttackSend(prompt: string, scenario: import('~/types/scenarios').
     border-bottom: 1px solid rgba(var(--v-theme-warning), 0.15);
 
     :deep(.v-chip) {
-      font-size: 11px !important;
+      font-size: 12px !important;
     }
   }
 
@@ -446,7 +447,7 @@ function handleAttackSend(prompt: string, scenario: import('~/types/scenarios').
     border-bottom: 1px solid rgba(var(--v-theme-success), 0.12);
 
     :deep(.v-chip) {
-      font-size: 11px !important;
+      font-size: 12px !important;
     }
   }
 
@@ -466,8 +467,10 @@ function handleAttackSend(prompt: string, scenario: import('~/types/scenarios').
   &__panels {
     flex: 1;
     display: flex;
+    gap: 4px;
     min-height: 0;
     overflow: hidden;
+    padding: 4px 4px 0;
   }
 
   &__panel {
@@ -481,13 +484,28 @@ function handleAttackSend(prompt: string, scenario: import('~/types/scenarios').
 
   &__input {
     flex-shrink: 0;
+    padding-right: 72px;
   }
 
   &__fab {
     position: fixed !important;
-    top: 80px;
+    bottom: 24px;
     right: 24px;
     z-index: 1000;
+    border-radius: 50% !important;
+    transition: box-shadow 0.3s ease;
+
+    &--idle {
+      animation: fab-pulse 2.8s ease-in-out infinite;
+      box-shadow:
+        0 0 8px 2px rgba(239, 68, 68, 0.15),
+        0 0 20px 4px rgba(239, 68, 68, 0.06) !important;
+    }
   }
+}
+
+@keyframes fab-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 </style>

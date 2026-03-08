@@ -3,8 +3,7 @@
     :model-value="modelValue"
     location="right"
     :width="400"
-    :temporary="isMobile"
-    :permanent="!isMobile && modelValue"
+    temporary
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div class="attack-panel">
@@ -101,7 +100,7 @@
                       <v-chip
                         :color="decisionColor(item.expectedDecision)"
                         size="x-small"
-                        variant="flat"
+                        variant="outlined"
                         class="ml-2 flex-shrink-0"
                       >
                         {{ item.expectedDecision }}
@@ -148,7 +147,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useDisplay } from 'vuetify'
 import type { ScenarioGroup, ScenarioItem } from '~/types/scenarios'
 import { decisionColor as _dc } from '~/utils/colors'
 
@@ -162,8 +160,6 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean]
   'send': [prompt: string, scenario: ScenarioItem]
 }>()
-
-const { mobile: isMobile } = useDisplay()
 
 const search = ref('')
 const selectedTags = ref<string[]>([])
@@ -294,7 +290,7 @@ function handleSend(item: ScenarioItem) {
     }
 
     &--block {
-      border-left-color: rgb(var(--v-theme-error));
+      border-left-color: rgba(var(--v-theme-error), 0.35);
     }
 
     &--modify {

@@ -1,52 +1,24 @@
 <template>
   <div class="compare-panel" :class="panelClasses">
-    <!-- ═══ Verdict Header ═══ -->
-    <div class="verdict-header" :class="headerClasses">
+    <!-- ═══ Column Header — compact, one clear line ═══ -->
+    <div class="column-header" :class="headerClasses">
       <div class="d-flex align-center ga-2">
         <v-icon :icon="headerIcon" size="20" />
-        <span class="text-subtitle-1 font-weight-bold">{{ headerTitle }}</span>
+        <span class="text-subtitle-2 font-weight-bold">{{ headerTitle }}</span>
+        <v-spacer />
+        <v-chip
+          v-if="timing !== null && timing !== undefined"
+          size="x-small"
+          variant="outlined"
+          class="column-header__timing"
+        >
+          {{ timing }}ms
+        </v-chip>
       </div>
-      <p class="text-caption mt-1 mb-0 verdict-subtitle">{{ headerSubtitle }}</p>
-      <v-chip
-        v-if="timing !== null && timing !== undefined"
-        size="x-small"
-        variant="outlined"
-        class="mt-1"
-      >
-        <v-icon start size="12">mdi-clock-outline</v-icon>
-        {{ timing }}ms
-      </v-chip>
+      <p class="text-caption mt-1 mb-0 column-header__subtitle">{{ headerSubtitle }}</p>
     </div>
 
-    <!-- ═══ Route summary (compact) ═══ -->
-    <div class="route-summary">
-      <div class="d-flex align-center flex-wrap ga-1">
-        <template v-if="variant === 'protected'">
-          <span class="text-caption text-medium-emphasis">OpenAI SDK</span>
-          <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
-          <v-chip size="x-small" color="primary" variant="tonal" label>
-            <v-icon start size="12">mdi-shield-check</v-icon>
-            AI Protector
-          </v-chip>
-          <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
-          <span class="text-caption text-medium-emphasis">LLM</span>
-        </template>
-        <template v-else>
-          <span class="text-caption text-medium-emphasis">OpenAI SDK</span>
-          <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
-          <v-chip size="x-small" :color="isDanger ? 'error' : 'warning'" variant="tonal" label>
-            <v-icon start size="12">{{ isDirectBrowser ? 'mdi-web' : 'mdi-shield-off' }}</v-icon>
-            {{ isDirectBrowser ? 'Direct API' : 'No scanning' }}
-          </v-chip>
-          <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
-          <span class="text-caption text-medium-emphasis">LLM</span>
-        </template>
-      </div>
-    </div>
-
-    <v-divider />
-
-    <!-- ═══ Messages ═══ -->
+    <!-- ═══ Messages (verdict card renders inside) ═══ -->
     <div class="compare-panel__messages">
       <playground-chat-message-list
         :messages="messages"
@@ -54,43 +26,27 @@
       />
     </div>
 
-    <!-- ═══ Outcome: Protected side ═══ -->
-    <div v-if="props.decision" class="compare-panel__outcome">
-      <v-divider />
-      <compare-decision-card :decision="props.decision" />
-    </div>
-
-    <!-- ═══ Outcome: Direct side — DANGER (attack detected) ═══ -->
-    <div v-if="variant === 'direct' && hasDirectResponse && isDanger" class="compare-panel__outcome compare-panel__outcome--unsafe">
-      <v-divider />
-      <div class="unsafe-outcome pa-3">
-        <div class="d-flex align-center ga-2 mb-1">
-          <v-icon icon="mdi-alert-circle" color="error" size="18" />
-          <span class="text-caption font-weight-bold" style="color: rgb(var(--v-theme-error))">UNSAFE OUTPUT</span>
-        </div>
-        <p class="text-caption text-medium-emphasis mb-1">
-          Model followed the malicious instruction without any guardrails.
-        </p>
-        <div class="d-flex flex-wrap ga-1">
-          <v-chip size="x-small" variant="tonal" color="error" label>No scanning</v-chip>
-          <v-chip size="x-small" variant="tonal" color="error" label>No policy enforcement</v-chip>
-          <v-chip size="x-small" variant="tonal" color="error" label>Raw model output</v-chip>
-        </div>
+    <!-- ═══ Direct side — DANGER footer (attack detected) ═══ -->
+    <div v-if="variant === 'direct' && hasDirectResponse && isDanger" class="compare-panel__footer compare-panel__footer--danger">
+      <div class="d-flex align-center ga-2">
+        <v-icon icon="mdi-alert-circle" color="error" size="16" />
+        <span class="text-caption font-weight-bold" style="color: rgb(var(--v-theme-error))">Unsafe output — no protection applied</span>
       </div>
     </div>
 
-    <!-- ═══ Outcome: Direct side — NEUTRAL (safe prompt) ═══ -->
-    <div v-if="variant === 'direct' && hasDirectResponse && !isDanger" class="compare-panel__outcome">
-      <v-divider />
-      <div class="neutral-outcome pa-3">
-        <div class="d-flex align-center ga-2 mb-1">
-          <v-icon icon="mdi-shield-off-outline" size="18" color="grey" />
-          <span class="text-caption font-weight-bold text-medium-emphasis">Direct response</span>
-        </div>
-        <div class="d-flex flex-wrap ga-1">
-          <v-chip size="x-small" variant="tonal" label>No scanning</v-chip>
-          <v-chip size="x-small" variant="tonal" label>No policy enforcement</v-chip>
-        </div>
+    <!-- ═══ Direct side — NEUTRAL footer (safe prompt) ═══ -->
+    <div v-if="variant === 'direct' && hasDirectResponse && !isDanger" class="compare-panel__footer">
+      <div class="d-flex align-center ga-2">
+        <v-icon icon="mdi-shield-off-outline" size="16" color="grey" />
+        <span class="text-caption text-medium-emphasis">Direct response — no scanning applied</span>
+      </div>
+    </div>
+
+    <!-- ═══ Protected side — success footer (when blocked) ═══ -->
+    <div v-if="variant === 'protected' && props.decision?.decision === 'BLOCK'" class="compare-panel__footer compare-panel__footer--success">
+      <div class="d-flex align-center ga-2">
+        <v-icon icon="mdi-shield-check" color="success" size="16" />
+        <span class="text-caption font-weight-bold" style="color: rgb(var(--v-theme-success))">Protection succeeded — threat blocked</span>
       </div>
     </div>
 
@@ -100,18 +56,44 @@
         <v-icon :icon="showIntegration ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="14" />
         <span class="text-caption">{{ showIntegration ? 'Hide' : 'Show' }} integration details</span>
       </button>
-      <div v-if="showIntegration" class="integration-details mt-2">
-        <pre class="code-snippet__block"><span class="c-var">client</span> = <span class="c-fn">OpenAI</span>(
+      <v-expand-transition>
+        <div v-if="showIntegration" class="integration-details mt-2">
+          <!-- Route -->
+          <div class="d-flex align-center flex-wrap ga-1 mb-2">
+            <template v-if="variant === 'protected'">
+              <span class="text-caption text-medium-emphasis">OpenAI SDK</span>
+              <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
+              <v-chip size="x-small" color="primary" variant="tonal" label>
+                <v-icon start size="12">mdi-shield-check</v-icon>
+                AI Protector
+              </v-chip>
+              <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
+              <span class="text-caption text-medium-emphasis">LLM</span>
+            </template>
+            <template v-else>
+              <span class="text-caption text-medium-emphasis">OpenAI SDK</span>
+              <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
+              <v-chip size="x-small" :color="isDanger ? 'error' : 'warning'" variant="tonal" label>
+                <v-icon start size="12">{{ isDirectBrowser ? 'mdi-web' : 'mdi-shield-off' }}</v-icon>
+                {{ isDirectBrowser ? 'Direct API' : 'No scanning' }}
+              </v-chip>
+              <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
+              <span class="text-caption text-medium-emphasis">LLM</span>
+            </template>
+          </div>
+          <!-- Code snippet -->
+          <pre class="code-snippet__block"><span class="c-var">client</span> = <span class="c-fn">OpenAI</span>(
   <span class="c-key">api_key</span>=<span class="c-str">"sk-..."</span>,
   <span class="c-key">base_url</span>=<span class="c-str">"<span class="c-url">{{ codeBaseUrl }}</span>"</span>  <span class="c-comment">{{ codeComment }}</span>
 )</pre>
-        <div class="compare-panel__endpoint mt-2">
-          <code class="compare-panel__url">
-            <v-icon size="12" class="mr-1">mdi-arrow-right-bold</v-icon>
-            POST <span class="compare-panel__url-highlight">{{ endpointBase }}</span>{{ endpointPath }}
-          </code>
+          <div class="compare-panel__endpoint mt-2">
+            <code class="compare-panel__url">
+              <v-icon size="12" class="mr-1">mdi-arrow-right-bold</v-icon>
+              POST <span class="compare-panel__url-highlight">{{ endpointBase }}</span>{{ endpointPath }}
+            </code>
+          </div>
         </div>
-      </div>
+      </v-expand-transition>
     </div>
   </div>
 </template>
@@ -152,8 +134,8 @@ const panelClasses = computed(() => {
 })
 
 const headerClasses = computed(() => {
-  if (props.variant === 'protected') return 'verdict-header--protected'
-  return isDanger.value ? 'verdict-header--danger' : 'verdict-header--direct'
+  if (props.variant === 'protected') return 'column-header--protected'
+  return isDanger.value ? 'column-header--danger' : 'column-header--direct'
 })
 
 // ── Verdict header content ──
@@ -167,15 +149,15 @@ const headerTitle = computed(() =>
 
 const headerSubtitle = computed(() => {
   if (props.variant === 'protected') {
-    if (props.decision?.decision === 'BLOCK') return 'Blocked before reaching the model'
-    if (props.decision?.decision === 'MODIFY') return 'Prompt sanitized before forwarding'
-    if (props.decision) return 'No threats detected'
-    return 'Full security pipeline applied'
+    if (props.decision?.decision === 'BLOCK') return 'Threat detected and blocked — model never saw the prompt'
+    if (props.decision?.decision === 'MODIFY') return 'Prompt sanitized before forwarding to model'
+    if (props.decision) return 'All checks passed — no threats detected'
+    return 'Full security pipeline active'
   }
   // Direct side
-  if (isDanger.value) return 'Unsafe response returned by model'
-  if (hasDirectResponse.value) return 'Direct model response'
-  return 'Direct LLM call — no protection'
+  if (isDanger.value) return 'Model followed the malicious instruction — no guardrails'
+  if (hasDirectResponse.value) return 'Direct response — no security scanning'
+  return 'No protection pipeline — raw LLM access'
 })
 
 // ── Endpoint computations ──
@@ -230,8 +212,8 @@ const codeComment = computed(() =>
   border-radius: 8px;
   overflow: hidden;
 
-  &--protected { border-color: rgb(var(--v-theme-success)); }
-  &--direct { border-color: rgba(var(--v-theme-warning), 0.6); }
+  &--protected { border-color: rgba(var(--v-theme-success), 0.5); }
+  &--direct { border-color: rgba(var(--v-theme-on-surface), 0.12); }
   &--danger { border-color: rgb(var(--v-theme-error)); }
 
   &__messages {
@@ -240,8 +222,21 @@ const codeComment = computed(() =>
     min-height: 120px;
   }
 
-  &__outcome {
+  &__footer {
     flex-shrink: 0;
+    padding: 8px 16px;
+    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+    background: rgba(var(--v-theme-on-surface), 0.02);
+
+    &--danger {
+      background: rgba(var(--v-theme-error), 0.04);
+      border-top-color: rgba(var(--v-theme-error), 0.15);
+    }
+
+    &--success {
+      background: rgba(var(--v-theme-success), 0.04);
+      border-top-color: rgba(var(--v-theme-success), 0.12);
+    }
   }
 
   &__endpoint {
@@ -263,47 +258,35 @@ const codeComment = computed(() =>
   }
 }
 
-/* ─── Verdict Header ─── */
-.verdict-header {
-  padding: 12px 16px 8px;
+/* ─── Column Header ─── */
+.column-header {
+  padding: 12px 16px 10px;
   border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
 
   &--protected {
-    background: rgba(var(--v-theme-success), 0.06);
+    background: rgba(var(--v-theme-success), 0.05);
     color: rgb(var(--v-theme-success));
   }
 
   &--direct {
-    background: rgba(var(--v-theme-warning), 0.06);
-    color: rgb(var(--v-theme-warning));
+    background: rgba(var(--v-theme-on-surface), 0.03);
+    color: rgba(var(--v-theme-on-surface), 0.6);
   }
 
   &--danger {
-    background: rgba(var(--v-theme-error), 0.06);
+    background: rgba(var(--v-theme-error), 0.05);
     color: rgb(var(--v-theme-error));
   }
-}
 
-.verdict-subtitle {
-  opacity: 0.8;
-}
+  &__subtitle {
+    opacity: 0.75;
+    color: rgba(var(--v-theme-on-surface), 0.6);
+  }
 
-/* ─── Route Summary ─── */
-.route-summary {
-  padding: 6px 16px;
-  background: rgba(var(--v-theme-on-surface), 0.02);
-}
-
-/* ─── Unsafe outcome (direct side — attack mode) ─── */
-.unsafe-outcome {
-  background: rgba(var(--v-theme-error), 0.04);
-  border-left: 3px solid rgb(var(--v-theme-error));
-}
-
-/* ─── Neutral outcome (direct side — benign mode) ─── */
-.neutral-outcome {
-  background: rgba(var(--v-theme-on-surface), 0.03);
-  border-left: 3px solid rgba(var(--v-theme-on-surface), 0.15);
+  &__timing {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 10px !important;
+  }
 }
 
 /* ─── Integration toggle ─── */
@@ -318,7 +301,7 @@ const codeComment = computed(() =>
     background: none;
     border: none;
     cursor: pointer;
-    color: rgba(var(--v-theme-primary), 0.8);
+    color: rgba(var(--v-theme-on-surface), 0.5);
     padding: 0;
 
     &:hover { text-decoration: underline; }

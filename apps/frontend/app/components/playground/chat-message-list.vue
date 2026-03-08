@@ -1,12 +1,29 @@
 <template>
   <div ref="listRef" class="chat-message-list">
     <div v-if="messages.length === 0" class="chat-message-list__empty">
-      <v-icon size="48" color="primary">mdi-shield-search</v-icon>
+      <v-icon size="48" color="grey-darken-1">mdi-shield-search</v-icon>
       <p class="text-h6 font-weight-medium">
-        Test the AI Protector pipeline
+        Test the firewall against real attack scenarios
       </p>
-      <p class="text-body-2 text-medium-emphasis" style="max-width: 360px; text-align: center;">
-        Send a message or click a starter chip below to see how the security pipeline handles prompt injections, jailbreaks, and data leaks.
+      <p class="text-body-2 text-medium-emphasis" style="max-width: 420px; text-align: center;">
+        Run a prompt injection, data leak, jailbreak, or resume manipulation scenario and inspect the decision step by step.
+      </p>
+      <div class="d-flex flex-wrap justify-center ga-2 mt-1">
+        <v-chip prepend-icon="mdi-needle" variant="tonal" color="error" @click="emit('open-scenarios')">
+          Prompt injection
+        </v-chip>
+        <v-chip prepend-icon="mdi-database-alert" variant="tonal" color="warning" @click="emit('open-scenarios')">
+          Data leak
+        </v-chip>
+        <v-chip prepend-icon="mdi-lock-open-variant" variant="tonal" color="error" @click="emit('open-scenarios')">
+          Jailbreak
+        </v-chip>
+        <v-chip prepend-icon="mdi-file-document-alert" variant="tonal" color="warning" @click="emit('open-scenarios')">
+          Resume manipulation
+        </v-chip>
+      </div>
+      <p class="text-caption text-medium-emphasis mt-2">
+        Or enter any prompt below to test the pipeline manually.
       </p>
     </div>
 
@@ -34,6 +51,10 @@ import type { ChatMessage } from '~/types/api'
 const props = defineProps<{
   messages: ChatMessage[]
   isStreaming: boolean
+}>()
+
+const emit = defineEmits<{
+  'open-scenarios': []
 }>()
 
 const listRef = ref<HTMLElement | null>(null)

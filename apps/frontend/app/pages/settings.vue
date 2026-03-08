@@ -2,72 +2,89 @@
   <v-container class="settings-page" style="max-width: 720px;">
     <v-row>
       <v-col cols="12">
-        <h1 class="text-h5 mb-1">
-          <v-icon start>mdi-cog</v-icon>
-          Settings
-        </h1>
+        <div class="d-flex align-center ga-2 mb-1">
+          <h1 class="text-h5">
+            <v-icon start>mdi-cog</v-icon>
+            Settings
+          </h1>
+          <v-chip size="x-small" variant="outlined" label prepend-icon="mdi-shield-check" class="ml-2 text-medium-emphasis">
+            Keys handled locally
+          </v-chip>
+        </div>
         <p class="text-body-2 text-medium-emphasis mb-4">
           Your API keys let AI Protector call LLM providers on your behalf.
         </p>
 
         <!-- Security explainer -->
-        <v-card variant="tonal" color="primary" class="mb-6 security-explainer">
+        <v-card variant="flat" class="mb-2 security-explainer">
           <v-card-text class="py-3 px-4">
-            <div class="d-flex align-center mb-2">
+            <div class="d-flex align-center mb-3">
               <v-icon icon="mdi-shield-lock" size="20" class="mr-2" />
               <span class="text-subtitle-2 font-weight-bold">How we protect your keys</span>
             </div>
             <div class="security-points">
-              <div class="d-flex align-start ga-2 mb-1">
+              <div class="d-flex align-start ga-2 mb-3">
                 <v-icon icon="mdi-database-off" size="14" class="mt-1 flex-shrink-0" />
-                <span class="text-body-2"><strong>Never stored on our server</strong> — keys live only in your browser's sessionStorage (or localStorage if you choose "Remember")</span>
+                <span class="text-body-2"><strong>Never stored on our server</strong> — keys live only in your browser</span>
               </div>
-              <div class="d-flex align-start ga-2 mb-1">
+              <div class="d-flex align-start ga-2 mb-3">
                 <v-icon icon="mdi-file-hidden" size="14" class="mt-1 flex-shrink-0" />
-                <span class="text-body-2"><strong>Never logged</strong> — our server logs record the model, latency, and decision, but never your API key</span>
+                <span class="text-body-2"><strong>Never logged</strong> — server records model and latency, never your key</span>
               </div>
-              <div class="d-flex align-start ga-2 mb-1">
+              <div class="d-flex align-start ga-2 mb-3">
                 <v-icon icon="mdi-arrow-right-bold" size="14" class="mt-1 flex-shrink-0" />
-                <span class="text-body-2"><strong>Pass-through only</strong> — your key is forwarded directly to the LLM provider in a single request and immediately discarded</span>
+                <span class="text-body-2"><strong>Pass-through only</strong> — forwarded once, then immediately discarded</span>
               </div>
               <div class="d-flex align-start ga-2">
                 <v-icon icon="mdi-web-lock" size="14" class="mt-1 flex-shrink-0" />
-                <span class="text-body-2"><strong>CSP-restricted</strong> — Content Security Policy headers prevent your browser from sending data anywhere except our proxy and the known LLM APIs</span>
+                <span class="text-body-2"><strong>CSP-restricted</strong> — browser connects only to our proxy and LLM APIs</span>
               </div>
             </div>
           </v-card-text>
         </v-card>
+
+        <!-- Local-only callout -->
+        <p class="text-caption text-medium-emphasis mb-6 ml-1">
+          <v-icon size="12" class="mr-1">mdi-information-outline</v-icon>
+          All keys are stored only in this browser and never persisted on AI Protector servers.
+          <a href="https://github.com/Szesnasty/ai-protector/blob/main/SECURITY.md" target="_blank" rel="noopener" class="text-primary text-decoration-none security-link">
+            How key storage works
+            <v-icon size="10" class="ml-0">mdi-open-in-new</v-icon>
+          </a>
+        </p>
 
         <!-- Provider cards -->
         <v-card
           v-for="provider in PROVIDERS"
           :key="provider.id"
           variant="outlined"
-          class="mb-3"
+          class="mb-3 provider-card"
         >
           <v-card-text class="d-flex align-center">
             <v-icon :icon="provider.icon" class="mr-3" size="28" />
             <div class="flex-grow-1">
-              <div class="text-subtitle-1 font-weight-medium">{{ provider.name }}</div>
-              <div v-if="getStoredKey(provider.id)" class="text-body-2 text-medium-emphasis">
+              <div class="d-flex align-center ga-2">
+                <span class="text-subtitle-1 font-weight-medium">{{ provider.name }}</span>
+                <v-chip
+                  v-if="getStoredKey(provider.id)"
+                  size="x-small"
+                  color="success"
+                  variant="tonal"
+                  label
+                  prepend-icon="mdi-check-circle"
+                >
+                  Configured
+                </v-chip>
+              </div>
+              <div v-if="getStoredKey(provider.id)" class="text-body-2 text-medium-emphasis mt-1">
                 <code>{{ getStoredKey(provider.id)!.maskedKey }}</code>
-                <v-chip
-                  v-if="getStoredKey(provider.id)!.remembered"
-                  size="x-small"
-                  class="ml-2"
-                  color="info"
-                  variant="tonal"
-                >
-                  remembered
-                </v-chip>
-                <v-chip
-                  v-else
-                  size="x-small"
-                  class="ml-2"
-                  variant="tonal"
-                >
-                  session only
-                </v-chip>
+                <span class="text-caption text-medium-emphasis ml-2">
+                  <v-icon size="11" class="mr-1" style="opacity: 0.6">mdi-content-save-outline</v-icon>
+                  {{ getStoredKey(provider.id)!.remembered ? 'saved locally' : 'this session only' }}
+                </span>
+              </div>
+              <div v-else class="text-caption text-medium-emphasis mt-1">
+                No key added — enable {{ provider.name }} models
               </div>
             </div>
 
@@ -75,37 +92,42 @@
             <v-btn
               v-if="getStoredKey(provider.id)"
               variant="text"
-              color="error"
               size="small"
-              @click="handleRemove(provider.id, provider.name)"
+              class="remove-btn"
             >
-              <v-icon start>mdi-delete-outline</v-icon>
-              Remove
+              <v-icon start size="14">mdi-delete-outline</v-icon>
+              <span @click="handleRemove(provider.id, provider.name)">Remove</span>
             </v-btn>
 
             <!-- No key: Add button -->
             <v-btn
               v-else
-              variant="tonal"
+              variant="outlined"
               color="primary"
               size="small"
               @click="openAddDialog(provider)"
             >
-              <v-icon start>mdi-plus</v-icon>
+              <v-icon start size="16">mdi-plus</v-icon>
               Add Key
             </v-btn>
           </v-card-text>
         </v-card>
 
         <!-- Ollama info -->
-        <v-alert
-          type="info"
-          variant="tonal"
-          class="mt-4"
-          density="compact"
-        >
-          <strong>Ollama</strong> (local) is always available — no API key needed.
-        </v-alert>
+        <v-card variant="outlined" class="mt-4 provider-card">
+          <v-card-text class="d-flex align-center">
+            <v-icon icon="mdi-server" class="mr-3" size="28" />
+            <div class="flex-grow-1">
+              <div class="d-flex align-center ga-2">
+                <span class="text-subtitle-1 font-weight-medium">Ollama</span>
+                <v-chip size="x-small" variant="outlined" label prepend-icon="mdi-laptop" class="text-medium-emphasis">
+                  Local
+                </v-chip>
+              </div>
+              <span class="text-caption text-medium-emphasis">Always available — runs locally, no API key needed</span>
+            </div>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -118,6 +140,11 @@
         </v-card-title>
 
         <v-card-text>
+          <p class="text-caption text-medium-emphasis mb-3">
+            <v-icon size="12" class="mr-1">mdi-shield-check</v-icon>
+            Stored locally in this browser — you can remove it at any time.
+          </p>
+
           <v-text-field
             v-model="addKeyValue"
             label="API Key"
@@ -133,7 +160,7 @@
           <v-checkbox
             v-model="addRemember"
             label="Remember on this device"
-            hint="Saves to localStorage — survives browser restarts. Otherwise saved to sessionStorage and cleared when you close the tab."
+            hint="Saved in this browser's local storage — survives restarts. Otherwise cleared when you close the tab."
             persistent-hint
             density="compact"
           />
@@ -144,7 +171,7 @@
             density="compact"
             class="mt-3"
           >
-            Your key is sent to {{ addProvider?.name }} via our proxy in the <code>x-api-key</code> header, used for a single LLM call, then discarded. It is never written to any database or log file.
+            Your key is sent to {{ addProvider?.name }} via our proxy, used for a single LLM call, then discarded. Never written to any database or log.
           </v-alert>
         </v-card-text>
 
@@ -206,8 +233,8 @@ function handleSave() {
   saveKey(addProvider.value.id, addKeyValue.value, addRemember.value)
   addDialog.value = false
 
-  const mode = addRemember.value ? 'remembered' : 'session only'
-  snackbarText.value = `✓ ${addProvider.value.name} key saved (${mode})`
+  const mode = addRemember.value ? 'saved locally' : 'this session only'
+  snackbarText.value = `${addProvider.value.name} key saved (${mode})`
   snackbarColor.value = 'success'
   snackbar.value = true
 }
@@ -222,6 +249,10 @@ function handleRemove(providerId: string, providerName: string) {
 
 <style lang="scss" scoped>
 .security-explainer {
+  background: rgba(var(--v-theme-on-surface), 0.04) !important;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-radius: 12px !important;
+
   .security-points {
     padding-left: 28px;
   }
@@ -231,6 +262,33 @@ function handleRemove(providerId: string, providerName: string) {
     padding: 1px 5px;
     border-radius: 3px;
     background: rgba(var(--v-theme-on-surface), 0.08);
+  }
+}
+
+.security-link {
+  &:hover {
+    text-decoration: underline !important;
+  }
+}
+
+.provider-card {
+  transition: border-color 0.2s ease;
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity));
+
+  code {
+    font-size: 0.8em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(var(--v-theme-on-surface), 0.08);
+  }
+}
+
+.remove-btn {
+  color: rgba(var(--v-theme-on-surface), 0.4) !important;
+  font-size: 0.8rem;
+
+  &:hover {
+    color: rgba(var(--v-theme-on-surface), 0.7) !important;
   }
 }
 </style>

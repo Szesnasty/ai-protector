@@ -13,7 +13,7 @@
     <v-card-text v-else>
       <div class="trace-row mb-3">
         <span class="text-caption text-grey">Intent</span>
-        <v-chip color="info" size="small" label>{{ trace.intent }}</v-chip>
+        <v-chip size="small" label>{{ trace.intent }}</v-chip>
       </div>
 
       <div class="trace-row mb-3">
@@ -22,14 +22,13 @@
       </div>
 
       <div v-if="trace.allowed_tools.length" class="mb-3">
-        <span class="text-caption text-grey d-block mb-1">Allowed tools</span>
+        <span class="text-caption text-grey d-block mb-1">Role tool access</span>
         <div class="d-flex flex-wrap ga-1">
           <v-chip
             v-for="tool in trace.allowed_tools"
             :key="tool"
             size="x-small"
             label
-            color="info"
             variant="outlined"
           >
             {{ tool }}

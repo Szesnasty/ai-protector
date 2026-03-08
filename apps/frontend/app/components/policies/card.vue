@@ -1,9 +1,10 @@
 <template>
   <v-card
-    variant="outlined"
-    :color="cardColor"
+    variant="flat"
     class="policy-card"
+    :class="`policy-card--${policy.name}`"
     hover
+    @click="$emit('edit', policy)"
   >
     <v-card-text>
       <div class="d-flex align-center mb-3">
@@ -11,18 +12,29 @@
           <v-icon :icon="policyIcon" />
         </v-avatar>
         <div class="flex-grow-1">
-          <div class="text-subtitle-1 font-weight-bold">{{ policy.name }}</div>
-          <v-chip
-            :color="policy.is_active ? 'success' : 'grey'"
-            size="x-small"
-            variant="tonal"
-            class="mr-1"
-          >
-            {{ policy.is_active ? 'Active' : 'Inactive' }}
-          </v-chip>
-          <v-chip size="x-small" variant="outlined">
-            v{{ policy.version }}
-          </v-chip>
+          <div class="d-flex align-center ga-2">
+            <span class="text-subtitle-1 font-weight-bold">{{ policy.name }}</span>
+            <v-chip
+              v-if="policy.name === 'balanced'"
+              size="x-small"
+              variant="tonal"
+              color="primary"
+            >
+              Default
+            </v-chip>
+          </div>
+          <div class="d-flex align-center ga-1 mt-1">
+            <v-chip
+              :color="policy.is_active ? 'success' : 'grey'"
+              size="x-small"
+              variant="tonal"
+            >
+              {{ policy.is_active ? 'Active' : 'Inactive' }}
+            </v-chip>
+            <v-chip size="x-small" variant="outlined">
+              v{{ policy.version }}
+            </v-chip>
+          </div>
         </div>
       </div>
 
@@ -30,37 +42,26 @@
         {{ policy.description || 'No description' }}
       </p>
 
-      <div class="d-flex ga-3 text-caption text-medium-emphasis">
-        <span>
-          <v-icon size="14" icon="mdi-shield-search" class="mr-1" />
+      <div class="d-flex ga-4 text-caption text-medium-emphasis">
+        <span class="d-flex align-center ga-1">
+          <v-icon size="14" icon="mdi-shield-search" />
           {{ scannerCount }} scanners
         </span>
-        <span>
-          <v-icon size="14" icon="mdi-speedometer" class="mr-1" />
+        <span class="d-flex align-center ga-1">
+          <v-icon size="14" icon="mdi-speedometer" />
           risk {{ maxRisk }}
         </span>
       </div>
     </v-card-text>
 
-    <v-card-actions>
+    <v-card-actions class="pt-0 px-4 pb-3">
       <v-btn
         size="small"
         variant="text"
-        :prepend-icon="isBuiltin ? 'mdi-eye' : 'mdi-pencil'"
-        @click="$emit('edit', policy)"
+        prepend-icon="mdi-eye"
+        class="text-medium-emphasis"
       >
-        {{ isBuiltin ? 'View' : 'Edit' }}
-      </v-btn>
-      <v-spacer />
-      <v-btn
-        v-if="!isBuiltin"
-        size="small"
-        variant="text"
-        color="error"
-        prepend-icon="mdi-delete"
-        @click="$emit('delete', policy)"
-      >
-        Delete
+        View
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -73,18 +74,8 @@ import { policyColor as _policyColor } from '~/utils/colors'
 const props = defineProps<{ policy: Policy }>()
 defineEmits<{
   edit: [policy: Policy]
-  delete: [policy: Policy]
 }>()
 
-const BUILTIN = new Set(['fast', 'balanced', 'strict', 'paranoid'])
-const isBuiltin = computed(() => BUILTIN.has(props.policy.name))
-
-const _COLORS: Record<string, string> = {
-  fast: 'success',
-  balanced: 'warning',
-  strict: 'orange',
-  paranoid: 'error',
-}
 const ICONS: Record<string, string> = {
   fast: 'mdi-speedometer',
   balanced: 'mdi-scale-balance',
@@ -99,3 +90,24 @@ const config = computed(() => props.policy.config as { nodes?: string[]; thresho
 const scannerCount = computed(() => config.value?.nodes?.length ?? 0)
 const maxRisk = computed(() => config.value?.thresholds?.max_risk?.toFixed(2) ?? '—')
 </script>
+
+<style lang="scss" scoped>
+.policy-card {
+  border-radius: 12px !important;
+  background: rgb(var(--v-theme-surface)) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(-2px);
+  }
+
+  &--fast { border-left-color: rgb(var(--v-theme-success)); }
+  &--balanced { border-left-color: rgb(var(--v-theme-primary)); }
+  &--strict { border-left-color: rgb(var(--v-theme-warning)); }
+  &--paranoid { border-left-color: rgb(var(--v-theme-error)); }
+}
+</style>

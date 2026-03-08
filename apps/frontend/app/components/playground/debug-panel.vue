@@ -16,7 +16,7 @@
           <v-icon icon="mdi-shield-off" color="error" size="20" />
           <span class="text-body-1 font-weight-bold text-error">BLOCKED</span>
         </div>
-        <div v-if="decision.blockedReason" class="text-caption mt-1" style="color: rgba(var(--v-theme-error), 0.8);">
+        <div v-if="decision.blockedReason" class="text-caption mt-1 text-medium-emphasis">
           {{ blockedLabel }}
         </div>
       </div>
@@ -41,7 +41,10 @@
       <div class="mb-3">
         <div class="d-flex justify-space-between mb-1">
           <span class="text-caption text-grey">Risk score</span>
-          <span class="text-body-2 font-weight-medium">
+          <span v-if="decision.decision === 'BLOCK'" class="text-body-2 font-weight-medium text-medium-emphasis">
+            Policy triggered
+          </span>
+          <span v-else class="text-body-2 font-weight-medium">
             {{ (decision.riskScore * 100).toFixed(0) }}%
           </span>
         </div>
@@ -70,20 +73,17 @@
       </div>
 
       <!-- Blocked reason -->
-      <v-alert
+      <div
         v-if="decision.decision === 'BLOCK' && decision.blockedReason"
-        type="error"
-        density="compact"
-        variant="tonal"
-        class="mt-2 block-alert"
+        class="mt-2 block-reason"
       >
-        <div class="font-weight-bold text-body-2 mb-1">
+        <div class="text-caption font-weight-medium text-medium-emphasis mb-1">
           Blocked — {{ blockedLabel }}
         </div>
-        <div class="text-caption">
+        <div class="text-caption text-medium-emphasis">
           {{ decision.blockedReason }}
         </div>
-      </v-alert>
+      </div>
 
       <!-- Triggered controls -->
       <div v-if="triggeredControls.length" class="mt-3">
@@ -92,7 +92,6 @@
           <v-chip
             v-for="ctrl in triggeredControls"
             :key="ctrl"
-            color="error"
             size="x-small"
             label
             variant="outlined"
@@ -186,15 +185,19 @@ const triggeredControls = computed(() => {
     font-size: 12px !important;
   }
 
-  .block-alert {
-    border-left: 3px solid rgb(var(--v-theme-error));
-  }
 }
 
 .block-verdict {
   padding: 8px 12px;
-  background: rgba(var(--v-theme-error), 0.08);
+  background: rgba(var(--v-theme-on-surface), 0.04);
   border-radius: 8px;
   border-left: 3px solid rgb(var(--v-theme-error));
+}
+
+.block-reason {
+  padding: 8px 12px;
+  background: rgba(var(--v-theme-on-surface), 0.03);
+  border-radius: 6px;
+  border-left: 2px solid rgba(var(--v-theme-on-surface), 0.15);
 }
 </style>

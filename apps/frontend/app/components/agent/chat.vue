@@ -3,12 +3,29 @@
     <!-- Messages area -->
     <div ref="listRef" class="agent-chat__messages">
       <div v-if="messages.length === 0" class="agent-chat__empty">
-        <v-icon size="48" color="primary">mdi-shield-search</v-icon>
+        <v-icon size="48" color="grey-darken-1">mdi-shield-search</v-icon>
         <p class="text-h6 font-weight-medium">
-          Test the Agent Firewall
+          Test how agent guardrails block unsafe tool use
         </p>
-        <p class="text-body-2 text-medium-emphasis" style="max-width: 360px; text-align: center;">
-          Chat with the Customer Support Copilot to test tool-calling, RBAC, and firewall integration.
+        <p class="text-body-2 text-medium-emphasis" style="max-width: 420px; text-align: center;">
+          Run a multi-step attack scenario or enter your own prompt to inspect role checks, tool gating, policy decisions, and blocked actions.
+        </p>
+        <div class="d-flex flex-wrap justify-center ga-2 mt-1">
+          <v-chip prepend-icon="mdi-tools" variant="tonal" color="error" @click="emit('open-scenarios')">
+            Tool misuse
+          </v-chip>
+          <v-chip prepend-icon="mdi-shield-key" variant="tonal" color="warning" @click="emit('open-scenarios')">
+            Privilege escalation
+          </v-chip>
+          <v-chip prepend-icon="mdi-database-export" variant="tonal" color="error" @click="emit('open-scenarios')">
+            Data exfiltration
+          </v-chip>
+          <v-chip prepend-icon="mdi-swap-horizontal" variant="tonal" color="warning" @click="emit('open-scenarios')">
+            Cross-tool abuse
+          </v-chip>
+        </div>
+        <p class="text-caption text-medium-emphasis mt-2">
+          Choose a scenario or type an agent instruction below to test tool access and enforcement.
         </p>
       </div>
 
@@ -33,7 +50,7 @@
       <v-textarea
         v-model="text"
         :disabled="isLoading"
-        placeholder="Type a message…"
+        placeholder="Type an agent instruction…"
         variant="outlined"
         rows="1"
         auto-grow
@@ -71,6 +88,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   send: [text: string]
+  'open-scenarios': []
 }>()
 
 const text = ref('')

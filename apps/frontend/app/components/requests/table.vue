@@ -39,7 +39,7 @@
 
     <!-- Cell: Policy -->
     <template #item.policy_name="{ item }">
-      <v-chip size="x-small" variant="tonal" color="primary">{{ item.policy_name || '—' }}</v-chip>
+      <v-chip size="x-small" variant="tonal">{{ item.policy_name || '—' }}</v-chip>
     </template>
 
     <!-- Cell: Intent -->

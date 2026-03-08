@@ -77,9 +77,9 @@
           >
             <v-expansion-panel-title class="iteration-title">
               <div class="d-flex align-center ga-3 flex-grow-1">
-                <v-icon size="20" color="primary">mdi-repeat</v-icon>
+                <v-icon size="20">mdi-repeat</v-icon>
                 <span class="text-body-2 font-weight-bold">Iteration {{ iter.iteration ?? idx + 1 }}</span>
-                <v-chip v-if="iterToolCount(iter)" size="x-small" variant="tonal" color="info">
+                <v-chip v-if="iterToolCount(iter)" size="x-small" variant="tonal">
                   <v-icon start size="12">mdi-wrench</v-icon>
                   {{ iterToolCount(iter) }} tool{{ iterToolCount(iter) > 1 ? 's' : '' }}
                 </v-chip>
@@ -112,7 +112,7 @@
                   </div>
                   <div v-for="(t, ti) in iter.tool_executions" :key="ti" class="tool-exec-row mb-3">
                     <div class="d-flex align-center ga-2">
-                      <v-icon size="16" color="info">mdi-cog</v-icon>
+                      <v-icon size="16">mdi-cog</v-icon>
                       <span class="text-body-2 font-weight-medium">{{ t.tool }}</span>
                       <v-chip v-if="t.duration_ms" size="x-small" variant="tonal">{{ t.duration_ms }}ms</v-chip>
                     </div>
@@ -454,7 +454,7 @@ function shortId(id: unknown): string {
 }
 
 .iteration-title:hover {
-  background: rgba(var(--v-theme-primary), 0.04);
+  background: rgba(var(--v-theme-on-surface), 0.06);
 }
 
 .iter-subsection {
