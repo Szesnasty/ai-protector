@@ -63,6 +63,7 @@ import { computed } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
 import { useAppMode } from '~/composables/useAppMode'
+import { sortedPolicyItems } from '~/utils/policyOrder'
 
 defineProps<{
   role: 'customer' | 'admin'
@@ -106,12 +107,7 @@ const modelItems = computed(() =>
     })),
 )
 
-const policyItems = computed(() =>
-  (policies.value ?? []).map((p) => ({
-    title: p.name,
-    value: p.name,
-  })),
-)
+const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
 </script>
 
 <style lang="scss" scoped>

@@ -169,6 +169,7 @@ import { useScenarios } from '~/composables/useScenarios'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
 import { useRememberedModel } from '~/composables/useRememberedModel'
+import { sortedPolicyItems } from '~/utils/policyOrder'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
@@ -199,12 +200,7 @@ const { groupedModels, isLoading: modelsLoading, refreshAvailability } = useMode
 const showScenarios = ref(true)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)
 
-const policyItems = computed(() =>
-  (policies.value ?? []).map((p) => ({
-    title: p.name,
-    value: p.name,
-  })),
-)
+const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
 
 const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',

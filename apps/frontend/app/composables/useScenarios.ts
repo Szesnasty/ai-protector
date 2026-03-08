@@ -10,7 +10,7 @@ export function useScenarios(kind: 'playground' | 'agent' | 'compare') {
   const { data, isLoading, error } = useQuery<ScenarioGroup[]>({
     queryKey: ['scenarios', kind],
     queryFn: () => api.get<ScenarioGroup[]>(`/v1/scenarios/${kind}`).then(r => r.data),
-    staleTime: Infinity,         // never refetch — static catalogue
+    staleTime: 0,
     gcTime: 1000 * 60 * 60,     // keep in cache for 1h
   })
 

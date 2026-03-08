@@ -8,7 +8,7 @@ export const usePolicies = () => {
   const { data: policies, isLoading, error, refetch } = useQuery<Policy[]>({
     queryKey: ['policies'],
     queryFn: () => api.get<Policy[]>('/v1/policies?active_only=false').then(r => r.data),
-    staleTime: 60_000,
+    staleTime: 0,
   })
 
   const createMutation = useMutation({

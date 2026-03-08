@@ -32,7 +32,7 @@ export function useModels() {
   const { data: rawModels, isLoading, error, refetch } = useQuery<ModelInfo[]>({
     queryKey: ['models-catalog'],
     queryFn: () => api.get<ModelsResponse>('/v1/models').then((r) => r.data.models),
-    staleTime: 60_000, // refetch after 1 min
+    staleTime: 0,
   })
 
   /** Force re-evaluation of model availability (e.g. after adding an API key). */

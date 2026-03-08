@@ -39,21 +39,19 @@
       </div>
 
       <!-- Tag filter -->
-      <div v-if="allTags.length" class="attack-panel__tags">
-        <v-chip-group
+      <div v-if="allTags.length" class="attack-panel__tags px-3 pb-2">
+        <v-autocomplete
           v-model="selectedTags"
+          :items="allTags"
+          label="Filter by attack type"
           multiple
-          column
-        >
-          <v-chip
-            v-for="tag in allTags"
-            :key="tag"
-            :text="tag"
-            size="x-small"
-            variant="outlined"
-            filter
-          />
-        </v-chip-group>
+          chips
+          closable-chips
+          variant="outlined"
+          density="compact"
+          hide-details
+          clearable
+        />
       </div>
 
       <v-divider />
@@ -167,7 +165,7 @@ const emit = defineEmits<{
 const { mobile: isMobile } = useDisplay()
 
 const search = ref('')
-const selectedTags = ref<number[]>([])
+const selectedTags = ref<string[]>([])
 
 // Collect all unique tags from all scenarios
 const allTags = computed(() => {
@@ -182,20 +180,15 @@ const allTags = computed(() => {
   return [...tags].sort()
 })
 
-// Get the actual selected tag strings from indices
-const selectedTagStrings = computed(() =>
-  selectedTags.value.map(i => allTags.value[i]),
-)
-
 // Total scenario count
 const totalCount = computed(() =>
   props.scenarios.reduce((sum, g) => sum + g.items.length, 0),
 )
 
-// Filter scenarios based on search + selected tags
+// Filter scenarios based on search + selected tags, sort groups alphabetically
 const filteredGroups = computed(() => {
   const q = search.value?.toLowerCase().trim() ?? ''
-  const activeTags = selectedTagStrings.value
+  const activeTags = selectedTags.value
 
   return props.scenarios
     .map(group => ({
@@ -218,6 +211,7 @@ const filteredGroups = computed(() => {
       }),
     }))
     .filter(group => group.items.length > 0)
+    .sort((a, b) => a.label.localeCompare(b.label))
 })
 
 // Default: all panels collapsed

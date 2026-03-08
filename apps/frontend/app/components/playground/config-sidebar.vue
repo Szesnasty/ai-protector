@@ -68,6 +68,7 @@ import { computed } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
 import { useAppMode } from '~/composables/useAppMode'
+import { sortedPolicyItems } from '~/utils/policyOrder'
 
 interface Config {
   policy: string
@@ -89,12 +90,7 @@ const { policies, isLoading } = usePolicies()
 const { groupedModels, isLoading: modelsLoading } = useModels()
 const { isDemo } = useAppMode()
 
-const policyItems = computed(() =>
-  (policies.value ?? []).map((p) => ({
-    title: p.name,
-    value: p.name,
-  })),
-)
+const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
 
 const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
