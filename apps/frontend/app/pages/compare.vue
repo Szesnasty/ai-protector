@@ -102,8 +102,56 @@
       <v-divider />
     </div>
 
+    <!-- Scenario context bar -->
+    <div v-if="activeScenario" class="compare-page__scenario-bar">
+      <div class="d-flex align-center ga-2 px-4 py-2">
+        <v-icon size="16" color="warning">mdi-bullseye-arrow</v-icon>
+        <span class="text-caption text-medium-emphasis">Scenario:</span>
+        <span class="text-caption font-weight-bold">{{ activeScenario.label }}</span>
+        <v-chip
+          :color="scenarioDecisionColor"
+          size="x-small"
+          label
+          variant="flat"
+          class="ml-1"
+        >
+          Expected: {{ activeScenario.expectedDecision }}
+        </v-chip>
+        <div v-if="activeScenario.tags.length" class="d-flex ga-1 ml-1">
+          <v-chip
+            v-for="tag in activeScenario.tags"
+            :key="tag"
+            size="x-small"
+            variant="outlined"
+            label
+          >
+            {{ tag }}
+          </v-chip>
+        </div>
+        <v-spacer />
+        <v-btn
+          icon="mdi-close"
+          size="x-small"
+          variant="text"
+          @click="activeScenario = null"
+        />
+      </div>
+      <v-divider />
+    </div>
+
+    <!-- Parity summary bar (benign compare) -->
+    <div v-if="showParityBar" class="compare-page__parity-bar">
+      <div class="d-flex align-center ga-2 px-4 py-2">
+        <v-icon size="16" color="success">mdi-check-circle</v-icon>
+        <span class="text-caption font-weight-bold" style="color: rgb(var(--v-theme-success))">Same safe result</span>
+        <span class="text-caption text-medium-emphasis">&mdash;</span>
+        <span class="text-caption text-medium-emphasis">Protected path added security checks with no behavior change</span>
+      </div>
+      <v-divider />
+    </div>
+
     <!-- Two-column panels -->
-    <div class="compare-page__panels">
+    <div v-if="hasMessages" class="compare-page__panels">
       <div class="compare-page__panel">
         <compare-panel
           variant="protected"
@@ -111,6 +159,7 @@
           :is-streaming="isProtectedStreaming"
           :decision="protectedDecision"
           :timing="timings.protected"
+          :compare-mode="compareMode"
         />
       </div>
 
@@ -124,7 +173,57 @@
           :timing="timings.direct"
           :endpoint-url="directEndpointUrl"
           :is-direct-browser="isDirectBrowser"
+          :compare-mode="compareMode"
         />
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div v-else class="compare-page__panels compare-page__empty">
+      <div class="text-center">
+        <v-icon size="56" color="grey-darken-1" class="mb-3">mdi-compare</v-icon>
+        <p class="text-h6 text-grey-lighten-1 mb-1">Compare Protected vs Direct</p>
+        <p class="text-body-2 text-medium-emphasis mb-5" style="max-width: 480px">
+          Run a prompt injection or jailbreak scenario to see how AI Protector
+          blocks threats while the direct path lets them through.
+        </p>
+        <div class="d-flex flex-wrap justify-center ga-2">
+          <v-chip
+            prepend-icon="mdi-needle"
+            variant="tonal"
+            color="error"
+            @click="showScenarios = true"
+          >
+            Prompt injection
+          </v-chip>
+          <v-chip
+            prepend-icon="mdi-database-alert"
+            variant="tonal"
+            color="warning"
+            @click="showScenarios = true"
+          >
+            Data leak
+          </v-chip>
+          <v-chip
+            prepend-icon="mdi-lock-open-variant"
+            variant="tonal"
+            color="error"
+            @click="showScenarios = true"
+          >
+            Jailbreak
+          </v-chip>
+          <v-chip
+            prepend-icon="mdi-file-document-alert"
+            variant="tonal"
+            color="warning"
+            @click="showScenarios = true"
+          >
+            Resume manipulation
+          </v-chip>
+        </div>
+        <p class="text-caption text-medium-emphasis mt-4">
+          Or type any prompt below to compare safe request parity.
+        </p>
       </div>
     </div>
 
@@ -135,7 +234,7 @@
         <playground-chat-input
           ref="chatInputRef"
           :disabled="isBusy || !hasAvailableModel || !selectedModelAvailable"
-          @send="send"
+          @send="handleManualSend"
         />
       </div>
     </div>
@@ -168,6 +267,7 @@ import { useCompareChat } from '~/composables/useCompareChat'
 import { useScenarios } from '~/composables/useScenarios'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
+import { decisionColor as _dc } from '~/utils/colors'
 import { useRememberedModel } from '~/composables/useRememberedModel'
 import { sortedPolicyItems } from '~/utils/policyOrder'
 
@@ -199,6 +299,28 @@ const { groupedModels, isLoading: modelsLoading, refreshAvailability } = useMode
 
 const showScenarios = ref(true)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)
+const activeScenario = ref<import('~/types/scenarios').ScenarioItem | null>(null)
+
+const scenarioDecisionColor = computed(() => {
+  if (!activeScenario.value) return 'grey'
+  return _dc(activeScenario.value.expectedDecision)
+})
+
+const compareMode = computed<'neutral' | 'attack'>(() => {
+  if (!protectedDecision.value) return 'neutral'
+  const d = protectedDecision.value.decision
+  return (d === 'BLOCK' || d === 'MODIFY') ? 'attack' : 'neutral'
+})
+
+const hasMessages = computed(() => protectedMessages.value.length > 0)
+
+/** Show parity bar when both sides completed with safe results. */
+const showParityBar = computed(() =>
+  compareMode.value === 'neutral'
+  && protectedDecision.value?.decision === 'ALLOW'
+  && protectedMessages.value.some(m => m.role === 'assistant' && m.content?.trim())
+  && directMessages.value.some(m => m.role === 'assistant' && m.content?.trim()),
+)
 
 const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
 
@@ -286,7 +408,13 @@ function dismissError() {
   error.value = null
 }
 
-function handleAttackSend(prompt: string) {
+function handleManualSend(prompt: string) {
+  activeScenario.value = null
+  send(prompt)
+}
+
+function handleAttackSend(prompt: string, scenario: import('~/types/scenarios').ScenarioItem) {
+  activeScenario.value = scenario
   chatInputRef.value?.setText(prompt)
   setTimeout(() => send(prompt), ATTACK_SUBMIT_DELAY_MS)
 }
@@ -300,6 +428,33 @@ function handleAttackSend(prompt: string) {
 
   &__config {
     flex-shrink: 0;
+  }
+
+  &__scenario-bar {
+    flex-shrink: 0;
+    background: rgba(var(--v-theme-warning), 0.06);
+    border-bottom: 1px solid rgba(var(--v-theme-warning), 0.15);
+
+    :deep(.v-chip) {
+      font-size: 11px !important;
+    }
+  }
+
+  &__parity-bar {
+    flex-shrink: 0;
+    background: rgba(var(--v-theme-success), 0.05);
+    border-bottom: 1px solid rgba(var(--v-theme-success), 0.12);
+
+    :deep(.v-chip) {
+      font-size: 11px !important;
+    }
+  }
+
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
   }
 
   &__explainer {

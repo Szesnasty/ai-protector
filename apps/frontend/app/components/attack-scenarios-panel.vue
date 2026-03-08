@@ -93,7 +93,7 @@
                         variant="flat"
                         class="attack-panel__scenario-btn text-left"
                         :class="`attack-panel__scenario-btn--${(item.expectedDecision || '').toLowerCase()}`"
-                        @click="handleSend(item.prompt)"
+                        @click="handleSend(item)"
                       >
                   <div class="attack-panel__scenario-content">
                     <div class="d-flex align-center justify-space-between w-100">
@@ -149,7 +149,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
-import type { ScenarioGroup } from '~/types/scenarios'
+import type { ScenarioGroup, ScenarioItem } from '~/types/scenarios'
 import { decisionColor as _dc } from '~/utils/colors'
 
 const props = defineProps<{
@@ -160,7 +160,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'send': [prompt: string]
+  'send': [prompt: string, scenario: ScenarioItem]
 }>()
 
 const { mobile: isMobile } = useDisplay()
@@ -222,10 +222,10 @@ function decisionColor(decision: string) {
   return _dc(decision)
 }
 
-function handleSend(prompt: string) {
+function handleSend(item: ScenarioItem) {
   // Emit immediately so parent can set the input text,
   // then the parent handles the 300ms delay + submit
-  emit('send', prompt)
+  emit('send', item.prompt, item)
 }
 </script>
 
