@@ -142,6 +142,15 @@ Now follow the guides for the full protection stack →
 
 ---
 
+## v1 specification
+
+The formal requirements, Definition of Done, and implementation order
+for shipping Agents as a product pillar:
+
+→ **[agents-v1.spec.md](../agents-v1.spec.md)**
+
+---
+
 ## Deep-dive reference
 
 The existing technical guides cover each mechanism in detail:
