@@ -217,3 +217,39 @@ classification that:
 
 Once fixed, remove the `xfail` markers from `test_scenario_deterministic.py`
 (IDs: PLY-106, PLY-108, PLY-115, PLY-134, AGT-065, AGT-066).
+
+---
+
+### ISS-013: Docker Ollama on macOS has no GPU access — CPU-only inference
+
+**Component:** `infra/docker-compose.yml`, Ollama container
+
+**Problem:** Docker Desktop on macOS runs containers inside a Linux VM
+(Apple Hypervisor Framework). This VM has **no access to Apple Silicon
+Metal GPU**. As a result, Ollama in Docker performs CPU-only inference:
+
+- **Observed:** ~0.6 tok/s, 1275% CPU (all 12 cores maxed), ~15–20 s for
+  a simple "Hi!" response
+- **Expected:** ~30–50 tok/s with Metal GPU (native Ollama)
+
+This is a Docker/Apple platform limitation, not a model or code issue.
+Smaller models (tinyllama, qwen2:0.5b) are still slow on CPU — the
+bottleneck is compute, not model size. Docker GPU passthrough only works
+on Linux with NVIDIA (nvidia-container-toolkit).
+
+**Impact:** `make up` with Ollama is unusable on macOS. Users see extreme
+latency and 100% CPU usage. The only viable paths for real LLM responses
+on macOS are:
+
+1. **API key** (OpenAI / Anthropic / Google / Mistral) — paste in
+   Settings → API Keys, works instantly in `make demo`
+2. **Native Ollama** — install outside Docker (`brew install ollama`),
+   gets Metal GPU access, ~50× faster. Supported via `make up-native`
+   but requires software outside Docker
+
+**Current workaround:** `make demo` is the recommended quickstart. It
+runs the full security pipeline with real scanners; only LLM responses
+are simulated. Users who need real responses can add an API key in
+Settings without any additional infrastructure.
+
+**Status:** Open — platform limitation, no Docker-side fix available.
