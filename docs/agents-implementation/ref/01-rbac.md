@@ -1,0 +1,319 @@
+# Guide 1 — RBAC & Tool Allowlist
+
+**Goal:** Define which roles can call which tools.
+Default-deny — if not explicitly allowed, it's blocked.
+
+**Time:** 15 minutes
+
+---
+
+## Step 1: Create RBAC config
+
+Create `rbac.yaml` in your project:
+
+```yaml
+# rbac.yaml — Agent Tool Permissions
+#
+# Rules:
+#   - Default-deny: if a (role, tool) pair is not listed → DENY
+#   - Inheritance: a role inherits all tools from its parent
+#   - Scopes: read, write, execute
+#   - Sensitivity: low, medium, high, critical
+#   - requires_confirmation: pauses for human approval
+
+roles:
+  # ── Public user ────────────────────────────────
+  user:
+    description: "End user with read-only access"
+    tools:
+      searchProducts:
+        scopes: [read]
+        sensitivity: low
+      getOrderStatus:
+        scopes: [read]
+        sensitivity: low
+
+  # ── Support agent ──────────────────────────────
+  support:
+    description: "Support agent with customer data access"
+    inherits: user
+    tools:
+      getCustomerProfile:
+        scopes: [read]
+        sensitivity: medium
+      updateTicket:
+        scopes: [write]
+        sensitivity: medium
+
+  # ── Admin ──────────────────────────────────────
+  admin:
+    description: "Admin with full access"
+    inherits: support
+    tools:
+      issueRefund:
+        scopes: [write]
+        sensitivity: high
+        requires_confirmation: true
+      deleteRecord:
+        scopes: [write]
+        sensitivity: critical
+        requires_confirmation: true
+```
+
+### Your config checklist
+
+- [ ] Every tool your agent can call is listed under at least one role
+- [ ] Sensitive tools have `requires_confirmation: true`
+- [ ] Write/delete operations have `scopes: [write]`
+- [ ] No role has more access than it needs
+- [ ] Inheritance chain is correct (child inherits parent tools)
+
+---
+
+## Step 2: RBAC service (copy-paste ready)
+
+```python
+# rbac_service.py — ~100 lines, zero dependencies except pyyaml
+"""RBAC service — loads YAML config, resolves inheritance, checks permissions."""
+
+from __future__ import annotations
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+
+@dataclass(frozen=True)
+class PermissionResult:
+    """Outcome of a permission check."""
+    allowed: bool
+    reason: str | None = None
+    requires_confirmation: bool = False
+    tool_sensitivity: str = "low"
+
+
+@dataclass
+class RoleConfig:
+    name: str
+    description: str
+    inherits: str | None
+    tools: dict[str, dict[str, Any]]
+
+
+class RBACService:
+    """In-memory RBAC with YAML config and role inheritance."""
+
+    def __init__(self, config_path: str | Path) -> None:
+        self._roles: dict[str, RoleConfig] = {}
+        self._load_config(Path(config_path))
+
+    def _load_config(self, path: Path) -> None:
+        with open(path) as f:
+            data = yaml.safe_load(f)
+
+        for role_name, role_info in data.get("roles", {}).items():
+            self._roles[role_name] = RoleConfig(
+                name=role_name,
+                description=role_info.get("description", ""),
+                inherits=role_info.get("inherits"),
+                tools=role_info.get("tools", {}),
+            )
+
+    def _resolve_tools(self, role_name: str, visited: set | None = None) -> dict[str, dict]:
+        """Resolve all tools for a role, including inherited ones."""
+        if visited is None:
+            visited = set()
+        if role_name in visited or role_name not in self._roles:
+            return {}
+
+        visited.add(role_name)
+        role = self._roles[role_name]
+
+        # Start with inherited tools
+        tools: dict[str, dict] = {}
+        if role.inherits:
+            tools.update(self._resolve_tools(role.inherits, visited))
+
+        # Override with own tools
+        tools.update(role.tools)
+        return tools
+
+    def check_permission(
+        self, role: str, tool: str, scope: str = "read"
+    ) -> PermissionResult:
+        """Check if a role has permission to call a tool.
+
+        Returns PermissionResult with allowed=True/False and reason.
+        """
+        tools = self._resolve_tools(role)
+
+        if tool not in tools:
+            return PermissionResult(
+                allowed=False,
+                reason=f"Tool '{tool}' is not permitted for role '{role}'.",
+            )
+
+        tool_config = tools[tool]
+        allowed_scopes = tool_config.get("scopes", ["read"])
+
+        if scope not in allowed_scopes:
+            return PermissionResult(
+                allowed=False,
+                reason=f"Scope '{scope}' not allowed for '{tool}' (allowed: {allowed_scopes}).",
+            )
+
+        return PermissionResult(
+            allowed=True,
+            requires_confirmation=tool_config.get("requires_confirmation", False),
+            tool_sensitivity=tool_config.get("sensitivity", "low"),
+        )
+
+    def get_allowed_tools(self, role: str) -> list[str]:
+        """Return list of tool names available to this role."""
+        return list(self._resolve_tools(role).keys())
+```
+
+---
+
+## Step 3: Wire it into your agent
+
+### Option A: Raw Python (any framework)
+
+```python
+rbac = RBACService("rbac.yaml")
+
+def handle_tool_call(user_role: str, tool_name: str, args: dict) -> str:
+    # Check permission
+    perm = rbac.check_permission(user_role, tool_name)
+
+    if not perm.allowed:
+        return f"❌ Access denied: {perm.reason}"
+
+    if perm.requires_confirmation:
+        return f"⚠️ {tool_name} requires confirmation. Proceed? (args: {args})"
+
+    # Tool is allowed — execute
+    return execute_tool(tool_name, args)
+```
+
+### Option B: LangGraph node
+
+```python
+from rbac_service import RBACService
+
+rbac = RBACService("rbac.yaml")
+
+def policy_check_node(state: dict) -> dict:
+    """Determine which tools the user is allowed to use."""
+    user_role = state.get("user_role", "user")
+    allowed_tools = rbac.get_allowed_tools(user_role)
+    return {**state, "allowed_tools": allowed_tools}
+```
+
+### Option C: Decorator pattern
+
+```python
+rbac = RBACService("rbac.yaml")
+
+def require_permission(tool_name: str, scope: str = "read"):
+    """Decorator that enforces RBAC before tool execution."""
+    def decorator(fn):
+        def wrapper(*args, user_role: str = "user", **kwargs):
+            perm = rbac.check_permission(user_role, tool_name, scope)
+            if not perm.allowed:
+                raise PermissionError(perm.reason)
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
+
+@require_permission("getOrderStatus")
+def get_order_status(order_id: str, user_role: str = "user") -> str:
+    return db.query_order(order_id)
+```
+
+---
+
+## How inheritance works
+
+```
+admin
+  └── inherits: support
+        └── inherits: user
+              └── tools: searchProducts, getOrderStatus
+        └── tools: + getCustomerProfile, updateTicket
+  └── tools: + issueRefund, deleteRecord
+
+Result:
+  admin can use: searchProducts, getOrderStatus, getCustomerProfile,
+                 updateTicket, issueRefund, deleteRecord
+  support can use: searchProducts, getOrderStatus, getCustomerProfile, updateTicket
+  user can use: searchProducts, getOrderStatus
+```
+
+---
+
+## Testing your RBAC
+
+```python
+rbac = RBACService("rbac.yaml")
+
+# Positive cases
+assert rbac.check_permission("user", "searchProducts").allowed
+assert rbac.check_permission("admin", "issueRefund").allowed
+assert rbac.check_permission("admin", "issueRefund").requires_confirmation
+
+# Negative cases (default-deny)
+assert not rbac.check_permission("user", "issueRefund").allowed
+assert not rbac.check_permission("user", "deleteRecord").allowed
+assert not rbac.check_permission("support", "deleteRecord").allowed
+
+# Inheritance
+assert rbac.check_permission("admin", "searchProducts").allowed  # inherited from user
+
+# Scope check
+assert not rbac.check_permission("user", "searchProducts", scope="write").allowed
+
+print("✅ All RBAC tests passed")
+```
+
+---
+
+## Common patterns
+
+### Multi-tenant (per-org roles)
+
+```yaml
+roles:
+  acme_user:
+    description: "Acme Corp user"
+    tools:
+      searchAcmeProducts: { scopes: [read], sensitivity: low }
+
+  globex_user:
+    description: "Globex Corp user"
+    tools:
+      searchGlobexProducts: { scopes: [read], sensitivity: low }
+```
+
+### Time-scoped access
+
+```python
+perm = rbac.check_permission(role, tool)
+if perm.allowed and is_outside_business_hours():
+    perm = PermissionResult(allowed=False, reason="Tool not available outside business hours.")
+```
+
+### Dynamic roles from JWT / API
+
+```python
+user_role = jwt_claims.get("agent_role", "user")
+perm = rbac.check_permission(user_role, tool_name)
+```
+
+---
+
+## Next step
+
+Your agent now knows WHO can call WHAT.
+Next: [Guide 2 — Pre-tool Gate](02-pre-tool-gate.md) — add injection scanning, context risk, and limits checks.
