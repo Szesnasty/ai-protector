@@ -4,6 +4,28 @@
 
 ---
 
+## Phase 0: Agents v1 (immediate next)
+
+> **Full spec:** [`agents-v1.spec.md`](agents-v1.spec.md)
+
+New product pillar: **Agents** — registration, tool/role RBAC, config generation, integration kit, attack validation, rollout modes, traces.
+
+| # | Requirement | Status |
+|---|------------|--------|
+| 1 | Agent registration (profile, risk level) | Not started |
+| 2 | Tools + roles CRUD (RBAC, default-deny, confirmation) | Backend exists (YAML), no API/UI |
+| 3 | Generated config (rbac.yaml, limits, policy pack) | Not started |
+| 4 | Integration kit (pre/post gate, snippets, tests) | Reference code exists, no generator |
+| 5 | Attack validation runner | Gate logic works, no automated runner |
+| 6 | Observe / Warn / Enforce rollout modes | Not started |
+| 7 | Traces with decision + reason | Working (needs per-agent filtering + DB persistence) |
+
+**Implementation order:** Agent CRUD → Tools/Roles → Config generation → Integration kit → Validation → Rollout modes → Traces
+
+**Key risk:** Integration kit is the core product — must generate real, working files, not just previews.
+
+---
+
 ## Phase 1: Red Team Lab (weeks 9–14)
 
 The second pillar of AI Protector. Transforms the project from "just a firewall" into a full **offensive + defensive AI security platform**.
@@ -72,13 +94,15 @@ The second pillar of AI Protector. Transforms the project from "just a firewall"
 
 ### 2.2. Advanced Agent Security
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-agent support** | Multiple agent-demo instances with different configs behind one proxy |
-| **Agent fingerprinting** | Identify which agent made each request (by client-id patterns) |
-| **Tool-call auditing** | Log every tool call with parameters, not just LLM calls |
-| **Cross-agent correlation** | Detect coordinated attacks across multiple agents |
-| **Agent health scoring** | Dashboard panel showing per-agent risk profile over time |
+> **Note:** The foundation for agent management is being built in **Agents v1** (Phase 0). Items marked ✅ below are addressed there. This phase covers the advanced features that build on top of v1.
+
+| Feature | Description | Agents v1? |
+|---------|-------------|------------|
+| **Multi-agent support** | Multiple agents with different configs behind one proxy | ✅ Agent registration + per-agent config |
+| **Agent fingerprinting** | Identify which agent made each request (by client-id patterns) | ✅ agent_id on every request/trace |
+| **Tool-call auditing** | Log every tool call with parameters, not just LLM calls | ✅ Full trace with tool calls + gate decisions |
+| **Cross-agent correlation** | Detect coordinated attacks across multiple agents | Phase 2 — needs multi-agent data first |
+| **Agent health scoring** | Dashboard panel showing per-agent risk profile over time | ✅ Partial — validation scorecard + trace stats |
 
 ### 2.3. Session/Memory Agent
 

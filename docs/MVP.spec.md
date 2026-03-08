@@ -3,6 +3,7 @@
 > **Scope:** Blue Team Firewall (agentic pipeline) + Agent Demo App + Frontend Dashboard
 > **Timeline:** 6–8 weeks
 > **Red Team:** out of MVP scope → see `ROADMAP.spec.md`
+> **Status:** MVP complete. Next milestone → **Agents v1** — see [`agents-v1.spec.md`](agents-v1.spec.md)
 
 ---
 
