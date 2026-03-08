@@ -7,11 +7,22 @@ export default defineNuxtConfig({
     'vuetify-nuxt-module',
     '@pinia/nuxt',
     '@nuxt/eslint',
+    // vuetify-nuxt-module pushes `vuetify/styles` and `@mdi/font/css/…` to
+    // nuxt.options.css.  In SSR dev mode those raw module-name entries become
+    // bare /_nuxt/… <link> tags that 404 (the same styles also load correctly
+    // via @fs links resolved by Vite).  Strip them and load via JS import in
+    // app/plugins/vuetify-styles.client.ts so Vite resolves them properly.
+    function (_opts: unknown, nuxt: { options: { css: (string | object)[] } }) {
+      nuxt.options.css = nuxt.options.css.filter(
+        c => typeof c !== 'string'
+          || (c !== 'vuetify/styles'
+              && c !== 'vuetify/lib/styles/main.css'
+              && c !== '@mdi/font/css/materialdesignicons.css'),
+      )
+    },
   ],
 
-  css: [
-    '@mdi/font/css/materialdesignicons.css',
-  ],
+  css: [],
 
   vuetify: {
     moduleOptions: {
