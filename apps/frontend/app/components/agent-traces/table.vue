@@ -11,7 +11,7 @@
     show-expand
     density="comfortable"
     hover
-    class="elevation-1 rounded"
+    class="elevation-1 rounded-lg"
   >
     <!-- Time -->
     <template #item.timestamp="{ item }">
@@ -72,23 +72,23 @@
     <template #item.status="{ item }">
       <div class="d-flex align-center ga-1">
         <span v-if="item.has_errors">
-          <v-icon icon="mdi-alert-circle" color="error" size="16" />
+          <v-icon icon="mdi-alert-circle" color="error" size="20" />
           <v-tooltip activator="parent" location="top">Agent encountered errors during execution</v-tooltip>
         </span>
         <span v-if="item.limits_hit">
-          <v-icon icon="mdi-speedometer" color="warning" size="16" />
+          <v-icon icon="mdi-speedometer" color="warning" size="20" />
           <v-tooltip activator="parent" location="top">Rate or budget limit was reached</v-tooltip>
         </span>
         <span v-if="item.firewall_blocked">
-          <v-icon icon="mdi-shield-lock" color="error" size="16" />
+          <v-icon icon="mdi-shield-lock" color="error" size="20" />
           <v-tooltip activator="parent" location="top">Request blocked by the LLM Firewall — prompt was rejected before reaching the model</v-tooltip>
         </span>
         <span v-if="item.tool_calls_blocked > 0">
-          <v-icon icon="mdi-shield-off" color="error" size="16" />
+          <v-icon icon="mdi-shield-off" color="error" size="20" />
           <v-tooltip activator="parent" location="top">{{ item.tool_calls_blocked }} tool call{{ item.tool_calls_blocked > 1 ? 's' : '' }} blocked by security policy</v-tooltip>
         </span>
         <span v-if="!item.has_errors && !item.limits_hit && !item.firewall_blocked && item.tool_calls_blocked === 0">
-          <v-icon icon="mdi-check-circle" color="success" size="16" />
+          <v-icon icon="mdi-check-circle" color="success" size="20" />
           <v-tooltip activator="parent" location="top">Request completed successfully — no security issues detected</v-tooltip>
         </span>
       </div>
@@ -103,7 +103,7 @@
         :loading="exportingId === item.trace_id"
         @click.stop="exportTrace(item.trace_id)"
       >
-        <v-icon size="16">mdi-download</v-icon>
+        <v-icon size="20">mdi-download</v-icon>
         <v-tooltip activator="parent" location="top">Export JSON</v-tooltip>
       </v-btn>
     </template>

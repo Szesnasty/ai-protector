@@ -17,11 +17,18 @@
 
     <!-- Action filter + search -->
     <div class="d-flex ga-3 mb-3 align-center">
-      <v-chip-group v-model="selectedAction" selected-class="text-primary" column>
-        <v-chip v-for="a in ACTIONS" :key="a.value ?? 'all'" :value="a.value" size="small" variant="outlined">
+      <div class="d-flex flex-wrap ga-2">
+        <v-chip
+          v-for="a in ACTIONS"
+          :key="a.value ?? 'all'"
+          :variant="selectedAction === a.value ? 'flat' : 'outlined'"
+          :color="selectedAction === a.value ? 'primary' : undefined"
+          size="small"
+          @click="selectedAction = a.value"
+        >
           {{ a.label }}
         </v-chip>
-      </v-chip-group>
+      </div>
       <v-spacer />
       <v-text-field
         v-model="searchQuery"
@@ -90,9 +97,9 @@
       </template>
 
       <template #item.actions="{ item }">
-        <v-btn icon="mdi-pencil" size="x-small" variant="text" @click="$emit('edit', item)" />
-        <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click="$emit('delete', item)" />
-        <v-btn icon="mdi-test-tube" size="x-small" variant="text" color="info" @click="$emit('test', item)" />
+        <v-btn icon="mdi-pencil" size="small" variant="text" @click="$emit('edit', item)" />
+        <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="$emit('delete', item)" />
+        <v-btn icon="mdi-test-tube" size="small" variant="text" color="info" @click="$emit('test', item)" />
       </template>
     </v-data-table>
   </div>
@@ -115,7 +122,7 @@ defineEmits<{
 const { getGroupIcon } = useRulePresets()
 
 const selectedGroup = ref<string | null>(null)
-const selectedAction = ref<string | undefined>(undefined)
+const selectedAction = ref<string | null>(null)
 const searchQuery = ref('')
 
 const CATEGORY_GROUPS = [
@@ -129,11 +136,11 @@ const CATEGORY_GROUPS = [
 ]
 
 const ACTIONS = [
-  { label: 'All', value: undefined },
+  { label: 'All', value: null },
   { label: 'Block', value: 'block' },
   { label: 'Flag', value: 'flag' },
   { label: 'Score Boost', value: 'score_boost' },
-]
+] as const
 
 const headers = [
   { title: 'Phrase', key: 'phrase', width: '28%' },

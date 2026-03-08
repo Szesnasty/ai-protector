@@ -1,99 +1,176 @@
 <template>
-  <v-card variant="outlined" class="pa-4">
-    <div v-if="loading" class="text-center py-4">
-      <v-progress-circular indeterminate color="primary" />
-      <p class="text-body-2 text-medium-emphasis mt-2">Loading trace…</p>
+  <div class="detail-row">
+    <!-- Loading -->
+    <div v-if="loading" class="text-center py-8">
+      <v-progress-circular indeterminate color="primary" size="32" />
+      <p class="text-body-2 text-medium-emphasis mt-3">Loading trace details…</p>
     </div>
 
     <template v-else-if="detail">
-      <!-- User Message -->
-      <div class="mb-4" v-if="detail.user_message">
-        <div class="text-overline text-medium-emphasis mb-1">User Message</div>
-        <v-code tag="pre" class="pa-3 text-body-2" style="white-space: pre-wrap; word-break: break-word;">{{ detail.user_message }}</v-code>
+      <!-- ── SECTION 1: Summary Header ── -->
+      <div class="detail-header mb-6">
+        <div class="d-flex align-center ga-4 flex-wrap">
+          <!-- Status -->
+          <v-chip
+            :color="isBlocked ? 'error' : 'success'"
+            :prepend-icon="isBlocked ? 'mdi-shield-lock' : 'mdi-check-circle'"
+            variant="flat"
+            size="small"
+          >
+            {{ isBlocked ? 'BLOCKED' : 'ALLOWED' }}
+          </v-chip>
+          <!-- Intent -->
+          <v-chip v-if="detail.intent" variant="outlined" size="small">
+            {{ detail.intent }}
+          </v-chip>
+          <!-- Role -->
+          <v-chip
+            :color="detail.user_role === 'admin' ? 'warning' : 'info'"
+            variant="tonal"
+            size="small"
+          >
+            {{ detail.user_role }}
+          </v-chip>
+          <v-spacer />
+          <!-- Key metrics inline -->
+          <span class="text-caption text-medium-emphasis d-flex align-center ga-3">
+            <span><v-icon size="14" class="mr-1">mdi-brain</v-icon>{{ detail.model }}</span>
+            <span><v-icon size="14" class="mr-1">mdi-timer-outline</v-icon>{{ detail.total_duration_ms }}ms</span>
+            <span><v-icon size="14" class="mr-1">mdi-repeat</v-icon>{{ iterations.length }} iter</span>
+          </span>
+        </div>
       </div>
 
-      <!-- Final Response -->
-      <div class="mb-4" v-if="detail.final_response">
-        <div class="text-overline text-medium-emphasis mb-1">Final Response</div>
-        <v-code tag="pre" class="pa-3 text-body-2" style="white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto;">{{ detail.final_response }}</v-code>
+      <!-- ── SECTION 2: User Message ── -->
+      <div v-if="detail.user_message" class="detail-section mb-5">
+        <div class="section-label mb-2">
+          <v-icon size="16" class="mr-1">mdi-account-arrow-right</v-icon>
+          User Message
+        </div>
+        <div class="message-block message-user">
+          {{ detail.user_message }}
+        </div>
       </div>
 
-      <!-- Iterations -->
-      <div v-if="iterations.length" class="mb-4">
-        <div class="text-overline text-medium-emphasis mb-2">
+      <!-- ── SECTION 3: Final Response ── -->
+      <div v-if="detail.final_response" class="detail-section mb-5">
+        <div class="section-label mb-2">
+          <v-icon size="16" class="mr-1">mdi-robot-outline</v-icon>
+          Final Response
+        </div>
+        <div class="message-block message-response">
+          {{ detail.final_response }}
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: Iterations ── -->
+      <div v-if="iterations.length" class="detail-section mb-5">
+        <div class="section-label mb-3">
+          <v-icon size="16" class="mr-1">mdi-layers-outline</v-icon>
           Iterations ({{ iterations.length }})
         </div>
-        <v-expansion-panels variant="accordion">
+        <v-expansion-panels variant="accordion" class="iteration-panels">
           <v-expansion-panel
             v-for="(iter, idx) in iterations"
             :key="idx"
+            class="iteration-panel"
           >
-            <v-expansion-panel-title>
-              <div class="d-flex align-center ga-2">
-                <v-icon size="16">mdi-repeat</v-icon>
-                <span class="text-body-2 font-weight-medium">Iteration {{ iter.iteration ?? idx + 1 }}</span>
+            <v-expansion-panel-title class="iteration-title">
+              <div class="d-flex align-center ga-3 flex-grow-1">
+                <v-icon size="20" color="primary">mdi-repeat</v-icon>
+                <span class="text-body-2 font-weight-bold">Iteration {{ iter.iteration ?? idx + 1 }}</span>
                 <v-chip v-if="iterToolCount(iter)" size="x-small" variant="tonal" color="info">
+                  <v-icon start size="12">mdi-wrench</v-icon>
                   {{ iterToolCount(iter) }} tool{{ iterToolCount(iter) > 1 ? 's' : '' }}
                 </v-chip>
-                <v-chip v-if="iterHasBlock(iter)" size="x-small" variant="flat" color="error">
+                <v-chip v-if="iterHasBlock(iter)" size="small" variant="flat" color="error" class="font-weight-bold">
+                  <v-icon start size="14">mdi-shield-lock</v-icon>
                   BLOCKED
                 </v-chip>
               </div>
             </v-expansion-panel-title>
             <v-expansion-panel-text>
-              <!-- Pre-tool decisions -->
-              <div v-if="iter.pre_tool_decisions?.length" class="mb-3">
-                <div class="text-caption font-weight-bold mb-1">Pre-tool Gate</div>
-                <div v-for="(d, di) in iter.pre_tool_decisions" :key="di" class="d-flex align-center ga-2 mb-1">
-                  <v-chip :color="decisionColor(d.decision)" size="x-small" variant="flat">{{ d.decision }}</v-chip>
-                  <span class="text-caption">{{ d.tool }}</span>
-                  <span v-if="d.reason" class="text-caption text-medium-emphasis">— {{ d.reason }}</span>
-                </div>
-              </div>
-
-              <!-- Tool executions -->
-              <div v-if="iter.tool_executions?.length" class="mb-3">
-                <div class="text-caption font-weight-bold mb-1">Tool Executions</div>
-                <div v-for="(t, ti) in iter.tool_executions" :key="ti" class="mb-2">
-                  <div class="d-flex align-center ga-2">
-                    <v-icon size="14">mdi-wrench</v-icon>
-                    <span class="text-caption font-weight-medium">{{ t.tool }}</span>
-                    <span v-if="t.duration_ms" class="text-caption text-medium-emphasis">{{ t.duration_ms }}ms</span>
+              <div class="pa-2">
+                <!-- Pre-tool decisions -->
+                <div v-if="iter.pre_tool_decisions?.length" class="iter-subsection mb-4">
+                  <div class="subsection-label mb-2">
+                    <v-icon size="14" class="mr-1">mdi-shield-check-outline</v-icon>
+                    Pre-tool Gate
                   </div>
-                  <pre v-if="t.args" class="text-caption pa-2 bg-surface-variant rounded mt-1" style="white-space: pre-wrap; max-height: 100px; overflow-y: auto;">{{ JSON.stringify(t.args, null, 2) }}</pre>
+                  <div v-for="(d, di) in iter.pre_tool_decisions" :key="di" class="d-flex align-center ga-2 mb-2">
+                    <v-chip :color="decisionColor(d.decision)" size="x-small" variant="flat">{{ d.decision }}</v-chip>
+                    <span class="text-body-2">{{ d.tool }}</span>
+                    <span v-if="d.reason" class="text-caption text-medium-emphasis">— {{ d.reason }}</span>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Post-tool decisions -->
-              <div v-if="iter.post_tool_decisions?.length" class="mb-3">
-                <div class="text-caption font-weight-bold mb-1">Post-tool Gate</div>
-                <div v-for="(d, di) in iter.post_tool_decisions" :key="di" class="d-flex align-center ga-2 mb-1">
-                  <v-chip :color="decisionColor(d.decision)" size="x-small" variant="flat">{{ d.decision }}</v-chip>
-                  <span class="text-caption">{{ d.tool }}</span>
-                  <span v-if="d.pii_count" class="text-caption text-medium-emphasis">PII: {{ d.pii_count }}</span>
+                <!-- Tool executions -->
+                <div v-if="iter.tool_executions?.length" class="iter-subsection mb-4">
+                  <div class="subsection-label mb-2">
+                    <v-icon size="14" class="mr-1">mdi-wrench</v-icon>
+                    Tool Executions
+                  </div>
+                  <div v-for="(t, ti) in iter.tool_executions" :key="ti" class="tool-exec-row mb-3">
+                    <div class="d-flex align-center ga-2">
+                      <v-icon size="16" color="info">mdi-cog</v-icon>
+                      <span class="text-body-2 font-weight-medium">{{ t.tool }}</span>
+                      <v-chip v-if="t.duration_ms" size="x-small" variant="tonal">{{ t.duration_ms }}ms</v-chip>
+                    </div>
+                    <pre v-if="t.args" class="args-block text-caption pa-3 rounded-lg mt-2">{{ JSON.stringify(t.args, null, 2) }}</pre>
+                  </div>
                 </div>
-              </div>
 
-              <!-- LLM call -->
-              <div v-if="iter.llm_call" class="mb-3">
-                <div class="text-caption font-weight-bold mb-1">LLM Call</div>
-                <div class="d-flex flex-wrap ga-3 text-caption">
-                  <span v-if="iter.llm_call.tokens_in != null">In: {{ iter.llm_call.tokens_in }} tokens</span>
-                  <span v-if="iter.llm_call.tokens_out != null">Out: {{ iter.llm_call.tokens_out }} tokens</span>
-                  <span v-if="iter.llm_call.duration_ms">{{ iter.llm_call.duration_ms }}ms</span>
+                <!-- Post-tool decisions -->
+                <div v-if="iter.post_tool_decisions?.length" class="iter-subsection mb-4">
+                  <div class="subsection-label mb-2">
+                    <v-icon size="14" class="mr-1">mdi-shield-search</v-icon>
+                    Post-tool Gate
+                  </div>
+                  <div v-for="(d, di) in iter.post_tool_decisions" :key="di" class="d-flex align-center ga-2 mb-2">
+                    <v-chip :color="decisionColor(d.decision)" size="x-small" variant="flat">{{ d.decision }}</v-chip>
+                    <span class="text-body-2">{{ d.tool }}</span>
+                    <v-chip v-if="d.pii_count" size="x-small" variant="tonal" color="warning">
+                      PII: {{ d.pii_count }}
+                    </v-chip>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Firewall decision -->
-              <div v-if="iter.firewall_decision">
-                <div class="text-caption font-weight-bold mb-1">Firewall Decision</div>
-                <div class="d-flex align-center ga-2">
-                  <v-chip :color="decisionColor(iter.firewall_decision.decision)" size="x-small" variant="flat">
-                    {{ iter.firewall_decision.decision }}
-                  </v-chip>
-                  <span v-if="iter.firewall_decision.risk_score != null" class="text-caption">
-                    Risk: {{ (iter.firewall_decision.risk_score * 100).toFixed(0) }}%
-                  </span>
+                <!-- LLM call -->
+                <div v-if="iter.llm_call" class="iter-subsection mb-4">
+                  <div class="subsection-label mb-2">
+                    <v-icon size="14" class="mr-1">mdi-brain</v-icon>
+                    LLM Call
+                  </div>
+                  <div class="d-flex flex-wrap ga-3">
+                    <v-chip v-if="iter.llm_call.tokens_in != null" size="x-small" variant="tonal" color="teal">
+                      <v-icon start size="12">mdi-arrow-down</v-icon>
+                      {{ iter.llm_call.tokens_in }} in
+                    </v-chip>
+                    <v-chip v-if="iter.llm_call.tokens_out != null" size="x-small" variant="tonal" color="teal">
+                      <v-icon start size="12">mdi-arrow-up</v-icon>
+                      {{ iter.llm_call.tokens_out }} out
+                    </v-chip>
+                    <v-chip v-if="iter.llm_call.duration_ms" size="x-small" variant="tonal">
+                      <v-icon start size="12">mdi-timer-outline</v-icon>
+                      {{ iter.llm_call.duration_ms }}ms
+                    </v-chip>
+                  </div>
+                </div>
+
+                <!-- Firewall decision -->
+                <div v-if="iter.firewall_decision" class="iter-subsection">
+                  <div class="subsection-label mb-2">
+                    <v-icon size="14" class="mr-1">mdi-shield-alert-outline</v-icon>
+                    Firewall Decision
+                  </div>
+                  <div class="d-flex align-center ga-2">
+                    <v-chip :color="decisionColor(iter.firewall_decision.decision)" size="small" variant="flat" class="font-weight-bold">
+                      {{ iter.firewall_decision.decision }}
+                    </v-chip>
+                    <span v-if="iter.firewall_decision.risk_score != null" class="text-body-2">
+                      Risk: <strong>{{ (iter.firewall_decision.risk_score * 100).toFixed(0) }}%</strong>
+                    </span>
+                  </div>
                 </div>
               </div>
             </v-expansion-panel-text>
@@ -101,76 +178,90 @@
         </v-expansion-panels>
       </div>
 
-      <v-row>
+      <!-- ── SECTION 5: Metrics ── -->
+      <v-row class="mb-5" no-gutters>
         <!-- Node Timings -->
-        <v-col cols="12" md="6">
-          <div class="text-overline text-medium-emphasis mb-2">Node Timings</div>
-          <template v-if="timingEntries.length">
-            <div v-for="[node, ms] in timingEntries" :key="node" class="d-flex align-center mb-1">
-              <span class="text-caption" style="min-width: 130px;">{{ node }}</span>
-              <v-progress-linear
-                :model-value="maxTiming > 0 ? (ms / maxTiming * 100) : 0"
-                color="primary"
-                height="8"
-                rounded
-                style="max-width: 200px;"
-                class="mr-2"
-              />
-              <span class="text-caption font-weight-bold">{{ ms }}ms</span>
+        <v-col cols="12" md="6" class="pr-md-2 mb-3 mb-md-0">
+          <div class="metrics-card">
+            <div class="section-label mb-3">
+              <v-icon size="16" class="mr-1">mdi-chart-timeline-variant</v-icon>
+              Node Timings
             </div>
-          </template>
-          <span v-else class="text-body-2 text-medium-emphasis">None</span>
+            <template v-if="timingEntries.length">
+              <div v-for="[node, ms] in timingEntries" :key="node" class="timing-row mb-2">
+                <span class="text-body-2" style="min-width: 120px;">{{ node }}</span>
+                <v-progress-linear
+                  :model-value="maxTiming > 0 ? (ms / maxTiming * 100) : 0"
+                  color="primary"
+                  height="6"
+                  rounded
+                  class="mx-3 flex-grow-1"
+                  style="max-width: 180px;"
+                />
+                <span class="text-body-2 font-weight-bold">{{ ms }}ms</span>
+              </div>
+            </template>
+            <div v-else class="empty-state">
+              <v-icon size="32" color="grey-darken-1" class="mb-2">mdi-timer-off-outline</v-icon>
+              <span class="text-caption text-medium-emphasis">No node timing data recorded</span>
+            </div>
+          </div>
         </v-col>
 
         <!-- Counters -->
-        <v-col cols="12" md="6">
-          <div class="text-overline text-medium-emphasis mb-2">Counters</div>
-          <template v-if="counterEntries.length">
-            <div v-for="c in enrichedCounters" :key="c.key" class="d-flex align-center mb-2">
-              <v-icon :icon="c.icon" :color="c.color" size="16" class="mr-2 flex-shrink-0" />
-              <div class="d-flex justify-space-between flex-grow-1">
-                <span class="text-caption">
-                  {{ c.label }}
-                  <v-tooltip activator="parent" location="top" max-width="280">
-                    {{ c.description }}
-                  </v-tooltip>
-                </span>
-                <span class="text-caption font-weight-bold" :class="c.highlight ? 'text-error' : ''">{{ c.value }}</span>
-              </div>
+        <v-col cols="12" md="6" class="pl-md-2">
+          <div class="metrics-card">
+            <div class="section-label mb-3">
+              <v-icon size="16" class="mr-1">mdi-counter</v-icon>
+              Counters
             </div>
-          </template>
-          <span v-else class="text-body-2 text-medium-emphasis">None</span>
+            <template v-if="counterEntries.length">
+              <div class="counters-grid">
+                <div v-for="c in enrichedCounters" :key="c.key" class="counter-row">
+                  <div class="d-flex align-center ga-2">
+                    <v-icon :icon="c.icon" :color="c.color" size="18" />
+                    <span class="text-body-2">
+                      {{ c.label }}
+                      <v-tooltip activator="parent" location="top" max-width="280">{{ c.description }}</v-tooltip>
+                    </span>
+                  </div>
+                  <span class="text-body-2 font-weight-bold" :class="c.highlight ? 'text-error' : ''" style="font-feature-settings: 'tnum'">{{ c.value }}</span>
+                </div>
+              </div>
+            </template>
+            <div v-else class="empty-state">
+              <v-icon size="32" color="grey-darken-1" class="mb-2">mdi-counter</v-icon>
+              <span class="text-caption text-medium-emphasis">No counter data available</span>
+            </div>
+          </div>
         </v-col>
       </v-row>
 
-      <!-- Errors -->
-      <div v-if="errors.length" class="mt-3">
+      <!-- ── Errors ── -->
+      <div v-if="errors.length" class="mb-5">
         <v-alert
           v-for="(err, i) in errors"
           :key="i"
           type="error"
           variant="tonal"
           density="compact"
-          class="mb-1"
+          class="mb-2"
         >
           {{ err }}
         </v-alert>
       </div>
 
-      <!-- Metadata -->
-      <v-divider class="my-3" />
-      <div class="d-flex flex-wrap ga-3 text-caption text-medium-emphasis">
-        <span>Trace: <strong>{{ shortId(detail.trace_id) }}</strong></span>
-        <span>Session: <strong>{{ shortId(detail.session_id) }}</strong></span>
-        <span>Model: <strong>{{ detail.model }}</strong></span>
-        <span>Policy: <strong>{{ detail.policy }}</strong></span>
-        <span>Duration: <strong>{{ detail.total_duration_ms }}ms</strong></span>
+      <!-- ── Footer Metadata ── -->
+      <div class="detail-footer">
+        <span>Trace: {{ shortId(detail.trace_id) }}</span>
+        <span>Session: {{ shortId(detail.session_id) }}</span>
+        <span>Policy: {{ detail.policy }}</span>
         <span v-if="detail.limits_hit">
-          <v-icon size="14" icon="mdi-alert" color="warning" class="mr-1" />Limit: {{ detail.limits_hit }}
+          <v-icon size="12" icon="mdi-alert" color="warning" class="mr-1" />Limit: {{ detail.limits_hit }}
         </span>
       </div>
     </template>
-  </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -184,6 +275,11 @@ const props = defineProps<{
 const iterations = computed<TraceIteration[]>(() =>
   props.detail?.iterations ?? [],
 )
+
+const isBlocked = computed(() => {
+  if (!props.detail) return false
+  return iterations.value.some((iter) => iterHasBlock(iter))
+})
 
 const errors = computed<string[]>(() =>
   props.detail?.errors ?? [],
@@ -291,3 +387,152 @@ function shortId(id: unknown): string {
   return s.length > 12 ? `${s.slice(0, 8)}…` : s
 }
 </script>
+
+<style scoped>
+.detail-row {
+  padding: 20px 24px;
+  background: rgba(var(--v-theme-on-surface), 0.035);
+}
+
+/* ── Section labels ── */
+.section-label {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.subsection-label {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+}
+
+/* ── Message blocks ── */
+.message-block {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.message-user {
+  background: rgba(var(--v-theme-primary), 0.10);
+  border-left: 3px solid rgb(var(--v-theme-primary));
+}
+
+.message-response {
+  background: rgba(var(--v-theme-on-surface), 0.07);
+  border-left: 3px solid rgba(var(--v-theme-on-surface), 0.2);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* ── Iteration panels ── */
+.iteration-panels {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.iteration-panel {
+  background: rgba(var(--v-theme-on-surface), 0.05) !important;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+}
+
+.iteration-title {
+  min-height: 56px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  transition: background 0.15s ease;
+}
+
+.iteration-title:hover {
+  background: rgba(var(--v-theme-primary), 0.04);
+}
+
+.iter-subsection {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.args-block {
+  background: rgba(var(--v-theme-on-surface), 0.05);
+  white-space: pre-wrap;
+  max-height: 100px;
+  overflow-y: auto;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+/* ── Metrics cards ── */
+.metrics-card {
+  padding: 18px 22px;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-on-surface), 0.05);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+  min-height: 120px;
+}
+
+.timing-row {
+  display: flex;
+  align-items: center;
+}
+
+.counters-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.counter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(var(--v-theme-on-surface), 0.05);
+  transition: background 0.15s ease;
+}
+
+.counter-row:hover {
+  background: rgba(var(--v-theme-on-surface), 0.09);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 16px;
+  min-height: 80px;
+  opacity: 0.5;
+}
+
+/* ── Footer ── */
+.detail-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+  font-size: 11px;
+  color: rgba(var(--v-theme-on-surface), 0.30);
+  letter-spacing: 0.3px;
+}
+
+/* ── Summary header ── */
+.detail-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+</style>

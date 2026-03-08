@@ -9,7 +9,7 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
   ],
 
-  css: [],
+  css: ['~/assets/global.scss'],
 
   vuetify: {
     moduleOptions: {
@@ -27,11 +27,11 @@ export default defineNuxtConfig({
               warning: '#FFB74D',
               success: '#81C784',
               background: '#1A1A2E',
-              surface: '#242438',
-              'surface-bright': '#2E2E45',
-              'surface-light': '#282840',
+              surface: '#252540',
+              'surface-bright': '#333352',
+              'surface-light': '#2A2A48',
               'surface-variant': '#B0B0C0',
-              'on-surface-variant': '#242438',
+              'on-surface-variant': '#252540',
             },
           },
           light: {

@@ -1,9 +1,12 @@
 <template>
   <div ref="listRef" class="chat-message-list">
     <div v-if="messages.length === 0" class="chat-message-list__empty">
-      <v-icon size="48" color="grey-lighten-1">mdi-chat-outline</v-icon>
-      <p class="text-body-1 text-grey">
-        Type a message to start testing the AI Protector pipeline.
+      <v-icon size="48" color="primary">mdi-shield-search</v-icon>
+      <p class="text-h6 font-weight-medium">
+        Test the AI Protector pipeline
+      </p>
+      <p class="text-body-2 text-medium-emphasis" style="max-width: 360px; text-align: center;">
+        Send a message or click a starter chip below to see how the security pipeline handles prompt injections, jailbreaks, and data leaks.
       </p>
     </div>
 

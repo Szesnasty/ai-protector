@@ -63,9 +63,14 @@
           type="error"
           density="compact"
           variant="tonal"
-          class="mt-3"
+          class="mt-3 block-alert"
         >
-          {{ decision.blockedReason }}
+          <div class="font-weight-bold text-body-2 mb-1">
+            Blocked — {{ decisionLabel }}
+          </div>
+          <div class="text-caption">
+            {{ decision.blockedReason }}
+          </div>
         </v-alert>
       </div>
     </v-card>
@@ -120,6 +125,23 @@ const hasFlags = computed(() =>
   decision.value?.riskFlags && Object.keys(decision.value.riskFlags).length > 0,
 )
 
+const decisionLabel = computed(() => {
+  const intent = decision.value?.intent ?? 'unknown'
+  const labels: Record<string, string> = {
+    prompt_injection: 'prompt injection attempt',
+    jailbreak: 'jailbreak attempt',
+    agent_exfiltration: 'attempted data exfiltration',
+    data_leak: 'data leak attempt',
+    social_engineering: 'social engineering attempt',
+    system_sabotage: 'system sabotage attempt',
+    pii_leak: 'PII exposure detected',
+    harmful_content: 'harmful content detected',
+    off_topic: 'off-topic request blocked',
+    suspicious_intent: 'suspicious intent detected',
+  }
+  return labels[intent] ?? intent.replace(/_/g, ' ')
+})
+
 function flagColor(score: number): string {
   if (score >= 0.7) return 'error'
   if (score >= 0.3) return 'warning'
@@ -157,6 +179,10 @@ function flagColor(score: number): string {
 
   :deep(.v-alert__prepend .v-icon) {
     color: rgb(var(--v-theme-error)) !important;
+  }
+
+  .block-alert {
+    border-left: 3px solid rgb(var(--v-theme-error));
   }
 }
 </style>

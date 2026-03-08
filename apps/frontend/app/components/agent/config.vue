@@ -1,7 +1,7 @@
 <template>
   <v-card variant="flat" class="agent-config">
     <v-card-title class="text-subtitle-1">
-      <v-icon start size="20">mdi-cog</v-icon>
+      <v-icon class="main-icon" start>mdi-cog</v-icon>
       Agent Config
     </v-card-title>
 
@@ -47,6 +47,11 @@
         @update:model-value="$emit('update:policy', $event)"
       />
 
+      <p v-if="isDemo" class="text-caption text-medium-emphasis mt-n2 mb-4">
+        <v-icon size="x-small">mdi-key</v-icon>
+        Paste an API key in <router-link to="/settings">Settings</router-link> to use real models.
+      </p>
+
       <v-btn
         block
         variant="outlined"
@@ -84,7 +89,7 @@ defineEmits<{
 
 const { policies, isLoading: isPoliciesLoading } = usePolicies()
 const { groupedModels, isLoading: isModelsLoading } = useModels()
-const { isDemo: _isDemo } = useAppMode()
+const { isDemo } = useAppMode()
 
 const roleItems = [
   { title: 'Customer', value: 'customer' },
@@ -119,5 +124,9 @@ const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
   border-radius: 12px !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
   background: rgb(var(--v-theme-surface));
+
+  .main-icon {
+    font-size: 24px;
+  }
 }
 </style>

@@ -1,6 +1,5 @@
 <template>
-  <v-card variant="outlined" class="mb-4">
-    <v-card-text class="d-flex flex-wrap ga-3 align-center">
+  <div class="mb-4 pa-4 d-flex flex-wrap ga-3 align-center rounded-lg elevation-1" style="background: rgb(var(--v-theme-surface));">
       <v-text-field
         v-model="local.session_id"
         label="Session ID"
@@ -19,7 +18,7 @@
         density="compact"
         clearable
         hide-details
-        style="max-width: 140px;"
+        style="max-width: 180px;"
       />
       <v-select
         v-model="local.has_blocks"
@@ -31,7 +30,7 @@
         hide-details
         item-title="title"
         item-value="value"
-        style="max-width: 160px;"
+        style="max-width: 180px;"
       />
       <v-text-field
         v-model="local.date_from"
@@ -62,8 +61,7 @@
       >
         Clear
       </v-btn>
-    </v-card-text>
-  </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">

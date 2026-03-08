@@ -142,7 +142,7 @@ function handleAttackSend(prompt: string) {
   &__sidebar {
     height: 100%;
     overflow-y: auto;
-    padding: 16px 8px 16px 16px;
+    padding: 16px 8px 16px 16px !important;
     display: flex;
     flex-direction: column;
     gap: 16px;

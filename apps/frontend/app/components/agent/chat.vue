@@ -3,9 +3,12 @@
     <!-- Messages area -->
     <div ref="listRef" class="agent-chat__messages">
       <div v-if="messages.length === 0" class="agent-chat__empty">
-        <v-icon size="48" color="grey-lighten-1">mdi-robot-outline</v-icon>
-        <p class="text-body-1 text-grey">
-          Chat with the Customer Support Copilot to test tool-calling, RBAC, and firewall.
+        <v-icon size="48" color="primary">mdi-shield-search</v-icon>
+        <p class="text-h6 font-weight-medium">
+          Test the Agent Firewall
+        </p>
+        <p class="text-body-2 text-medium-emphasis" style="max-width: 360px; text-align: center;">
+          Chat with the Customer Support Copilot to test tool-calling, RBAC, and firewall integration.
         </p>
       </div>
 
@@ -37,8 +40,12 @@
         max-rows="6"
         hide-details
         density="comfortable"
+        class="agent-chat__field"
         @keydown.enter.exact.prevent="handleSend"
       >
+        <template #prepend-inner>
+          <v-icon size="20" color="medium-emphasis" class="mr-1">mdi-shield-search</v-icon>
+        </template>
         <template #append-inner>
           <v-btn
             icon="mdi-send"
@@ -115,7 +122,17 @@ watch(
 
   &__input {
     padding: 12px 16px;
-    border-top: 1px solid rgb(var(--v-border-color));
   }
+}
+</style>
+
+<style lang="scss">
+.agent-chat__field.v-textarea .v-field {
+  align-items: center;
+}
+
+.agent-chat__field.v-textarea .v-field__prepend-inner {
+  padding-top: 0 !important;
+  align-self: center;
 }
 </style>

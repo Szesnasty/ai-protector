@@ -3,15 +3,19 @@
     <v-textarea
       v-model="text"
       :disabled="disabled"
-      placeholder="Type a message…"
+      placeholder="Try a prompt injection, data leak, or jailbreak…"
       variant="outlined"
       rows="1"
       auto-grow
       max-rows="6"
       hide-details
       density="comfortable"
+      class="chat-input__field"
       @keydown.enter.exact.prevent="handleSend"
     >
+      <template #prepend-inner>
+        <v-icon size="20" color="medium-emphasis" class="mr-1">mdi-shield-search</v-icon>
+      </template>
       <template #append-inner>
         <v-btn
           icon="mdi-send"
@@ -56,6 +60,16 @@ defineExpose({ setText })
 <style lang="scss" scoped>
 .chat-input {
   padding: 12px 16px;
-  border-top: 1px solid rgb(var(--v-border-color));
+}
+</style>
+
+<style lang="scss">
+.chat-input__field.v-textarea .v-field {
+  align-items: center;
+}
+
+.chat-input__field.v-textarea .v-field__prepend-inner {
+  padding-top: 0 !important;
+  align-self: center;
 }
 </style>

@@ -2,7 +2,7 @@
   <v-card variant="flat" class="agent-trace-panel">
     <!-- Agent Trace section -->
     <v-card-title class="text-subtitle-1">
-      <v-icon start size="20">mdi-chart-timeline-variant</v-icon>
+      <v-icon class="main-icon" start>mdi-chart-timeline-variant</v-icon>
       Agent Trace
     </v-card-title>
 
@@ -52,7 +52,7 @@
 
     <!-- Firewall Decision section -->
     <v-card-title class="text-subtitle-1">
-      <v-icon start size="20">mdi-shield-search</v-icon>
+      <v-icon class="main-icon" start>mdi-shield-search</v-icon>
       Firewall Decision
     </v-card-title>
 
@@ -108,10 +108,32 @@
         type="error"
         density="compact"
         variant="tonal"
-        class="mt-2"
+        class="mt-2 block-alert"
       >
-        {{ decision.blocked_reason }}
+        <div class="font-weight-bold text-body-2 mb-1">
+          Blocked — {{ blockedLabel }}
+        </div>
+        <div class="text-caption">
+          {{ decision.blocked_reason }}
+        </div>
       </v-alert>
+
+      <!-- Triggered controls -->
+      <div v-if="triggeredControls.length" class="mt-4">
+        <span class="text-caption text-grey d-block mb-1">Triggered controls</span>
+        <div class="d-flex flex-wrap ga-1">
+          <v-chip
+            v-for="ctrl in triggeredControls"
+            :key="ctrl"
+            color="error"
+            size="x-small"
+            label
+            variant="outlined"
+          >
+            {{ ctrl }}
+          </v-chip>
+        </div>
+      </div>
     </v-card-text>
   </v-card>
 </template>
@@ -150,14 +172,67 @@ function flagColor(score: number): string {
   if (score >= 0.3) return 'warning'
   return 'grey'
 }
+
+const blockedLabel = computed(() => {
+  const intent = props.decision?.intent ?? 'unknown'
+  const labels: Record<string, string> = {
+    prompt_injection: 'prompt injection attempt',
+    jailbreak: 'jailbreak attempt',
+    agent_exfiltration: 'attempted data exfiltration',
+    data_leak: 'data leak attempt',
+    social_engineering: 'social engineering attempt',
+    system_sabotage: 'system sabotage attempt',
+    pii_leak: 'PII exposure detected',
+    harmful_content: 'harmful content detected',
+    off_topic: 'off-topic request blocked',
+    suspicious_intent: 'suspicious intent detected',
+    order_query: 'order query',
+    excessive_agency: 'excessive agency attempt',
+  }
+  return labels[intent] ?? intent.replace(/_/g, ' ')
+})
+
+const triggeredControls = computed(() => {
+  if (!props.decision || props.decision.decision !== 'BLOCK') return []
+  const controls: string[] = []
+  const reason = props.decision.blocked_reason ?? ''
+  const intent = props.decision.intent ?? ''
+
+  if (intent.includes('injection') || intent.includes('jailbreak')) controls.push('NeMo Guardrails')
+  if (intent.includes('pii') || reason.toLowerCase().includes('pii')) controls.push('Presidio PII')
+  if (intent.includes('exfiltration') || intent.includes('data_leak')) controls.push('Data boundary')
+  if (reason.toLowerCase().includes('custom rule') || reason.toLowerCase().includes('keyword')) controls.push('Custom rules')
+
+  const flags = Object.keys(props.decision.risk_flags ?? {})
+  if (flags.some(f => f.includes('suspicious'))) controls.push('Intent classifier')
+  if (flags.some(f => f.includes('toxicity') || f.includes('harm'))) controls.push('LLM Guard')
+  if (intent.includes('excessive_agency') || intent.includes('agent')) controls.push('Agent firewall')
+
+  if (controls.length === 0) controls.push('Security pipeline')
+  return [...new Set(controls)]
+})
 </script>
 
 <style lang="scss" scoped>
 .agent-trace-panel {
   padding: 8px 0;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+  background: rgb(var(--v-theme-surface));
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
+  .main-icon {
+    font-size: 24px;
+  }
 
   :deep(.v-chip) {
     font-size: 12px !important;
+  }
+
+  .block-alert {
+    border-left: 3px solid rgb(var(--v-theme-error));
   }
 }
 

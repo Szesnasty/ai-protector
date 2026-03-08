@@ -66,10 +66,32 @@
         type="error"
         density="compact"
         variant="tonal"
-        class="mt-2"
+        class="mt-2 block-alert"
       >
-        {{ decision.blockedReason }}
+        <div class="font-weight-bold text-body-2 mb-1">
+          Blocked — {{ blockedLabel }}
+        </div>
+        <div class="text-caption">
+          {{ decision.blockedReason }}
+        </div>
       </v-alert>
+
+      <!-- Triggered controls -->
+      <div v-if="triggeredControls.length" class="mt-3">
+        <span class="text-caption text-grey d-block mb-1">Triggered controls</span>
+        <div class="d-flex flex-wrap ga-1">
+          <v-chip
+            v-for="ctrl in triggeredControls"
+            :key="ctrl"
+            color="error"
+            size="x-small"
+            label
+            variant="outlined"
+          >
+            {{ ctrl }}
+          </v-chip>
+        </div>
+      </div>
     </v-card-text>
   </v-card>
 </template>
@@ -107,6 +129,45 @@ function flagColor(score: number): string {
   if (score >= 0.3) return 'warning'
   return 'grey'
 }
+
+const blockedLabel = computed(() => {
+  const intent = props.decision?.intent ?? 'unknown'
+  const labels: Record<string, string> = {
+    prompt_injection: 'prompt injection attempt',
+    jailbreak: 'jailbreak attempt',
+    agent_exfiltration: 'attempted data exfiltration',
+    data_leak: 'data leak attempt',
+    social_engineering: 'social engineering attempt',
+    system_sabotage: 'system sabotage attempt',
+    pii_leak: 'PII exposure detected',
+    harmful_content: 'harmful content detected',
+    off_topic: 'off-topic request blocked',
+    suspicious_intent: 'suspicious intent detected',
+  }
+  return labels[intent] ?? intent.replace(/_/g, ' ')
+})
+
+const triggeredControls = computed(() => {
+  if (!props.decision || props.decision.decision !== 'BLOCK') return []
+  const controls: string[] = []
+  const reason = props.decision.blockedReason ?? ''
+  const intent = props.decision.intent ?? ''
+
+  // Derive from intent
+  if (intent.includes('injection') || intent.includes('jailbreak')) controls.push('NeMo Guardrails')
+  if (intent.includes('pii') || reason.toLowerCase().includes('pii')) controls.push('Presidio PII')
+  if (intent.includes('exfiltration') || intent.includes('data_leak')) controls.push('Data boundary')
+  if (reason.toLowerCase().includes('custom rule') || reason.toLowerCase().includes('keyword')) controls.push('Custom rules')
+
+  // Derive from risk flags
+  const flags = Object.keys(props.decision.riskFlags ?? {})
+  if (flags.some(f => f.includes('suspicious'))) controls.push('Intent classifier')
+  if (flags.some(f => f.includes('toxicity') || f.includes('harm'))) controls.push('LLM Guard')
+
+  // Always at least show the intent-based control
+  if (controls.length === 0) controls.push('Security pipeline')
+  return [...new Set(controls)]
+})
 </script>
 
 <style lang="scss" scoped>
@@ -127,6 +188,10 @@ function flagColor(score: number): string {
 
   :deep(.v-chip) {
     font-size: 12px !important;
+  }
+
+  .block-alert {
+    border-left: 3px solid rgb(var(--v-theme-error));
   }
 }
 </style>
