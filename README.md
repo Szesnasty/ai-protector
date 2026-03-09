@@ -16,7 +16,9 @@ Inspect, score, and enforce deterministic security policies on every request, re
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
-<!-- ![AI Protector Demo](docs/assets/hero.gif) -->
+<p align="center">
+  <img src="docs/assets/playground.gif" alt="AI Protector Playground" width="800" />
+</p>
 
 ---
 
