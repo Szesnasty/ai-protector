@@ -190,7 +190,7 @@ function handleManualSend(prompt: string) {
 
   &__sidebar {
     flex: 0 0 320px;
-    height: 100%;
+    min-height: 0;
     overflow-y: auto;
     padding: 16px 8px 16px 16px;
     display: flex;
@@ -214,6 +214,8 @@ function handleManualSend(prompt: string) {
     &__sidebar {
       flex: none;
       width: 100%;
+      max-height: 50vh;
+      overflow-y: auto;
       padding: 16px;
     }
   }
