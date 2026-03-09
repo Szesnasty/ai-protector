@@ -14,7 +14,8 @@ modes** to let you deploy safely:
 1. **Observe** — log everything, block nothing
 2. **Warn** — log + alert, but allow through
 3. **Enforce** — block violations, redact PII
-4. **Strict** — block + fail-closed on errors
+
+> **Strict mode (v2):** A fourth mode (fail-closed on errors, block uncertain) is planned for v2 for high-risk agents (finance, healthcare). Not in v1 scope.
 
 This is the same pattern used by WAFs, CSPs, and feature flags.
 You start in observe, watch for false positives, then promote.
@@ -28,7 +29,6 @@ You start in observe, watch for false positives, then promote.
 | `observe` | No | No | No | Yes | None (read-only) |
 | `warn` | No | No | Yes | Yes | Low (alerts only) |
 | `enforce` | Yes | Yes | Yes | Yes | Medium (blocks bad) |
-| `strict` | Yes | Yes | Yes | Yes | High (blocks uncertain) |
 
 ---
 
@@ -128,6 +128,8 @@ False positives:  0
 - ✅ No critical false positives
 - ✅ 3+ days of data collected
 
+> **How FP rate is computed:** From three sources: (a) **manual review labels** — operator marks a blocked/redacted event as "false positive" in UI, (b) **dismissed incidents** — incidents dismissed without action count as likely FPs, (c) **observed-but-allowed** — in observe mode, events where `would_block: true` but no downstream incident occurred. See [agents-v1.spec.md](../agents-v1.spec.md) Req 6.
+
 ### Week 2: Warn
 
 ```
@@ -173,12 +175,15 @@ Monitoring:
 - Track blocked request rate
 - Review traces for edge cases
 
-**Optional escalation to strict:**
+**Optional escalation to strict (v2):**
 - All policies stable for 30+ days
 - No false positives for 14+ days
 - High-risk agent (finance, HR, healthcare)
+- Strict mode is planned for v2 — see [agents-v1.spec.md](../agents-v1.spec.md)
 
-### Week 4+ (optional): Strict
+### Future (v2): Strict
+
+> **Not in v1.** Documented here for planning purposes.
 
 ```
 Mode: strict
@@ -345,7 +350,7 @@ decision = pre_gate.check(role="customer", tool="issueRefund", args={})
 │                                                           │
 │  ┌──── Rollout progress ──────────────────────────────┐  │
 │  │                                                     │  │
-│  │  [■ Observe] → [ Warn ] → [ Enforce ] → [ Strict ] │  │
+│  │  [■ Observe] → [ Warn ] → [ Enforce ]               │  │
 │  │   ▲ current                                         │  │
 │  │                                                     │  │
 │  └─────────────────────────────────────────────────────┘  │

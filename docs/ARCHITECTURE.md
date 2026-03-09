@@ -127,7 +127,7 @@ input → intent → policy_check → tool_router
 | Store | Purpose |
 |-------|---------|
 | **PostgreSQL** (pgvector/pg16) | Policies, denylist phrases, custom rules, request logs, analytics |
-| **Redis 7** | Rate limiting, session cache, pub/sub for hot-reload |
+| **Redis 7** | Rate limiting, session cache, pub/sub for config publish notifications |
 
 ### Key models
 

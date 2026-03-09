@@ -43,7 +43,7 @@
 2. The pre-tool gate (point 1) always checks this map.
 3. Any attempt to invoke a tool outside the allowlist results in `BLOCK` (with a clear reason).
 4. Additionally, tools can have **scopes** (`read`/`write`) or be marked as **sensitive** requiring confirmation (human-in-the-loop).
-5. The map is configurable — via CRUD on endpoint `/agent/roles` or in YAML/DB.
+5. The map is managed via the API (`/agents/:id/roles`) which persists to the database. Generated YAML files in the integration kit are deployment artifacts derived from DB state.
 
 **Impact on existing code:** extends the current `ROLE_TOOLS` dict in `registry.py` into a full model with DB/config, scopes, and a `requires_confirmation` flag.
 

@@ -13,7 +13,7 @@ New product pillar: **Agents** — registration, tool/role RBAC, config generati
 | # | Requirement | Status |
 |---|------------|--------|
 | 1 | Agent registration (profile, risk level) | Not started |
-| 2 | Tools + roles CRUD (RBAC, default-deny, confirmation) | Backend exists (YAML), no API/UI |
+| 2 | Tools + roles CRUD (RBAC, default-deny, confirmation, publish config) | Backend exists (YAML), no API/UI |
 | 3 | Generated config (rbac.yaml, limits, policy pack) | Not started |
 | 4 | Integration kit (pre/post gate, snippets, tests) | Reference code exists, no generator |
 | 5 | Attack validation runner | Gate logic works, no automated runner |
@@ -21,6 +21,8 @@ New product pillar: **Agents** — registration, tool/role RBAC, config generati
 | 7 | Traces with decision + reason | Working (needs per-agent filtering + DB persistence) |
 
 **Implementation order:** Agent CRUD → Tools/Roles → Config generation → Integration kit → Validation → Rollout modes → Traces
+
+**Release gate tiers:** Reqs 1–5 + 7 = core release gate (must ship). Req 6 (rollout modes) = v1.1 (ship right after). See [agents-v1.spec.md — Release gate tiers](agents-v1.spec.md) for details.
 
 **Key risk:** Integration kit is the core product — must generate real, working files, not just previews.
 
