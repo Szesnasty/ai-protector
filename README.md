@@ -17,7 +17,7 @@ Inspect, score, and enforce deterministic security policies on every request, re
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
 <p align="center">
-  <img src="docs/assets/playground.gif" alt="AI Protector Playground" />
+  <img src="docs/assets/agent-demo.png" alt="AI Protector — Agent Demo blocking a fake API call" />
 </p>
 
 ---
@@ -54,6 +54,10 @@ Open **http://localhost:3000**. Done.
 2. **Playground** — chat through the firewall and watch real-time risk scoring
 3. **Agent Demo** — test a tool-calling agent with RBAC, pre/post tool gates, and budget limits
 4. **Analytics** — view blocked vs allowed, risk distribution, timeline
+
+<p align="center">
+  <img src="docs/assets/playground.gif" alt="AI Protector Playground" />
+</p>
 
 ---
 
