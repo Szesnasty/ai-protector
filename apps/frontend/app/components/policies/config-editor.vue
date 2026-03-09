@@ -7,17 +7,19 @@
           <template #activator="{ props: tip }">
             <v-chip
               v-bind="tip"
-              :color="isEnabled(node.id) ? 'primary' : undefined"
-              :variant="isEnabled(node.id) ? 'flat' : 'outlined'"
+              :color="node.comingSoon ? undefined : (isEnabled(node.id) ? 'primary' : undefined)"
+              :variant="node.comingSoon ? 'outlined' : (isEnabled(node.id) ? 'flat' : 'outlined')"
               :prepend-icon="node.icon"
-              append-icon="mdi-information-outline"
-              :disabled="props.disabled"
-              @click="toggleNode(node.id)"
+              :append-icon="node.comingSoon ? 'mdi-clock-outline' : 'mdi-information-outline'"
+              :disabled="props.disabled || node.comingSoon"
+              :style="node.comingSoon ? 'opacity: 0.5; cursor: not-allowed;' : ''"
+              @click="!node.comingSoon && toggleNode(node.id)"
             >
               {{ node.label }}
             </v-chip>
           </template>
-          <span>{{ node.tooltip }}</span>
+          <span v-if="node.comingSoon">⏳ Coming soon — {{ node.tooltip }}</span>
+          <span v-else>{{ node.tooltip }}</span>
         </v-tooltip>
       </div>
     </v-card-text>
@@ -108,15 +110,22 @@
         class="mb-3"
         @update:model-value="setThreshold('pii_action', $event)"
       />
-      <v-switch
-        :model-value="thresholds.enable_canary ?? false"
-        label="Enable canary tokens"
-        color="primary"
-        density="compact"
-        hide-details
-        :disabled="props.disabled"
-        @update:model-value="setThreshold('enable_canary', $event)"
-      />
+      <v-tooltip location="top" max-width="320">
+        <template #activator="{ props: tip }">
+          <div v-bind="tip" style="display: inline-flex; align-items: center; opacity: 0.5; cursor: not-allowed;">
+            <v-switch
+              :model-value="false"
+              label="Enable canary tokens"
+              color="primary"
+              density="compact"
+              hide-details
+              disabled
+            />
+            <v-chip size="x-small" color="grey" variant="tonal" class="ml-2">Coming soon</v-chip>
+          </div>
+        </template>
+        <span>⏳ Coming soon — Canary token injection to detect data leakage is not yet implemented.</span>
+      </v-tooltip>
     </v-card-text>
   </v-card>
 </template>
@@ -132,15 +141,17 @@ interface PolicyConfig {
 const props = defineProps<{ modelValue: PolicyConfig; disabled?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [val: PolicyConfig] }>()
 
-const AVAILABLE_NODES = [
+interface AvailableNode { id: string; label: string; icon: string; tooltip: string; comingSoon?: boolean }
+
+const AVAILABLE_NODES: AvailableNode[] = [
   { id: 'llm_guard', label: 'LLM Guard', icon: 'mdi-shield-search', tooltip: 'ProtectAI ML scanners: prompt injection (DeBERTa), toxicity, secrets leakage, banned substrings, invisible Unicode characters.' },
   { id: 'presidio', label: 'Presidio PII', icon: 'mdi-account-lock', tooltip: 'Microsoft Presidio PII detection — identifies PERSON, EMAIL, PHONE, CREDIT_CARD, SSN, IP, IBAN and more using spaCy NER + regex.' },
   { id: 'nemo_guardrails', label: 'NeMo Guardrails', icon: 'mdi-shield-lock', tooltip: 'NVIDIA NeMo Guardrails — Colang-based semantic intent matching for 11 attack categories (role bypass, tool abuse, exfiltration, social engineering, etc.). Zero LLM calls, ~7ms per scan.' },
-  { id: 'ml_judge', label: 'ML Judge', icon: 'mdi-brain', tooltip: 'Additional ML-based risk judge (placeholder — not yet implemented).' },
+  { id: 'ml_judge', label: 'ML Judge', icon: 'mdi-brain', tooltip: 'Additional ML-based risk judge — not yet implemented.', comingSoon: true },
   { id: 'output_filter', label: 'Output Filter', icon: 'mdi-filter', tooltip: 'Post-LLM output filtering — removes PII, secrets, and data leaks from LLM responses before sending to the user.' },
   { id: 'memory_hygiene', label: 'Memory Hygiene', icon: 'mdi-broom', tooltip: 'Sanitizes conversation history — strips PII and sensitive data from session memory before storage.' },
   { id: 'logging', label: 'Logging', icon: 'mdi-text-box-outline', tooltip: 'Full audit logging to PostgreSQL and Langfuse for observability, compliance, and analytics.' },
-  { id: 'canary', label: 'Canary', icon: 'mdi-bird', tooltip: 'Canary token injection to detect data leakage (placeholder — not yet implemented).' },
+  { id: 'canary', label: 'Canary', icon: 'mdi-bird', tooltip: 'Canary token injection to detect data leakage — not yet implemented.', comingSoon: true },
 ]
 
 const THRESHOLD_SLIDERS = [
