@@ -17,7 +17,7 @@ Inspect, score, and enforce deterministic security policies on every request, re
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
 <p align="center">
-  <img src="docs/assets/playground.gif" alt="AI Protector Playground" width="800" />
+  <img src="docs/assets/playground.gif" alt="AI Protector Playground" />
 </p>
 
 ---
