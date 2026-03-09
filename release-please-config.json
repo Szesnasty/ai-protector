@@ -9,21 +9,9 @@
       "component": "ai-protector",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        {
-          "type": "json",
-          "path": "apps/frontend/package.json",
-          "jsonpath": "$.version"
-        },
-        {
-          "type": "toml",
-          "path": "apps/proxy-service/pyproject.toml",
-          "toml-path": "project.version"
-        },
-        {
-          "type": "toml",
-          "path": "apps/agent-demo/pyproject.toml",
-          "toml-path": "project.version"
-        }
+        "apps/frontend/package.json",
+        "apps/proxy-service/pyproject.toml",
+        "apps/agent-demo/pyproject.toml"
       ]
     }
   }
