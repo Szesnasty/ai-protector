@@ -52,7 +52,7 @@ protected agent by step 5.
 | 2 | [Register Tools](02-register-tools.md) | Tool registry with access, sensitivity, schema | 10 min |
 | 3 | [Generate RBAC](03-generate-rbac.md) | `rbac.yaml` with roles, inheritance, default-deny | 10 min |
 | 4 | [Choose a Policy Pack](04-policy-packs.md) | Pre-built preset for your agent type | 5 min |
-| 5 | [Generate Integration Kit](05-integration-kit.md) | Copy-paste code: gates, config, env vars, test request | 15 min |
+| 5 | [Generate Integration Kit](05-integration-kit.md) | 7 files: config, wrapper, env, tests, README | 15 min |
 | 6 | [Run Attack Validation](06-attack-validation.md) | Security test suite tailored to your agent | 10 min |
 | 7 | [Deploy with Rollout Modes](07-rollout-modes.md) | Observe → Warn → Enforce progression | 5 min |
 | 8 | [Monitor Traces & Incidents](08-traces-incidents.md) | Live visibility into every decision | ongoing |

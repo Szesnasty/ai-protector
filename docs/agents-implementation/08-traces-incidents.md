@@ -222,6 +222,9 @@ patterns:
 │  [ View Full Traces ] [ Block Session ] [ Acknowledge ]   │
 │  [ Escalate ] [ Mark False Positive ]                     │
 │                                                           │
+│  ℹ️ Marking as false positive contributes to the FP rate  │
+│  used for rollout promotion readiness.                    │
+│                                                           │
 └───────────────────────────────────────────────────────────┘
 ```
 

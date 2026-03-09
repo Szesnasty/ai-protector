@@ -11,9 +11,11 @@
 Every tool your agent can call is an attack surface. Before writing any
 security code, you need a complete inventory of what your agent can do.
 
-This step produces a **tool registry** — the single source of truth for
+This step produces a **tool registry** — a complete inventory of
 what tools exist, who can use them, how they should be validated, and
 what protection each one needs.
+
+> **Source of truth:** The database is the source of truth for tool registrations inside AI Protector. The tool registry YAML in the integration kit is a deployment artifact derived from DB state.
 
 ---
 

@@ -10,11 +10,14 @@
 
 You've configured protection and integrated it. Now prove it works.
 
-AI Protector runs a suite of attacks **against your specific agent**
+AI Protector runs a suite of attacks **against your generated config
+and AI Protector runtime** (gates, RBAC service, limits service)
 and tells you exactly what was blocked, redacted, or missed.
 
 This isn't a generic security scan — the tests are generated from
 your tool registry, RBAC, and policy pack.
+
+> **What validation proves:** Tests verify that your AI Protector configuration works correctly. They do NOT verify that your agent integrated the kit correctly. The UI states: "These tests validate your AI Protector configuration. To verify end-to-end integration, use the smoke tests in your integration kit."
 
 ---
 
@@ -28,6 +31,14 @@ set of attack tests automatically:
 | Low | `basic` | 12 | ~10s |
 | Medium | `standard` | 28 | ~30s |
 | High | `comprehensive` | 52 | ~60s |
+
+### Test properties
+
+All test packs follow three rules:
+
+1. **Deterministic** — same config → same results, every time. Basic/standard packs use no LLM randomness; inputs and expected outputs are fixed.
+2. **Versioned** — each test has a version number. Results reference the test version so you can compare runs across time.
+3. **Tied to policy pack version** — when the policy pack changes (e.g., new thresholds), the test pack version bumps. This enables cross-version comparison ("did v1.2 of the finance pack break anything?").
 | Critical | `adversarial` | 80+ | ~2min |
 
 ---
@@ -262,6 +273,8 @@ Response:
 {
   "agent_id": "customer-support-copilot",
   "test_pack": "standard",
+  "test_version": "1.0.0",
+  "pack_version": "1.2.0",
   "total": 28,
   "passed": 27,
   "failed": 1,
@@ -274,7 +287,8 @@ Response:
       "decision": "BLOCKED",
       "expected": "BLOCKED",
       "passed": true,
-      "latency_ms": 12
+      "latency_ms": 12,
+      "test_version": "1.0.0"
     },
     {
       "name": "Encoded exfiltration",
@@ -283,6 +297,7 @@ Response:
       "expected": "BLOCKED",
       "passed": false,
       "latency_ms": 8,
+      "test_version": "1.0.0",
       "recommendation": "Add exfiltration patterns to post-tool gate"
     }
   ]

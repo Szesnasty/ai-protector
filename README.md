@@ -2,7 +2,7 @@
 
 **Ship agents with guardrails — not prayers.**
 
-AI Protector is a self-hosted LLM firewall and secure agent runtime for teams shipping AI features to production.
+AI Protector is an open-source, self-hosted LLM firewall with deterministic guardrails, policy enforcement, and a reference secure runtime for tool-calling agents.
 Inspect, score, and enforce deterministic security policies on every request, response, and tool call — without relying on another LLM to judge safety.
 
 - **Block prompt injection** before it reaches the model
@@ -34,6 +34,17 @@ Open **http://localhost:3000**. Done.
 >
 > Demo mode runs the full security pipeline with real scanners.
 > Only model responses are simulated in demo mode. Add an API key in Settings → API Keys to route requests to a real provider.
+
+---
+
+## Current status
+
+| Area | Status |
+|------|--------|
+| **Proxy firewall** | Production-oriented and runnable today |
+| **Agent Demo** | Reference implementation showing the runtime security pattern |
+| **Self-serve agent onboarding** | On the roadmap — see [Agents v1 spec](docs/agents-v1.spec.md) |
+| **Generated integration kits** | On the roadmap — see [Agents v1 spec](docs/agents-v1.spec.md) |
 
 ### First things to try
 
@@ -112,7 +123,7 @@ Agent → IntentClassifier → PolicyCheck → ToolRouter
 | **Attack tests** | 350+ one-click scenarios mapped to OWASP LLM Top 10 |
 | **Providers** | OpenAI, Anthropic, Google Gemini, Mistral, Azure, Ollama (via LiteLLM) |
 | **Policies** | 4 firewall policies — fast, balanced, strict, paranoid |
-| **Agent security** | Pre/post tool gates, RBAC, confirmation flows, budget caps |
+| **Agent security** | Pre/post tool gates, RBAC, confirmation flows, budget caps (reference implementation) |
 | **Observability** | Langfuse tracing, structured logging, per-request risk scoring |
 | **Tests** | 1 200+ across proxy decisions, agent tool gating, and attack scenarios |
 
@@ -185,6 +196,8 @@ how thresholds affect the outcome.
 <summary><strong>Agent Demo</strong> — test a tool-calling agent with RBAC, budgets, and confirmation flows</summary>
 
 <!-- ![Agent Demo](docs/assets/agent-demo.png) -->
+
+Agent Demo is a **reference implementation** showing how deterministic guardrails can protect a tool-calling agent. A dedicated self-serve Agents onboarding module is [on the roadmap](docs/agents-v1.spec.md).
 
 Interact with a Customer Support Copilot that uses 5 tools gated by
 role-based access control. Switch roles (customer → support → admin)
@@ -393,6 +406,14 @@ For a formal threat breakdown see [THREAT_MODEL.md](docs/THREAT_MODEL.md).
 - **No formal tool verification** — tool behavior is gated by RBAC and argument validation, but runtime effects are not verified.
 - **Domain-specific tuning required** — default thresholds work for general use; production deployments need calibration.
 - **Single-node deployment** — horizontal scaling and HA are not yet implemented.
+
+---
+
+## Roadmap
+
+**Next milestone: [Agents v1](docs/agents-v1.spec.md)** — self-serve agent registration, tool/role CRUD, generated integration kits, attack validation runner, rollout modes, per-agent traces.
+
+See [ROADMAP.spec.md](docs/ROADMAP.spec.md) for the full post-MVP plan.
 
 ---
 
