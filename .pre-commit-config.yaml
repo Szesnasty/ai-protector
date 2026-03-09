@@ -1,6 +1,24 @@
 # See https://pre-commit.com for more information
-# Install: pip install pre-commit && pre-commit install
+# Install: pip install pre-commit && pre-commit install --hook-type commit-msg
 repos:
+  # ── Commit message lint (Conventional Commits) ──
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        name: conventional commit check
+        stages: [commit-msg]
+        args:
+          - feat
+          - fix
+          - docs
+          - build
+          - refactor
+          - test
+          - perf
+          - ci
+          - chore
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.4
     hooks:
