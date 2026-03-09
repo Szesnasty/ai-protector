@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY pyproject.toml .
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir uv && \
+    uv pip install --system --no-cache .
 
 # ── Stage 2: Runtime ────────────────────────────────────
 FROM python:3.12-slim
