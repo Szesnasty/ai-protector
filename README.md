@@ -143,11 +143,11 @@ how thresholds affect the outcome.
 </details>
 
 <details>
-<summary><strong>Compare</strong> — run the same prompt through multiple policies side by side</summary>
+<summary><strong>Compare</strong> — protected vs direct model response, side by side</summary>
 
 <img src="docs/assets/compare.png" alt="Compare" />
 
-Send one prompt and see how different firewall policies (fast, balanced, strict, paranoid) score and handle it. Spot the threshold that blocks an attack or lets a false positive through.
+Send one prompt and see both paths: through the firewall (protected) and straight to the model (direct). Spot exactly what the security pipeline catches, modifies, or blocks compared to the raw model output.
 
 </details>
 
