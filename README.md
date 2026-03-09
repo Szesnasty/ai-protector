@@ -169,8 +169,6 @@ Supported providers: OpenAI, Anthropic, Google Gemini, Mistral, Azure, Ollama �
 <details>
 <summary><strong>Attack Scenarios</strong> — launch pre-built prompt injection, jailbreak, PII, and exfiltration tests</summary>
 
-<!-- ![Attack Scenarios](docs/assets/attack-scenarios.png) -->
-
 Fire 350+ pre-built attack scenarios against the proxy and see whether
 they are blocked, modified, or allowed. Each scenario is mapped to an
 OWASP LLM Top 10 category.
@@ -185,7 +183,7 @@ OWASP LLM Top 10 category.
 <details>
 <summary><strong>Playground</strong> — chat through the firewall with real-time risk scoring</summary>
 
-<!-- ![Playground](docs/assets/playground.png) -->
+<img src="docs/assets/playground.png" alt="Playground" />
 
 Send any prompt through the full 9-node security pipeline and see the
 firewall's decision in real time. Switch between policies to compare
@@ -199,9 +197,18 @@ how thresholds affect the outcome.
 </details>
 
 <details>
+<summary><strong>Compare</strong> — run the same prompt through multiple policies side by side</summary>
+
+<img src="docs/assets/compare.png" alt="Compare" />
+
+Send one prompt and see how different firewall policies (fast, balanced, strict, paranoid) score and handle it. Spot the threshold that blocks an attack or lets a false positive through.
+
+</details>
+
+<details>
 <summary><strong>Agent Demo</strong> — test a tool-calling agent with RBAC, budgets, and confirmation flows</summary>
 
-<!-- ![Agent Demo](docs/assets/agent-demo.png) -->
+<img src="docs/assets/agent-demo.png" alt="Agent Demo" />
 
 Agent Demo is a **reference implementation** showing how deterministic guardrails can protect a tool-calling agent. A dedicated self-serve Agents onboarding module is [on the roadmap](docs/agents-v1.spec.md).
 
@@ -218,9 +225,18 @@ to see how permissions change what the agent can do.
 </details>
 
 <details>
+<summary><strong>Policies</strong> — configure firewall thresholds and scanner weights</summary>
+
+<img src="docs/assets/Policies.png" alt="Policies" />
+
+Four built-in policies (fast, balanced, strict, paranoid) with adjustable risk thresholds and scanner weights. Switch policies per request or set a global default.
+
+</details>
+
+<details>
 <summary><strong>Analytics</strong> — view blocked vs allowed, risk distribution, and timeline</summary>
 
-<!-- ![Analytics](docs/assets/analytics.png) -->
+<img src="docs/assets/analytics.png" alt="Analytics" />
 
 Dashboard with charts showing how the firewall is performing across all
 requests. Filter by time window, policy, or threat category.
