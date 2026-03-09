@@ -215,8 +215,17 @@ const totalTiming = computed(() =>
   timingEntries.value.reduce((sum, [, v]) => sum + (v as number), 0),
 )
 
+const KEY_LABELS: Record<string, string> = {
+  llm_guard: 'LLM Guard',
+  nemo_guardrails: 'NeMo Guardrails',
+  presidio_pii: 'Presidio PII',
+  ml_judge: 'ML Judge',
+  output_filter: 'Output Filter',
+  pii: 'PII',
+}
+
 function formatKey(key: string) {
-  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  return KEY_LABELS[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 function formatVal(val: unknown): string {
