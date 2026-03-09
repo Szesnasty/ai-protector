@@ -22,6 +22,7 @@ class ToolCallInfo(BaseModel):
     args: dict = Field(default_factory=dict)
     result_preview: str = ""
     allowed: bool = True
+    blocked_reason: str | None = None
 
 
 class AgentTrace(BaseModel):

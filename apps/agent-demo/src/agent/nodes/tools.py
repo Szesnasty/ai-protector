@@ -26,9 +26,17 @@ def _select_tools_for_intent(state: AgentState) -> list[dict]:
     plans: list[dict] = []
 
     if intent == "order_query":
-        # Extract order ID from message
-        order_match = re.search(r"ord-\d{3,6}", message)
-        order_id = order_match.group(0).upper() if order_match else ""
+        # Extract order ID from message — supports:
+        #   "ORD-12345", "ord-123", "#12345", "order #12345", bare digits
+        order_match = re.search(r"ord-(\d{3,6})", message)
+        if not order_match:
+            # Try "#<digits>" or "order <digits>" or "order#<digits>"
+            order_match = re.search(r"(?:order\s*)?#?\s*(\d{3,6})\b", message)
+        if order_match:
+            digits = order_match.group(1)
+            order_id = f"ORD-{digits}"
+        else:
+            order_id = ""
         if "getOrderStatus" in allowed:
             plans.append({"tool": "getOrderStatus", "args": {"order_id": order_id or "unknown"}})
 

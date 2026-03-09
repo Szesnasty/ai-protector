@@ -13,6 +13,7 @@ export interface ToolCall {
   args: Record<string, unknown>
   result_preview: string
   allowed: boolean
+  blocked_reason?: string | null
 }
 
 export interface AgentTrace {

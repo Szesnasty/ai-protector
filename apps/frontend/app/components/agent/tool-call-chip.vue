@@ -40,7 +40,7 @@
           variant="flat"
           class="mt-1"
         >
-          Blocked by RBAC
+          {{ blockLabel }}
         </v-chip>
       </v-card-text>
     </v-card>
@@ -71,6 +71,17 @@ const chipIcon = computed(() => {
   if (!props.tool.allowed) return 'mdi-close-circle'
   if (props.verdict?.toLowerCase() === 'block') return 'mdi-minus-circle-outline'
   return 'mdi-check-circle'
+})
+
+/** Derive block reason label from the blocked_reason string */
+const blockLabel = computed(() => {
+  const reason = props.tool.blocked_reason || props.tool.result_preview || ''
+  if (/not permitted|not allowed|rbac|allowlist/i.test(reason)) return 'Blocked by RBAC'
+  if (/invalid args|schema|pattern|validation/i.test(reason)) return 'Blocked by argument validation'
+  if (/injection/i.test(reason)) return 'Blocked — injection detected'
+  if (/limit|budget|exceeded/i.test(reason)) return 'Blocked by session limits'
+  if (/risk|escalation|exfiltration/i.test(reason)) return 'Blocked by risk assessment'
+  return 'Blocked'
 })
 
 const expanded = ref(false)

@@ -53,6 +53,7 @@ async def agent_chat(
             args=tc.get("args", {}),
             result_preview=tc.get("result", "")[:200],
             allowed=tc.get("allowed", True),
+            blocked_reason=tc.get("result", "")[:200] if not tc.get("allowed", True) else None,
         )
         for tc in result.get("tool_calls", [])
     ]
