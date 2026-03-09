@@ -189,7 +189,7 @@
             </div>
             <template v-if="timingEntries.length">
               <div v-for="[node, ms] in timingEntries" :key="node" class="timing-row mb-2">
-                <span class="text-body-2" style="min-width: 120px;">{{ node }}</span>
+                <span class="text-body-2" style="min-width: 120px;">{{ formatNodeKey(node) }}</span>
                 <v-progress-linear
                   :model-value="maxTiming > 0 ? (ms / maxTiming * 100) : 0"
                   color="primary"
@@ -326,7 +326,7 @@ const COUNTER_META: Record<string, { label: string; icon: string; color: string;
     label: 'Tools blocked',
     icon: 'mdi-shield-off-outline',
     color: 'error',
-    description: 'Tool calls rejected by the RBAC policy — the user\'s role did not have permission for this tool',
+    description: 'Tool calls blocked by the security gate — RBAC, argument validation, injection detection, or session limits',
     highlightIf: (v) => v > 0,
   },
   tokens_in: {
@@ -377,6 +377,26 @@ function iterHasBlock(iter: TraceIteration): boolean {
 
 function decisionColor(d: string) {
   return _dc(d)
+}
+
+const NODE_KEY_LABELS: Record<string, string> = {
+  llm_guard: 'LLM Guard',
+  nemo_guardrails: 'NeMo Guardrails',
+  presidio_pii: 'Presidio PII',
+  ml_judge: 'ML Judge',
+  output_filter: 'Output Filter',
+  pre_tool_gate: 'Pre-tool Gate',
+  post_tool_gate: 'Post-tool Gate',
+  tool_router: 'Tool Router',
+  tool_executor: 'Tool Executor',
+  llm_call: 'LLM Call',
+  intent_classifier: 'Intent Classifier',
+  rbac: 'RBAC',
+  pii: 'PII',
+}
+
+function formatNodeKey(key: string): string {
+  return NODE_KEY_LABELS[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 function shortId(id: unknown): string {
