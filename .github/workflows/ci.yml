@@ -117,16 +117,27 @@ jobs:
       - name: Upload coverage badge to Gist
         if: github.ref == 'refs/heads/main' && always()
         continue-on-error: true
-        uses: schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483 # v1.7.0
-        with:
-          auth: ${{ secrets.GIST_TOKEN }}
-          gistID: ${{ vars.COVERAGE_GIST_ID }}
-          filename: coverage-badge.json
-          label: coverage
-          message: ${{ env.COVERAGE_PCT }}%
-          valColorRange: ${{ env.COVERAGE_PCT }}
-          minColorRange: 0
-          maxColorRange: 100
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+        run: |
+          curl -sS -X PATCH \
+            -H "Authorization: token $GIST_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/gists/${{ vars.COVERAGE_GIST_ID }}" \
+            -d "$(jq -n --arg pct "$COVERAGE_PCT" '{
+              files: {
+                "coverage-badge.json": {
+                  content: ({
+                    schemaVersion: 1,
+                    label: "coverage",
+                    message: ($pct + "%"),
+                    color: (if ($pct | tonumber) >= 80 then "brightgreen"
+                            elif ($pct | tonumber) >= 60 then "yellow"
+                            else "red" end)
+                  } | tostring)
+                }
+              }
+            }')"
 
   test-agent:
     name: Test Agent Demo
