@@ -35,7 +35,17 @@ Open **http://localhost:3000**. Done.
 > **Requirements:** Docker & Docker Compose. No GPU, no API keys, no Ollama.
 >
 > Demo mode runs the full security pipeline with real scanners.
-> Only model responses are simulated in demo mode. Add an API key in Settings → API Keys to route requests to a real provider.
+> Only model responses are simulated. Paste an API key in **Settings** to use a real provider — works in both modes.
+
+### Full stack with local LLM
+
+```bash
+make up
+```
+
+This adds Ollama (local LLM) and Langfuse (tracing) on top of the demo stack.
+
+> **Tip:** You don't need `make up` to use real models. Paste an OpenAI / Anthropic / Google / Mistral API key in **Settings → API Keys** — it works instantly even with `make demo`.
 
 ---
 
