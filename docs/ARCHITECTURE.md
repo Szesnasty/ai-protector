@@ -90,6 +90,15 @@ Custom policies can be created via the REST API.
 The agent demo (Customer Support Copilot) shows in-agent security controls.
 It uses a separate **LangGraph state machine** with 11 nodes.
 
+### Two-phase LLM call architecture
+
+The agent uses a two-phase approach for LLM calls:
+
+1. **Phase 1 — Firewall scan:** Send `scan_messages` (user message only) to the proxy service for security analysis (injection detection, PII scanning, policy evaluation).
+2. **Phase 2 — LLM call:** Send the full message history (system prompt, tool results, conversation context) directly to the LLM provider via LiteLLM.
+
+This separates security enforcement from LLM inference — the proxy never sees tool results or the system prompt, while user input is always scanned.
+
 ### Agent graph
 
 ```
@@ -194,11 +203,16 @@ docker-build ─────┘
 ```
 
 - **lint-python**: ruff check + ruff format for proxy-service and agent-demo
-- **test-proxy**: pytest with PostgreSQL + Redis services, coverage reporting
-- **test-agent**: pytest (in-memory, no external services)
+- **test-proxy**: pytest with PostgreSQL + Redis services, coverage reporting (1 050 tests)
+- **test-agent**: pytest (in-memory, no external services) (421 tests)
 - **docker-build**: builds all 3 Docker images
 
-Pre-commit hooks enforce ruff check/format locally before each commit.
+Additional workflows:
+- **release.yml**: Release Please (automated versioning, v0.1.0+)
+- **codeql.yml**: CodeQL security analysis (Python + JavaScript, weekly schedule)
+
+All actions are pinned to full-length commit SHAs.
+Pre-commit hooks enforce ruff check/format and Conventional Commits locally.
 
 ---
 
@@ -212,3 +226,18 @@ Pre-commit hooks enforce ruff check/format locally before each commit.
 | Separate proxy + agent layers | Proxy catches network-level threats; agent layer catches tool-use threats; defense in depth |
 | PostgreSQL for everything | Single data store for policies, logs, analytics; pgvector ready for future embedding search |
 | Session-scoped API keys | Keys stay in browser (sessionStorage); server never persists them |
+
+---
+
+## What's next
+
+The MVP is complete (all phases except Phase 6 Enterprise). The **primary focus** is now
+**Agents v1** — transforming the agent demo into a full product pillar:
+
+1. Agent registration (profile, risk level, recommended preset)
+2. Tools & roles CRUD with generated RBAC config
+3. Integration kit — 7 copy-paste files to protect any agent in 60 minutes
+4. Attack validation runner
+5. Traces & incidents with per-agent filtering
+
+See [ROADMAP](ROADMAP.spec.md) and [Agents Implementation Guides](agents-implementation/README.md) for details.

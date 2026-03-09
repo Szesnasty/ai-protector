@@ -1,23 +1,27 @@
-# AI Protector — Post-MVP Roadmap
+# AI Protector — Roadmap
 
-> Everything below is out of MVP scope. Features are grouped into phases, roughly ordered by priority and dependency.
+> MVP is complete (Phases 1–5 + 7). The **immediate next milestone is Agents v1** —
+> turning agent security from a demo into a product pillar.
+> Features below are grouped into phases, roughly ordered by priority and dependency.
 
 ---
 
-## Phase 0: Agents v1 (immediate next)
+## Phase 0: Agents v1 🔜 (in progress — primary focus)
 
 > **Full spec:** [`agents-v1.spec.md`](agents-v1.spec.md)
+> **Implementation guides:** [`agents-implementation/`](agents-implementation/README.md)
 
-New product pillar: **Agents** — registration, tool/role RBAC, config generation, integration kit, attack validation, rollout modes, traces.
+New product pillar: **Agents** — register any agent (LangGraph, CrewAI, AutoGen, raw Python),
+map its tools and roles, generate guardrail configs, validate with attack tests, deploy safely.
 
 | # | Requirement | Status |
 |---|------------|--------|
-| 1 | Agent registration (profile, risk level) | Not started |
-| 2 | Tools + roles CRUD (RBAC, default-deny, confirmation, publish config) | Backend exists (YAML), no API/UI |
-| 3 | Generated config (rbac.yaml, limits, policy pack) | Not started |
-| 4 | Integration kit (pre/post gate, snippets, tests) | Reference code exists, no generator |
+| 1 | Agent registration (profile, risk level, recommended preset) | Not started |
+| 2 | Tools + roles CRUD (RBAC, default-deny, confirmation, publish config) | Reference code exists (YAML), no API/UI |
+| 3 | Generated config (`rbac.yaml`, limits, policy pack) | Not started |
+| 4 | Integration kit (pre/post gate, snippets, tests — 7 files) | Reference code exists, no generator |
 | 5 | Attack validation runner | Gate logic works, no automated runner |
-| 6 | Observe / Warn / Enforce rollout modes | Not started |
+| 6 | Observe / Warn / Enforce rollout modes | Not started (v1.1) |
 | 7 | Traces with decision + reason | Working (needs per-agent filtering + DB persistence) |
 
 **Implementation order:** Agent CRUD → Tools/Roles → Config generation → Integration kit → Validation → Rollout modes → Traces
@@ -26,9 +30,16 @@ New product pillar: **Agents** — registration, tool/role RBAC, config generati
 
 **Key risk:** Integration kit is the core product — must generate real, working files, not just previews.
 
+**What already exists:**
+- Agent Demo app with full LangGraph graph (11 nodes), RBAC, pre/post-tool gates, argument validation, budgets
+- Two-phase LLM call architecture (Phase 1: firewall scan via proxy, Phase 2: full context to LLM provider)
+- 421 agent-demo tests passing
+- 8 detailed implementation guides in `docs/agents-implementation/`
+- Reference implementations for all security mechanisms in `apps/agent-demo/`
+
 ---
 
-## Phase 1: Red Team Lab (weeks 9–14)
+## Phase 1: Red Team Lab (after Agents v1)
 
 The second pillar of AI Protector. Transforms the project from "just a firewall" into a full **offensive + defensive AI security platform**.
 
@@ -85,7 +96,7 @@ The second pillar of AI Protector. Transforms the project from "just a firewall"
 
 ---
 
-## Phase 2: Advanced Blue Team (weeks 15–18)
+## Phase 2: Advanced Blue Team (after Red Team Lab)
 
 ### 2.1. Adaptive Policies
 
@@ -125,7 +136,7 @@ The second pillar of AI Protector. Transforms the project from "just a firewall"
 
 ---
 
-## Phase 3: Enterprise Features (weeks 19–24)
+## Phase 3: Enterprise Features
 
 ### 3.1. Multi-Tenancy
 
@@ -161,7 +172,7 @@ The second pillar of AI Protector. Transforms the project from "just a firewall"
 
 ---
 
-## Phase 4: Scale & Optimize (weeks 25+)
+## Phase 4: Scale & Optimize
 
 ### 4.1. Performance
 
@@ -224,6 +235,7 @@ The second pillar of AI Protector. Transforms the project from "just a firewall"
 
 | Feature | Impact | Effort | Priority |
 |---------|--------|--------|----------|
+| **Agents v1 (registration, RBAC, kit)** | 🔴 Critical | High | **P0** |
 | Red Team basic attacks | 🔴 High | Medium | P1 |
 | Red Team LangGraph agent | 🔴 High | High | P1 |
 | Adaptive policies | 🟡 Medium | Medium | P2 |
@@ -244,7 +256,12 @@ The second pillar of AI Protector. Transforms the project from "just a firewall"
 - [ ] Integration tests for full pipeline
 - [ ] API versioning (v1 → v2)
 - [ ] OpenAPI spec generation + client SDKs
-- [ ] CI/CD: GitHub Actions (lint, test, build, push images)
+- [x] CI/CD: GitHub Actions (lint, test, build, push images)
+- [x] Release Please (automated versioning)
+- [x] Conventional Commits enforcement (pre-commit)
+- [x] CodeQL security analysis
+- [x] SHA-pinned GitHub Actions
 - [ ] Helm chart for Kubernetes deployment
 - [ ] Monitoring: Prometheus + Grafana stack
 - [ ] Database: read replicas for analytics queries
+- [ ] E2E tests (Playwright for frontend)

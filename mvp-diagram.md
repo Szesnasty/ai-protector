@@ -1,7 +1,9 @@
 # AI Protector — MVP Implementation Diagram
 
-> 20 steps across 7 phases. Each step builds on the previous.
-> ✅ = done, 🔜 = next, ⬜ = planned.
+> 20 steps across 7 phases. **All core phases complete (1–5 + 7).**
+> Next milestone: **Agents v1** — see [ROADMAP](docs/ROADMAP.spec.md).
+>
+> ✅ = done, ⬜ = planned (deferred to post-MVP).
 
 ---
 
@@ -29,16 +31,27 @@
                                                           │ ✅ 16  Analytics          │
                                                           └────────────┬────────────┘
                                                                        ▼
-                                                          Phase 6: Enterprise Readiness
+                                                          Phase 6: Enterprise (deferred)
                                                           ┌─────────────────────────┐
                                                           │ ⬜ 17  Observe/Simulate  │
                                                           │ ⬜ 18  Explainability    │
                                                           │ ⬜ 19  Replay Requests   │
                                                           └────────────┬────────────┘
                                                                        ▼
-                                                          Phase 7: Demo & Polish
+                                                          Phase 7: Demo & Polish ✅
                                                           ┌─────────────────────────┐
                                                           │ ✅ 20  Attack Scenarios  │
+                                                          └─────────────────────────┘
+
+                                                                Next milestone
+                                                          ┌─────────────────────────┐
+                                                          │ 🔜 AGENTS v1            │
+                                                          │    Agent registration   │
+                                                          │    Tools/Roles CRUD     │
+                                                          │    Config generation    │
+                                                          │    Integration kit      │
+                                                          │    Attack validation    │
+                                                          │    Traces & incidents   │
                                                           └─────────────────────────┘
 ```
 
@@ -89,19 +102,19 @@
 | 15 | **Policies & Log UI** | Policies CRUD interface, request log with pagination, filters, expandable rows | ✅ Done |
 | 16 | **Analytics** | KPI cards, timeline chart (ECharts), block rate by policy, top risk flags, intent distribution, sub-minute polling | ✅ Done |
 
-### Phase 6: Enterprise Readiness ⬜
+### Phase 6: Enterprise Readiness ⬜ (deferred — focusing on Agents v1 first)
 
 | Step | Name | What it does | Status |
 |------|------|-------------|--------|
-| 17 | **Observe / Simulate** | Per-policy observe mode: BLOCK → ALLOW in shadow, logs `original_decision` for audit | ⬜ Spec written |
-| 18 | **Explainability** | Structured explanation for every decision: matched rules, scanner signals, risk breakdown | ⬜ Spec written |
-| 19 | **Replay Requests** | Replay any log entry through pipeline with different policy, side-by-side comparison | ⬜ Spec written |
+| 17 | **Observe / Simulate** | Per-policy observe mode: BLOCK → ALLOW in shadow, logs `original_decision` for audit | ⬜ Deferred |
+| 18 | **Explainability** | Structured explanation for every decision: matched rules, scanner signals, risk breakdown | ⬜ Deferred |
+| 19 | **Replay Requests** | Replay any log entry through pipeline with different policy, side-by-side comparison | ⬜ Deferred |
 
 ### Phase 7: Demo & Polish ✅
 
 | Step | Name | What it does | Status |
 |------|------|-------------|--------|
-| 20 | **Attack Scenarios Panel** | 260 ready-made attack prompts (157 Playground + 103 Agent), skull FAB, one-click auto-submit, tag filter, OWASP labels | ✅ Done |
+| 20 | **Attack Scenarios Panel** | 350+ ready-made attack prompts (Playground + Agent), skull FAB, one-click auto-submit, tag filter, OWASP labels | ✅ Done |
 
 ---
 
@@ -229,30 +242,43 @@ Four built-in policy levels control the pipeline behavior:
 ## Test Coverage
 
 ```
-348 tests (pytest)
- ├── Pipeline nodes .................. ~140 tests
- │   ├── parse, intent, rules ........ 45
- │   ├── scanners (LLM Guard + Presidio) 50
- │   ├── decision node ............... 22
- │   ├── output filter ............... 12
- │   └── logging node ................ 14
- ├── Integration (full pipeline) ..... ~50 tests
- │   ├── graph routing ............... 5
- │   ├── ALLOW/BLOCK/MODIFY E2E ...... 12
- │   └── graph with mocked LLM ...... 8
- ├── Services ........................ ~50 tests
- │   ├── request logger .............. 14
- │   ├── custom rules CRUD ........... 20
- │   ├── langfuse client ............. 8
- │   └── denylist, policy cache ...... 12
- ├── API endpoints ................... ~40 tests
- │   ├── chat completions ............ 14
- │   ├── policies CRUD ............... 14
- │   ├── analytics ................... 8
- │   └── health ...................... 2
- └── Schemas & utils ................ ~30 tests
+1 471 tests (pytest) — 1 050 proxy-service + 421 agent-demo
+ ├── Proxy Service (1 050 tests)
+ │   ├── Pipeline nodes .............. ~350 tests
+ │   │   ├── parse, intent, rules ..... 90
+ │   │   ├── scanners (LLM Guard + Presidio) 120
+ │   │   ├── decision node ............ 60
+ │   │   ├── output filter ............ 40
+ │   │   └── logging node ............. 40
+ │   ├── Integration (full pipeline) .. ~150 tests
+ │   ├── Services (CRUD, cache) ....... ~200 tests
+ │   ├── API endpoints ................ ~200 tests
+ │   └── Schemas & utils .............. ~150 tests
+ │
+ └── Agent Demo (421 tests)
+     ├── Agent graph nodes ............ ~120 tests
+     ├── RBAC & gates ................. ~100 tests
+     ├── Tool validation .............. ~80 tests
+     ├── Limits & budgets ............. ~60 tests
+     └── API & integration ............ ~60 tests
 ```
 
 ---
 
-*Generated from [MVP-PLAN.md](docs/plan/MVP-PLAN.md). Last updated: 2026-03-03.*
+---
+
+## What's Next: Agents v1
+
+The MVP is complete. The main focus going forward is **Agents v1** —
+transforming the agent demo into a full product pillar where users can
+register their own agents, map tools and roles, generate guardrail
+configs, and deploy them safely.
+
+See:
+- [ROADMAP — Agents v1](docs/ROADMAP.spec.md#phase-0-agents-v1-immediate-next)
+- [Agents Implementation Guides](docs/agents-implementation/README.md)
+- [Agents v1 Spec](docs/agents-v1.spec.md)
+
+---
+
+*Generated from [MVP-PLAN.md](docs/plan/MVP-PLAN.md). Last updated: 2026-03-09.*
