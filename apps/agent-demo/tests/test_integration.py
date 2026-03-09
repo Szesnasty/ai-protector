@@ -469,7 +469,9 @@ class TestPolicySelection:
             )
 
             # Verify x-policy header was set to paranoid
-            call_args = mock_call.call_args
+            # Headers are sent in the first call (proxy/scan), not the
+            # second (direct LLM), so use call_args_list[0].
+            call_args = mock_call.call_args_list[0]
             headers = call_args.kwargs.get("extra_headers", {})
             assert headers.get("x-policy") == "paranoid"
 
@@ -488,7 +490,7 @@ class TestPolicySelection:
                 }
             )
 
-            call_args = mock_call.call_args
+            call_args = mock_call.call_args_list[0]
             headers = call_args.kwargs.get("extra_headers", {})
             assert headers.get("x-correlation-id") == "corr-test-123"
             assert headers.get("x-client-id") == "agent-corr-test-123"
@@ -516,8 +518,8 @@ class TestChatEndpointIntegration:
             )
 
         assert response.status_code == 200
-        # Verify paranoid policy was passed to LiteLLM
-        call_args = mock_call.call_args
+        # Verify paranoid policy was sent in proxy/scan call (first call)
+        call_args = mock_call.call_args_list[0]
         headers = call_args.kwargs.get("extra_headers", {})
         assert headers.get("x-policy") == "paranoid"
 
@@ -586,7 +588,8 @@ class TestChatEndpointIntegration:
             )
 
         assert response.status_code == 200
-        call_args = mock_call.call_args
+        # Default policy is sent in the proxy/scan call (first call)
+        call_args = mock_call.call_args_list[0]
         headers = call_args.kwargs.get("extra_headers", {})
         # Should use the default policy from config (strict)
         assert headers.get("x-policy") == "strict"

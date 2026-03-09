@@ -100,6 +100,7 @@ services:
       - "8002:8002"
     environment:
       PROXY_BASE_URL: http://proxy-service:8000/v1
+      OLLAMA_BASE_URL: http://ollama:11434
       DEFAULT_MODEL: llama3.2:3b
       DEFAULT_MODEL_PREFIX: openai
       DEFAULT_POLICY: balanced

@@ -20,9 +20,59 @@ from src.agent.limits.service import get_limits_service
 from src.agent.security.message_builder import build_messages
 from src.agent.state import AgentState
 from src.agent.trace.accumulator import TraceAccumulator
-from src.config import get_settings
+from src.config import Settings, get_settings
 
 logger = structlog.get_logger()
+
+# ── Provider detection rules (mirrors proxy-service/src/llm/providers.py) ──
+_PROVIDER_RULES: list[tuple[str, str]] = [
+    ("ollama/", "ollama"),
+    ("anthropic/", "anthropic"),
+    ("gemini/", "google"),
+    ("mistral/", "mistral"),
+    ("azure/", "azure"),
+    ("gpt-", "openai"),
+    ("o1", "openai"),
+    ("o3", "openai"),
+    ("claude-", "anthropic"),
+    ("gemini-", "google"),
+    ("mistral-", "mistral"),
+    ("codestral", "mistral"),
+]
+
+
+def _resolve_direct_llm(
+    model_name: str,
+    api_key: str | None,
+    settings: Settings,
+) -> tuple[str, dict[str, Any]]:
+    """Resolve model name and kwargs for a direct LLM call (bypassing proxy).
+
+    Returns ``(litellm_model, extra_kwargs)``.  For Ollama the kwargs contain
+    ``api_base``; for external providers they carry ``api_key``.
+    """
+    model_lower = model_name.lower()
+    provider = "ollama"
+    for pattern, prov in _PROVIDER_RULES:
+        if model_lower.startswith(pattern):
+            provider = prov
+            break
+
+    # Format model for LiteLLM (add provider prefix where required)
+    if provider == "ollama" and not model_name.startswith("ollama/"):
+        litellm_model = f"ollama/{model_name}"
+    elif provider == "anthropic" and not model_name.startswith("anthropic/"):
+        litellm_model = f"anthropic/{model_name}"
+    elif provider == "google" and not model_name.startswith("gemini/"):
+        litellm_model = f"gemini/{model_name}"
+    elif provider == "mistral" and not model_name.startswith("mistral/"):
+        litellm_model = f"mistral/{model_name}"
+    else:
+        litellm_model = model_name  # openai: no prefix
+
+    if provider == "ollama":
+        return litellm_model, {"api_base": settings.ollama_base_url}
+    return litellm_model, {"api_key": api_key}
 
 
 def _track_tokens(response: Any, state: AgentState, model: str) -> dict:
@@ -211,15 +261,16 @@ async def _demo_llm_call(state: AgentState, settings: Any) -> AgentState:
 
 
 async def llm_call_node(state: AgentState) -> AgentState:
-    """Call LLM through the proxy-service firewall.
+    """Call LLM with firewall scan + direct provider call (two-phase).
 
     Architecture:
-      1. Send chat history + current user message to proxy (without the agent
-         system prompt / tool delimiters which trigger false-positives).
-         The proxy scans only the last user message (parse_node) so history
-         is safe, and the LLM needs it for multi-turn context.
+      1. Send chat history + current user message to proxy for firewall scan
+         (without the agent system prompt / tool delimiters which trigger
+         false-positives).
       2. If BLOCK → honour it and stop.
-      3. If ALLOW → use the proxy's LLM response (which now has full context).
+      3. If ALLOW → call the LLM directly (bypassing proxy) with the full
+         message set including system prompt, tool results & anti-injection
+         delimiters so the model can use tool outputs in its answer.
     """
     settings = get_settings()
 
@@ -261,7 +312,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
     if api_key:
         extra_headers["x-api-key"] = api_key
 
-    # ── Step 1: Firewall scan + LLM call via proxy ──────────────
+    # ── Step 1: Firewall scan via proxy ──────────────────────────────
     # Send chat history + current user message (without the agent system
     # prompt / tool delimiters which trigger false-positives).  The proxy
     # only scans the *last* user message (parse_node) so history is safe,
@@ -296,19 +347,34 @@ async def llm_call_node(state: AgentState) -> AgentState:
             "risk_flags": {},
         }
 
-        # ── Step 2: Proxy returned ALLOW — use its LLM response ──
-        # The proxy already forwarded to the actual LLM provider, so we
-        # have a real response. Use it as the agent's LLM output.
-        llm_text = scan_resp.choices[0].message.content or ""
+        # ── Step 2: Direct LLM call with full context ────────────────
+        # The proxy scan passed (ALLOW).  Now call the LLM directly with
+        # the complete message set including system prompt and tool results
+        # so the model can actually use tool outputs in its answer.
+        # TODO(perf): add scan-only mode to proxy to avoid the wasted LLM
+        #   call in step 1 (the proxy forwards to LLM even though we only
+        #   need the firewall decision).
+        direct_model, direct_kwargs = _resolve_direct_llm(model_name, api_key, settings)
+
+        full_resp = await acompletion(
+            model=direct_model,
+            messages=messages,  # full: system + history + user + tool results
+            temperature=settings.default_temperature,
+            max_tokens=settings.default_max_tokens,
+            timeout=120,
+            **direct_kwargs,
+        )
+
+        llm_text = full_resp.choices[0].message.content or ""
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         logger.info("llm_call_ok", elapsed_ms=elapsed_ms, response_len=len(llm_text))
 
         # ── Token tracking (spec 06) ─────────────────────
-        token_state = _track_tokens(scan_resp, state, model_name)
+        token_state = _track_tokens(full_resp, state, model_name)
 
         # Trace (spec 07)
-        usage = getattr(scan_resp, "usage", None)
+        usage = getattr(full_resp, "usage", None)
         trace.record_llm_call(
             messages_count=len(messages),
             tokens_in=int(getattr(usage, "prompt_tokens", 0) or 0) if usage else 0,
