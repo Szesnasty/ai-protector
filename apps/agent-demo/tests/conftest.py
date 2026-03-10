@@ -7,8 +7,8 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-# Force "real" mode in tests — agent tests mock acompletion directly
-# and must not go through demo's mock_agent_llm path.
+# Force "real" mode in tests — agent tests mock _scan_via_proxy + acompletion
+# directly and must not go through demo's mock_agent_llm path.
 os.environ["MODE"] = "real"
 
 from src.config import get_settings  # noqa: E402

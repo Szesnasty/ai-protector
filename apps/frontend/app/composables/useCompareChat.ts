@@ -1,7 +1,7 @@
 /**
  * Composable for the Compare Playground.
  *
- * Fires the SAME prompt through two paths:
+ * Fires the SAME prompt through two paths IN PARALLEL:
  *   1. Protected  — POST proxy/v1/chat/completions (full AI Protector pipeline)
  *   2. Unprotected — DIRECT to provider API (browser → api.openai.com etc.)
  *
@@ -12,8 +12,7 @@
  * right panel falls back to the proxy's /v1/chat/direct endpoint
  * (zero scanning passthrough).
  *
- * Requests run SEQUENTIALLY (protected first, then direct) to avoid
- * rate-limit issues with external providers.
+ * Both requests run in parallel to minimize total wait time.
  */
 import { ref, reactive, computed } from 'vue'
 import {
@@ -33,7 +32,7 @@ export interface CompareTimings {
 }
 
 /** Which phase is currently running. */
-export type ComparePhase = 'idle' | 'protected' | 'direct'
+export type ComparePhase = 'idle' | 'streaming'
 
 export function useCompareChat() {
   // ── Protected panel (left) ──
@@ -77,7 +76,7 @@ export function useCompareChat() {
   })
 
   // ────────────────────────────────────────────────────────────────
-  // Sequential send: Protected → then → Direct
+  // Send: Protected + Direct in parallel
   // ────────────────────────────────────────────────────────────────
   async function send(text: string) {
     if (!config.model) {
@@ -122,132 +121,132 @@ export function useCompareChat() {
       stream: true as const,
     }
 
-    // ── Phase 1: Protected ──────────────────────────────────────
-    phase.value = 'protected'
+    // ── Both panels run in PARALLEL ────────────────────────────
+    phase.value = 'streaming'
     isProtectedStreaming.value = true
-    protectedAbort = new AbortController()
-
-    const protectedStart = performance.now()
-    try {
-      const response = await streamChat(
-        {
-          body,
-          url: '/v1/chat/completions',
-          headers: { 'x-policy': config.policy },
-          signal: protectedAbort.signal,
-        },
-        {
-          onToken: (token: string) => {
-            const msg = protectedMessages.value[protIdx]
-            if (msg) {
-              protectedMessages.value.splice(protIdx, 1, {
-                ...msg,
-                content: (msg.content ?? '') + token,
-              })
-            }
-          },
-          onDone: () => {
-            isProtectedStreaming.value = false
-            timings.protected = Math.round(performance.now() - protectedStart)
-          },
-          onError: (err: Error) => {
-            isProtectedStreaming.value = false
-            timings.protected = Math.round(performance.now() - protectedStart)
-            error.value = err.message
-          },
-        },
-      )
-      protectedDecision.value = extractPipelineDecision(response)
-      if (protectedDecision.value && protectedMessages.value[protIdx]) {
-        protectedMessages.value[protIdx].decision = protectedDecision.value
-      }
-    } catch (err: unknown) {
-      isProtectedStreaming.value = false
-      timings.protected = Math.round(performance.now() - protectedStart)
-
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        phase.value = 'idle'
-        return
-      }
-
-      const apiErr = err as ApiError
-      const errMsg = apiErr?.error?.message
-        ?? (err instanceof Error ? err.message : String(err))
-
-      if (apiErr?.error?.message) {
-        protectedDecision.value = extractBlockDecision(apiErr)
-      }
-
-      protectedMessages.value[protIdx] = {
-        role: 'assistant',
-        content: `⛔ ${errMsg}`,
-        decision: protectedDecision.value ?? undefined,
-      }
-      error.value = `Protected: ${errMsg}`
-    }
-
-    // ── Phase 2: Direct (unprotected) ───────────────────────────
-    // For OpenAI/Mistral: browser → provider API directly (true proof)
-    // For others: browser → proxy /v1/chat/direct (zero scanning fallback)
-    phase.value = 'direct'
     isDirectStreaming.value = true
+    protectedAbort = new AbortController()
     directAbort = new AbortController()
 
-    const directStart = performance.now()
-    const directProvider = detectProviderClient(config.model)
-    const useDirectBrowser = supportsDirectBrowserCall(directProvider)
-
-    const directCallbacks = {
-      onToken: (token: string) => {
-        const msg = directMessages.value[dirIdx]
-        if (msg) {
-          directMessages.value.splice(dirIdx, 1, {
-            ...msg,
-            content: (msg.content ?? '') + token,
-          })
+    // helper: Protected panel
+    const runProtected = async () => {
+      const t0 = performance.now()
+      try {
+        const response = await streamChat(
+          {
+            body,
+            url: '/v1/chat/completions',
+            headers: { 'x-policy': config.policy },
+            signal: protectedAbort!.signal,
+          },
+          {
+            onToken: (token: string) => {
+              const msg = protectedMessages.value[protIdx]
+              if (msg) {
+                protectedMessages.value.splice(protIdx, 1, {
+                  ...msg,
+                  content: (msg.content ?? '') + token,
+                })
+              }
+            },
+            onDone: () => {
+              isProtectedStreaming.value = false
+              timings.protected = Math.round(performance.now() - t0)
+            },
+            onError: (err: Error) => {
+              isProtectedStreaming.value = false
+              timings.protected = Math.round(performance.now() - t0)
+              error.value = err.message
+            },
+          },
+        )
+        protectedDecision.value = extractPipelineDecision(response)
+        if (protectedDecision.value && protectedMessages.value[protIdx]) {
+          protectedMessages.value[protIdx].decision = protectedDecision.value
         }
-      },
-      onDone: () => {
-        isDirectStreaming.value = false
-        timings.direct = Math.round(performance.now() - directStart)
-      },
-      onError: (_err: Error) => {
-        isDirectStreaming.value = false
-        timings.direct = Math.round(performance.now() - directStart)
-      },
+      } catch (err: unknown) {
+        isProtectedStreaming.value = false
+        timings.protected = Math.round(performance.now() - t0)
+
+        if (err instanceof DOMException && err.name === 'AbortError') return
+
+        const apiErr = err as ApiError
+        const errMsg = apiErr?.error?.message
+          ?? (err instanceof Error ? err.message : String(err))
+
+        if (apiErr?.error?.message) {
+          protectedDecision.value = extractBlockDecision(apiErr)
+        }
+
+        protectedMessages.value[protIdx] = {
+          role: 'assistant',
+          content: `⛔ ${errMsg}`,
+          decision: protectedDecision.value ?? undefined,
+        }
+        error.value = `Protected: ${errMsg}`
+      }
     }
 
-    try {
-      if (useDirectBrowser) {
-        await streamChatDirect(
-          { body, signal: directAbort.signal },
-          directCallbacks,
-        )
-      } else {
-        await streamChat(
-          { body, url: '/v1/chat/direct', signal: directAbort.signal },
-          directCallbacks,
-        )
-      }
-    } catch (err: unknown) {
-      isDirectStreaming.value = false
-      timings.direct = Math.round(performance.now() - directStart)
+    // helper: Direct (unprotected) panel
+    // For OpenAI/Mistral: browser → provider API directly (true proof)
+    // For others: browser → proxy /v1/chat/direct (zero scanning fallback)
+    const runDirect = async () => {
+      const t0 = performance.now()
+      const directProvider = detectProviderClient(config.model)
+      const useDirectBrowser = supportsDirectBrowserCall(directProvider)
 
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        phase.value = 'idle'
-        return
+      const directCallbacks = {
+        onToken: (token: string) => {
+          const msg = directMessages.value[dirIdx]
+          if (msg) {
+            directMessages.value.splice(dirIdx, 1, {
+              ...msg,
+              content: (msg.content ?? '') + token,
+            })
+          }
+        },
+        onDone: () => {
+          isDirectStreaming.value = false
+          timings.direct = Math.round(performance.now() - t0)
+        },
+        onError: (_err: Error) => {
+          isDirectStreaming.value = false
+          timings.direct = Math.round(performance.now() - t0)
+        },
       }
 
-      const apiErr = err as ApiError
-      const errMsg = apiErr?.error?.message
-        ?? (err instanceof Error ? err.message : String(err))
+      try {
+        if (useDirectBrowser) {
+          await streamChatDirect(
+            { body, signal: directAbort!.signal },
+            directCallbacks,
+          )
+        } else {
+          await streamChat(
+            { body, url: '/v1/chat/direct', signal: directAbort!.signal },
+            directCallbacks,
+          )
+        }
+      } catch (err: unknown) {
+        isDirectStreaming.value = false
+        timings.direct = Math.round(performance.now() - t0)
 
-      directMessages.value[dirIdx] = {
-        role: 'assistant',
-        content: `⚠️ ${errMsg}`,
+        if (err instanceof DOMException && err.name === 'AbortError') return
+
+        const apiErr = err as ApiError
+        const errMsg = apiErr?.error?.message
+          ?? (err instanceof Error ? err.message : String(err))
+
+        directMessages.value[dirIdx] = {
+          role: 'assistant',
+          content: `⚠️ ${errMsg}`,
+        }
+        if (!error.value) error.value = `Direct: ${errMsg}`
       }
-      if (!error.value) error.value = `Direct: ${errMsg}`
     }
+
+    // Fire both panels simultaneously — total time ≈ max(protected, direct)
+    await Promise.allSettled([runProtected(), runDirect()])
 
     phase.value = 'idle'
   }

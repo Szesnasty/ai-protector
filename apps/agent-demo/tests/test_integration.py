@@ -11,13 +11,13 @@ These tests cover the 9 security scenarios from the SPEC:
 8. Multi-turn memory → agent remembers
 9. Session isolation → independent histories
 
-Tests use mocked LiteLLM (unit-style) since real proxy may not be available.
+Tests use mocked _scan_via_proxy + acompletion (unit-style) since real proxy
+may not be available.
 For full Docker-based integration, run: pytest -k integration_docker (requires stack).
 """
 
 from __future__ import annotations
 
-import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -26,51 +26,54 @@ from src.agent.graph import get_agent_graph
 
 # ── Helpers ──────────────────────────────────────────────────
 
+_SCAN_PATCH = "src.agent.nodes.llm_call._scan_via_proxy"
+_LLM_PATCH = "src.agent.nodes.llm_call.acompletion"
 
-def _mock_llm_response(
-    content: str = "Test response",
+
+def _mock_scan_allow(
     decision: str = "ALLOW",
-    risk_score: str = "0.1",
+    risk_score: float = 0.1,
     intent: str = "qa",
-):
-    """Build a mock LiteLLM response with firewall headers."""
-    resp = AsyncMock()
-    resp.choices = [AsyncMock()]
-    resp.choices[0].message.content = content
-    resp._hidden_params = {
-        "additional_headers": {
-            "x-decision": decision,
-            "x-risk-score": risk_score,
-            "x-intent": intent,
-        }
+    risk_flags: dict | None = None,
+) -> dict:
+    """Build a mock /v1/scan response dict (ALLOW)."""
+    return {
+        "status_code": 200,
+        "decision": decision,
+        "risk_score": risk_score,
+        "intent": intent,
+        "risk_flags": risk_flags or {},
+        "blocked_reason": None,
     }
-    return resp
 
 
-def _mock_block_error(
+def _mock_scan_block(
     blocked_reason: str = "Request blocked by security policy.",
     risk_score: float = 0.9,
     risk_flags: dict | None = None,
     intent: str = "jailbreak",
-):
-    """Build a mock LiteLLM APIError for 403 BLOCK."""
-    from litellm.exceptions import APIError
+) -> dict:
+    """Build a mock /v1/scan response dict (BLOCK, 403)."""
+    return {
+        "status_code": 403,
+        "decision": "BLOCK",
+        "risk_score": risk_score,
+        "intent": intent,
+        "risk_flags": risk_flags or {"suspicious_intent": 0.8},
+        "blocked_reason": blocked_reason,
+    }
 
-    body = json.dumps(
-        {
-            "error": {
-                "message": blocked_reason,
-                "type": "policy_violation",
-                "code": "blocked",
-            },
-            "decision": "BLOCK",
-            "risk_score": risk_score,
-            "risk_flags": risk_flags or {"suspicious_intent": 0.8},
-            "intent": intent,
-        }
-    )
-    err = APIError(status_code=403, message=body, llm_provider="ollama", model="ollama/llama3.1:8b")
-    return err
+
+def _mock_llm_response(content: str = "Test response"):
+    """Build a mock LiteLLM acompletion response (Step 2 direct LLM call)."""
+    resp = AsyncMock()
+    resp.choices = [AsyncMock()]
+    resp.choices[0].message.content = content
+    resp.usage = AsyncMock()
+    resp.usage.prompt_tokens = 50
+    resp.usage.completion_tokens = 20
+    resp.usage.total_tokens = 70
+    return resp
 
 
 # ── Scenario 1: Normal KB query ─────────────────────────────
@@ -81,14 +84,10 @@ class TestScenario1NormalKBQuery:
 
     @pytest.mark.asyncio
     async def test_kb_query_allowed(self):
-        mock_resp = _mock_llm_response(
-            content="Our return policy allows items to be returned within 30 days.",
-            decision="ALLOW",
-            risk_score="0.05",
-            intent="qa",
-        )
+        scan = _mock_scan_allow(decision="ALLOW", risk_score=0.05, intent="qa")
+        llm = _mock_llm_response("Our return policy allows items to be returned within 30 days.")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             graph = get_agent_graph()
             result = await graph.ainvoke(
                 {
@@ -124,14 +123,10 @@ class TestScenario2OrderLookup:
 
     @pytest.mark.asyncio
     async def test_order_lookup_allowed(self):
-        mock_resp = _mock_llm_response(
-            content="Your order ORD-001 has been shipped and is on its way.",
-            decision="ALLOW",
-            risk_score="0.05",
-            intent="qa",
-        )
+        scan = _mock_scan_allow(decision="ALLOW", risk_score=0.05, intent="qa")
+        llm = _mock_llm_response("Your order ORD-001 has been shipped and is on its way.")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             graph = get_agent_graph()
             result = await graph.ainvoke(
                 {
@@ -160,14 +155,10 @@ class TestScenario3CustomerSecrets:
 
     @pytest.mark.asyncio
     async def test_customer_secrets_rbac_blocked(self):
-        mock_resp = _mock_llm_response(
-            content="I don't have access to internal data for your role.",
-            decision="ALLOW",
-            risk_score="0.2",
-            intent="qa",
-        )
+        scan = _mock_scan_allow(decision="ALLOW", risk_score=0.2, intent="qa")
+        llm = _mock_llm_response("I don't have access to internal data for your role.")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             graph = get_agent_graph()
             result = await graph.ainvoke(
                 {
@@ -194,14 +185,10 @@ class TestScenario4AdminSecrets:
 
     @pytest.mark.asyncio
     async def test_admin_secrets_requires_confirmation(self):
-        mock_resp = _mock_llm_response(
-            content="Here are the internal configuration details.",
-            decision="ALLOW",
-            risk_score="0.15",
-            intent="qa",
-        )
+        scan = _mock_scan_allow(decision="ALLOW", risk_score=0.15, intent="qa")
+        llm = _mock_llm_response("Here are the internal configuration details.")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             graph = get_agent_graph()
             result = await graph.ainvoke(
                 {
@@ -235,14 +222,14 @@ class TestScenario5Injection:
 
     @pytest.mark.asyncio
     async def test_injection_blocked(self):
-        block_err = _mock_block_error(
+        scan = _mock_scan_block(
             blocked_reason="Prompt injection detected",
             risk_score=0.9,
             risk_flags={"suspicious_intent": 0.8, "denylist_hit": True},
             intent="jailbreak",
         )
 
-        with patch("src.agent.nodes.llm_call.acompletion", side_effect=block_err):
+        with patch(_SCAN_PATCH, return_value=scan):
             graph = get_agent_graph()
             result = await graph.ainvoke(
                 {
@@ -273,14 +260,14 @@ class TestScenario6Jailbreak:
 
     @pytest.mark.asyncio
     async def test_jailbreak_blocked(self):
-        block_err = _mock_block_error(
+        scan = _mock_scan_block(
             blocked_reason="Jailbreak attempt detected — request blocked",
             risk_score=0.95,
             risk_flags={"suspicious_intent": 0.9},
             intent="jailbreak",
         )
 
-        with patch("src.agent.nodes.llm_call.acompletion", side_effect=block_err):
+        with patch(_SCAN_PATCH, return_value=scan):
             graph = get_agent_graph()
             result = await graph.ainvoke(
                 {
@@ -307,15 +294,10 @@ class TestScenario7PIIFilter:
 
     @pytest.mark.asyncio
     async def test_pii_filtered_response(self):
-        # Simulate proxy returning a response where PII was already masked
-        mock_resp = _mock_llm_response(
-            content="Your card ending in [REDACTED] has been charged. Email: [EMAIL_REDACTED]",
-            decision="ALLOW",
-            risk_score="0.2",
-            intent="qa",
-        )
+        scan = _mock_scan_allow(decision="ALLOW", risk_score=0.2, intent="qa")
+        llm = _mock_llm_response("Your card ending in [REDACTED] has been charged. Email: [EMAIL_REDACTED]")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             graph = get_agent_graph()
             result = await graph.ainvoke(
                 {
@@ -345,14 +327,10 @@ class TestScenario8MultiTurnMemory:
         session_id = "int-memory-test"
 
         # Turn 1: introduce name
-        mock_resp1 = _mock_llm_response(
-            content="Nice to meet you, Jan! How can I help?",
-            decision="ALLOW",
-            risk_score="0.02",
-            intent="chitchat",
-        )
+        scan1 = _mock_scan_allow(decision="ALLOW", risk_score=0.02, intent="chitchat")
+        llm1 = _mock_llm_response("Nice to meet you, Jan! How can I help?")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp1):
+        with patch(_SCAN_PATCH, return_value=scan1), patch(_LLM_PATCH, return_value=llm1):
             graph = get_agent_graph()
             result1 = await graph.ainvoke(
                 {
@@ -366,14 +344,10 @@ class TestScenario8MultiTurnMemory:
         assert result1.get("final_response")
 
         # Turn 2: ask about name — session should have history
-        mock_resp2 = _mock_llm_response(
-            content="Your name is Jan, as you told me earlier.",
-            decision="ALLOW",
-            risk_score="0.02",
-            intent="chitchat",
-        )
+        scan2 = _mock_scan_allow(decision="ALLOW", risk_score=0.02, intent="chitchat")
+        llm2 = _mock_llm_response("Your name is Jan, as you told me earlier.")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp2) as mock_call:
+        with patch(_SCAN_PATCH, return_value=scan2), patch(_LLM_PATCH, return_value=llm2) as mock_call:
             result2 = await graph.ainvoke(
                 {
                     "session_id": session_id,
@@ -401,14 +375,10 @@ class TestScenario9SessionIsolation:
 
     @pytest.mark.asyncio
     async def test_session_isolation(self):
-        mock_resp = _mock_llm_response(
-            content="Hello!",
-            decision="ALLOW",
-            risk_score="0.02",
-            intent="chitchat",
-        )
+        scan = _mock_scan_allow(decision="ALLOW", risk_score=0.02, intent="chitchat")
+        llm = _mock_llm_response("Hello!")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             graph = get_agent_graph()
 
             # Session A: say hello
@@ -455,9 +425,10 @@ class TestPolicySelection:
 
     @pytest.mark.asyncio
     async def test_policy_passed_to_llm(self):
-        mock_resp = _mock_llm_response(content="Hi!")
+        scan = _mock_scan_allow()
+        llm = _mock_llm_response("Hi!")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp) as mock_call:
+        with patch(_SCAN_PATCH, return_value=scan) as mock_scan, patch(_LLM_PATCH, return_value=llm):
             graph = get_agent_graph()
             await graph.ainvoke(
                 {
@@ -468,18 +439,16 @@ class TestPolicySelection:
                 }
             )
 
-            # Verify x-policy header was set to paranoid
-            # Headers are sent in the first call (proxy/scan), not the
-            # second (direct LLM), so use call_args_list[0].
-            call_args = mock_call.call_args_list[0]
-            headers = call_args.kwargs.get("extra_headers", {})
-            assert headers.get("x-policy") == "paranoid"
+            # Verify policy was passed to the scan call
+            call_kwargs = mock_scan.call_args.kwargs
+            assert call_kwargs["policy"] == "paranoid"
 
     @pytest.mark.asyncio
     async def test_correlation_id_sent(self):
-        mock_resp = _mock_llm_response(content="Hi!")
+        scan = _mock_scan_allow()
+        llm = _mock_llm_response("Hi!")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp) as mock_call:
+        with patch(_SCAN_PATCH, return_value=scan) as mock_scan, patch(_LLM_PATCH, return_value=llm):
             graph = get_agent_graph()
             await graph.ainvoke(
                 {
@@ -490,10 +459,8 @@ class TestPolicySelection:
                 }
             )
 
-            call_args = mock_call.call_args_list[0]
-            headers = call_args.kwargs.get("extra_headers", {})
-            assert headers.get("x-correlation-id") == "corr-test-123"
-            assert headers.get("x-client-id") == "agent-corr-test-123"
+            call_kwargs = mock_scan.call_args.kwargs
+            assert call_kwargs["session_id"] == "corr-test-123"
 
 
 # ── Chat endpoint integration ────────────────────────────────
@@ -504,9 +471,10 @@ class TestChatEndpointIntegration:
 
     def test_policy_override_in_request(self, client):
         """Policy field in request should be passed through."""
-        mock_resp = _mock_llm_response(content="Hello!")
+        scan = _mock_scan_allow()
+        llm = _mock_llm_response("Hello!")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp) as mock_call:
+        with patch(_SCAN_PATCH, return_value=scan) as mock_scan, patch(_LLM_PATCH, return_value=llm):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -518,21 +486,15 @@ class TestChatEndpointIntegration:
             )
 
         assert response.status_code == 200
-        # Verify paranoid policy was sent in proxy/scan call (first call)
-        call_args = mock_call.call_args_list[0]
-        headers = call_args.kwargs.get("extra_headers", {})
-        assert headers.get("x-policy") == "paranoid"
+        call_kwargs = mock_scan.call_args.kwargs
+        assert call_kwargs["policy"] == "paranoid"
 
     def test_firewall_decision_in_response(self, client):
         """Firewall decision should always be present in response."""
-        mock_resp = _mock_llm_response(
-            content="Here's the info.",
-            decision="ALLOW",
-            risk_score="0.12",
-            intent="qa",
-        )
+        scan = _mock_scan_allow(decision="ALLOW", risk_score=0.12, intent="qa")
+        llm = _mock_llm_response("Here's the info.")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -550,14 +512,14 @@ class TestChatEndpointIntegration:
         assert fw["intent"] == "qa"
 
     def test_block_response_via_endpoint(self, client):
-        """403 BLOCK from proxy should result in graceful denial."""
-        block_err = _mock_block_error(
+        """403 BLOCK from scan should result in graceful denial."""
+        scan = _mock_scan_block(
             blocked_reason="Injection attempt detected",
             risk_score=0.92,
             intent="jailbreak",
         )
 
-        with patch("src.agent.nodes.llm_call.acompletion", side_effect=block_err):
+        with patch(_SCAN_PATCH, return_value=scan):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -575,9 +537,10 @@ class TestChatEndpointIntegration:
 
     def test_default_policy_when_not_specified(self, client):
         """When no policy in request, should use config default."""
-        mock_resp = _mock_llm_response(content="Hello!")
+        scan = _mock_scan_allow()
+        llm = _mock_llm_response("Hello!")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_resp) as mock_call:
+        with patch(_SCAN_PATCH, return_value=scan) as mock_scan, patch(_LLM_PATCH, return_value=llm):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -588,8 +551,6 @@ class TestChatEndpointIntegration:
             )
 
         assert response.status_code == 200
-        # Default policy is sent in the proxy/scan call (first call)
-        call_args = mock_call.call_args_list[0]
-        headers = call_args.kwargs.get("extra_headers", {})
+        call_kwargs = mock_scan.call_args.kwargs
         # Should use the default policy from config (strict)
-        assert headers.get("x-policy") == "strict"
+        assert call_kwargs["policy"] == "strict"

@@ -6,11 +6,11 @@ role-separation, anti-spoofing delimiters and sanitization.
 
 from __future__ import annotations
 
-import json
 import os
 import time
 from typing import Any
 
+import httpx
 import structlog
 from litellm import acompletion
 from litellm.exceptions import APIError
@@ -132,12 +132,53 @@ def _track_tokens(response: Any, state: AgentState, model: str) -> dict:
         return {}
 
 
+async def _scan_via_proxy(
+    *,
+    proxy_base_url: str,
+    session_id: str,
+    policy: str,
+    api_key: str | None,
+    scan_messages: list[dict],
+    model_name: str,
+    temperature: float,
+    max_tokens: int | None,
+) -> dict:
+    """Call POST /v1/scan and return the parsed JSON response.
+
+    Returns a dict with at least: ``status_code``, ``decision``,
+    ``risk_score``, ``risk_flags``, ``intent``, ``blocked_reason``.
+    """
+    scan_url = f"{proxy_base_url}/v1/scan"
+    scan_body = {
+        "model": model_name,
+        "messages": scan_messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": False,
+    }
+    scan_headers: dict[str, str] = {
+        "Content-Type": "application/json",
+        "x-client-id": f"agent-{session_id}",
+        "x-policy": policy,
+        "x-correlation-id": session_id,
+    }
+    if api_key:
+        scan_headers["x-api-key"] = api_key
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(scan_url, json=scan_body, headers=scan_headers)
+
+    data = resp.json()
+    data["status_code"] = resp.status_code
+    return data
+
+
 async def _demo_llm_call(state: AgentState, settings: Any) -> AgentState:
     """Demo mode: route through proxy for real firewall, mock for response.
 
-    1. Send the user message to proxy-service → runs the full security
-       pipeline (Presidio, LLM Guard, NeMo, custom rules).
-    2. If the proxy returns BLOCK (403) → honour it and stop.
+    1. Send the user message to /v1/scan → runs the security pipeline
+       (Presidio, LLM Guard, NeMo, custom rules) without an LLM call.
+    2. If the scan returns BLOCK (403) → honour it and stop.
     3. If ALLOW → use mock_agent_llm for the agent response (tool calls
        etc.) but inject the **real** firewall decision.
     """
@@ -148,14 +189,7 @@ async def _demo_llm_call(state: AgentState, settings: Any) -> AgentState:
     policy = state.get("policy", settings.default_policy)
     trace = TraceAccumulator(state.get("trace"))
     model_name = state.get("model", settings.default_model)
-    litellm_model = f"{settings.default_model_prefix}/{model_name}"
     start = time.perf_counter()
-
-    extra_headers: dict[str, str] = {
-        "x-client-id": f"agent-{session_id}",
-        "x-policy": policy,
-        "x-correlation-id": session_id,
-    }
 
     firewall_decision: dict = {
         "decision": "ALLOW",
@@ -164,64 +198,37 @@ async def _demo_llm_call(state: AgentState, settings: Any) -> AgentState:
         "risk_flags": {},
     }
 
-    # Build proxy-safe messages: chat history + current user message.
+    # Build scan-safe messages: chat history + current user message.
     # We strip the system prompt (anti-injection rules) and tool delimiters
     # because those trigger false-positives in the proxy's injection detector.
-    # The proxy only scans the *last* user message (parse_node), so history
-    # is safe to include — and the LLM needs it for multi-turn context.
     chat_history = state.get("chat_history", [])
     user_msg = state.get("message", "")
     scan_messages = [*chat_history, {"role": "user", "content": user_msg}]
 
     try:
-        proxy_resp = await acompletion(
-            model=litellm_model,
-            messages=scan_messages,
-            api_base=settings.proxy_base_url,
-            api_key="not-needed",
-            extra_headers=extra_headers,
+        scan_data = await _scan_via_proxy(
+            proxy_base_url=settings.proxy_base_url,
+            session_id=session_id,
+            policy=policy,
+            api_key=None,
+            scan_messages=scan_messages,
+            model_name=model_name,
             temperature=settings.default_temperature,
             max_tokens=settings.default_max_tokens,
-            timeout=120,
         )
 
-        # Extract real firewall decision from proxy headers
-        hidden = getattr(proxy_resp, "_hidden_params", {})
-        addl = hidden.get("additional_headers", {}) if isinstance(hidden, dict) else {}
-
-        def _hdr(name: str) -> str:
-            return addl.get(name, addl.get(f"llm_provider-{name}", ""))
-
-        firewall_decision = {
-            "decision": _hdr("x-decision") or "ALLOW",
-            "risk_score": float(_hdr("x-risk-score") or "0"),
-            "intent": _hdr("x-intent") or "",
-            "risk_flags": {},
-        }
-
-    except APIError as e:
-        elapsed_ms = int((time.perf_counter() - start) * 1000)
-
-        if e.status_code == 403:
+        if scan_data.get("status_code") == 403:
             # Firewall BLOCK — honour it
-            try:
-                body = json.loads(str(e.message)) if isinstance(e.message, str) else {}
-            except (json.JSONDecodeError, TypeError):
-                body = {}
+            elapsed_ms = int((time.perf_counter() - start) * 1000)
+            blocked_reason = scan_data.get("blocked_reason", "Request blocked by security policy.")
 
-            blocked_reason = "Request blocked by security policy."
-            if isinstance(body, dict):
-                error_obj = body.get("error", {})
-                if isinstance(error_obj, dict):
-                    blocked_reason = error_obj.get("message", blocked_reason)
-
-                firewall_decision = {
-                    "decision": "BLOCK",
-                    "risk_score": body.get("risk_score", 1.0),
-                    "risk_flags": body.get("risk_flags", {}),
-                    "intent": body.get("intent", ""),
-                    "blocked_reason": blocked_reason,
-                }
+            firewall_decision = {
+                "decision": "BLOCK",
+                "risk_score": scan_data.get("risk_score", 1.0),
+                "risk_flags": scan_data.get("risk_flags", {}),
+                "intent": scan_data.get("intent", ""),
+                "blocked_reason": blocked_reason,
+            }
 
             trace.record_llm_call(
                 messages_count=len(messages),
@@ -238,13 +245,19 @@ async def _demo_llm_call(state: AgentState, settings: Any) -> AgentState:
                 "trace": trace.data,
             }
 
-        logger.warning("demo_proxy_error", error=str(e), status=e.status_code)
+        # ALLOW — extract firewall decision from scan response
+        firewall_decision = {
+            "decision": scan_data.get("decision", "ALLOW"),
+            "risk_score": scan_data.get("risk_score", 0.0),
+            "intent": scan_data.get("intent", ""),
+            "risk_flags": scan_data.get("risk_flags", {}),
+        }
 
     except Exception as e:
         # Non-fatal: if proxy unreachable, fall through with default ALLOW
         logger.warning("demo_proxy_unreachable", error=str(e))
 
-    # ── Proxy returned ALLOW/MODIFY → use mock for agent response ──
+    # ── Scan returned ALLOW/MODIFY → use mock for agent response ──
     elapsed_ms = int((time.perf_counter() - start) * 1000)
     mock_state = mock_agent_llm(state)
     mock_state["firewall_decision"] = firewall_decision
@@ -301,59 +314,65 @@ async def llm_call_node(state: AgentState) -> AgentState:
 
     model_name = state.get("model", settings.default_model)
 
-    # Format model for LiteLLM: use prefix routing through proxy
-    litellm_model = f"{settings.default_model_prefix}/{model_name}"
-
-    extra_headers: dict[str, str] = {
-        "x-client-id": f"agent-{session_id}",
-        "x-policy": policy,
-        "x-correlation-id": session_id,
-    }
-    if api_key:
-        extra_headers["x-api-key"] = api_key
-
-    # ── Step 1: Firewall scan via proxy ──────────────────────────────
+    # ── Step 1: Firewall scan via /v1/scan (no LLM call) ───────────
     # Send chat history + current user message (without the agent system
     # prompt / tool delimiters which trigger false-positives).  The proxy
-    # only scans the *last* user message (parse_node) so history is safe,
-    # and the LLM needs it for multi-turn context.
+    # only scans the *last* user message (parse_node) so history is safe.
     chat_history = state.get("chat_history", [])
     user_msg = state.get("message", "")
     scan_messages = [*chat_history, {"role": "user", "content": user_msg}]
 
     try:
-        scan_resp = await acompletion(
-            model=litellm_model,
-            messages=scan_messages,
-            api_base=settings.proxy_base_url,
-            api_key="not-needed",
-            extra_headers=extra_headers,
+        scan_data = await _scan_via_proxy(
+            proxy_base_url=settings.proxy_base_url,
+            session_id=session_id,
+            policy=policy,
+            api_key=api_key,
+            scan_messages=scan_messages,
+            model_name=model_name,
             temperature=settings.default_temperature,
             max_tokens=settings.default_max_tokens,
-            timeout=120,
         )
 
-        # Extract firewall decision from proxy response headers
-        hidden = getattr(scan_resp, "_hidden_params", {})
-        addl_headers = hidden.get("additional_headers", {}) if isinstance(hidden, dict) else {}
+        if scan_data.get("status_code") == 403:
+            # Firewall BLOCK
+            elapsed_ms = int((time.perf_counter() - start) * 1000)
+            blocked_reason = scan_data.get("blocked_reason", "Request blocked by security policy.")
+            firewall_decision = {
+                "decision": "BLOCK",
+                "risk_score": scan_data.get("risk_score", 1.0),
+                "risk_flags": scan_data.get("risk_flags", {}),
+                "intent": scan_data.get("intent", ""),
+                "blocked_reason": blocked_reason,
+            }
 
-        def _hdr(name: str) -> str:
-            return addl_headers.get(name, addl_headers.get(f"llm_provider-{name}", ""))
+            trace.record_llm_call(
+                messages_count=len(messages),
+                duration_ms=elapsed_ms,
+                firewall=firewall_decision,
+            )
 
+            return {
+                **state,
+                "llm_messages": messages,
+                "llm_response": "",
+                "firewall_decision": firewall_decision,
+                "final_response": f"I'm sorry, but I can't process that request. {blocked_reason}",
+                "trace": trace.data,
+            }
+
+        # ALLOW — extract firewall decision from scan response
         firewall_decision = {
-            "decision": _hdr("x-decision") or "ALLOW",
-            "risk_score": float(_hdr("x-risk-score") or "0"),
-            "intent": _hdr("x-intent") or "",
-            "risk_flags": {},
+            "decision": scan_data.get("decision", "ALLOW"),
+            "risk_score": scan_data.get("risk_score", 0.0),
+            "intent": scan_data.get("intent", ""),
+            "risk_flags": scan_data.get("risk_flags", {}),
         }
 
         # ── Step 2: Direct LLM call with full context ────────────────
-        # The proxy scan passed (ALLOW).  Now call the LLM directly with
-        # the complete message set including system prompt and tool results
-        # so the model can actually use tool outputs in its answer.
-        # TODO(perf): add scan-only mode to proxy to avoid the wasted LLM
-        #   call in step 1 (the proxy forwards to LLM even though we only
-        #   need the firewall decision).
+        # The firewall scan passed (ALLOW).  Now call the LLM directly
+        # with the complete message set including system prompt and tool
+        # results so the model can actually use tool outputs in its answer.
         direct_model, direct_kwargs = _resolve_direct_llm(model_name, api_key, settings)
 
         full_resp = await acompletion(
@@ -394,46 +413,8 @@ async def llm_call_node(state: AgentState) -> AgentState:
 
     except APIError as e:
         elapsed_ms = int((time.perf_counter() - start) * 1000)
-        logger.warning("llm_call_blocked", status=e.status_code, elapsed_ms=elapsed_ms)
+        logger.warning("llm_call_api_error", status=e.status_code, elapsed_ms=elapsed_ms)
 
-        if e.status_code == 403:
-            # Firewall BLOCK — parse error body
-            try:
-                body = json.loads(str(e.message)) if isinstance(e.message, str) else {}
-            except (json.JSONDecodeError, TypeError):
-                body = {}
-
-            blocked_reason = "Request blocked by security policy."
-            if isinstance(body, dict):
-                error_obj = body.get("error", {})
-                if isinstance(error_obj, dict):
-                    blocked_reason = error_obj.get("message", blocked_reason)
-
-                firewall_decision = {
-                    "decision": "BLOCK",
-                    "risk_score": body.get("risk_score", 1.0),
-                    "risk_flags": body.get("risk_flags", {}),
-                    "intent": body.get("intent", ""),
-                    "blocked_reason": blocked_reason,
-                }
-
-            # Trace (spec 07)
-            trace.record_llm_call(
-                messages_count=len(messages),
-                duration_ms=elapsed_ms,
-                firewall=firewall_decision,
-            )
-
-            return {
-                **state,
-                "llm_messages": messages,
-                "llm_response": "",
-                "firewall_decision": firewall_decision,
-                "final_response": f"I'm sorry, but I can't process that request. {blocked_reason}",
-                "trace": trace.data,
-            }
-
-        # Other API errors
         error_msg = f"LLM service error: {e}"
         return {
             **state,

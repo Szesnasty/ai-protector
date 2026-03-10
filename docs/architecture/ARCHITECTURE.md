@@ -90,14 +90,14 @@ Custom policies can be created via the REST API.
 The agent demo (Customer Support Copilot) shows in-agent security controls.
 It uses a separate **LangGraph state machine** with 11 nodes.
 
-### Two-phase LLM call architecture
+### Scan + LLM call architecture
 
-The agent uses a two-phase approach for LLM calls:
+The agent uses a two-step approach for LLM calls:
 
-1. **Phase 1 — Firewall scan:** Send `scan_messages` (user message only) to the proxy service for security analysis (injection detection, PII scanning, policy evaluation).
-2. **Phase 2 — LLM call:** Send the full message history (system prompt, tool results, conversation context) directly to the LLM provider via LiteLLM.
+1. **Step 1 — Firewall scan:** Call the proxy's `POST /v1/scan` endpoint with `scan_messages` (user message only) for security analysis (injection detection, PII scanning, policy evaluation). This is a lightweight scan-only call — no LLM inference happens.
+2. **Step 2 — LLM call:** If the scan allows the request, send the full message history (system prompt, tool results, conversation context) directly to the LLM provider via LiteLLM.
 
-This separates security enforcement from LLM inference — the proxy never sees tool results or the system prompt, while user input is always scanned.
+This separates security enforcement from LLM inference — the proxy never sees tool results or the system prompt, while user input is always scanned. The `/v1/scan` endpoint runs the same `run_pre_llm_pipeline()` as the full proxy path, ensuring identical security coverage with minimal latency.
 
 ### Agent graph
 

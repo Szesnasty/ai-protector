@@ -2,6 +2,31 @@
 
 from unittest.mock import AsyncMock, patch
 
+_SCAN_PATCH = "src.agent.nodes.llm_call._scan_via_proxy"
+_LLM_PATCH = "src.agent.nodes.llm_call.acompletion"
+
+
+def _scan_allow(risk_score: float = 0.1, intent: str = "qa") -> dict:
+    return {
+        "status_code": 200,
+        "decision": "ALLOW",
+        "risk_score": risk_score,
+        "intent": intent,
+        "risk_flags": {},
+        "blocked_reason": None,
+    }
+
+
+def _llm_resp(content: str = "Test response") -> AsyncMock:
+    resp = AsyncMock()
+    resp.choices = [AsyncMock()]
+    resp.choices[0].message.content = content
+    resp.usage = AsyncMock()
+    resp.usage.prompt_tokens = 50
+    resp.usage.completion_tokens = 20
+    resp.usage.total_tokens = 70
+    return resp
+
 
 class TestAgentChatEndpoint:
     def test_missing_fields(self, client):
@@ -35,18 +60,10 @@ class TestAgentChatEndpoint:
 
     def test_valid_request_shape(self, client):
         """Should return proper response structure with mocked LLM."""
-        mock_response = AsyncMock()
-        mock_response.choices = [AsyncMock()]
-        mock_response.choices[0].message.content = "Hello! How can I help?"
-        mock_response._hidden_params = {
-            "additional_headers": {
-                "x-decision": "ALLOW",
-                "x-risk-score": "0.05",
-                "x-intent": "chitchat",
-            }
-        }
+        scan = _scan_allow(risk_score=0.05, intent="chitchat")
+        llm = _llm_resp("Hello! How can I help?")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_response):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -80,14 +97,10 @@ class TestAgentChatEndpoint:
 
     def test_kb_search_response(self, client):
         """KB search should return tool call info."""
-        mock_response = AsyncMock()
-        mock_response.choices = [AsyncMock()]
-        mock_response.choices[0].message.content = "Our return policy allows returns within 30 days."
-        mock_response._hidden_params = {
-            "additional_headers": {"x-decision": "ALLOW", "x-risk-score": "0.1", "x-intent": "qa"}
-        }
+        scan = _scan_allow(risk_score=0.1, intent="qa")
+        llm = _llm_resp("Our return policy allows returns within 30 days.")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_response):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -106,14 +119,10 @@ class TestAgentChatEndpoint:
 
     def test_customer_secrets_denied(self, client):
         """Customer should not be able to call getInternalSecrets."""
-        mock_response = AsyncMock()
-        mock_response.choices = [AsyncMock()]
-        mock_response.choices[0].message.content = "I don't have access to that."
-        mock_response._hidden_params = {
-            "additional_headers": {"x-decision": "ALLOW", "x-risk-score": "0.3", "x-intent": "qa"}
-        }
+        scan = _scan_allow(risk_score=0.3, intent="qa")
+        llm = _llm_resp("I don't have access to that.")
 
-        with patch("src.agent.nodes.llm_call.acompletion", return_value=mock_response):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
             response = client.post(
                 "/agent/chat",
                 json={

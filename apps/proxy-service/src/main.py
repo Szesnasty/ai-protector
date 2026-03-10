@@ -23,6 +23,7 @@ from src.routers.models import router as models_router
 from src.routers.policies import router as policies_router
 from src.routers.requests import router as requests_router
 from src.routers.rules import router as rules_router
+from src.routers.scan import router as scan_router
 from src.routers.scenarios import router as scenarios_router
 from src.schemas.chat import ErrorDetail, ErrorResponse
 
@@ -126,6 +127,7 @@ app.include_router(analytics_router, prefix="/v1")
 app.include_router(policies_router, prefix="/v1")
 app.include_router(requests_router, prefix="/v1")
 app.include_router(rules_router, prefix="/v1")
+app.include_router(scan_router)
 app.include_router(scenarios_router, prefix="/v1")
 
 

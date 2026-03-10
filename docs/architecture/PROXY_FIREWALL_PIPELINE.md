@@ -150,7 +150,7 @@ Request
 | 4 | scanners | **Layer 5** — NeMo Guardrails | FastEmbed cosine similarity: 12 semantic rails |
 | 5 | decision | — | Weighted signal aggregation → ALLOW / MODIFY / BLOCK |
 | 6 | transform | — | PII masking in prompt (if policy = mask) |
-| 7 | llm_call | — | Two-phase: proxy firewall scan + LLM provider call |
+| 7 | llm_call | — | LLM provider call (or scan-only via `/v1/scan`) |
 | 8 | output_filter | — | PII redaction, secrets scan, system prompt leak detection |
 | 9 | logging | — | Trace accumulator, metrics, Langfuse export |
 

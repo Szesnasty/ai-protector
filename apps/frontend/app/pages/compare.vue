@@ -36,14 +36,14 @@
 
         <!-- Phase indicator -->
         <v-chip
-          v-if="phase !== 'idle'"
-          :color="phase === 'protected' ? 'info' : 'warning'"
+          v-if="phase === 'streaming'"
+          color="info"
           size="small"
           variant="tonal"
           class="ml-2"
         >
           <v-progress-circular indeterminate size="12" width="2" class="mr-1" />
-          {{ phase === 'protected' ? 'Running: Protected…' : 'Running: Direct…' }}
+          Running…
         </v-chip>
 
         <v-spacer />

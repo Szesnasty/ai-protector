@@ -32,7 +32,7 @@ map its tools and roles, generate guardrail configs, validate with attack tests,
 
 **What already exists:**
 - Agent Demo app with full LangGraph graph (11 nodes), RBAC, pre/post-tool gates, argument validation, budgets
-- Two-phase LLM call architecture (Phase 1: firewall scan via proxy, Phase 2: full context to LLM provider)
+- Scan + LLM call architecture (Step 1: scan-only via proxy `/v1/scan`, Step 2: full context to LLM provider)
 - 421 agent-demo tests passing
 - 8 detailed implementation guides in `docs/agents-implementation/`
 - Reference implementations for all security mechanisms in `apps/agent-demo/`

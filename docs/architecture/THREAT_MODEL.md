@@ -73,6 +73,7 @@
 |-------------|----------|----------------|--------------|
 | `POST /v1/chat/completions` | HTTP/JSON | API key (passthrough) | By policy config |
 | `POST /v1/chat/completions` (stream) | HTTP/SSE | API key (passthrough) | By policy config |
+| `POST /v1/scan` | HTTP/JSON | API key (passthrough) | By policy config |
 | `GET/POST /v1/policies/*` | HTTP/JSON | None (admin API) | No |
 | `GET/POST /v1/rules/*` | HTTP/JSON | None (admin API) | No |
 | `POST /agent/chat` | HTTP/JSON | Session-based | By budget limits |
