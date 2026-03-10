@@ -51,10 +51,10 @@ Test generation rules:
 - Tests 10–12 use agent's limits config to trigger thresholds
 
 **DoD:**
-- [ ] `BasicTestPack` class with 12 test definitions
-- [ ] Each test is a dataclass: `name`, `category`, `description`, `input`, `expected_decision`, `expected_reason`
-- [ ] Test inputs are parameterized from agent's tools/roles/limits
-- [ ] Tests: pack generates 12 tests for demo agent with correct tool/role names
+- [x] `BasicTestPack` class with 12 test definitions
+- [x] Each test is a dataclass: `name`, `category`, `description`, `input`, `expected_decision`, `expected_reason`
+- [x] Test inputs are parameterized from agent's tools/roles/limits
+- [x] Tests: pack generates 12 tests for demo agent with correct tool/role names
 
 ### 30b — Validation engine
 
@@ -73,11 +73,11 @@ async def run_validation(agent_id: str, pack: str = "basic") -> ValidationResult
 ```
 
 **DoD:**
-- [ ] `run_validation(agent_id)` → `ValidationResult`
-- [ ] Result includes: total, passed, failed, per-test detail
-- [ ] Per-test detail: name, category, expected, actual, passed, duration_ms
-- [ ] Failed tests include recommendation (what to change)
-- [ ] Tests: run against demo agent config → 12/12 pass
+- [x] `run_validation(agent_id)` → `ValidationResult`
+- [x] Result includes: total, passed, failed, per-test detail
+- [x] Per-test detail: name, category, expected, actual, passed, duration_ms
+- [x] Failed tests include recommendation (what to change)
+- [x] Tests: run against demo agent config → 12/12 pass
 
 ### 30c — Validation API endpoint
 
@@ -110,11 +110,11 @@ Body: { "pack": "basic" }  (optional, defaults to "basic")
 ```
 
 **DoD:**
-- [ ] Endpoint accepts pack name (default "basic")
-- [ ] Returns full result with per-test detail
-- [ ] Stores validation run in DB (agent_id, pack, score, results JSONB, timestamp)
-- [ ] `GET /agents/:id/validations` returns history of runs
-- [ ] Tests: POST → response matches schema → re-run gives same score
+- [x] Endpoint accepts pack name (default "basic")
+- [x] Returns full result with per-test detail
+- [x] Stores validation run in DB (agent_id, pack, score, results JSONB, timestamp)
+- [x] `GET /agents/:id/validations` returns history of runs
+- [x] Tests: POST → response matches schema → re-run gives same score
 
 ### 30d — Validation properties
 
@@ -124,9 +124,9 @@ Tests must be:
 - **Tied to pack version:** When pack changes, test pack version bumps
 
 **DoD:**
-- [ ] Each test has `version` field
-- [ ] Results include `test_version` + `pack_version`
-- [ ] Tests: same agent, two runs → identical results
+- [x] Each test has `version` field
+- [x] Results include `test_version` + `pack_version`
+- [x] Tests: same agent, two runs → identical results
 
 ---
 
