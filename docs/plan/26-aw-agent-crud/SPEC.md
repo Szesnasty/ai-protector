@@ -42,10 +42,10 @@ Tools, roles, config generation, validation, traces — all hang on `agent_id`.
 | Migration | Alembic auto-generate |
 
 **DoD:**
-- [ ] SQLAlchemy model `Agent` with all columns above
-- [ ] Alembic migration creates table
-- [ ] Migration runs cleanly up and down
-- [ ] Pydantic schemas: `AgentCreate`, `AgentUpdate`, `AgentResponse`
+- [x] SQLAlchemy model `Agent` with all columns above
+- [x] Alembic migration creates table
+- [x] Migration runs cleanly up and down
+- [x] Pydantic schemas: `AgentCreate`, `AgentUpdate`, `AgentResponse`
 
 ### 26b — Risk classification logic
 
@@ -68,10 +68,10 @@ CRITICAL → full
 ```
 
 **DoD:**
-- [ ] `compute_risk_level(agent)` function with deterministic rules above
-- [ ] `recommend_protection_level(risk_level)` returns recommendation
-- [ ] Risk is re-computed on every update (PATCH)
-- [ ] Unit tests: all 4 risk levels covered with edge cases
+- [x] `compute_risk_level(agent)` function with deterministic rules above
+- [x] `recommend_protection_level(risk_level)` returns recommendation
+- [x] Risk is re-computed on every update (PATCH)
+- [x] Unit tests: all 4 risk levels covered with edge cases
 
 ### 26c — CRUD API endpoints
 
@@ -84,22 +84,22 @@ CRITICAL → full
 | `/agents/:id` | DELETE | Soft-delete (set status=archived) |
 
 **DoD:**
-- [ ] All 5 endpoints working
-- [ ] POST returns computed `risk_level` + recommended `protection_level`
-- [ ] GET list supports `?status=active&risk_level=high&team=platform`
-- [ ] PATCH re-computes risk when capability fields change
-- [ ] DELETE sets `status=archived`, doesn't hard-delete
-- [ ] Validation: name required, min 2 chars
-- [ ] Tests: CRUD cycle, risk computation, filtering, soft-delete
+- [x] All 5 endpoints working
+- [x] POST returns computed `risk_level` + recommended `protection_level`
+- [x] GET list supports `?status=active&risk_level=high&team=platform`
+- [x] PATCH re-computes risk when capability fields change
+- [x] DELETE sets `status=archived`, doesn't hard-delete
+- [x] Validation: name required, min 2 chars
+- [x] Tests: CRUD cycle, risk computation, filtering, soft-delete
 
 ### 26d — Seed demo agent
 
 Insert the existing Customer Support Copilot as a pre-configured reference agent.
 
 **DoD:**
-- [ ] Seed script creates "Customer Support Copilot" agent with status=active, is_reference=true
-- [ ] Reference agent is non-deletable (API returns 403)
-- [ ] Reference agent appears at top of agents list
+- [x] Seed script creates "Customer Support Copilot" agent with status=active, is_reference=true
+- [x] Reference agent is non-deletable (API returns 403)
+- [x] Reference agent appears at top of agents list
 
 ---
 
