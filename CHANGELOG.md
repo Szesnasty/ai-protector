@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/Szesnasty/ai-protector/compare/v0.1.1...v0.1.2) (2026-03-10)
+
+
+### Performance Improvements
+
+* scan-only endpoint + parallel Compare execution ([6bb7dbf](https://github.com/Szesnasty/ai-protector/commit/6bb7dbf6f4add7f5b2059754b8442ec85abcbe4c))
+
 ## [0.1.1](https://github.com/Szesnasty/ai-protector/compare/v0.1.0...v0.1.1) (2026-03-09)
 
 
