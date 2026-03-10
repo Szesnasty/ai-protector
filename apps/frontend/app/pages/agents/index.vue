@@ -8,6 +8,12 @@
         </p>
       </div>
       <div class="d-flex ga-2">
+        <v-btn
+          variant="text"
+          icon="mdi-book-open-outline"
+          title="Integration Guide"
+          @click="navigateTo('/agents/integration-guide')"
+        />
         <v-btn variant="text" icon="mdi-refresh" :loading="isLoading" @click="refetch" />
         <v-btn color="primary" prepend-icon="mdi-plus" @click="navigateTo('/agents/new')">
           New Agent
