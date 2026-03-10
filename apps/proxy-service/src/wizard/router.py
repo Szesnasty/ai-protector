@@ -9,6 +9,8 @@ main.py only needs:
 from fastapi import APIRouter
 
 from src.wizard.routers.agents import router as agents_router
+from src.wizard.routers.tools_roles import router as tools_roles_router
 
 wizard_router = APIRouter()
 wizard_router.include_router(agents_router)
+wizard_router.include_router(tools_roles_router)
