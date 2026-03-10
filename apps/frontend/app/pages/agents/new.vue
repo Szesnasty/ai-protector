@@ -123,15 +123,12 @@ onMounted(async () => {
     }
   }
   else {
-    // Check for resumed wizard state
-    try {
-      const saved = localStorage.getItem('ai-protector-wizard-state')
-      if (saved) {
-        const state = JSON.parse(saved)
-        if (state.agentId) agentId.value = state.agentId
-      }
-    }
-    catch { /* */ }
+    // Fresh wizard entry — always start clean
+    localStorage.removeItem('ai-protector-wizard-state')
+    currentStep.value = 1
+    agentId.value = null
+    editAgent.value = null
+    Object.keys(stepValidity).forEach(k => { stepValidity[Number(k)] = false })
   }
 })
 
