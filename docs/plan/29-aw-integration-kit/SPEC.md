@@ -5,6 +5,8 @@
 **Effort:** 3–4 days (⚠️ highest risk item — the heart of the product)
 **Output:** Template-based generation of 7 deployment-ready files
 
+**Module:** `src/wizard/` — adds services/integration_kit.py, routers/integration.py, templates/kit/
+
 ---
 
 ## Why this is the hardest step
@@ -27,7 +29,7 @@ a real repo, run real tests, and protect a real agent. If
 
 ### 29a — Template engine setup
 
-Jinja2 templates stored in `apps/proxy-service/src/templates/kit/`.
+Jinja2 templates stored in `apps/proxy-service/src/wizard/templates/kit/`.
 
 Template context (filled from DB):
 
@@ -245,8 +247,8 @@ The ultimate acceptance test:
 
 ## Test plan
 
-Minimum **58 tests** across 12 sub-steps. Tests in `tests/agents/test_integration_kit.py`
-and `tests/agents/test_kit_templates.py`.
+Minimum **58 tests** across 12 sub-steps. Tests in `tests/wizard/test_integration_kit.py`
+and `tests/wizard/test_kit_templates.py`.
 
 ### 29a tests — Template engine (6 tests)
 

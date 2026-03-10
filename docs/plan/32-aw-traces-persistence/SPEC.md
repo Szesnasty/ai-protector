@@ -5,6 +5,8 @@
 **Effort:** 2 days
 **Output:** Per-agent traces stored in DB, queryable via API, incident grouping
 
+**Module:** `src/wizard/` — adds models (AgentTrace, AgentIncident), routers/traces.py, services/trace_recorder.py
+
 ---
 
 ## Why this step matters
@@ -180,8 +182,8 @@ GET /agents/:id/traces/stats
 
 ## Test plan
 
-Minimum **50 tests** across 5 sub-steps. Tests in `tests/agents/test_traces.py`
-and `tests/agents/test_incidents.py`.
+Minimum **50 tests** across 5 sub-steps. Tests in `tests/wizard/test_traces.py`
+and `tests/wizard/test_incidents.py`.
 
 ### 32a tests — Trace DB model (10 tests)
 

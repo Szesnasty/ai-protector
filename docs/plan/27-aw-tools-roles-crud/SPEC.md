@@ -5,6 +5,8 @@
 **Effort:** 2–3 days
 **Output:** Tool registry, role management, permission matrix — all in DB
 
+**Module:** `src/wizard/` — extends models.py, schemas.py, adds routers/tools_roles.py, services/
+
 ---
 
 ## Why this step matters
@@ -110,7 +112,7 @@ existing tools and roles.
 
 ## Test plan
 
-Minimum **52 tests** across 4 sub-steps. Tests in `tests/agents/test_tools_roles.py`.
+Minimum **52 tests** across 4 sub-steps. Tests in `tests/wizard/test_tools_roles.py`.
 
 ### 27a tests — Tool CRUD (18 tests)
 
