@@ -193,8 +193,8 @@ jobs:
 
 **Definition of Done:**
 - [x] All 3 workflow files in `.github/workflows/`
-- [ ] CI passes on main (green badge!)
-- [ ] CodeQL scanning enabled in repo settings
+- [x] CI passes on main (green badge!)
+- [x] CodeQL scanning enabled in repo settings
 - [ ] Dependency review blocks PRs with vulnerable deps
 
 ---
@@ -236,7 +236,7 @@ updates:
 
 **Definition of Done:**
 - [x] `.github/dependabot.yml` exists
-- [ ] Dependabot enabled in repo Settings → Code security
+- [x] Dependabot enabled in repo Settings → Code security
 - [ ] First Dependabot PRs appear within a week
 
 ---
@@ -258,8 +258,8 @@ cd apps/proxy-service && pytest tests/ -v --tb=short 2>&1 | grep FAILED
 
 **Definition of Done:**
 - [x] `pytest tests/ -v` → **0 failures** (unit tests; integration tests need DB)
-- [ ] `ruff check src/ tests/` → **0 errors**
-- [ ] CI pipeline green
+- [x] `ruff check src/ tests/` → **0 errors**
+- [x] CI pipeline green
 
 ---
 
@@ -277,7 +277,7 @@ Add status badges to the top of README.md:
 
 **Definition of Done:**
 - [x] Badges visible on GitHub repo page
-- [ ] CI badge shows green ✅
+- [x] CI badge shows green ✅
 
 ---
 
@@ -296,9 +296,9 @@ Then create a **GitHub Release** (via UI or `gh` CLI):
 - Mark as pre-release (honest about maturity)
 
 **Definition of Done:**
-- [ ] Git tag `v0.1.0` exists
-- [ ] GitHub Release published with description
-- [ ] Release visible on repo main page ("1 Release")
+- [x] Git tag `v0.1.0` exists
+- [x] GitHub Release published with description
+- [x] Release visible on repo main page ("1 Release")
 
 ---
 
@@ -317,8 +317,8 @@ Prevent direct pushes to main — enforce PR workflow:
 | Include administrators | ❌ (you can still push directly if needed) |
 
 **Definition of Done:**
-- [ ] Branch protection rule active on `main`
-- [ ] Pushing directly to main is blocked (except for admin override)
+- [x] Branch protection rule active on `main`
+- [x] Pushing directly to main is blocked (except for admin override)
 
 ---
 
@@ -336,9 +336,9 @@ Small touches that signal professionalism:
 | **Discussions** | Enable GitHub Discussions for Q&A |
 
 **Definition of Done:**
-- [ ] Description and topics set
+- [x] Description and topics set
 - [ ] Social preview image uploaded
-- [ ] Discussions enabled
+- [x] Discussions enabled
 
 ---
 

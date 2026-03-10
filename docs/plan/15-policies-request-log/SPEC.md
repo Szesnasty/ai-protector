@@ -142,16 +142,16 @@ curl -s 'http://localhost:8000/v1/requests/{ID}' | python -m json.tool
 - Request log: paginated table → filter by BLOCK → see only blocked requests → expand row → see scanner details
 
 ### Checklist
-- [ ] Request log API with server-side pagination, sorting, 6+ filter params
-- [ ] Request detail endpoint returns full audit row
-- [ ] Policies page: card grid showing all policies with status indicators
-- [ ] Policy create/edit dialog with config editor (threshold sliders, node toggles)
-- [ ] Policy delete (soft-delete) for non-builtin policies
-- [ ] Request log page: data table with server-side pagination controls
-- [ ] Request log: filter bar (decision, intent, policy, date range, search)
-- [ ] Request log: expandable rows with scanner results, risk flags, node timings
-- [ ] Loading states, error handling, empty states for both pages
-- [ ] Existing tests still pass
+- [x] Request log API with server-side pagination, sorting, 6+ filter params
+- [x] Request detail endpoint returns full audit row
+- [x] Policies page: card grid showing all policies with status indicators
+- [x] Policy create/edit dialog with config editor (threshold sliders, node toggles)
+- [x] Policy delete (soft-delete) for non-builtin policies
+- [x] Request log page: data table with server-side pagination controls
+- [x] Request log: filter bar (decision, intent, policy, date range, search)
+- [x] Request log: expandable rows with scanner results, risk flags, node timings
+- [x] Loading states, error handling, empty states for both pages
+- [x] Existing tests still pass
 
 ---
 

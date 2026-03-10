@@ -789,28 +789,28 @@ curl -s http://localhost:8000/v1/chat/completions \
 ```
 
 ### Checklist
-- [ ] Alembic migration adds `action`, `severity`, and `description` columns
-- [ ] Alembic migration adds index on `category` column
-- [ ] Alembic migration seeds 18+ rules per policy (OWASP + PII/PL + brand)
-- [ ] `DenylistPhrase` model updated with new fields (action, severity, description)
-- [ ] CRUD API: GET, POST, PATCH, DELETE for rules (description in schema)
-- [ ] Bulk import endpoint accepts up to 500 rules
-- [ ] Rule test endpoint checks text against all policy rules
-- [ ] Export endpoint returns JSON array (with description)
-- [ ] `check_denylist()` returns `DenylistHit` with action/severity/description
-- [ ] `rules_node` handles `block`, `flag`, and `score_boost` actions
-- [ ] `intent_node` queries custom `intent:*` rules from DB
-- [ ] `decision_node` incorporates `score_boost` into risk_score
-- [ ] Redis cache invalidated on rule CRUD mutations
-- [ ] Frontend: Rules page with data table (description column), filters, CRUD
-- [ ] Frontend: Category group filter chips (intent:* / owasp_* / pii_* / brand_*)
-- [ ] Frontend: `useRulePresets` composable with 20+ OWASP/PII/brand presets
-- [ ] Frontend: RuleDialog category dropdown with auto-fill (action, severity, description)
-- [ ] Frontend: Bulk import dialog with preview
-- [ ] Frontend: Rule test dialog
-- [ ] Frontend: Export button downloads JSON
-- [ ] All new tests pass
-- [ ] Existing tests still pass (backward compatible)
+- [x] Alembic migration adds `action`, `severity`, and `description` columns
+- [x] Alembic migration adds index on `category` column
+- [x] Alembic migration seeds 18+ rules per policy (OWASP + PII/PL + brand)
+- [x] `DenylistPhrase` model updated with new fields (action, severity, description)
+- [x] CRUD API: GET, POST, PATCH, DELETE for rules (description in schema)
+- [x] Bulk import endpoint accepts up to 500 rules
+- [x] Rule test endpoint checks text against all policy rules
+- [x] Export endpoint returns JSON array (with description)
+- [x] `check_denylist()` returns `DenylistHit` with action/severity/description
+- [x] `rules_node` handles `block`, `flag`, and `score_boost` actions
+- [x] `intent_node` queries custom `intent:*` rules from DB
+- [x] `decision_node` incorporates `score_boost` into risk_score
+- [x] Redis cache invalidated on rule CRUD mutations
+- [x] Frontend: Rules page with data table (description column), filters, CRUD
+- [x] Frontend: Category group filter chips (intent:* / owasp_* / pii_* / brand_*)
+- [x] Frontend: `useRulePresets` composable with 20+ OWASP/PII/brand presets
+- [x] Frontend: RuleDialog category dropdown with auto-fill (action, severity, description)
+- [x] Frontend: Bulk import dialog with preview
+- [x] Frontend: Rule test dialog
+- [x] Frontend: Export button downloads JSON
+- [x] All new tests pass
+- [x] Existing tests still pass (backward compatible)
 
 ---
 

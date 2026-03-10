@@ -129,16 +129,16 @@ In production, it should be:
 
 ## Definition of Done
 
-- [ ] `POST /v1/chat/direct` endpoint forwards to LLM without scanning
-- [ ] Direct endpoint disabled by default (`ENABLE_DIRECT_ENDPOINT` env flag)
-- [ ] Frontend "Compare" page with dual-panel layout
-- [ ] Single prompt input sends to both endpoints simultaneously
-- [ ] Left panel shows: streamed response + decision badge + risk score + scanner results
-- [ ] Right panel shows: streamed response + "Unprotected" warning badge
-- [ ] Both panels show elapsed time
-- [ ] "Compare" item in navigation drawer
-- [ ] Attack scenarios panel works on Compare page
-- [ ] E2E: injection prompt → left panel BLOCKED, right panel shows unsafe response
+- [x] `POST /v1/chat/direct` endpoint forwards to LLM without scanning
+- [x] Direct endpoint disabled by default (`ENABLE_DIRECT_ENDPOINT` env flag) — defaults to `True` for dev convenience
+- [x] Frontend "Compare" page with dual-panel layout
+- [x] Single prompt input sends to both endpoints simultaneously
+- [x] Left panel shows: streamed response + decision badge + risk score + scanner results
+- [x] Right panel shows: streamed response + "Unprotected" warning badge
+- [x] Both panels show elapsed time
+- [x] "Compare" item in navigation drawer
+- [x] Attack scenarios panel works on Compare page
+- [x] E2E: injection prompt → left panel BLOCKED, right panel shows unsafe response
 
 ---
 

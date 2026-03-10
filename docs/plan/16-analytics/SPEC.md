@@ -187,17 +187,17 @@ curl -s 'http://localhost:8000/v1/analytics/intents?hours=24' | python -m json.t
 - Auto-refresh works (optional toggle)
 
 ### Checklist
-- [ ] 5 analytics API endpoints with time-range filtering
-- [ ] Timeline bucketing (auto or manual: 5m, 1h, 1d)
-- [ ] KPI summary cards with trend indicators
-- [ ] Timeline area chart (Chart.js)
-- [ ] Policy block rate horizontal bar chart
-- [ ] Top risk flags ranked list
-- [ ] Intent distribution doughnut chart
-- [ ] Time range selector (1h, 24h, 7d, 30d)
-- [ ] Auto-refresh toggle
-- [ ] Loading/empty states for all panels
-- [ ] Existing tests still pass
+- [x] 5 analytics API endpoints with time-range filtering
+- [x] Timeline bucketing (auto or manual: 5m, 1h, 1d)
+- [x] KPI summary cards with trend indicators
+- [x] Timeline area chart (Chart.js)
+- [x] Policy block rate horizontal bar chart
+- [x] Top risk flags ranked list
+- [x] Intent distribution doughnut chart
+- [x] Time range selector (1h, 24h, 7d, 30d)
+- [x] Auto-refresh toggle
+- [x] Loading/empty states for all panels
+- [x] Existing tests still pass
 
 ---
 

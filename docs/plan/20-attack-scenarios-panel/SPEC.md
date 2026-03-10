@@ -509,14 +509,14 @@ All tags used across both scenario sets for filtering:
 
 ## Definition of Done
 
-- [ ] `types/scenarios.ts` — `ScenarioItem` + `ScenarioGroup` types with `tags` and `expectedDecision`
-- [ ] `usePlaygroundScenarios.ts` — 7 groups, 21 scenarios with OWASP tags
-- [ ] `useAgentScenarios.ts` — 6 groups, 19 scenarios with agent-specific tags
-- [ ] `attack-scenarios-panel.vue` — drawer component with search, tag filter, grouped buttons, decision chips
-- [ ] Playground integration — toggle button, auto-send on click
-- [ ] Agent Demo integration — toggle button, auto-send on click
-- [ ] Chat input components expose `setText` for prompt injection
-- [ ] Auto-submit with 300ms delay after prompt insertion
-- [ ] Responsive: temporary drawer on mobile, permanent on desktop
-- [ ] Dark mode compatible
-- [ ] Tag filter: multi-select chips, cross-filtering between groups
+- [x] `types/scenarios.ts` — `ScenarioItem` + `ScenarioGroup` types with `tags` and `expectedDecision`
+- [x] `usePlaygroundScenarios.ts` — 7 groups, 21 scenarios with OWASP tags
+- [x] `useAgentScenarios.ts` — 6 groups, 19 scenarios with agent-specific tags
+- [x] `attack-scenarios-panel.vue` — drawer component with search, tag filter, grouped buttons, decision chips
+- [x] Playground integration — toggle button, auto-send on click
+- [x] Agent Demo integration — toggle button, auto-send on click
+- [x] Chat input components expose `setText` for prompt injection
+- [x] Auto-submit with 300ms delay after prompt insertion
+- [x] Responsive: temporary drawer on mobile, permanent on desktop
+- [x] Dark mode compatible
+- [x] Tag filter: multi-select chips, cross-filtering between groups

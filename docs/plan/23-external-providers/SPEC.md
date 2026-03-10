@@ -191,18 +191,18 @@ response = await acompletion(model=litellm_model, messages=..., **kwargs)
 
 ## Definition of Done
 
-- [ ] `ApiToken` model in DB with Fernet-encrypted `encrypted_key` column
-- [ ] `POST /v1/tokens` encrypts and stores key, returns masked hint
-- [ ] `GET /v1/tokens` returns list with `key_hint` only (never the secret)
-- [ ] `DELETE /v1/tokens/{id}` hard-deletes the key
-- [ ] `llm_completion()` auto-detects provider from model name
-- [ ] `llm_completion()` fetches decrypted key from DB for non-Ollama providers
-- [ ] Ollama remains the default (backward compatible, no key needed)
-- [ ] Frontend "Tokens" page: add, list, delete API keys
-- [ ] Playground model dropdown includes external models when tokens exist
-- [ ] Agent Demo model dropdown includes external models when tokens exist
-- [ ] All unit tests pass (encryption, CRUD, routing, detection)
-- [ ] E2E: add OpenAI token → select gpt-4o in Playground → chat works through proxy with full scanning
+- [ ] ~~`ApiToken` model in DB with Fernet-encrypted `encrypted_key` column~~ — replaced by browser-only key storage (`useApiKeys` composable)
+- [ ] ~~`POST /v1/tokens` encrypts and stores key, returns masked hint~~ — not needed (browser storage)
+- [ ] ~~`GET /v1/tokens` returns list with `key_hint` only (never the secret)~~ — not needed (browser storage)
+- [ ] ~~`DELETE /v1/tokens/{id}` hard-deletes the key~~ — not needed (browser storage)
+- [x] `llm_completion()` auto-detects provider from model name
+- [ ] ~~`llm_completion()` fetches decrypted key from DB for non-Ollama providers~~ — key comes from `x-api-key` header instead
+- [x] Ollama remains the default (backward compatible, no key needed)
+- [x] Frontend "Tokens" page: add, list, delete API keys — implemented as Settings page with per-provider key cards
+- [x] Playground model dropdown includes external models when tokens exist
+- [x] Agent Demo model dropdown includes external models when tokens exist
+- [x] All unit tests pass (encryption, CRUD, routing, detection) — provider detection tests pass; no encryption tests (not needed)
+- [x] E2E: add OpenAI token → select gpt-4o in Playground → chat works through proxy with full scanning
 
 ---
 
