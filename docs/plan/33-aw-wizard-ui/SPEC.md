@@ -315,3 +315,151 @@ Build order within step 33:
 6. **33k** (agent detail) — needs all APIs working
 
 Total: ~12 components + 8 composables + 4 pages
+
+---
+
+## Test plan
+
+Minimum **72 tests** across 12 sub-steps.
+Unit tests in `tests/components/` (Vitest + Vue Test Utils).
+E2E tests in `tests/e2e/` (Playwright or Cypress).
+
+### 33a tests — Sidebar + routing (6 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 1 | `test_sidebar_has_agents_item` | "Agents" nav item rendered with mdi-robot-outline icon |
+| 2 | `test_agents_item_is_first` | "Agents" is first item in nav list |
+| 3 | `test_route_agents_list` | /agents resolves, renders page |
+| 4 | `test_route_agents_new` | /agents/new resolves, renders wizard |
+| 5 | `test_route_agents_detail` | /agents/:id resolves, renders detail |
+| 6 | `test_sidebar_active_state` | Navigating to /agents/xxx highlights "Agents" in sidebar |
+
+### 33b tests — Agents list page (8 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 7 | `test_list_renders_agents` | Mock 3 agents → 3 rows rendered |
+| 8 | `test_list_risk_chip_colors` | LOW=green, MEDIUM=amber, HIGH=orange, CRITICAL=red |
+| 9 | `test_list_rollout_chip` | observe=blue, warn=amber, enforce=green |
+| 10 | `test_list_tool_count` | Tools column shows correct count |
+| 11 | `test_list_new_agent_button` | "+ New Agent" button exists, navigates to /agents/new |
+| 12 | `test_list_empty_state` | 0 agents → "Register your first agent" CTA |
+| 13 | `test_list_row_click_navigates` | Click row → navigates to /agents/:id |
+| 14 | `test_list_search_filter` | Type in search → list filtered by name |
+
+### 33c tests — Wizard stepper (8 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 15 | `test_stepper_renders_7_steps` | 7 step headers visible |
+| 16 | `test_stepper_starts_at_step_1` | Step 1 active on mount |
+| 17 | `test_stepper_next_disabled_without_validation` | "Next" disabled when step not valid |
+| 18 | `test_stepper_next_advances` | Complete step 1 → click Next → step 2 active |
+| 19 | `test_stepper_back_works` | Click Back on step 2 → step 1 active |
+| 20 | `test_stepper_no_back_on_step_1` | Step 1 has no Back button |
+| 21 | `test_stepper_persists_to_localStorage` | Advance to step 3 → localStorage has wizard state |
+| 22 | `test_stepper_restores_from_localStorage` | Set localStorage wizard state → mount → resumes at step 3 |
+
+### 33d tests — Step 1: Describe Agent (6 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 23 | `test_describe_form_renders` | Name, description, framework fields visible |
+| 24 | `test_describe_name_required` | Submit empty name → validation error shown |
+| 25 | `test_describe_name_min_3` | Submit "ab" → validation error |
+| 26 | `test_describe_framework_select` | 4 options: LangGraph, CrewAI, raw Python, proxy-only |
+| 27 | `test_describe_next_calls_api` | Fill form + Next → POST /agents called |
+| 28 | `test_describe_duplicate_name_error` | API returns 409 → "Name already taken" shown |
+
+### 33e tests — Step 2: Register Tools (8 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 29 | `test_tools_empty_state` | Initially shows "No tools added" + "Add Tool" button |
+| 30 | `test_tools_add_dialog` | Click "+ Add Tool" → dialog opens with form |
+| 31 | `test_tools_add_saves_to_api` | Fill tool form + Save → POST /agents/:id/tools called |
+| 32 | `test_tools_appears_in_list` | After add, tool appears in visual list |
+| 33 | `test_tools_edit` | Click edit → dialog pre-filled, save calls PATCH |
+| 34 | `test_tools_delete` | Click delete → confirm dialog → DELETE called |
+| 35 | `test_tools_import_json` | Paste valid JSON → tools added |
+| 36 | `test_tools_import_invalid` | Paste invalid JSON → error shown |
+
+### 33f tests — Step 3: Define Roles (6 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 37 | `test_roles_add` | "+ Add Role" → dialog, save calls API |
+| 38 | `test_roles_permission_matrix_renders` | Grid shows roles × tools |
+| 39 | `test_roles_matrix_checkbox_toggle` | Click checkbox → permission toggled, API called |
+| 40 | `test_roles_at_least_one_required` | 0 roles → "Next" disabled |
+| 41 | `test_roles_delete` | Delete role → removed from matrix |
+| 42 | `test_roles_inheritance_select` | Role form has "Inherits from" dropdown |
+
+### 33g tests — Step 4: Configure Security (6 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 43 | `test_security_pack_cards` | 5 policy pack cards rendered |
+| 44 | `test_security_pack_selection` | Click card → selected state, pack value set |
+| 45 | `test_security_limits_form` | Rate limit, token budget, cost budget inputs visible |
+| 46 | `test_security_limits_defaults` | Defaults populated per risk level |
+| 47 | `test_security_config_preview` | YAML preview shown, syntax highlighted |
+| 48 | `test_security_preview_updates` | Change pack → preview YAML updates |
+
+### 33h tests — Step 5: Generate Kit (6 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 49 | `test_kit_generate_button` | "Generate Kit" button calls POST /agents/:id/integration-kit |
+| 50 | `test_kit_tabbed_preview` | After generate, 7 tabs shown (one per file) |
+| 51 | `test_kit_syntax_highlighting` | Python files have syntax classes, YAML files have syntax classes |
+| 52 | `test_kit_download_button` | "Download ZIP" button triggers GET download |
+| 53 | `test_kit_copy_button` | "Copy" button on each tab copies file content |
+| 54 | `test_kit_loading_state` | During generation, loading indicator shown |
+
+### 33i tests — Step 6: Validate (6 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 55 | `test_validate_run_button` | "Run Validation" calls POST /agents/:id/validate |
+| 56 | `test_validate_loading` | During run, progress indicator shown |
+| 57 | `test_validate_scorecard_pass` | 12/12 → green badge, all categories green |
+| 58 | `test_validate_scorecard_fail` | 10/12 → red badge, failed tests listed |
+| 59 | `test_validate_failed_recommendation` | Failed test shows recommendation text |
+| 60 | `test_validate_rerun_button` | After results, "Re-run" button visible |
+
+### 33j tests — Step 7: Deploy (4 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 61 | `test_deploy_mode_cards` | 3 mode explanation cards rendered |
+| 62 | `test_deploy_activate_button` | "Activate" calls PATCH /agents/:id/rollout |
+| 63 | `test_deploy_success_state` | After activation, success message + link to detail page |
+| 64 | `test_deploy_next_steps` | Success view shows "promote to warn/enforce later" info |
+
+### 33k tests — Agent detail page (8 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 65 | `test_detail_has_8_tabs` | 8 tab headers rendered |
+| 66 | `test_detail_overview_tab` | Overview shows agent info, risk, rollout mode |
+| 67 | `test_detail_tools_tab` | Tools tab lists agent's tools |
+| 68 | `test_detail_config_tab` | Config tab shows YAML with re-generate button |
+| 69 | `test_detail_validation_tab` | Validation tab shows latest results + history |
+| 70 | `test_detail_traces_tab` | Traces tab shows filtered trace list |
+| 71 | `test_detail_rollout_promote_button` | "Promote to warn" button visible in observe mode |
+| 72 | `test_detail_rollout_readiness` | Readiness check info displayed before promotion |
+
+### 33l tests — Composables (8 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 73 | `test_useAgents_list` | useAgents().agents returns reactive agent list |
+| 74 | `test_useAgents_create` | useAgents().create() calls POST /agents |
+| 75 | `test_useAgentTools_crud` | useAgentTools(id).create/update/delete call correct endpoints |
+| 76 | `test_useAgentRoles_crud` | useAgentRoles(id).create/update/delete call correct endpoints |
+| 77 | `test_useAgentConfig_generate` | useAgentConfig(id).generate() calls POST generate-config |
+| 78 | `test_useAgentKit_download` | useAgentKit(id).download() triggers file download |
+| 79 | `test_useAgentValidation_run` | useAgentValidation(id).run() calls POST validate |
+| 80 | `test_composable_error_handling` | API error → composable.error is set, loading=false |

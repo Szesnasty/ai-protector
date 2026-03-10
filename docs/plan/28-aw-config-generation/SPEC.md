@@ -171,3 +171,79 @@ POST /agents/:id/generate-config
 - [ ] `GET /agents/:id/config` returns last generated config (cached)
 - [ ] `GET /agents/:id/config/download` returns .zip with 3 YAML files
 - [ ] Tests: generate → download → unzip → 3 valid YAML files
+
+---
+
+## Test plan
+
+Minimum **45 tests** across 5 sub-steps. Tests in `tests/agents/test_config_generation.py`.
+
+### 28a tests — rbac.yaml generator (12 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 1 | `test_rbac_generates_valid_yaml` | Output is parseable YAML |
+| 2 | `test_rbac_metadata_header` | Output contains agent name, ID, timestamp in comments |
+| 3 | `test_rbac_roles_present` | All DB roles appear in YAML |
+| 4 | `test_rbac_tools_present` | All DB tools appear under correct roles |
+| 5 | `test_rbac_inheritance_chain` | `inherits` field matches DB inheritance |
+| 6 | `test_rbac_roles_sorted_by_depth` | Base roles before child roles |
+| 7 | `test_rbac_scopes_correct` | read/write scopes match DB access_type |
+| 8 | `test_rbac_sensitivity_correct` | low/medium/high/critical match DB |
+| 9 | `test_rbac_confirmation_flag` | requires_confirmation=true where DB says so |
+| 10 | `test_rbac_matches_existing_config` | Demo agent output == existing rbac_config.yaml (semantic) |
+| 11 | `test_rbac_empty_tools` | Agent with 0 tools → valid YAML with empty roles |
+| 12 | `test_rbac_circular_inheritance_error` | Circular inheritance → raises ValueError, not infinite loop |
+
+### 28b tests — limits.yaml generator (8 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 13 | `test_limits_generates_valid_yaml` | Output is parseable YAML |
+| 14 | `test_limits_all_roles_present` | Every role has budget entry |
+| 15 | `test_limits_defaults_from_pack` | Default values match policy pack tier |
+| 16 | `test_limits_override_single_value` | Override max_cost_usd → only that changes |
+| 17 | `test_limits_per_tool_rate_limits` | Tool-level rate_limit appears in output |
+| 18 | `test_limits_different_packs` | customer_support vs research → different default budgets |
+| 19 | `test_limits_no_roles` | Agent with 0 roles → valid YAML (empty) |
+| 20 | `test_limits_deterministic` | Two calls same input → identical output |
+
+### 28c tests — Policy pack templates (10 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 21 | `test_list_packs_returns_5` | list_policy_packs() → 5 packs |
+| 22 | `test_get_pack_customer_support` | get_policy_pack("customer_support") → has all required fields |
+| 23 | `test_get_pack_internal_copilot` | get_policy_pack("internal_copilot") → correct thresholds |
+| 24 | `test_get_pack_finance` | get_policy_pack("finance") → strict values |
+| 25 | `test_get_pack_hr` | get_policy_pack("hr") → strict values, PII=block |
+| 26 | `test_get_pack_research` | get_policy_pack("research") → lax values, PII=off |
+| 27 | `test_get_pack_nonexistent` | get_policy_pack("xxx") → KeyError |
+| 28 | `test_all_packs_have_required_fields` | Each pack has: scanners, thresholds, limits, redaction |
+| 29 | `test_pack_thresholds_in_range` | All thresholds between 0.0 and 1.0 |
+| 30 | `test_pack_dataclass_immutable` | Modifying returned pack doesn't affect template |
+
+### 28d tests — policy.yaml generator (7 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 31 | `test_policy_generates_valid_yaml` | Output is parseable YAML |
+| 32 | `test_policy_values_from_pack` | customer_support pack → injection_threshold=0.3 |
+| 33 | `test_policy_override_single_value` | Override toxicity_threshold → only that changes |
+| 34 | `test_policy_all_scanner_toggles` | All scanner on/off flags present |
+| 35 | `test_policy_output_filtering_section` | output_filtering section present with correct values |
+| 36 | `test_policy_confirmation_section` | confirmation section with sensitivity list |
+| 37 | `test_policy_deterministic` | Two calls same input → identical output |
+
+### 28e tests — Generation API (8 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 38 | `test_generate_returns_all_3_files` | POST → response has rbac_yaml, limits_yaml, policy_yaml |
+| 39 | `test_generate_stores_on_agent` | After POST, GET /agents/:id/config returns cached config |
+| 40 | `test_generate_nonexistent_agent` | POST with bad ID → 404 |
+| 41 | `test_generate_agent_no_tools` | Agent with 0 tools → valid but minimal config |
+| 42 | `test_get_config_before_generate` | GET /agents/:id/config before any generation → 404 or null |
+| 43 | `test_download_zip` | GET /agents/:id/config/download → zip with 3 YAML files |
+| 44 | `test_download_zip_valid_yaml` | Each file in zip is parseable YAML |
+| 45 | `test_regenerate_overwrites_cache` | Generate twice → GET config returns latest |
