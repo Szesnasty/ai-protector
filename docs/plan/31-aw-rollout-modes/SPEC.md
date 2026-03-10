@@ -5,6 +5,8 @@
 **Effort:** 2 days
 **Output:** observe / warn / enforce mode on agent gates with promotion flow
 
+**Module:** `src/wizard/` — adds routers/rollout.py, extends services/
+
 ---
 
 ## Why this step matters
@@ -153,7 +155,7 @@ GET /agents/:id/rollout/readiness
 
 ## Test plan
 
-Minimum **48 tests** across 5 sub-steps. Tests in `tests/agents/test_rollout_modes.py`.
+Minimum **48 tests** across 5 sub-steps. Tests in `tests/wizard/test_rollout_modes.py`.
 
 ### 31a tests — DB model + enum (6 tests)
 

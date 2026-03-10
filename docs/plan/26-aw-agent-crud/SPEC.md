@@ -5,6 +5,23 @@
 **Effort:** 1–2 days
 **Output:** Agent registration API, DB model, risk classification
 
+**Module:** All wizard code lives in the self-contained `src/wizard/` package:
+
+```
+src/wizard/
+    __init__.py              # Exports wizard_router + seed_wizard
+    router.py                # Composite router mounting all sub-routers
+    models.py                # Agent model + enums (this spec)
+    schemas.py               # Pydantic schemas (this spec)
+    seed.py                  # Reference agent seed (this spec)
+    routers/agents.py        # Agent CRUD endpoints (this spec)
+    services/risk.py         # Risk classification (this spec)
+tests/wizard/
+    test_agent_crud.py       # Tests for this spec
+alembic/versions/
+    *_aw_001_agents.py       # Migration (prefix aw_ for wizard)
+```
+
 ---
 
 ## Why first
@@ -88,7 +105,7 @@ Insert the existing Customer Support Copilot as a pre-configured reference agent
 
 ## Test plan
 
-Minimum **35 tests** across 4 sub-steps. All tests in `tests/agents/test_agent_crud.py`.
+Minimum **35 tests** across 4 sub-steps. All tests in `tests/wizard/test_agent_crud.py`.
 
 ### 26a tests — DB model (6 tests)
 
