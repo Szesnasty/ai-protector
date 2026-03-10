@@ -33,6 +33,7 @@ class AgentCreate(BaseModel):
     touches_pii: bool = False
     handles_secrets: bool = False
     calls_external_apis: bool = False
+    policy_pack: str | None = None
 
 
 class AgentUpdate(BaseModel):
@@ -76,6 +77,7 @@ class AgentRead(BaseModel):
     rollout_mode: RolloutMode
     status: AgentStatus
     is_reference: bool
+    generated_config: dict | None = None
     created_at: datetime
     updated_at: datetime
 
