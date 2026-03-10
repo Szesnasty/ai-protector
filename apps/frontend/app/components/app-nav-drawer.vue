@@ -99,6 +99,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { title: 'Agents', icon: 'mdi-robot-outline', to: '/agents' },
   { title: 'Playground', icon: 'mdi-chat-processing', to: '/playground' },
   { title: 'Compare', icon: 'mdi-compare', to: '/compare' },
   { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
