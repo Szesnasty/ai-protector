@@ -14,10 +14,15 @@ from src.wizard.models import (
     AgentStatus,
     GateAction,
     GateDecisionType,
+    IncidentCategory,
+    IncidentSeverity,
+    IncidentStatus,
     ProtectionLevel,
     RiskLevel,
     RolloutMode,
     Sensitivity,
+    TraceDecision,
+    TraceGate,
 )
 
 
@@ -335,3 +340,113 @@ class GateDecisionRead(BaseModel):
     warning: str | None
     context: dict | None
     created_at: datetime
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Agent trace schemas (spec 32)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TraceCreate(BaseModel):
+    """Request body to record a trace (via recorder service)."""
+
+    session_id: str = "default"
+    gate: TraceGate
+    tool_name: str | None = None
+    role: str | None = None
+    decision: TraceDecision
+    reason: str = ""
+    category: str = "policy"
+    rollout_mode: RolloutMode = RolloutMode.OBSERVE
+    enforced: bool = True
+    latency_ms: int = 0
+    details: dict | None = None
+
+
+class TraceRead(BaseModel):
+    """Read view of a single agent trace."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    agent_id: uuid.UUID
+    session_id: str
+    timestamp: datetime
+    gate: TraceGate
+    tool_name: str | None
+    role: str | None
+    decision: TraceDecision
+    reason: str
+    category: str
+    rollout_mode: RolloutMode
+    enforced: bool
+    latency_ms: int
+    details: dict | None
+    incident_id: uuid.UUID | None
+
+
+class TraceListResponse(BaseModel):
+    """Paginated trace list."""
+
+    items: list[TraceRead]
+    total: int
+    page: int
+    per_page: int
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Incident schemas (spec 32b)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class IncidentRead(BaseModel):
+    """Read view of an agent incident."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    agent_id: uuid.UUID
+    severity: IncidentSeverity
+    category: IncidentCategory
+    title: str
+    status: IncidentStatus
+    first_seen: datetime
+    last_seen: datetime
+    trace_count: int
+    details: dict | None
+
+
+class IncidentListResponse(BaseModel):
+    """Paginated incident list."""
+
+    items: list[IncidentRead]
+    total: int
+
+
+class IncidentUpdate(BaseModel):
+    """Patch body for incident status update."""
+
+    status: IncidentStatus
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Trace statistics (spec 32e)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class IncidentStatsBreakdown(BaseModel):
+    open: int = 0
+    acknowledged: int = 0
+    resolved: int = 0
+    false_positive: int = 0
+
+
+class TraceStatsResponse(BaseModel):
+    """Aggregated trace statistics."""
+
+    total_evaluations: int
+    by_decision: dict[str, int]
+    by_category: dict[str, int]
+    by_gate: dict[str, int]
+    avg_latency_ms: float
+    incidents: IncidentStatsBreakdown
