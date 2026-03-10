@@ -50,14 +50,14 @@ roles:
 ```
 
 **DoD:**
-- [ ] `generate_rbac_yaml(agent_id)` → returns YAML string
-- [ ] Output includes metadata header (agent name, ID, timestamp)
-- [ ] Roles sorted by inheritance depth (base first)
-- [ ] Inherits-from chains resolved correctly
-- [ ] Scopes, sensitivity, confirmation all populated from DB
-- [ ] Tests: generate from seeded demo agent → compare against existing `rbac_config.yaml`
-- [ ] Tests: empty tools → valid YAML with empty roles
-- [ ] Tests: circular inheritance → error (not infinite loop)
+- [x] `generate_rbac_yaml(agent_id)` → returns YAML string
+- [x] Output includes metadata header (agent name, ID, timestamp)
+- [x] Roles sorted by inheritance depth (base first)
+- [x] Inherits-from chains resolved correctly
+- [x] Scopes, sensitivity, confirmation all populated from DB
+- [x] Tests: generate from seeded demo agent → compare against existing `rbac_config.yaml`
+- [x] Tests: empty tools → valid YAML with empty roles
+- [x] Tests: circular inheritance → error (not infinite loop)
 
 ### 28b — limits.yaml generator
 
@@ -94,11 +94,11 @@ Default budgets by role tier (from policy pack):
 | High (admin) | 100 | 32K | 16K | $10.00 |
 
 **DoD:**
-- [ ] `generate_limits_yaml(agent_id)` → returns YAML string
-- [ ] Defaults from policy pack, overridable per agent
-- [ ] Per-tool rate limits from `agent_tools.rate_limit`
-- [ ] Tests: generate with defaults → all values match pack
-- [ ] Tests: override one limit → only that value changes
+- [x] `generate_limits_yaml(agent_id)` → returns YAML string
+- [x] Defaults from policy pack, overridable per agent
+- [x] Per-tool rate limits from `agent_tools.rate_limit`
+- [x] Tests: generate with defaults → all values match pack
+- [x] Tests: override one limit → only that value changes
 
 ### 28c — Policy pack templates
 
@@ -113,11 +113,11 @@ Default budgets by role tier (from policy pack):
 | `research` | lax (0.7) | off | off | lax (0.9) | very high |
 
 **DoD:**
-- [ ] 5 pack templates as Python dataclasses (not YAML files)
-- [ ] `get_policy_pack(name)` → returns pack config
-- [ ] `list_policy_packs()` → returns all 5 with descriptions
-- [ ] Each pack has: scanner toggles, thresholds, limit defaults, redaction mode
-- [ ] Tests: all 5 packs load without error, contain all required fields
+- [x] 5 pack templates as Python dataclasses (not YAML files)
+- [x] `get_policy_pack(name)` → returns pack config
+- [x] `list_policy_packs()` → returns all 5 with descriptions
+- [x] Each pack has: scanner toggles, thresholds, limit defaults, redaction mode
+- [x] Tests: all 5 packs load without error, contain all required fields
 
 ### 28d — policy.yaml generator
 
@@ -149,10 +149,10 @@ confirmation:
 ```
 
 **DoD:**
-- [ ] `generate_policy_yaml(agent_id)` → returns YAML string
-- [ ] Values come from selected pack + any per-agent overrides
-- [ ] Tests: generate with `customer_support` pack → all thresholds match
-- [ ] Tests: override one value → only that changes
+- [x] `generate_policy_yaml(agent_id)` → returns YAML string
+- [x] Values come from selected pack + any per-agent overrides
+- [x] Tests: generate with `customer_support` pack → all thresholds match
+- [x] Tests: override one value → only that changes
 
 ### 28e — Generation API endpoint
 
@@ -167,12 +167,12 @@ POST /agents/:id/generate-config
 ```
 
 **DoD:**
-- [ ] Endpoint generates all 3 files in one call
-- [ ] Returns file contents as strings (not files — download is separate)
-- [ ] Stores last generated config on agent record (JSONB column)
-- [ ] `GET /agents/:id/config` returns last generated config (cached)
-- [ ] `GET /agents/:id/config/download` returns .zip with 3 YAML files
-- [ ] Tests: generate → download → unzip → 3 valid YAML files
+- [x] Endpoint generates all 3 files in one call
+- [x] Returns file contents as strings (not files — download is separate)
+- [x] Stores last generated config on agent record (JSONB column)
+- [x] `GET /agents/:id/config` returns last generated config (cached)
+- [x] `GET /agents/:id/config/download` returns .zip with 3 YAML files
+- [x] Tests: generate → download → unzip → 3 valid YAML files
 
 ---
 
