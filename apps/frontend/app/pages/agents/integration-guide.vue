@@ -17,8 +17,9 @@
         trace logging, and full security pipeline scans.
       </p>
       <p class="mb-0 text-body-2 text-medium-emphasis">
-        AI Protector is lightweight — the core stack (proxy + database + cache) requires
-        roughly 400–500 MB RAM and runs on a single machine via Docker Compose.
+        AI Protector runs on a single machine via Docker Compose.
+        Core stack (proxy + DB + cache) uses ~280 MB.
+        With all ML scanners (LLM Guard, NeMo, Presidio) loaded: ~1.2 GB.
         No GPU needed unless you use local LLM inference via Ollama.
       </p>
     </v-alert>
@@ -371,9 +372,17 @@ docker compose --profile full up -d
         </tbody>
       </v-table>
 
+      <p class="text-body-2 text-medium-emphasis mb-2">
+        <strong>Minimal (no ML scanners):</strong> ~280 MB — proxy base + PostgreSQL + Redis.
+        Suitable for RBAC-only enforcement or proxy_only framework.
+      </p>
+      <p class="text-body-2 text-medium-emphasis mb-2">
+        <strong>With all scanners:</strong> ~1.2 GB — adds LLM Guard, NeMo, and Presidio
+        (models lazy-loaded on first request, not at startup).
+      </p>
       <p class="text-body-2 text-medium-emphasis">
-        Total with core services only: <strong>~400–500 MB RAM</strong>.
-        Runs on a $5/month VPS (Hetzner, DigitalOcean) or any machine with Docker.
+        Runs on a $6–12/month VPS (Hetzner, DigitalOcean) or any machine with Docker.
+        2 GB RAM recommended for full scanner stack.
       </p>
     </section>
 
@@ -409,7 +418,10 @@ const observabilityItems = [
 ]
 
 const services = [
-  { name: 'proxy-service', ram: '~150 MB', required: true, notes: 'Core security proxy + API' },
+  { name: 'proxy-service (base)', ram: '~150 MB', required: true, notes: 'Core proxy + API (without ML models)' },
+  { name: '  + LLM Guard', ram: '~500 MB', required: false, notes: 'PromptInjection (DeBERTa) + Toxicity (RoBERTa) + Secrets — lazy-loaded on first scan' },
+  { name: '  + NeMo Guardrails', ram: '~200 MB', required: false, notes: 'FastEmbed all-MiniLM-L6-v2 (ONNX) — lazy-loaded on first scan' },
+  { name: '  + Presidio PII', ram: '~200 MB', required: false, notes: 'spaCy NER model — lazy-loaded on first scan' },
   { name: 'PostgreSQL', ram: '~100 MB', required: true, notes: 'Database for agents, traces, policies' },
   { name: 'Redis', ram: '~30 MB', required: true, notes: 'Cache and rate limiting' },
   { name: 'frontend', ram: '~150 MB', required: false, notes: 'Management UI (optional for headless use)' },
