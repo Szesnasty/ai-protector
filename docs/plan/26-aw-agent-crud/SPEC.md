@@ -83,3 +83,64 @@ Insert the existing Customer Support Copilot as a pre-configured reference agent
 - [ ] Seed script creates "Customer Support Copilot" agent with status=active, is_reference=true
 - [ ] Reference agent is non-deletable (API returns 403)
 - [ ] Reference agent appears at top of agents list
+
+---
+
+## Test plan
+
+Minimum **35 tests** across 4 sub-steps. All tests in `tests/agents/test_agent_crud.py`.
+
+### 26a tests — DB model (6 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 1 | `test_create_agent_model` | Agent row inserted, id is UUID, created_at auto-set |
+| 2 | `test_agent_default_values` | status=draft, rollout_mode=observe, risk_level=null before compute |
+| 3 | `test_agent_framework_enum` | Only langgraph/raw_python/proxy_only accepted |
+| 4 | `test_agent_environment_enum` | Only dev/staging/production accepted |
+| 5 | `test_migration_up_down` | Alembic upgrade → table exists, downgrade → table gone |
+| 6 | `test_pydantic_schemas_validation` | AgentCreate rejects missing name, AgentUpdate allows partial |
+
+### 26b tests — Risk classification (12 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 7 | `test_risk_low` | !write && !pii && !secrets && !public → LOW |
+| 8 | `test_risk_medium_write` | write && !pii && !public → MEDIUM |
+| 9 | `test_risk_medium_public_tools` | public && tools && !write → MEDIUM |
+| 10 | `test_risk_high_write_public` | write && public → HIGH |
+| 11 | `test_risk_high_pii` | pii=true (any combo) → HIGH |
+| 12 | `test_risk_high_secrets` | secrets=true (any combo) → HIGH |
+| 13 | `test_risk_critical` | write && pii && public → CRITICAL |
+| 14 | `test_risk_all_false` | All capabilities false → LOW |
+| 15 | `test_risk_all_true` | All capabilities true → CRITICAL |
+| 16 | `test_protection_level_low` | risk LOW → proxy_only |
+| 17 | `test_protection_level_medium` | risk MEDIUM → agent_runtime |
+| 18 | `test_protection_level_high_critical` | risk HIGH/CRITICAL → full |
+
+### 26c tests — CRUD API (13 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 19 | `test_post_creates_agent` | POST /agents → 201, body has id + computed risk |
+| 20 | `test_post_missing_name` | POST /agents {} → 422 validation error |
+| 21 | `test_post_name_too_short` | POST name="a" → 422 |
+| 22 | `test_post_duplicate_name` | POST same name twice → 409 conflict |
+| 23 | `test_get_list_empty` | GET /agents → 200, items=[] |
+| 24 | `test_get_list_pagination` | Create 15 agents, GET ?page=2&per_page=10 → 5 items, total=15 |
+| 25 | `test_get_list_filter_status` | GET ?status=active → only active agents |
+| 26 | `test_get_list_filter_risk` | GET ?risk_level=high → only high-risk agents |
+| 27 | `test_get_list_filter_team` | GET ?team=platform → only platform team agents |
+| 28 | `test_get_detail` | GET /agents/:id → 200, full agent object |
+| 29 | `test_get_detail_not_found` | GET /agents/nonexistent → 404 |
+| 30 | `test_patch_updates_and_recomputes_risk` | PATCH touches_pii=true → risk re-computed to HIGH |
+| 31 | `test_delete_soft_deletes` | DELETE → status=archived, still in DB, not in active list |
+
+### 26d tests — Seed (4 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 32 | `test_seed_creates_reference_agent` | After seed, "Customer Support Copilot" exists |
+| 33 | `test_reference_agent_non_deletable` | DELETE reference agent → 403 |
+| 34 | `test_reference_agent_top_of_list` | GET /agents → reference agent first |
+| 35 | `test_seed_idempotent` | Run seed twice → still 1 reference agent, no duplicates |
