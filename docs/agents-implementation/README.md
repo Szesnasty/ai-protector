@@ -158,14 +158,14 @@ Build order is sequential — each step depends on the previous.
 
 | Step | Spec | Sub-steps | Effort |
 |------|------|-----------|--------|
-| 26 | [Agent CRUD](../plan/26-agent-crud/SPEC.md) | 26a–26d: DB model, risk classification, CRUD API, seed data | 2 days |
-| 27 | [Tools & Roles CRUD](../plan/27-tools-roles-crud/SPEC.md) | 27a–27d: Tool CRUD, Role CRUD, permission matrix, seed data | 2 days |
-| 28 | [Config Generation](../plan/28-config-generation/SPEC.md) | 28a–28e: rbac.yaml, limits.yaml, policy packs, policy.yaml, API | 2 days |
-| 29 | [Integration Kit](../plan/29-integration-kit/SPEC.md) | 29a–29l: Jinja2 templates, framework wrappers, tests, download API | 3 days |
-| 30 | [Validation Runner](../plan/30-validation-runner/SPEC.md) | 30a–30d: test pack, engine, API, determinism properties | 2 days |
-| 31 | [Rollout Modes](../plan/31-rollout-modes/SPEC.md) | 31a–31e: DB enum, gate behavior, promotion API, traces, readiness | 2 days |
-| 32 | [Traces & Incidents](../plan/32-agent-traces-persistence/SPEC.md) | 32a–32e: trace model, incidents, recorder, API, stats | 2 days |
-| 33 | [Wizard UI](../plan/33-agent-wizard-ui/SPEC.md) | 33a–33l: sidebar, list, stepper, 7 wizard steps, detail page, composables | 4–5 days |
+| 26 | [Agent CRUD](../plan/26-aw-agent-crud/SPEC.md) | 26a–26d: DB model, risk classification, CRUD API, seed data | 2 days |
+| 27 | [Tools & Roles CRUD](../plan/27-aw-tools-roles-crud/SPEC.md) | 27a–27d: Tool CRUD, Role CRUD, permission matrix, seed data | 2 days |
+| 28 | [Config Generation](../plan/28-aw-config-generation/SPEC.md) | 28a–28e: rbac.yaml, limits.yaml, policy packs, policy.yaml, API | 2 days |
+| 29 | [Integration Kit](../plan/29-aw-integration-kit/SPEC.md) | 29a–29l: Jinja2 templates, framework wrappers, tests, download API | 3 days |
+| 30 | [Validation Runner](../plan/30-aw-validation-runner/SPEC.md) | 30a–30d: test pack, engine, API, determinism properties | 2 days |
+| 31 | [Rollout Modes](../plan/31-aw-rollout-modes/SPEC.md) | 31a–31e: DB enum, gate behavior, promotion API, traces, readiness | 2 days |
+| 32 | [Traces & Incidents](../plan/32-aw-traces-persistence/SPEC.md) | 32a–32e: trace model, incidents, recorder, API, stats | 2 days |
+| 33 | [Wizard UI](../plan/33-aw-wizard-ui/SPEC.md) | 33a–33l: sidebar, list, stepper, 7 wizard steps, detail page, composables | 4–5 days |
 
 **Total: ~19–20 days of focused work.**
 
