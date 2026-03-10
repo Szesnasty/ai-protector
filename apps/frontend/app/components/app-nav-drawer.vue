@@ -1,5 +1,5 @@
 <template>
-  <div class="nav-drawer-wrapper d-flex flex-column" style="height: 100%; overflow: hidden">
+  <div class="nav-drawer-wrapper">
     <v-chip
       v-if="modeChip"
       :color="modeChip.color"
@@ -14,7 +14,7 @@
       </v-tooltip>
     </v-chip>
 
-    <v-list density="compact" nav color="primary" class="flex-grow-1 overflow-y-auto">
+    <v-list density="compact" nav color="primary">
       <v-list-item
         v-for="item in navItems"
         :key="item.to"
@@ -43,7 +43,7 @@
       </v-list-item>
     </v-list>
 
-    <div class="wizard-cta mx-4 flex-shrink-0 pt-2 pb-2">
+    <div class="wizard-cta mx-4" style="margin-top: 48px">
       <v-btn
         to="/agents/new"
         color="primary"
