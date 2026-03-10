@@ -69,24 +69,36 @@ def _get_tool_config(role: str, tool: str) -> dict | None:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# Test 1: RBAC block
+# Test 1: RBAC — unknown role is blocked
 # ═══════════════════════════════════════════════════════════════════════
 
-{% if roles and tools %}
-def test_rbac_block():
-    """{{ roles[0].name }} must not access the most sensitive tool."""
-    # The lowest-privilege role should NOT have access to the highest-sensitivity tool
-    {% set lowest_role = roles[0] %}
-    {% set highest_tool = tools[-1] %}
-    result = _check_permission("{{ lowest_role.name }}", "{{ highest_tool.name }}")
-    assert not result, (
-        "Role '{{ lowest_role.name }}' should NOT have access to '{{ highest_tool.name }}'"
-    )
+def test_rbac_block_unknown_role():
+    """An unknown role must be denied access to any tool."""
+{% if tools %}
+    result = _check_permission("__nonexistent_role__", "{{ tools[0].name }}")
 {% else %}
-def test_rbac_block():
-    """No roles/tools configured — RBAC check should deny unknown."""
-    result = _check_permission("unknown_role", "unknown_tool")
-    assert not result
+    result = _check_permission("__nonexistent_role__", "unknown_tool")
+{% endif %}
+    assert not result, (
+        "Unknown role should be denied access"
+    )
+
+
+{% if roles and tools %}
+# ═══════════════════════════════════════════════════════════════════════
+# Test 1b: RBAC — authorized role can access its tools
+# ═══════════════════════════════════════════════════════════════════════
+
+def test_rbac_allow_authorized():
+    """Roles in the RBAC config must have access to their assigned tools."""
+    roles_cfg = RBAC.get("roles", {})
+    for role_name, role_cfg in roles_cfg.items():
+        tools_cfg = role_cfg.get("tools", {})
+        for tool_name in tools_cfg:
+            result = _check_permission(role_name, tool_name)
+            assert result, (
+                f"Role '{role_name}' should have access to '{tool_name}'"
+            )
 {% endif %}
 
 

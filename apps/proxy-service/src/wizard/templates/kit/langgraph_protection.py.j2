@@ -101,20 +101,34 @@ class LimitsService:
 
     def check_limits(self, role: str, tool: str) -> dict[str, Any]:
         """Check if the call is within budget limits."""
+        # Per-role session limit
         role_limits = self.config.get("roles", {}).get(role, {})
         max_calls = role_limits.get("max_tool_calls_per_session", 20)
         key = f"{role}:{tool}"
         current = self._call_counts.get(key, 0)
+
+        # Per-tool rate limit (applies across all roles)
+        tool_limits = self.config.get("tool_rate_limits", {}).get(tool, {})
+        tool_max = tool_limits.get("rate_limit_per_session", max_calls)
+        tool_key = f"__tool__:{tool}"
+        tool_current = self._call_counts.get(tool_key, 0)
+
+        effective_max = min(max_calls, tool_max)
+        effective_current = max(current, tool_current)
+
         return {
-            "within_limits": current < max_calls,
-            "current_calls": current,
-            "max_calls": max_calls,
+            "within_limits": effective_current < effective_max,
+            "current_calls": effective_current,
+            "max_calls": effective_max,
         }
 
     def record_call(self, role: str, tool: str) -> None:
         """Record a tool call for rate limiting."""
         key = f"{role}:{tool}"
         self._call_counts[key] = self._call_counts.get(key, 0) + 1
+        # Also track per-tool count for tool-level rate limits
+        tool_key = f"__tool__:{tool}"
+        self._call_counts[tool_key] = self._call_counts.get(tool_key, 0) + 1
 
 
 class PreToolGate:
