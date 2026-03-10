@@ -54,6 +54,9 @@
       >
         Agent Wizard
       </v-btn>
+      <p class="text-caption text-medium-emphasis text-center mt-2 mb-0" style="opacity: 0.7">
+        Ship agents with guardrails — not prayers.
+      </p>
     </div>
   </div>
 </template>
