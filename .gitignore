@@ -54,3 +54,5 @@ yarn-error.log*
 
 # ==== Ollama models (local dev) ====
 ollama_models/
+
+demo-files/
