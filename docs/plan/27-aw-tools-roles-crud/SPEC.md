@@ -37,13 +37,13 @@ Smart defaults (applied on POST/PATCH):
 - `rate_limit` defaults: low=20, medium=10, high=5, critical=3
 
 **DoD:**
-- [ ] SQLAlchemy model `AgentTool`
-- [ ] Alembic migration
-- [ ] Pydantic schemas: `ToolCreate`, `ToolUpdate`, `ToolResponse`
-- [ ] All 4 endpoints working
-- [ ] Smart defaults applied and visible in response
-- [ ] Validation: name unique per agent, arg_schema is valid JSON Schema (if provided)
-- [ ] Tests: CRUD cycle, smart defaults, uniqueness constraint
+- [x] SQLAlchemy model `AgentTool`
+- [x] Alembic migration
+- [x] Pydantic schemas: `ToolCreate`, `ToolUpdate`, `ToolResponse`
+- [x] All 4 endpoints working
+- [x] Smart defaults applied and visible in response
+- [x] Validation: name unique per agent, arg_schema is valid JSON Schema (if provided)
+- [x] Tests: CRUD cycle, smart defaults, uniqueness constraint
 
 ### 27b — Role DB model + CRUD API
 
@@ -67,13 +67,13 @@ Permission resolution: if role inherits from parent, GET returns **merged** perm
 (child overrides parent). Default-deny: tool not in permission set → DENY.
 
 **DoD:**
-- [ ] SQLAlchemy models `AgentRole` + `RoleToolPermission`
-- [ ] Alembic migration
-- [ ] Pydantic schemas with inheritance resolution
-- [ ] All 5 endpoints working
-- [ ] Inheritance resolution: child tools merged with parent, child overrides win
-- [ ] Default-deny: `/agents/:id/check-permission?role=X&tool=Y` returns ALLOW/DENY
-- [ ] Tests: CRUD, inheritance chain (3 levels), default-deny, permission override
+- [x] SQLAlchemy models `AgentRole` + `RoleToolPermission`
+- [x] Alembic migration
+- [x] Pydantic schemas with inheritance resolution
+- [x] All 5 endpoints working
+- [x] Inheritance resolution: child tools merged with parent, child overrides win
+- [x] Default-deny: `/agents/:id/check-permission?role=X&tool=Y` returns ALLOW/DENY
+- [x] Tests: CRUD, inheritance chain (3 levels), default-deny, permission override
 
 ### 27c — Permission matrix endpoint
 
@@ -93,9 +93,9 @@ GET /agents/:id/permission-matrix
 ```
 
 **DoD:**
-- [ ] Endpoint returns resolved matrix (with inheritance applied)
-- [ ] `confirm` value for tools with `requires_confirmation=true`
-- [ ] Tests: matrix matches expected output for demo agent config
+- [x] Endpoint returns resolved matrix (with inheritance applied)
+- [x] `confirm` value for tools with `requires_confirmation=true`
+- [x] Tests: matrix matches expected output for demo agent config
 
 ### 27d — Seed demo agent tools + roles
 
@@ -103,10 +103,10 @@ Populate the reference agent (from 26d) with the Customer Support Copilot's
 existing tools and roles.
 
 **DoD:**
-- [ ] Seed: 5 tools (searchKB, getOrderStatus, getCustomerProfile, issueRefund, getInternalSecrets)
-- [ ] Seed: 3 roles (customer, support, admin) with inheritance
-- [ ] Seed: permission matrix matches existing `rbac_config.yaml`
-- [ ] Permission check against seeded data matches existing `check_permission()` results
+- [x] Seed: 5 tools (searchKB, getOrderStatus, getCustomerProfile, issueRefund, getInternalSecrets)
+- [x] Seed: 3 roles (customer, support, admin) with inheritance
+- [x] Seed: permission matrix matches existing `rbac_config.yaml`
+- [x] Permission check against seeded data matches existing `check_permission()` results
 
 ---
 
