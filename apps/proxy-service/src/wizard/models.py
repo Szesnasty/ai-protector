@@ -309,3 +309,97 @@ class ValidationRun(UUIDMixin, TimestampMixin, Base):
 
     def __repr__(self) -> str:
         return f"<ValidationRun agent_id={self.agent_id} pack={self.pack} score={self.score}/{self.total}>"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# PromotionEvent (spec 31c)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class PromotionEvent(UUIDMixin, TimestampMixin, Base):
+    """Audit log entry for rollout mode transitions."""
+
+    __tablename__ = "promotion_events"
+
+    agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    from_mode: Mapped[RolloutMode] = mapped_column(
+        Enum(RolloutMode, name="rollout_mode", create_type=False),
+        nullable=False,
+    )
+    to_mode: Mapped[RolloutMode] = mapped_column(
+        Enum(RolloutMode, name="rollout_mode", create_type=False),
+        nullable=False,
+    )
+    user: Mapped[str] = mapped_column(String(128), nullable=False, default="system")
+
+    agent: Mapped[Agent] = relationship("Agent", backref="promotion_events", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<PromotionEvent {self.from_mode}→{self.to_mode} agent={self.agent_id}>"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# GateDecision — per-request trace (spec 31b / 31d)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class GateDecisionType(str, enum.Enum):
+    """Type of gate check."""
+
+    RBAC = "rbac"
+    INJECTION = "injection"
+    PII = "pii"
+    BUDGET = "budget"
+
+
+class GateAction(str, enum.Enum):
+    """Gate action result."""
+
+    ALLOW = "allow"
+    DENY = "deny"
+    BLOCK = "block"
+    REDACT = "redact"
+    WARN = "warn"
+
+
+class GateDecision(UUIDMixin, TimestampMixin, Base):
+    """Trace of a single gate evaluation."""
+
+    __tablename__ = "gate_decisions"
+
+    agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    gate_type: Mapped[GateDecisionType] = mapped_column(
+        Enum(GateDecisionType, name="gate_decision_type"),
+        nullable=False,
+    )
+    decision: Mapped[GateAction] = mapped_column(
+        Enum(GateAction, name="gate_action"),
+        nullable=False,
+    )
+    effective_action: Mapped[GateAction] = mapped_column(
+        Enum(GateAction, name="gate_action", create_type=False),
+        nullable=False,
+    )
+    rollout_mode: Mapped[RolloutMode] = mapped_column(
+        Enum(RolloutMode, name="rollout_mode", create_type=False),
+        nullable=False,
+    )
+    enforced: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    warning: Mapped[str | None] = mapped_column(Text, nullable=True)
+    context: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    agent: Mapped[Agent] = relationship("Agent", backref="gate_decisions", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return (
+            f"<GateDecision gate={self.gate_type} decision={self.decision} "
+            f"effective={self.effective_action} enforced={self.enforced}>"
+        )
