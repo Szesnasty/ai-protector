@@ -125,3 +125,71 @@ Tests must be:
 - [ ] Each test has `version` field
 - [ ] Results include `test_version` + `pack_version`
 - [ ] Tests: same agent, two runs → identical results
+
+---
+
+## Test plan
+
+Minimum **42 tests** across 4 sub-steps. Tests in `tests/agents/test_validation_runner.py`.
+
+### 30a tests — Test pack definition (14 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 1 | `test_basic_pack_has_12_tests` | BasicTestPack → 12 test definitions |
+| 2 | `test_pack_3_rbac_tests` | Exactly 3 tests with category="rbac" |
+| 3 | `test_pack_3_injection_tests` | Exactly 3 tests with category="injection" |
+| 4 | `test_pack_3_pii_tests` | Exactly 3 tests with category="pii" |
+| 5 | `test_pack_3_budget_tests` | Exactly 3 tests with category="budget" |
+| 6 | `test_rbac_test_uses_agent_roles` | Test 1 input.role = agent's lowest role |
+| 7 | `test_rbac_test_uses_agent_tools` | Test 1 input.tool = agent's highest-sensitivity tool |
+| 8 | `test_injection_test_uses_agent_args` | Test 4 injects into agent's actual tool arg names |
+| 9 | `test_pii_test_uses_agent_tools` | Test 7 uses agent's tool names |
+| 10 | `test_budget_test_uses_agent_limits` | Test 10 threshold = agent's rate_limit + 1 |
+| 11 | `test_each_test_is_dataclass` | Every test has: name, category, description, input, expected |
+| 12 | `test_pack_for_agent_no_tools` | Agent with 0 tools → pack generates with generic defaults |
+| 13 | `test_pack_for_agent_no_roles` | Agent with 0 roles → pack generates with generic defaults |
+| 14 | `test_pack_version_field` | BasicTestPack has version string |
+
+### 30b tests — Validation engine (12 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 15 | `test_run_validation_demo_agent_12_pass` | Demo agent → 12/12 pass |
+| 16 | `test_result_structure` | Result has total, passed, failed, tests[] |
+| 17 | `test_per_test_detail` | Each test detail has: name, category, expected, actual, passed, duration_ms |
+| 18 | `test_failed_test_has_recommendation` | Deliberately broken config → recommendation not null |
+| 19 | `test_rbac_deny_detected` | Lowest role → highest tool → actual=DENY |
+| 20 | `test_rbac_allow_detected` | Admin → admin tool → actual=ALLOW |
+| 21 | `test_injection_blocked` | SQL injection input → actual=BLOCKED |
+| 22 | `test_pii_redacted` | Email in output → actual=REDACTED |
+| 23 | `test_budget_over_limit` | Exceed rate limit → actual=BLOCKED |
+| 24 | `test_engine_loads_generated_config` | Engine uses agent's generated config, not hardcoded |
+| 25 | `test_engine_no_config_generated` | Agent without generated config → error (not crash) |
+| 26 | `test_engine_duration_ms` | Each test duration_ms > 0 |
+
+### 30c tests — Validation API (12 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 27 | `test_post_validate_returns_result` | POST → 200, body matches schema |
+| 28 | `test_post_validate_nonexistent_agent` | POST bad ID → 404 |
+| 29 | `test_post_validate_default_pack` | POST without body → uses "basic" pack |
+| 30 | `test_post_validate_unknown_pack` | POST { pack: "xxx" } → 422 |
+| 31 | `test_post_validate_stores_run` | After POST, run stored in DB |
+| 32 | `test_get_validations_history` | GET /agents/:id/validations → list of runs |
+| 33 | `test_get_validations_empty` | New agent → [] |
+| 34 | `test_get_validations_ordered` | Most recent first |
+| 35 | `test_post_validate_categories_breakdown` | Response has categories.rbac, .injection, .pii, .budget |
+| 36 | `test_post_validate_response_timing` | Response has run_at + duration_ms |
+| 37 | `test_post_validate_result_schema_full` | Every field from API schema doc present |
+| 38 | `test_rerun_same_score` | POST twice → same score (determinism) |
+
+### 30d tests — Validation properties (4 tests)
+
+| # | Test | Assert |
+|---|------|--------|
+| 39 | `test_deterministic_same_config` | Same config, 3 runs → 3 identical results |
+| 40 | `test_versioned_tests` | Each test in result has version field |
+| 41 | `test_pack_version_in_result` | Result includes pack_version |
+| 42 | `test_no_llm_dependency` | Validation runs with no LLM configured (mocked/stubbed) |
