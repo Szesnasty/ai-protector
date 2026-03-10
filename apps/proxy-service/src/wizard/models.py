@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import enum
 import uuid as _uuid
+from datetime import datetime
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from src.models.base import Base, TimestampMixin, UUIDMixin
 
@@ -403,3 +405,168 @@ class GateDecision(UUIDMixin, TimestampMixin, Base):
             f"<GateDecision gate={self.gate_type} decision={self.decision} "
             f"effective={self.effective_action} enforced={self.enforced}>"
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Trace enums (spec 32)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TraceGate(str, enum.Enum):
+    """Which gate produced the trace."""
+
+    PRE_TOOL = "pre_tool"
+    POST_TOOL = "post_tool"
+    PRE_LLM = "pre_llm"
+    POST_LLM = "post_llm"
+
+
+class TraceDecision(str, enum.Enum):
+    """Decision recorded in a trace."""
+
+    ALLOW = "ALLOW"
+    DENY = "DENY"
+    REDACT = "REDACT"
+    WARN = "WARN"
+
+
+class IncidentSeverity(str, enum.Enum):
+    """Incident severity level."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class IncidentCategory(str, enum.Enum):
+    """Incident category."""
+
+    RBAC_VIOLATION = "rbac_violation"
+    INJECTION_ATTEMPT = "injection_attempt"
+    PII_LEAK = "pii_leak"
+    BUDGET_EXCEEDED = "budget_exceeded"
+
+
+class IncidentStatus(str, enum.Enum):
+    """Incident lifecycle status."""
+
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+    FALSE_POSITIVE = "false_positive"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# AgentIncident (spec 32b) — defined BEFORE AgentTrace so FK works
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class AgentIncident(UUIDMixin, Base):
+    """Security incident grouping related traces."""
+
+    __tablename__ = "agent_incidents"
+
+    agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    severity: Mapped[IncidentSeverity] = mapped_column(
+        Enum(IncidentSeverity, name="incident_severity"),
+        nullable=False,
+    )
+    category: Mapped[IncidentCategory] = mapped_column(
+        Enum(IncidentCategory, name="incident_category"),
+        nullable=False,
+    )
+    title: Mapped[str] = mapped_column(String(256), nullable=False)
+    status: Mapped[IncidentStatus] = mapped_column(
+        Enum(IncidentStatus, name="incident_status"),
+        nullable=False,
+        default=IncidentStatus.OPEN,
+    )
+    first_seen: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    last_seen: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    trace_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    agent: Mapped[Agent] = relationship("Agent", backref="incidents", lazy="selectin")
+    traces: Mapped[list[AgentTrace]] = relationship(
+        "AgentTrace",
+        back_populates="incident",
+        lazy="selectin",
+    )
+
+    def __repr__(self) -> str:
+        return f"<AgentIncident severity={self.severity} category={self.category} status={self.status}>"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# AgentTrace (spec 32a)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class AgentTrace(UUIDMixin, Base):
+    """Per-gate evaluation trace for an agent."""
+
+    __tablename__ = "agent_traces"
+
+    agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    session_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default")
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    gate: Mapped[TraceGate] = mapped_column(
+        Enum(TraceGate, name="trace_gate"),
+        nullable=False,
+    )
+    tool_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    role: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    decision: Mapped[TraceDecision] = mapped_column(
+        Enum(TraceDecision, name="trace_decision"),
+        nullable=False,
+    )
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    category: Mapped[str] = mapped_column(String(64), nullable=False, default="policy")
+    rollout_mode: Mapped[RolloutMode] = mapped_column(
+        Enum(RolloutMode, name="rollout_mode", create_type=False),
+        nullable=False,
+    )
+    enforced: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    incident_id: Mapped[_uuid.UUID | None] = mapped_column(
+        ForeignKey("agent_incidents.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    # Relationships
+    agent: Mapped[Agent] = relationship("Agent", backref="traces", lazy="selectin")
+    incident: Mapped[AgentIncident | None] = relationship(
+        "AgentIncident",
+        back_populates="traces",
+        lazy="selectin",
+    )
+
+    __table_args__ = (
+        Index("ix_agent_traces_agent_timestamp", "agent_id", "timestamp"),
+        Index("ix_agent_traces_agent_session", "agent_id", "session_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<AgentTrace gate={self.gate} decision={self.decision} agent={self.agent_id}>"
