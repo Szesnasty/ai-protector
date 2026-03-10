@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/Szesnasty/ai-protector/compare/v0.1.2...v0.1.3) (2026-03-10)
+
+
+### Bug Fixes
+
+* **agent:** double /v1/ in scan URL — firewall always returned ALLOW ([20bf766](https://github.com/Szesnasty/ai-protector/commit/20bf766d94b36f93e5c6b161458608339419716d))
+
 ## [0.1.2](https://github.com/Szesnasty/ai-protector/compare/v0.1.1...v0.1.2) (2026-03-10)
 
 
