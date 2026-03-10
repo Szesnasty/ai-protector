@@ -278,3 +278,34 @@ class RoleToolPermission(UUIDMixin, Base):
 
     def __repr__(self) -> str:
         return f"<RoleToolPermission role_id={self.role_id} tool_id={self.tool_id}>"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# ValidationRun (spec 30c)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class ValidationRun(UUIDMixin, TimestampMixin, Base):
+    """A stored validation run for an agent."""
+
+    __tablename__ = "validation_runs"
+
+    agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    pack: Mapped[str] = mapped_column(String(64), nullable=False, default="basic")
+    pack_version: Mapped[str] = mapped_column(String(16), nullable=False, default="1.0.0")
+    score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    passed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    failed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    duration_ms: Mapped[float] = mapped_column(nullable=False, default=0.0)
+    results: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+
+    # Relationships
+    agent: Mapped[Agent] = relationship("Agent", backref="validation_runs", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<ValidationRun agent_id={self.agent_id} pack={self.pack} score={self.score}/{self.total}>"
