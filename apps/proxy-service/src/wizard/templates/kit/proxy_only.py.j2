@@ -1,0 +1,16 @@
+# AI Protector — Proxy-only integration
+# Agent: {{ agent_name }}
+# Generated at: {{ generated_at }}
+# No SDK required — just change the base URL.
+
+"""Proxy-only integration for {{ agent_name }}."""
+
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="{{ proxy_url }}/v1",
+    api_key="your-api-key",  # passed through to provider
+)
+
+# All requests now flow through AI Protector's security pipeline.
+# Configure protection via the AI Protector dashboard or .env.protector.

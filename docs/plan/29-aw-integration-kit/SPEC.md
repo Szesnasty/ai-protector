@@ -48,10 +48,10 @@ Template context (filled from DB):
 ```
 
 **DoD:**
-- [ ] Jinja2 environment configured with template directory
-- [ ] Context builder: `build_kit_context(agent_id)` → dict from DB
-- [ ] Templates can access all context variables
-- [ ] Tests: context builder returns expected structure for demo agent
+- [x] Jinja2 environment configured with template directory
+- [x] Context builder: `build_kit_context(agent_id)` → dict from DB
+- [x] Templates can access all context variables
+- [x] Tests: context builder returns expected structure for demo agent
 
 ### 29b — Template: rbac.yaml
 
@@ -59,24 +59,24 @@ Template: `templates/kit/rbac.yaml.j2`
 Same output as step 28a but from Jinja2 template.
 
 **DoD:**
-- [ ] Template produces valid rbac.yaml identical to 28a generator
-- [ ] Tests: render template → compare against direct generator output
+- [x] Template produces valid rbac.yaml identical to 28a generator
+- [x] Tests: render template → compare against direct generator output
 
 ### 29c — Template: limits.yaml
 
 Template: `templates/kit/limits.yaml.j2`
 
 **DoD:**
-- [ ] Template produces valid limits.yaml identical to 28b generator
-- [ ] Per-tool rate limits included when defined
+- [x] Template produces valid limits.yaml identical to 28b generator
+- [x] Per-tool rate limits included when defined
 
 ### 29d — Template: policy.yaml
 
 Template: `templates/kit/policy.yaml.j2`
 
 **DoD:**
-- [ ] Template produces valid policy.yaml identical to 28d generator
-- [ ] Pack-specific values correctly substituted
+- [x] Template produces valid policy.yaml identical to 28d generator
+- [x] Pack-specific values correctly substituted
 
 ### 29e — Template: protected_agent.py (LangGraph)
 
@@ -90,10 +90,10 @@ Generated code includes:
 - `add_protection(graph)` — adds gate nodes to user's graph
 
 **DoD:**
-- [ ] Generated Python file is syntactically valid
-- [ ] Parameterized with agent's tool list and role names
-- [ ] Includes inline comments explaining each section
-- [ ] Tests: render → `ast.parse()` succeeds → function names exist
+- [x] Generated Python file is syntactically valid
+- [x] Parameterized with agent's tool list and role names
+- [x] Includes inline comments explaining each section
+- [x] Tests: render → `ast.parse()` succeeds → function names exist
 
 ### 29f — Template: protected_agent.py (raw Python)
 
@@ -105,9 +105,9 @@ Generated code includes:
 - Inline config (no external file dependency for simplest use case)
 
 **DoD:**
-- [ ] Generated Python file is syntactically valid
-- [ ] Works standalone with `pydantic`, `pyyaml`, `structlog` only
-- [ ] Tests: render → `ast.parse()` succeeds
+- [x] Generated Python file is syntactically valid
+- [x] Works standalone with `pydantic`, `pyyaml`, `structlog` only
+- [x] Tests: render → `ast.parse()` succeeds
 
 ### 29g — Template: protected_agent.py (proxy-only)
 
@@ -129,8 +129,8 @@ client = OpenAI(
 ```
 
 **DoD:**
-- [ ] 10-line snippet, syntactically valid
-- [ ] Proxy URL parameterized
+- [x] 10-line snippet, syntactically valid
+- [x] Proxy URL parameterized
 
 ### 29h — Template: .env.protector
 
@@ -148,9 +148,9 @@ AI_PROTECTOR_MODE=observe
 ```
 
 **DoD:**
-- [ ] All required env vars present
-- [ ] Provider-specific vars commented out with hints
-- [ ] Tests: render → dotenv parseable
+- [x] All required env vars present
+- [x] Provider-specific vars commented out with hints
+- [x] Tests: render → dotenv parseable
 
 ### 29i — Template: test_security.py
 
@@ -175,10 +175,10 @@ def test_injection_blocked():
 ```
 
 **DoD:**
-- [ ] 4 tests, all parameterized from agent config
-- [ ] Tests are runnable with `pytest` after extraction
-- [ ] Tests import from generated `protected_agent.py`
-- [ ] Tests: render → `ast.parse()` succeeds → 4 test functions present
+- [x] 4 tests, all parameterized from agent config
+- [x] Tests are runnable with `pytest` after extraction
+- [x] Tests import from generated `protected_agent.py`
+- [x] Tests: render → `ast.parse()` succeeds → 4 test functions present
 
 ### 29j — Template: README.md
 
@@ -193,8 +193,8 @@ Includes:
 - How to switch rollout modes
 
 **DoD:**
-- [ ] Renders with correct agent info
-- [ ] Steps are numbered and actionable
+- [x] Renders with correct agent info
+- [x] Steps are numbered and actionable
 
 ### 29k — Kit generation API + download
 
@@ -219,12 +219,12 @@ GET /agents/:id/integration-kit/download
 ```
 
 **DoD:**
-- [ ] POST returns all 7 files as strings (for UI preview)
-- [ ] GET returns .zip with all 7 files
-- [ ] Zip filename: `ai-protector-{agent_name_slugified}.zip`
-- [ ] Stores last generated kit on agent record
-- [ ] Tests: generate → download → unzip → 7 files → `pytest test_security.py` passes
-- [ ] Tests: different framework → different `protected_agent.py` content
+- [x] POST returns all 7 files as strings (for UI preview)
+- [x] GET returns .zip with all 7 files
+- [x] Zip filename: `ai-protector-{agent_name_slugified}.zip`
+- [x] Stores last generated kit on agent record
+- [x] Tests: generate → download → unzip → 7 files → `pytest test_security.py` passes
+- [x] Tests: different framework → different `protected_agent.py` content
 
 ### 29l — End-to-end smoke test
 
@@ -240,8 +240,8 @@ The ultimate acceptance test:
 ```
 
 **DoD:**
-- [ ] This test exists and passes in CI
-- [ ] Runs for each framework (langgraph, raw_python, proxy_only)
+- [x] This test exists and passes in CI
+- [x] Runs for each framework (langgraph, raw_python, proxy_only)
 
 ---
 

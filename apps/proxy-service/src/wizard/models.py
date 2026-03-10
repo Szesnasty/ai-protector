@@ -122,6 +122,9 @@ class Agent(UUIDMixin, TimestampMixin, Base):
     # ── Generated config cache (spec 28e) ────────────────────────────
     generated_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # ── Generated integration kit cache (spec 29k) ──────────────────
+    generated_kit: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     def __repr__(self) -> str:
         return f"<Agent name={self.name!r} risk={self.risk_level} status={self.status}>"
 
