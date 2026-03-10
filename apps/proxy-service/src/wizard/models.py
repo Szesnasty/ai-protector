@@ -119,6 +119,9 @@ class Agent(UUIDMixin, TimestampMixin, Base):
     )
     is_reference: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    # ── Generated config cache (spec 28e) ────────────────────────────
+    generated_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     def __repr__(self) -> str:
         return f"<Agent name={self.name!r} risk={self.risk_level} status={self.status}>"
 
