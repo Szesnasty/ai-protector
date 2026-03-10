@@ -5,6 +5,8 @@
 **Effort:** 1.5–2 days
 **Output:** Deterministic generation of rbac.yaml, limits.yaml, policy.yaml from DB state
 
+**Module:** `src/wizard/` — adds services/config_gen.py, routers/config.py
+
 ---
 
 ## Why this step matters
@@ -176,7 +178,7 @@ POST /agents/:id/generate-config
 
 ## Test plan
 
-Minimum **45 tests** across 5 sub-steps. Tests in `tests/agents/test_config_generation.py`.
+Minimum **45 tests** across 5 sub-steps. Tests in `tests/wizard/test_config_generation.py`.
 
 ### 28a tests — rbac.yaml generator (12 tests)
 

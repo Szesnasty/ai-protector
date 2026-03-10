@@ -48,6 +48,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await seed_policies()
     await seed_denylist()
 
+    # Seed wizard data (reference agent, demo tools/roles)
+    from src.wizard import seed_wizard
+
+    await seed_wizard()
+
     # ── Preload ML models in background (eliminates ~50 s cold-start) ──
     import asyncio
 
@@ -123,6 +128,12 @@ app.include_router(health_router)
 app.include_router(chat_router)
 app.include_router(chat_direct_router)
 app.include_router(models_router)
+
+# Agent Wizard — self-contained module (specs 26-33)
+from src.wizard import wizard_router  # noqa: E402
+
+app.include_router(wizard_router, prefix="/v1")
+
 app.include_router(analytics_router, prefix="/v1")
 app.include_router(policies_router, prefix="/v1")
 app.include_router(requests_router, prefix="/v1")

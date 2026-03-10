@@ -5,6 +5,8 @@
 **Effort:** 2 days
 **Output:** Automated attack test suite per agent, run against generated config
 
+**Module:** `src/wizard/` — adds services/validation_runner.py, routers/validation.py
+
 ---
 
 ## Why this step matters
@@ -130,7 +132,7 @@ Tests must be:
 
 ## Test plan
 
-Minimum **42 tests** across 4 sub-steps. Tests in `tests/agents/test_validation_runner.py`.
+Minimum **42 tests** across 4 sub-steps. Tests in `tests/wizard/test_validation_runner.py`.
 
 ### 30a tests — Test pack definition (14 tests)
 

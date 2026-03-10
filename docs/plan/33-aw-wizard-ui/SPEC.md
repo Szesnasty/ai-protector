@@ -5,6 +5,8 @@
 **Effort:** 4–5 days
 **Output:** Full wizard flow in Nuxt frontend — register, configure, validate, deploy
 
+**Module:** Frontend: `apps/frontend/app/pages/agents/`, `apps/frontend/app/components/wizard/`
+
 ---
 
 ## Why this step matters
