@@ -12,6 +12,8 @@ from src.wizard.models import (
     AgentEnvironment,
     AgentFramework,
     AgentStatus,
+    GateAction,
+    GateDecisionType,
     ProtectionLevel,
     RiskLevel,
     RolloutMode,
@@ -229,3 +231,107 @@ class PermissionCheckResponse(BaseModel):
     allowed: bool
     decision: str  # "allow" | "deny" | "confirm"
     reason: str
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Rollout mode schemas (spec 31)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class RolloutPromoteRequest(BaseModel):
+    """Body for PATCH /agents/:id/rollout."""
+
+    mode: RolloutMode
+
+
+class RolloutPromoteResponse(BaseModel):
+    """Response after a successful promotion/demotion."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    rollout_mode: RolloutMode
+    previous_mode: RolloutMode
+
+
+class PromotionBlockedResponse(BaseModel):
+    """Error detail when promotion is blocked."""
+
+    error: str = "promotion_blocked"
+    reason: str
+    current_mode: RolloutMode
+    requested_mode: RolloutMode
+    latest_score: dict | None = None
+
+
+class PromotionEventRead(BaseModel):
+    """Read view of a promotion event."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    agent_id: uuid.UUID
+    from_mode: RolloutMode
+    to_mode: RolloutMode
+    user: str
+    created_at: datetime
+
+
+class ReadinessStats(BaseModel):
+    """Promotion readiness statistics."""
+
+    traces_in_current_mode: int
+    would_have_blocked: int
+    false_positive_rate: float | None = None
+    latest_validation: dict | None = None
+
+
+class ReadinessResponse(BaseModel):
+    """Response for GET /agents/:id/rollout/readiness."""
+
+    current_mode: RolloutMode
+    can_promote_to: list[RolloutMode]
+    blockers: list[str]
+    stats: ReadinessStats
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Gate decision schemas (spec 31b / 31d)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class GateEvalRequest(BaseModel):
+    """Request to evaluate a gate."""
+
+    gate_type: GateDecisionType
+    context: dict | None = None
+
+
+class GateEvalResponse(BaseModel):
+    """Result of a gate evaluation."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    decision: GateAction
+    effective_action: GateAction
+    rollout_mode: RolloutMode
+    enforced: bool
+    warning: str | None = None
+
+
+class GateDecisionRead(BaseModel):
+    """Read view of a stored gate decision (trace)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    agent_id: uuid.UUID
+    gate_type: GateDecisionType
+    decision: GateAction
+    effective_action: GateAction
+    rollout_mode: RolloutMode
+    enforced: bool
+    warning: str | None
+    context: dict | None
+    created_at: datetime
