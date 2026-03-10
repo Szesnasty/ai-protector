@@ -78,6 +78,7 @@ class AgentRead(BaseModel):
     status: AgentStatus
     is_reference: bool
     generated_config: dict | None = None
+    generated_kit: dict | None = None
     created_at: datetime
     updated_at: datetime
 
