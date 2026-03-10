@@ -240,4 +240,13 @@ The MVP is complete (all phases except Phase 6 Enterprise). The **primary focus*
 4. Attack validation runner
 5. Traces & incidents with per-agent filtering
 
-See [ROADMAP](ROADMAP.spec.md) and [Agents Implementation Guides](agents-implementation/README.md) for details.
+See [ROADMAP](../ROADMAP.spec.md) and [Agents Implementation Guides](../agents-implementation/README.md) for details.
+
+---
+
+## Detailed pipeline references
+
+| Doc | What |
+|-----|------|
+| [PROXY_FIREWALL_PIPELINE.md](PROXY_FIREWALL_PIPELINE.md) | Full 9-node proxy graph — node internals, risk score formula, scanner model table |
+| [AGENT_PIPELINE.md](AGENT_PIPELINE.md) | Full 11-node agent graph — pre/post-gate checks, three lines of defense |

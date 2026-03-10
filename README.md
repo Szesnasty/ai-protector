@@ -56,31 +56,63 @@ AI Protector enforces policy **deterministically** — the protected LLM is the 
 
 ## How it works
 
-Two cooperating enforcement layers — each catches what the other cannot:
+Two cooperating enforcement layers — each catches what the other cannot.
+
+### Proxy firewall
+
+Sits between your app and the LLM provider. Every request passes through **5 independent detection layers** before reaching the model:
 
 ```
-PROXY FIREWALL — sits between your app and the LLM provider
-  Prompt injection · PII redaction · jailbreak · toxicity · secrets · custom rules
-
-AGENT RUNTIME — runs inside the agent graph
-  RBAC · tool access control · argument validation · budget limits
+Request
+  │
+  ├─ Layer 1: Rules      denylist · length · encoded content
+  ├─ Layer 2: Intent     pattern classification → jailbreak / tool_abuse / exfiltration / …
+  │
+  ├─ Layer 3: LLM Guard  ML classifiers — injection · toxicity · secrets  (local, free)
+  ├─ Layer 4: Presidio   spaCy NER — PII detection  (email · phone · card · ID)
+  ├─ Layer 5: NeMo       semantic embeddings — 12 rails, catches paraphrases + multilingual
+  │           (layers 3–5 run in parallel)
+  │
+  └─ Decision  weighted risk score → BLOCK / MODIFY / ALLOW
+                    │                        │
+               return error            Transform → LLM Call → Output Filter → Logging
 ```
 
-### Pipeline (9-node LangGraph security graph)
+All scanners run **locally** — no external API calls, no per-request cost. → [Full pipeline diagram](docs/architecture/PROXY_FIREWALL_PIPELINE.md)
+
+### Agent runtime
+
+Runs inside the agent graph, enforcing security **around every tool call**:
 
 ```
-Request → Parse → Intent → Rules → Scanners → Decision
-                                                  │
-                                    ┌──────┬──────┤
-                                  BLOCK  MODIFY  ALLOW
-                                    │   Transform  │
-                                    │      │       │
-                                    │   LLM Call  LLM Call
-                                    │      │       │
-                                    │  OutputFilter OutputFilter
-                                    └──────┴───────┘
-                                         Logging
+User request
+  ↓
+Input limits & sanitization      (rate limit · token budget · cost cap)
+  ↓
+Intent classification + policy check
+  ↓
+Tool router                       (LLM decides which tools are needed)
+  ↓
+Pre-tool gate                     (RBAC · arg validation · injection · limits · confirmation)
+  ↓
+Tool execution
+  ↓
+Post-tool gate                    (PII · secrets · indirect injection · size truncation)
+  ↓
+LLM call
+  ├─ Phase 1: Proxy firewall scan  ← runs full 5-layer pipeline as backstop
+  └─ Phase 2: Provider call
+  ↓
+Response + Memory + Trace
 ```
+
+Three lines of defense for every agent request:
+
+- **Pre-tool gate** blocks unsafe or unauthorized tool calls before execution
+- **Post-tool gate** sanitizes tool outputs before they reach the LLM
+- **Proxy firewall** scans the final message set before provider invocation
+
+→ [Full agent pipeline diagram](docs/architecture/AGENT_PIPELINE.md)
 
 ---
 
@@ -201,7 +233,7 @@ requests. Filter by time window, policy, or threat category.
 Scanners: [Presidio](https://github.com/microsoft/presidio) (PII) · [LLM Guard](https://github.com/protectai/llm-guard) (injection/toxicity) · [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails) (dialog rails via embeddings)
 
 Covers key application-layer risks: prompt injection, insecure output, sensitive data disclosure, insecure tool use, and excessive agency.
-Full scope and exclusions: [THREAT_MODEL.md](docs/THREAT_MODEL.md).
+Full scope and exclusions: [THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md).
 
 ---
 
@@ -209,10 +241,11 @@ Full scope and exclusions: [THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 | Doc | What |
 |-----|------|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, pipeline internals, two-phase LLM call flow |
-| [THREAT_MODEL.md](docs/THREAT_MODEL.md) | Threat categories, scanner mapping, what's in/out of scope |
+| [architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | System design, pipeline internals, two-phase LLM call flow |
+| [architecture/PROXY_FIREWALL_PIPELINE.md](docs/architecture/PROXY_FIREWALL_PIPELINE.md) | Full 9-node proxy pipeline — node internals, risk score calculator, scanner models |
+| [architecture/AGENT_PIPELINE.md](docs/architecture/AGENT_PIPELINE.md) | Full 11-node agent pipeline — pre/post-tool gates, three lines of defense |
+| [architecture/THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md) | Threat categories, scanner mapping, what's in/out of scope |
 | [agents-v1.spec.md](docs/agents-v1.spec.md) | Next milestone: self-serve agent onboarding spec |
-| [ROADMAP.spec.md](docs/ROADMAP.spec.md) | Full post-MVP plan |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 
 ---
