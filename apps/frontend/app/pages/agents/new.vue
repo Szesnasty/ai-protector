@@ -2,8 +2,18 @@
   <v-container fluid class="wizard-page">
     <div class="d-flex align-center mb-4">
       <v-btn icon="mdi-arrow-left" variant="text" @click="navigateTo('/agents')" />
-      <div class="ml-2">
-        <h1 class="text-h5">{{ isEditing ? 'Edit Agent' : 'Register New Agent' }}</h1>
+      <div class="ml-2 flex-grow-1">
+        <div class="d-flex align-center justify-space-between">
+          <h1 class="text-h5">{{ isEditing ? 'Edit Agent' : 'Register New Agent' }}</h1>
+          <v-btn
+            variant="text"
+            prepend-icon="mdi-book-open-outline"
+            size="small"
+            @click="navigateTo('/agents/integration-guide')"
+          >
+            Integration Guide
+          </v-btn>
+        </div>
         <v-breadcrumbs :items="breadcrumbs" density="compact" class="pa-0" />
       </div>
     </div>
