@@ -148,7 +148,7 @@ async def _scan_via_proxy(
     Returns a dict with at least: ``status_code``, ``decision``,
     ``risk_score``, ``risk_flags``, ``intent``, ``blocked_reason``.
     """
-    scan_url = f"{proxy_base_url}/v1/scan"
+    scan_url = f"{proxy_base_url}/scan"
     scan_body = {
         "model": model_name,
         "messages": scan_messages,
@@ -170,6 +170,11 @@ async def _scan_via_proxy(
 
     data = resp.json()
     data["status_code"] = resp.status_code
+
+    # Fail loudly on unexpected HTTP statuses (e.g. 404 from wrong URL)
+    if resp.status_code not in (200, 403):
+        raise RuntimeError(f"Unexpected proxy response {resp.status_code} from {scan_url}: {data}")
+
     return data
 
 
