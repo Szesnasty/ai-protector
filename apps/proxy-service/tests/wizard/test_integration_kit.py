@@ -775,8 +775,8 @@ async def test_security_ast_parse(client):
 
 
 @pytest.mark.asyncio
-async def test_security_has_4_test_functions(client):
-    """4 functions starting with test_."""
+async def test_security_has_5_test_functions(client):
+    """5 functions starting with test_."""
     ref = await _seed_ref_agent(client)
 
     from src.db.session import get_db
@@ -788,13 +788,13 @@ async def test_security_has_4_test_functions(client):
         test_funcs = [
             node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
         ]
-        assert len(test_funcs) == 4, f"Expected 4 test functions, got {len(test_funcs)}: {test_funcs}"
+        assert len(test_funcs) == 5, f"Expected 5 test functions, got {len(test_funcs)}: {test_funcs}"
         break
 
 
 @pytest.mark.asyncio
 async def test_security_rbac_test_uses_agent_roles(client):
-    """Test references agent's lowest role + highest tool."""
+    """Test has unknown-role block + authorized-role check."""
     ref = await _seed_ref_agent(client)
 
     from src.db.session import get_db
@@ -802,8 +802,10 @@ async def test_security_rbac_test_uses_agent_roles(client):
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         code = kit["files"]["test_security.py"]
-        # Should reference the first role (customer) and last tool
-        assert "customer" in code
+        # Must test unknown role denial
+        assert "__nonexistent_role__" in code
+        # Must test authorized roles from RBAC config
+        assert "test_rbac_allow_authorized" in code
         break
 
 
@@ -1032,7 +1034,7 @@ async def _e2e_flow(client: AsyncClient, framework: str) -> None:
         test_funcs = [
             node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
         ]
-        assert len(test_funcs) == 4
+        assert len(test_funcs) == 5
 
         # Validate .env.protector
         env_content = zf.read(".env.protector").decode()
