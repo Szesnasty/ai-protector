@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/Szesnasty/ai-protector/compare/v0.1.3...v0.1.4) (2026-03-12)
+
+
+### Bug Fixes
+
+* ensure demo seeds policies by default ([d9d94bd](https://github.com/Szesnasty/ai-protector/commit/d9d94bd0b62924437531eddb3f7d68ee89ea226a))
+
 ## [0.1.3](https://github.com/Szesnasty/ai-protector/compare/v0.1.2...v0.1.3) (2026-03-10)
 
 
