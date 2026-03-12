@@ -276,6 +276,12 @@ Full scope and exclusions: [THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md).
 
 **Next milestone: [Agents v1](docs/agents-v1.spec.md)** — self-serve agent registration, tool/role CRUD, generated integration kits, attack validation runner, rollout modes, per-agent traces.
 
+<p align="center">
+  <img src="docs/assets/agent-wizzard.png" alt="Agent Onboarding Wizard Screenshot" />
+</p>
+
+Branch: [`feat/agent-onboarding-wizard`](https://github.com/Szesnasty/ai-protector/tree/feat/agent-onboarding-wizard)
+
 Full plan: [ROADMAP.spec.md](docs/ROADMAP.spec.md).
 
 ---
