@@ -6,7 +6,8 @@
 # Contributor (infra only):        make dev
 
 demo:
-	cd infra && docker compose --profile demo up --build -d
+	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
+	cd infra && MODE=demo docker compose --profile demo up --build -d
 	@echo ""
 	@echo "🚀  AI Protector Demo is starting..."
 	@echo "    Frontend:       http://localhost:3000"
@@ -17,6 +18,7 @@ demo:
 	@echo "    Paste an API key in Settings to use a real model."
 
 up:
+	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
 	cd infra && MODE=real docker compose --profile full up --build -d
 	@echo ""
 	@echo "🚀  AI Protector is starting (full stack)..."

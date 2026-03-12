@@ -81,9 +81,14 @@ services:
     profiles: ["demo", "full"]
     ports:
       - "8000:8000"
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       MODE: ${MODE:-demo}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/ai_protector}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      DEFAULT_POLICY: ${DEFAULT_POLICY:-balanced}
     depends_on:
       db:
         condition: service_healthy
