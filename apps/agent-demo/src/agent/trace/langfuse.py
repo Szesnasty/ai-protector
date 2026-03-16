@@ -13,11 +13,31 @@ Configuration (environment variables):
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 import structlog
 
 logger = structlog.get_logger()
+
+_SECRET_RE = [
+    re.compile(r"(?:sk|pk)-[a-zA-Z0-9]{20,}"),
+    re.compile(r"(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36,}"),
+    re.compile(r"(?:Bearer|token)\s+[A-Za-z0-9\-._~+/]+=*"),
+    re.compile(r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----"),
+    re.compile(r"(?:password|passwd|pwd)\s*[=:]\s*\S+", re.IGNORECASE),
+    re.compile(r"AIzaSy[A-Za-z0-9_-]{33}"),
+    re.compile(r"(?:api[_-]?key)\s*[=:]\s*\S+", re.IGNORECASE),
+    re.compile(r"postgresql\+?\w*://\S+", re.IGNORECASE),
+    re.compile(r"sk_live_\w+"),
+]
+
+
+def _redact(text: str) -> str:
+    for p in _SECRET_RE:
+        text = p.sub("[REDACTED]", text)
+    return text
+
 
 _langfuse_client: Any = None
 _langfuse_available: bool | None = None
@@ -89,8 +109,8 @@ def send_trace_to_langfuse(trace: dict[str, Any]) -> bool:
                 "total_duration_ms": trace.get("total_duration_ms"),
                 "limits_hit": trace.get("limits_hit"),
             },
-            input=trace.get("user_message", ""),
-            output=trace.get("final_response", ""),
+            input=_redact(trace.get("user_message", "")),
+            output=_redact(trace.get("final_response", "")),
             tags=_build_tags(trace),
         )
 

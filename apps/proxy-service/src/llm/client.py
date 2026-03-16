@@ -112,9 +112,9 @@ async def llm_completion(
             timeout=settings.request_timeout,
             **kwargs,
         )
-    except AuthenticationError as exc:
-        logger.error("llm_auth_error", provider=provider, error=str(exc))
-        raise LLMError(f"Invalid API key for {provider}: {exc}") from exc
+    except AuthenticationError:
+        logger.error("llm_auth_error", provider=provider)
+        raise LLMError(f"Invalid API key for {provider}. Check your key in Settings → API Keys.") from None
     except ServiceUnavailableError as exc:
         logger.error("llm_upstream_error", error=str(exc))
         raise LLMUpstreamError(f"{provider} unavailable: {exc}") from exc
@@ -125,7 +125,8 @@ async def llm_completion(
         logger.error("llm_timeout", model=litellm_model, error=str(exc))
         raise LLMTimeoutError(f"LLM request timed out after {settings.request_timeout}s") from exc
     except Exception as exc:
-        logger.error("llm_error", model=litellm_model, error=str(exc), error_type=type(exc).__name__)
-        raise LLMError(f"LLM error: {exc}") from exc
+        safe_msg = str(exc)[:200] if str(exc) else "unknown"
+        logger.error("llm_error", model=litellm_model, error_type=type(exc).__name__)
+        raise LLMError(f"LLM error ({type(exc).__name__}): {safe_msg}") from exc
 
     return response

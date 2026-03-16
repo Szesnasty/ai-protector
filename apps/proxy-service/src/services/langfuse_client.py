@@ -76,8 +76,8 @@ async def create_trace(
             session_id=session_id,
         )
         return trace
-    except Exception:
-        logger.exception("langfuse_trace_failed", trace_id=trace_id)
+    except Exception as exc:
+        logger.error("langfuse_trace_failed", trace_id=trace_id, error_type=type(exc).__name__)
         return None
 
 

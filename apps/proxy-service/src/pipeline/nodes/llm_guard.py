@@ -166,7 +166,7 @@ async def llm_guard_node(state: PipelineState) -> PipelineState:
         except Exception as exc:
             results[scanner_name] = {"error": str(exc)}
             errors.append(f"llm_guard.{scanner_name}: {exc}")
-            logger.exception("llm_guard_error", scanner=scanner_name)
+            logger.error("llm_guard_error", scanner=scanner_name, error_type=type(exc).__name__)
 
     return {
         **state,

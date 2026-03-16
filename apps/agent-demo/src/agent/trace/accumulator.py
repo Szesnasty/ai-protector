@@ -9,10 +9,29 @@ serialized to JSON at the end.
 
 from __future__ import annotations
 
+import re
 import time
 from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
+
+_SECRET_RE = [
+    re.compile(r"(?:sk|pk)-[a-zA-Z0-9]{20,}"),
+    re.compile(r"(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36,}"),
+    re.compile(r"(?:Bearer|token)\s+[A-Za-z0-9\-._~+/]+=*"),
+    re.compile(r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----"),
+    re.compile(r"(?:password|passwd|pwd)\s*[=:]\s*\S+", re.IGNORECASE),
+    re.compile(r"AIzaSy[A-Za-z0-9_-]{33}"),
+    re.compile(r"(?:api[_-]?key)\s*[=:]\s*\S+", re.IGNORECASE),
+    re.compile(r"postgresql\+?\w*://\S+", re.IGNORECASE),
+    re.compile(r"sk_live_\w+"),
+]
+
+
+def _redact(text: str) -> str:
+    for p in _SECRET_RE:
+        text = p.sub("[REDACTED]", text)
+    return text
 
 
 class TraceAccumulator:
@@ -67,7 +86,7 @@ class TraceAccumulator:
                 "user_role": user_role,
                 "policy": policy,
                 "model": model,
-                "user_message": user_message,
+                "user_message": _redact(user_message),
                 "intent": None,
                 "intent_confidence": 0.0,
                 "iterations": [],
@@ -155,11 +174,12 @@ class TraceAccumulator:
         duration_ms: int = 0,
     ) -> None:
         it = self._ensure_iteration()
+        preview = _redact(result[:200]) if result else ""
         it["tool_executions"].append(
             {
                 "tool": tool,
                 "args": args,
-                "result_preview": result[:200] if result else "",
+                "result_preview": preview,
                 "result_length": len(result) if result else 0,
                 "duration_ms": duration_ms,
             }
@@ -231,7 +251,7 @@ class TraceAccumulator:
         counters_override: dict[str, Any] | None = None,
     ) -> None:
         """Finalize the trace at the end of the request."""
-        self._trace["final_response"] = final_response
+        self._trace["final_response"] = _redact(final_response)
         if errors:
             self._trace["errors"] = errors
         if node_timings:

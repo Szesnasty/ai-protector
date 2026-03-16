@@ -71,8 +71,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 await asyncio.to_thread(get_analyzer)
                 await asyncio.to_thread(get_anonymizer)
             logger.info("preload_complete", msg="All ML models loaded")
-        except Exception:
-            logger.exception("preload_failed", msg="Non-fatal — models will lazy-load on first request")
+        except Exception as exc:
+            logger.error(
+                "preload_failed",
+                error_type=type(exc).__name__,
+                msg="Non-fatal — models will lazy-load on first request",
+            )
 
     asyncio.create_task(_preload_scanners())
 

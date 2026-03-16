@@ -75,8 +75,8 @@ async def scan(
     result["latency_ms"] = latency_ms
     try:
         await log_request_from_state(dict(result))
-    except Exception:
-        logger.exception("scan_audit_log_failed")
+    except Exception as exc:
+        logger.error("scan_audit_log_failed", error_type=type(exc).__name__)
 
     payload = {
         "decision": decision,

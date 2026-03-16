@@ -70,8 +70,8 @@ async def sse_stream(
                 scanner_results=scanner_results,
                 node_timings=node_timings,
             )
-        except Exception:
-            logger.exception("stream_audit_log_failed")
+        except Exception as exc:
+            logger.error("stream_audit_log_failed", error_type=type(exc).__name__)
 
     try:
         async for chunk in response:

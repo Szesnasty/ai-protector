@@ -75,7 +75,7 @@ async def _redact_pii(text: str) -> tuple[str, int]:
             score_threshold=settings.presidio_score_threshold,
         )
     except Exception as exc:
-        logger.exception("output_filter_pii_error")
+        logger.error("output_filter_pii_error", error_type=type(exc).__name__)
         raise exc
 
     if not results:

@@ -144,7 +144,7 @@ async def presidio_node(state: PipelineState) -> PipelineState:
             score_threshold=settings.presidio_score_threshold,
         )
     except Exception as exc:
-        logger.exception("presidio_analyzer_error")
+        logger.error("presidio_analyzer_error", error_type=type(exc).__name__)
         errors = list(state.get("errors", []))
         errors.append(f"presidio: {exc}")
         return {
@@ -192,7 +192,7 @@ async def presidio_node(state: PipelineState) -> PipelineState:
             masked = await mask_pii_in_messages(messages, text, results)
             updated["modified_messages"] = masked
         except Exception as exc:
-            logger.exception("presidio_masking_error")
+            logger.error("presidio_masking_error", error_type=type(exc).__name__)
             errors = list(state.get("errors", []))
             errors.append(f"presidio.mask: {exc}")
             updated["errors"] = errors

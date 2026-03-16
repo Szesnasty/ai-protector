@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import uuid
 
 import structlog
@@ -50,11 +51,25 @@ def _prompt_hash(messages: list[dict]) -> str | None:
     return None
 
 
+_SECRET_RE = [
+    re.compile(r"(?:sk|pk)-[a-zA-Z0-9]{20,}"),
+    re.compile(r"(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36,}"),
+    re.compile(r"(?:Bearer|token)\s+[A-Za-z0-9\-._~+/]+=*"),
+    re.compile(r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----"),
+    re.compile(r"(?:password|passwd|pwd)\s*[=:]\s*\S+", re.IGNORECASE),
+    re.compile(r"AIzaSy[A-Za-z0-9_-]{33}"),
+    re.compile(r"(?:api[_-]?key)\s*[=:]\s*\S+", re.IGNORECASE),
+]
+
+
 def _prompt_preview(messages: list[dict], max_len: int = 200) -> str | None:
-    """First *max_len* chars of the last user message."""
+    """First *max_len* chars of the last user message, with secrets redacted."""
     for msg in reversed(messages):
         if msg.get("role") == "user":
-            return msg["content"][:max_len]
+            text = msg["content"][:max_len]
+            for pattern in _SECRET_RE:
+                text = pattern.sub("[REDACTED]", text)
+            return text
     return None
 
 
@@ -109,8 +124,8 @@ async def log_request(
             await session.commit()
 
         logger.debug("request_logged", client_id=row.client_id, decision=decision)
-    except Exception:
-        logger.exception("log_request_failed")
+    except Exception as exc:
+        logger.error("log_request_failed", error_type=type(exc).__name__)
 
 
 async def log_request_from_state(state: dict) -> None:
@@ -154,5 +169,5 @@ async def log_request_from_state(state: dict) -> None:
             client_id=row.client_id,
             decision=row.decision,
         )
-    except Exception:
-        logger.exception("log_request_from_state_failed")
+    except Exception as exc:
+        logger.error("log_request_from_state_failed", error_type=type(exc).__name__)

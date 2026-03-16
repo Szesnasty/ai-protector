@@ -203,7 +203,7 @@ async def nemo_guardrails_node(state: PipelineState) -> PipelineState:
     except Exception as exc:
         result = {"error": str(exc), "blocked": False}
         errors.append(f"nemo_guardrails: {exc}")
-        logger.exception("nemo_guardrails_error")
+        logger.error("nemo_guardrails_error", error_type=type(exc).__name__)
 
     return {
         **state,

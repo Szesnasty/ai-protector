@@ -6,6 +6,8 @@ Errors are swallowed so logging never blocks the response.
 
 from __future__ import annotations
 
+import re
+
 import structlog
 
 from src.pipeline.nodes import timed_node
@@ -14,6 +16,22 @@ from src.services.langfuse_client import add_pipeline_spans, create_trace
 from src.services.request_logger import log_request_from_state
 
 logger = structlog.get_logger()
+
+_SECRET_RE = [
+    re.compile(r"(?:sk|pk)-[a-zA-Z0-9]{20,}"),
+    re.compile(r"(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36,}"),
+    re.compile(r"(?:Bearer|token)\s+[A-Za-z0-9\-._~+/]+=*"),
+    re.compile(r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----"),
+    re.compile(r"(?:password|passwd|pwd)\s*[=:]\s*\S+", re.IGNORECASE),
+    re.compile(r"AIzaSy[A-Za-z0-9_-]{33}"),
+    re.compile(r"(?:api[_-]?key)\s*[=:]\s*\S+", re.IGNORECASE),
+]
+
+
+def _redact(text: str) -> str:
+    for p in _SECRET_RE:
+        text = p.sub("[REDACTED]", text)
+    return text
 
 
 @timed_node("logging")
@@ -25,8 +43,8 @@ async def logging_node(state: PipelineState) -> PipelineState:
     # 1. Postgres audit log
     try:
         await log_request_from_state(dict(state))
-    except Exception:
-        logger.exception("logging_node_postgres_failed")
+    except Exception as exc:
+        logger.error("logging_node_postgres_failed", error_type=type(exc).__name__)
 
     # 2. Langfuse trace
     try:
@@ -57,21 +75,23 @@ async def logging_node(state: PipelineState) -> PipelineState:
             trace,
             state.get("node_timings", {}),
         )
-    except Exception:
-        logger.exception("logging_node_langfuse_failed")
+    except Exception as exc:
+        logger.error("logging_node_langfuse_failed", error_type=type(exc).__name__)
 
     # Logging does NOT modify state
     return state
 
 
 def _safe_response_preview(state: PipelineState, max_len: int = 500) -> str | None:
-    """Extract first N chars of LLM response for trace."""
+    """Extract first N chars of LLM response for trace, with secrets redacted."""
     resp = state.get("llm_response")
     if not resp:
         return None
     try:
         content = resp["choices"][0]["message"]["content"]
-        return content[:max_len] if content else None
+        if not content:
+            return None
+        return _redact(content[:max_len])
     except (KeyError, IndexError, TypeError):
         return None
 
