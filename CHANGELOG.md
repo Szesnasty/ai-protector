@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.6](https://github.com/Szesnasty/ai-protector/compare/v0.1.5...v0.1.6) (2026-03-16)
+
+
+### Features
+
+* add benchmark suite + JailbreakBench external validation ([2131a4a](https://github.com/Szesnasty/ai-protector/commit/2131a4a5023c5fc593282dabf29ac3833e0b03bc))
+
+
+### Bug Fixes
+
+* **bench:** break CodeQL taint flow by separating model and key detection ([84af624](https://github.com/Szesnasty/ai-protector/commit/84af624dcb7b31c720d2d76cc8374079a7aff901))
+* **bench:** separate model name from api_key to resolve CodeQL alerts ([3928346](https://github.com/Szesnasty/ai-protector/commit/3928346a97cdaf742c62e36dd4c9b1f0c9c74a9d))
+* **bench:** show full CPU name in benchmark reports ([2fbef89](https://github.com/Szesnasty/ai-protector/commit/2fbef89980f34bbddb7082dcace2a7762a951d1c))
+* **nemo:** add safe coding examples to prevent false positives ([447851b](https://github.com/Szesnasty/ai-protector/commit/447851b39ac8d5d9ede08d85af9a291471f4e02f))
+* **nemo:** expand safe_input examples to prevent false positives ([e5279a5](https://github.com/Szesnasty/ai-protector/commit/e5279a5e8f7553738231804c6fc225f042e9ee8c))
+* **security:** prevent credential leaks in logs, traces, and API responses ([da70efe](https://github.com/Szesnasty/ai-protector/commit/da70efe61835dde4d5b55a4f7dbc23bb7fcb1ec0))
+
 ## [0.1.5](https://github.com/Szesnasty/ai-protector/compare/v0.1.4...v0.1.5) (2026-03-16)
 
 

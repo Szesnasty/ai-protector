@@ -1,6 +1,6 @@
 [project]
 name = "ai-protector-agent-demo"
-version = "0.1.5" # x-release-please-version
+version = "0.1.6" # x-release-please-version
 description = "Customer Support Copilot — demo agent behind the AI Protector firewall"
 requires-python = ">=3.12"
 dependencies = [
