@@ -3,7 +3,7 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm pkg delete scripts.postinstall && npm ci
+RUN npm pkg delete scripts.postinstall && npm install --no-audit --no-fund
 COPY . .
 RUN npx nuxt prepare && npm run build
 
