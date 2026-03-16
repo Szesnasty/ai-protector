@@ -51,6 +51,7 @@ KNOWN_RAILS = frozenset(
         "hallucination_exploit",
         "supply_chain",
         "system_sabotage",
+        "harmful_content",
     }
 )
 

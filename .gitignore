@@ -56,3 +56,7 @@ yarn-error.log*
 ollama_models/
 
 demo-files/
+
+# ==== Benchmarks ====
+apps/proxy-service/benchmarks/results/*.json
+apps/proxy-service/benchmarks/datasets/
