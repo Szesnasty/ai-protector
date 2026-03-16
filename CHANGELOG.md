@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/Szesnasty/ai-protector/compare/v0.1.6...v0.1.7) (2026-03-16)
+
+
+### Bug Fixes
+
+* **agent-demo:** align safe scenario prompts with ORD-xxx tool regex ([3007e8f](https://github.com/Szesnasty/ai-protector/commit/3007e8ff82349ba51f15208d2471e3e53d9ceac4))
+
 ## [0.1.6](https://github.com/Szesnasty/ai-protector/compare/v0.1.5...v0.1.6) (2026-03-16)
 
 
