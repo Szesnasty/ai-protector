@@ -180,6 +180,31 @@ def load_all_scenarios() -> list[dict]:
 # ── Hardware / platform info ─────────────────────────────────────────
 
 
+def _get_cpu_name() -> str:
+    """Return a human-readable CPU name, with Apple Silicon fallback."""
+    import subprocess as _sp
+
+    # Apple Silicon: sysctl gives the real chip name (e.g. "Apple M4 Pro")
+    if platform.system() == "Darwin":
+        try:
+            brand = _sp.check_output(["sysctl", "-n", "machdep.cpu.brand_string"], text=True, timeout=2).strip()
+            if brand:
+                return brand
+        except Exception:
+            pass
+
+    # Linux: /proc/cpuinfo
+    try:
+        with open("/proc/cpuinfo") as f:
+            for line in f:
+                if line.startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+    except Exception:
+        pass
+
+    return platform.processor() or platform.machine() or "N/A"
+
+
 def collect_machine_info() -> dict:
     """Collect hardware and platform info for benchmark reproducibility."""
     mem = psutil.virtual_memory()
@@ -189,7 +214,7 @@ def collect_machine_info() -> dict:
         "os": f"{platform.system()} {platform.release()}",
         "arch": platform.machine(),
         "python": platform.python_version(),
-        "cpu": platform.processor() or "N/A",
+        "cpu": _get_cpu_name(),
         "cpu_cores_physical": psutil.cpu_count(logical=False),
         "cpu_cores_logical": psutil.cpu_count(logical=True),
         "cpu_freq_mhz": round(cpu_freq.current) if cpu_freq else None,

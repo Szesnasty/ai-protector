@@ -20,12 +20,12 @@
 | | |
 |---|---|
 | OS | Darwin 24.6.0 (arm64) |
-| CPU | arm |
+| CPU | Apple M4 Pro |
 | Cores | 12 physical / 12 logical |
 | RAM | 48.0 GB |
 | Python | 3.12.12 |
 | Runtime | native |
-| Date | 2026-03-16 20:02 UTC |
+| Date | 2026-03-16 20:11 UTC |
 
 ## Security Detection Rate
 
