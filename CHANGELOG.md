@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5](https://github.com/Szesnasty/ai-protector/compare/v0.1.4...v0.1.5) (2026-03-16)
+
+
+### Bug Fixes
+
+* **ci:** use npm ci with lockfile to resolve tinyexec ERR_MODULE_NOT_FOUND ([da00cf6](https://github.com/Szesnasty/ai-protector/commit/da00cf6114413382846940f87628cd1d4b1e1d0c))
+* **ci:** use npm install instead of npm ci to avoid CI/Docker failures ([d2f2c3a](https://github.com/Szesnasty/ai-protector/commit/d2f2c3a076d0c3a7d9623f1a444ce8070b46d469))
+
 ## [0.1.4](https://github.com/Szesnasty/ai-protector/compare/v0.1.3...v0.1.4) (2026-03-12)
 
 
