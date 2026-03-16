@@ -12,6 +12,8 @@ Deterministically block unsafe prompts, gate tool calls, and redact sensitive ou
 
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-green)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
+[![Detection Rate](https://img.shields.io/badge/detection_rate-97.9%25-brightgreen)](BENCHMARK.md)
+[![JailbreakBench](https://img.shields.io/badge/JailbreakBench-94.8%25-brightgreen)](BENCHMARK_JAILBREAKBENCH.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
@@ -260,6 +262,41 @@ Full scope and exclusions: [THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md).
 | **No telemetry** | Zero third-party analytics; requests go only to your LLM provider |
 | **API keys stay in browser** | sessionStorage, never stored or logged server-side |
 | **Security headers** | Strict CSP, X-Frame-Options DENY, nosniff, restrictive Permissions-Policy |
+
+---
+
+## Benchmarks
+
+### Internal benchmark — broad threat coverage
+
+358 attack scenarios across 38 categories (OWASP LLM Top 10), covering prompt injection,
+agent abuse, PII, tool abuse, exfiltration, and more.
+
+| Metric | Value |
+|--------|-------|
+| Attack detection rate | **97.9%** (0% false positives) |
+| Pre-LLM pipeline overhead | **~50 ms** (balanced policy) |
+| Memory (all scanners) | ~1.1 GB |
+
+→ Full results: [BENCHMARK.md](BENCHMARK.md)
+
+### External benchmark — JailbreakBench (NeurIPS 2024)
+
+698 published jailbreak artifacts from [JailbreakBench](https://jailbreakbench.github.io/) —
+real attack prompts that bypassed target models in the original research. Pre-LLM pipeline only.
+
+| Metric | Value |
+|--------|-------|
+| Overall pre-LLM detection rate | **94.8%** |
+| Human-crafted & random search attacks | **100%** |
+| PAIR (iterative black-box) | 88.8% |
+| GCG (gradient-based) | 90.0% |
+
+→ Full results: [BENCHMARK_JAILBREAKBENCH.md](BENCHMARK_JAILBREAKBENCH.md)
+
+> Internal suite covers the broader agent/runtime threat model.
+> JailbreakBench provides an external reference point for jailbreak-style prompt attacks.
+> All results deterministic, reproducible with `make benchmark`.
 
 ---
 

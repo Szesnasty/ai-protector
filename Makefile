@@ -1,4 +1,4 @@
-.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit
+.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench
 
 # ── Quick start ─────────────────────────────────────────
 # Demo (no Ollama, mock LLM):     make demo
@@ -96,6 +96,29 @@ test-cov:
 
 test-scenarios:  ## Run 358 attack scenario deterministic tests (all scanners)
 	cd apps/proxy-service && pytest tests/test_scenario_deterministic.py -v --tb=short -x
+
+# ── Benchmark ───────────────────────────────────────────
+benchmark:  ## Run full benchmark suite (latency + security + memory)
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_security --all-policies
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_latency --all-policies --iterations 50
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_memory
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.generate_report
+	@echo ""
+	@echo "📊  Benchmark complete — see BENCHMARK.md"
+
+benchmark-quick:  ## Quick benchmark (balanced policy, 20 iterations)
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_security
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_latency --iterations 20
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.generate_report
+
+benchmark-e2e:  ## End-to-end benchmark with real LLM (requires GEMINI_API_KEY + running proxy)
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_e2e --iterations 10
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.generate_report
+
+benchmark-jailbreakbench:  ## JailbreakBench (NeurIPS 2024) detection benchmark
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_jailbreakbench
+	@echo ""
+	@echo "📊  JailbreakBench results — see BENCHMARK_JAILBREAKBENCH.md"
 
 # ── Verify ──────────────────────────────────────────────
 verify:
