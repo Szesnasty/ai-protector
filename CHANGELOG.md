@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/Szesnasty/ai-protector/compare/v0.1.8...v0.1.9) (2026-03-16)
+
+
+### Bug Fixes
+
+* **nemo:** add generic biographical safe patterns to prevent false positives ([8ae9039](https://github.com/Szesnasty/ai-protector/commit/8ae90393d10c827038a461277f2190d2000cc5b8))
+
 ## [0.1.8](https://github.com/Szesnasty/ai-protector/compare/v0.1.7...v0.1.8) (2026-03-16)
 
 
