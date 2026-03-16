@@ -51,8 +51,8 @@ async def transform_node(state: PipelineState) -> PipelineState:
             messages = [msg.copy() for msg in state["messages"]]
             messages = await mask_pii_in_messages(messages, state.get("user_message", ""), analyzer_results)
             response_masked = True
-        except Exception:
-            logger.exception("transform_pii_masking_error")
+        except Exception as exc:
+            logger.error("transform_pii_masking_error", error_type=type(exc).__name__)
             # Fall back to original messages
             messages = [msg.copy() for msg in state["messages"]]
 

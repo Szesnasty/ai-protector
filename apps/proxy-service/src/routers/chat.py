@@ -146,8 +146,8 @@ async def chat_completions(
             pre_result["latency_ms"] = latency_ms
             try:
                 await log_request_from_state(dict(pre_result))
-            except Exception:
-                logger.exception("stream_block_audit_log_failed")
+            except Exception as exc:
+                logger.error("stream_block_audit_log_failed", error_type=type(exc).__name__)
             return _block_response(pre_result)
 
         # ALLOW or MODIFY — stream from LLM

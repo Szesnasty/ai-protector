@@ -1,6 +1,7 @@
 """Health check router."""
 
 import os
+import re
 import time
 
 import httpx
@@ -19,14 +20,24 @@ _PROCESS_START = time.monotonic()
 router = APIRouter(tags=["health"])
 logger = structlog.get_logger()
 
+_CONN_STRING_RE = re.compile(r"\w+://\S+:\S+@\S+")
+
+
+def _safe_detail(exc: Exception) -> str:
+    """Return error type only — never leak connection strings or credentials."""
+    msg = str(exc)
+    if _CONN_STRING_RE.search(msg):
+        return f"Connection error ({type(exc).__name__})"
+    return type(exc).__name__
+
 
 async def _check_db(db: AsyncSession) -> ServiceHealth:
     try:
         await db.execute(text("SELECT 1"))
         return ServiceHealth(status="ok")
     except Exception as exc:
-        logger.warning("health_db_error", error=str(exc))
-        return ServiceHealth(status="error", detail=str(exc))
+        logger.warning("health_db_error", error_type=type(exc).__name__)
+        return ServiceHealth(status="error", detail=_safe_detail(exc))
 
 
 async def _check_redis() -> ServiceHealth:
@@ -37,8 +48,8 @@ async def _check_redis() -> ServiceHealth:
             return ServiceHealth(status="ok")
         return ServiceHealth(status="error", detail="no PONG")
     except Exception as exc:
-        logger.warning("health_redis_error", error=str(exc))
-        return ServiceHealth(status="error", detail=str(exc))
+        logger.warning("health_redis_error", error_type=type(exc).__name__)
+        return ServiceHealth(status="error", detail=_safe_detail(exc))
 
 
 async def _check_ollama(base_url: str) -> ServiceHealth:
@@ -56,8 +67,8 @@ async def _check_ollama(base_url: str) -> ServiceHealth:
                 return ServiceHealth(status="ok")
             return ServiceHealth(status="error", detail=f"HTTP {resp.status_code}")
     except Exception as exc:
-        logger.warning("health_ollama_error", error=str(exc))
-        return ServiceHealth(status="error", detail=str(exc))
+        logger.warning("health_ollama_error", error_type=type(exc).__name__)
+        return ServiceHealth(status="error", detail=_safe_detail(exc))
 
 
 async def _check_langfuse(host: str) -> ServiceHealth:
@@ -68,8 +79,8 @@ async def _check_langfuse(host: str) -> ServiceHealth:
                 return ServiceHealth(status="ok")
             return ServiceHealth(status="error", detail=f"HTTP {resp.status_code}")
     except Exception as exc:
-        logger.warning("health_langfuse_error", error=str(exc))
-        return ServiceHealth(status="error", detail=str(exc))
+        logger.warning("health_langfuse_error", error_type=type(exc).__name__)
+        return ServiceHealth(status="error", detail=_safe_detail(exc))
 
 
 async def _collect_metrics(db: AsyncSession) -> SystemMetrics:
@@ -131,7 +142,7 @@ async def health(
     try:
         metrics = await _collect_metrics(db)
     except Exception as exc:
-        logger.warning("health_metrics_error", error=str(exc))
+        logger.warning("health_metrics_error", error_type=type(exc).__name__)
         metrics = None
 
     return HealthResponse(
