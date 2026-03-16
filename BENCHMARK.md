@@ -5,7 +5,7 @@
 | Metric | Value |
 |--------|-------|
 | Attack detection rate | **97.9%** (331/338 attacks blocked) |
-| False positive rate | **0.0%** (safe prompts incorrectly blocked) |
+| False positive rate | **0.0%** (0/20 safe prompts in the current suite incorrectly blocked) |
 | Attack scenarios tested | 358 |
 | Attack categories | 38 |
 | Pre-LLM pipeline overhead (p50) | **50 ms** |
