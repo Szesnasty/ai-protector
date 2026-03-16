@@ -12,8 +12,8 @@ Deterministically block unsafe prompts, gate tool calls, and redact sensitive ou
 
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-green)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
-[![Detection Rate](https://img.shields.io/badge/detection_rate-97.9%25-brightgreen)](BENCHMARK.md)
-[![JailbreakBench](https://img.shields.io/badge/JailbreakBench-94.8%25-brightgreen)](BENCHMARK_JAILBREAKBENCH.md)
+[![Detection Rate](https://img.shields.io/badge/🎯_detection_rate-97.9%25-brightgreen)](BENCHMARK.md)
+[![JailbreakBench](https://img.shields.io/badge/🛡_JailbreakBench-94.8%25-brightgreen)](BENCHMARK_JAILBREAKBENCH.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
