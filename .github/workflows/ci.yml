@@ -43,7 +43,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/frontend/package-lock.json
-      - run: rm -f package-lock.json && npm install --no-audit --no-fund --ignore-scripts
+      - run: npm ci
       - run: npx nuxt prepare
       - run: npx eslint .
 
@@ -168,7 +168,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/frontend/package-lock.json
-      - run: rm -f package-lock.json && npm install --no-audit --no-fund --ignore-scripts
+      - run: npm ci
       - run: npx nuxt prepare
       - run: npm run build
         env:
