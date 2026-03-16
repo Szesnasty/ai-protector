@@ -12,7 +12,7 @@ Deterministically block unsafe prompts, gate tool calls, and redact sensitive ou
 
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-green)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
-[![Detection Rate](https://img.shields.io/badge/🎯_detection_rate-97.9%25-brightgreen)](BENCHMARK.md)
+[![Internal Suite](https://img.shields.io/badge/🎯_internal_suite-97.9%25-brightgreen)](BENCHMARK.md)
 [![JailbreakBench](https://img.shields.io/badge/🛡_JailbreakBench-94.8%25-brightgreen)](BENCHMARK_JAILBREAKBENCH.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
@@ -292,11 +292,15 @@ real attack prompts that bypassed target models in the original research. Pre-LL
 | PAIR (iterative black-box) | 88.8% |
 | GCG (gradient-based) | 90.0% |
 
+Strongest performance appears on human-crafted and random-search jailbreaks, with lower but still high detection on PAIR and GCG-style attacks.
+
 → Full results: [BENCHMARK_JAILBREAKBENCH.md](BENCHMARK_JAILBREAKBENCH.md)
 
 > Internal suite covers the broader agent/runtime threat model.
 > JailbreakBench provides an external reference point for jailbreak-style prompt attacks.
 > All results deterministic, reproducible with `make benchmark`.
+
+**AI Protector blocks 94.8% of published JailbreakBench artifacts and 97.9% of attacks in an internal agent-security benchmark, with ~50 ms median pre-LLM overhead — without relying on LLM-as-judge.**
 
 ---
 
@@ -314,7 +318,7 @@ real attack prompts that bypassed target models in the original research. Pre-LL
 **Next milestone: [Agents v1](docs/agents-v1.spec.md)** — self-serve agent registration, tool/role CRUD, generated integration kits, attack validation runner, rollout modes, per-agent traces.
 
 <p align="center">
-  <img src="docs/assets/agent-wizzard.png" alt="Agent Onboarding Wizard Screenshot" />
+  <img src="docs/assets/agent-wizard.png" alt="Agent Onboarding Wizard Screenshot" />
 </p>
 
 Branch: [`feat/agent-onboarding-wizard`](https://github.com/Szesnasty/ai-protector/tree/feat/agent-onboarding-wizard)
