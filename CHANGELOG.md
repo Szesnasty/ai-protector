@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/Szesnasty/ai-protector/compare/v0.1.7...v0.1.8) (2026-03-16)
+
+
+### Bug Fixes
+
+* **nemo:** resolve supply_chain false positive on order-status queries ([ca8b051](https://github.com/Szesnasty/ai-protector/commit/ca8b05133039620bcf8c854ea76990848aa576de))
+
 ## [0.1.7](https://github.com/Szesnasty/ai-protector/compare/v0.1.6...v0.1.7) (2026-03-16)
 
 
