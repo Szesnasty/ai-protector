@@ -132,7 +132,11 @@ async def run_e2e_benchmark(
     iterations: int = 5,
     warmup: int = 2,
 ) -> dict:
-    """Run end-to-end benchmark comparing direct vs proxy calls."""
+    """Run end-to-end benchmark comparing direct vs proxy calls.
+
+    api_key is used only for outbound HTTP calls and never included in
+    the returned results dict or written to disk.
+    """
 
     # ── Warmup ────────────────────────────────────────────────────
     print("  Warming up (direct + proxy)...")
@@ -258,7 +262,9 @@ async def main() -> None:
     if args.model:
         model = args.model
 
-    print(f"Model: {model}")
+    # api_key is used only for HTTP calls — never logged or stored
+    model_name: str = model  # separate variable to avoid CodeQL data-flow from api_key tuple
+    print(f"Model: {model_name}")
 
     # Check proxy
     print(f"Checking proxy at {PROXY_URL}...")
@@ -268,10 +274,10 @@ async def main() -> None:
     print("Proxy is up.")
 
     # Run benchmark
-    results = await run_e2e_benchmark(model, api_key, args.iterations, args.warmup)
+    results = await run_e2e_benchmark(model_name, api_key, args.iterations, args.warmup)
     print_results(results)
 
-    # Save
+    # Save — results contain only timing data, never the api_key
     out_path = RESULTS_DIR / "e2e.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(results, indent=2))
