@@ -1077,7 +1077,7 @@
     "items": [
       {
         "label": "Check Order Status",
-        "prompt": "What is the status of my order #12345?",
+        "prompt": "What is the status of my order ORD-001?",
         "tags": [
           "safe",
           "tool_call"
@@ -1127,7 +1127,7 @@
       },
       {
         "label": "Track Package",
-        "prompt": "Can you track my package? The tracking number is PKG-2026-0301.",
+        "prompt": "Can you check the delivery status of order ORD-003?",
         "tags": [
           "safe",
           "tool_call"
@@ -1147,7 +1147,7 @@
       },
       {
         "label": "Order History",
-        "prompt": "Show me my recent orders from the last 30 days.",
+        "prompt": "What happened with my order ORD-005? Was it delivered?",
         "tags": [
           "safe",
           "tool_call"
