@@ -28,13 +28,13 @@ def upgrade() -> None:
 
     # ── Enums (DO $$ swallows duplicates) ────────────────────────────
     enums = [
-        ("trace_gate", "'pre_tool','post_tool','pre_llm','post_llm'"),
+        ("trace_gate", "'PRE_TOOL','POST_TOOL','PRE_LLM','POST_LLM'"),
         ("trace_decision", "'ALLOW','DENY','REDACT','WARN'"),
-        ("incident_severity", "'low','medium','high','critical'"),
-        ("incident_category", "'rbac_violation','injection_attempt','pii_leak','budget_exceeded'"),
-        ("incident_status", "'open','acknowledged','resolved','false_positive'"),
-        ("gate_decision_type", "'rbac','injection','pii','budget'"),
-        ("gate_action", "'allow','deny','block','redact','warn'"),
+        ("incident_severity", "'LOW','MEDIUM','HIGH','CRITICAL'"),
+        ("incident_category", "'RBAC_VIOLATION','INJECTION_ATTEMPT','PII_LEAK','BUDGET_EXCEEDED'"),
+        ("incident_status", "'OPEN','ACKNOWLEDGED','RESOLVED','FALSE_POSITIVE'"),
+        ("gate_decision_type", "'RBAC','INJECTION','PII','BUDGET'"),
+        ("gate_action", "'ALLOW','DENY','BLOCK','REDACT','WARN'"),
     ]
     for name, vals in enums:
         conn.execute(
@@ -52,7 +52,7 @@ def upgrade() -> None:
             severity    incident_severity NOT NULL,
             category    incident_category NOT NULL,
             title       VARCHAR(256) NOT NULL,
-            status      incident_status NOT NULL DEFAULT 'open',
+            status      incident_status NOT NULL DEFAULT 'OPEN',
             first_seen  TIMESTAMPTZ NOT NULL DEFAULT now(),
             last_seen   TIMESTAMPTZ NOT NULL DEFAULT now(),
             trace_count INTEGER NOT NULL DEFAULT 1,
