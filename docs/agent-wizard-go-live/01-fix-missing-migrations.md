@@ -138,9 +138,9 @@ for t in ['agent_traces', 'agent_incidents', 'gate_decisions', 'promotion_events
 
 ## Definition of Done
 
-- [ ] Migration file `aw_006_*` exists in `alembic/versions/`
-- [ ] `alembic upgrade head` succeeds without errors
-- [ ] All 4 tables exist in PostgreSQL with correct columns
-- [ ] Indexes created on `agent_id` and `created_at` columns
-- [ ] `alembic downgrade -1` cleanly drops the 4 tables
-- [ ] Existing wizard tests still pass (no regressions)
+- [x] Migration file `aw_006_*` exists in `alembic/versions/`
+- [x] `alembic upgrade head` succeeds without errors
+- [x] All 4 tables exist in PostgreSQL with correct columns
+- [x] Indexes created on `agent_id` and `created_at` columns
+- [x] `alembic downgrade -1` cleanly drops the 4 tables
+- [x] Existing wizard tests still pass (no regressions)

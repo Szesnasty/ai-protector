@@ -126,9 +126,49 @@ services:
       # Client-side (browser) → calls host machine ports
       NUXT_PUBLIC_API_BASE: http://localhost:8000
       NUXT_PUBLIC_AGENT_API_BASE: http://localhost:8002
+      NUXT_PUBLIC_TEST_AGENT_PYTHON_URL: http://localhost:8003
+      NUXT_PUBLIC_TEST_AGENT_GRAPH_URL: http://localhost:8004
     depends_on:
       - proxy-service
       - agent-demo
+    networks:
+      - ai-protector
+
+  # ── Test Agents (wizard go-live) ──────────────────────
+
+  test-agent-python:
+    build:
+      context: ../apps/test-agents
+      dockerfile: pure-python-agent/Dockerfile
+    container_name: test-agent-python
+    profiles: ["test-agents"]
+    ports:
+      - "8003:8003"
+    environment:
+      PROXY_URL: http://proxy-service:8000
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ai-protector
+
+  test-agent-langgraph:
+    build:
+      context: ../apps/test-agents
+      dockerfile: langgraph-agent/Dockerfile
+    container_name: test-agent-langgraph
+    profiles: ["test-agents"]
+    ports:
+      - "8004:8004"
+    environment:
+      PROXY_URL: http://proxy-service:8000
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - ai-protector
 
