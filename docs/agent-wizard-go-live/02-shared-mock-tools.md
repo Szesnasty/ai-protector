@@ -176,12 +176,14 @@ __all__ = ["TOOL_REGISTRY", "execute_tool", "ORDERS", "USERS", "PRODUCTS"]
 
 ## Definition of Done
 
-- [ ] `apps/test-agents/shared/` directory exists with 3 files
-- [ ] `mock_data.py` has ORDERS (5), USERS (4 with PII), PRODUCTS (6)
-- [ ] `tools.py` has 5 functions + TOOL_REGISTRY + `execute_tool()`
-- [ ] `from shared.tools import execute_tool` works
-- [ ] `execute_tool("getOrders")` returns valid JSON with 5 orders
-- [ ] `execute_tool("getUsers")` returns JSON containing email addresses (for PII gate testing)
-- [ ] `execute_tool("searchProducts", {"query": "monitor"})` filters correctly
-- [ ] `execute_tool("updateOrder", {"order_id": "ORD-001", "status": "shipped"})` returns success
-- [ ] `execute_tool("unknownTool")` returns error JSON (not an exception)
+- [x] `apps/test-agents/shared/` directory exists with 4 files (+ tool_definitions.py)
+- [x] `mock_data.py` has ORDERS (5), USERS (4 with PII), PRODUCTS (6)
+- [x] `tools.py` has 5 functions + TOOL_REGISTRY + `execute_tool()`
+- [x] `from shared.tools import execute_tool` works
+- [x] `execute_tool("getOrders")` returns valid JSON with 5 orders
+- [x] `execute_tool("getUsers")` returns JSON containing email addresses (for PII gate testing)
+- [x] `execute_tool("searchProducts", {"query": "monitor"})` filters correctly
+- [x] `execute_tool("updateOrder", {"order_id": "ORD-001", "status": "shipped"})` returns success
+- [x] `execute_tool("unknownTool")` returns error JSON (not an exception)
+- [x] `tool_definitions.py` has 5 OpenAI function-calling definitions + SYSTEM_PROMPT
+- [x] 85 automated tests pass (test_shared_tools.py)
