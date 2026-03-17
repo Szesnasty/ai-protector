@@ -29,8 +29,7 @@
           <v-col cols="12">
             <v-textarea
               v-model="form.description"
-              label="Description"
-              :rules="[rules.required]"
+              label="Description (optional)"
               variant="outlined"
               rows="3"
               hint="What does this agent do?"
@@ -115,7 +114,7 @@ const envOptions = [
 
 const rules = {
   required: (v: string) => !!v?.trim() || 'Required',
-  minLength: (v: string) => (v && v.length >= 3) || 'At least 3 characters',
+  minLength: (v: string) => (v && v.length >= 2) || 'At least 2 characters',
 }
 
 const form = reactive<AgentCreate>({

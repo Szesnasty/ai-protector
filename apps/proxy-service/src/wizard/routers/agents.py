@@ -6,11 +6,11 @@ import uuid
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
-from src.wizard.models import Agent, AgentStatus, RiskLevel
+from src.wizard.models import Agent, AgentStatus, RiskLevel, RolloutMode
 from src.wizard.schemas import AgentCreate, AgentListResponse, AgentRead, AgentUpdate
 from src.wizard.services.risk import apply_risk_classification
 
@@ -57,13 +57,25 @@ async def create_agent(
 async def list_agents(
     page: int = Query(1, ge=1),  # noqa: B008
     per_page: int = Query(20, ge=1, le=100),  # noqa: B008
+    search: str | None = Query(None, max_length=200),  # noqa: B008
     status: AgentStatus | None = None,
     risk_level: RiskLevel | None = None,
+    rollout_mode: RolloutMode | None = None,
     team: str | None = None,
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> AgentListResponse:
-    """List agents with pagination and filtering."""
+    """List agents with pagination, search and filtering."""
     stmt = select(Agent)
+
+    # Full-text search on name / description
+    if search:
+        pattern = f"%{search}%"
+        stmt = stmt.where(
+            or_(
+                Agent.name.ilike(pattern),
+                Agent.description.ilike(pattern),
+            )
+        )
 
     # Filters
     if status is not None:
@@ -73,6 +85,8 @@ async def list_agents(
         stmt = stmt.where(Agent.status != AgentStatus.ARCHIVED)
     if risk_level is not None:
         stmt = stmt.where(Agent.risk_level == risk_level)
+    if rollout_mode is not None:
+        stmt = stmt.where(Agent.rollout_mode == rollout_mode)
     if team is not None:
         stmt = stmt.where(Agent.team == team)
 
@@ -80,8 +94,8 @@ async def list_agents(
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(count_stmt)).scalar_one()
 
-    # Order: reference agents first, then by name
-    stmt = stmt.order_by(Agent.is_reference.desc(), Agent.name)
+    # Order: reference agents first, then by created_at desc
+    stmt = stmt.order_by(Agent.is_reference.desc(), Agent.created_at.desc())
 
     # Paginate
     stmt = stmt.offset((page - 1) * per_page).limit(per_page)

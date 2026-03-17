@@ -4,6 +4,22 @@ Graph flow:
   route_tool → pre_tool_gate → (execute | blocked | confirmation)
                                    ↓
                               post_tool_gate → response → END
+
+╔══════════════════════════════════════════════════════════════════╗
+║  AI PROTECTOR — Integration Example (LangGraph)                ║
+║                                                                ║
+║  This file shows how AI Protector security gates are wired     ║
+║  into a LangGraph StateGraph. Look for sections marked with:   ║
+║                                                                ║
+║    # ═══ AI PROTECTOR ═══                                      ║
+║                                                                ║
+║  Key integration points:                                       ║
+║    1. Import PreToolGate, PostToolGate from protection.py      ║
+║    2. pre_tool_gate_node  — RBAC + rate-limit check            ║
+║    3. post_tool_gate_node — PII + injection scan on output     ║
+║    4. Conditional routing  — block / confirm / execute          ║
+║    5. Graph wiring — gates inserted between router & executor  ║
+╚══════════════════════════════════════════════════════════════════╝
 """
 
 from __future__ import annotations
@@ -23,7 +39,12 @@ if _parent not in sys.path:
 
 from shared.tools import execute_tool  # noqa: E402
 
+# ═══ AI PROTECTOR — Import security gates ═══════════════════════
+# PreToolGate: checks RBAC permissions + rate limits BEFORE tool runs
+# PostToolGate: scans tool output for PII, injection AFTER tool runs
+# Both are configured by wizard-generated YAML (rbac.yaml, limits.yaml, policy.yaml)
 from protection import PreToolGate, PostToolGate  # noqa: E402
+# ═══════════════════════════════════════════════════════════════════
 
 
 # ── State schema ────────────────────────────────────────────────
@@ -42,6 +63,7 @@ class AgentState(TypedDict, total=False):
     post_gate_result: dict | None
     final_response: str | None
     blocked: bool
+    no_match: bool
     requires_confirmation: bool
 
 
@@ -79,19 +101,42 @@ def route_tool_node(state: AgentState) -> dict[str, Any]:
     return {"tool": tool, "tool_args": tool_args, "gate_log": []}
 
 
+# ═══ AI PROTECTOR — Pre-Tool Gate (RBAC + Limits) ═══════════════
+#
+# This node runs BEFORE the tool executes. It checks:
+#   1. RBAC: Does this role have permission to use this tool?
+#   2. Rate Limits: Has the role exceeded max calls for this session?
+#   3. Confirmation: Does this tool require explicit user confirmation?
+#
+# If blocked → flow goes to blocked_response_node (tool never runs)
+# If confirm → flow goes to confirmation_node (asks user to confirm)
+# If allowed → flow continues to tool_executor_node
+#
 def pre_tool_gate_node(state: AgentState) -> dict[str, Any]:
     """Pre-tool security check: RBAC + limits."""
-    gate = PreToolGate()
+    gate = PreToolGate()  # ← AI Protector gate, configured by wizard YAML
     tool = state.get("tool")
     role = state.get("role", "user")
 
     if not tool:
         return {
-            "final_response": "No tool matched your request.",
-            "blocked": True,
-            "gate_log": [{"gate": "router", "decision": "no_match"}],
+            "final_response": (
+                "I couldn't match your request to a supported action.\n"
+                "Try asking about: orders, users, products — or use "
+                "one of the quick action buttons below."
+            ),
+            "blocked": False,
+            "no_match": True,
+            "gate_log": [
+                {
+                    "gate": "router",
+                    "decision": "no_match",
+                    "reason": "No tool matched the user message",
+                }
+            ],
         }
 
+    # AI Protector: check RBAC permission + rate limits for this role/tool
     result = gate.check(role, tool, state.get("tool_args"))
 
     log_entry = {
@@ -106,6 +151,9 @@ def pre_tool_gate_node(state: AgentState) -> dict[str, Any]:
     return {"pre_gate_result": result, "gate_log": gate_log}
 
 
+# ═══════════════════════════════════════════════════════════════════
+
+
 def tool_executor_node(state: AgentState) -> dict[str, Any]:
     """Execute the tool and capture output."""
     tool = state.get("tool", "")
@@ -114,10 +162,21 @@ def tool_executor_node(state: AgentState) -> dict[str, Any]:
     return {"tool_output": output}
 
 
+# ═══ AI PROTECTOR — Post-Tool Gate (PII + Injection Scan) ═══════
+#
+# This node runs AFTER the tool executes. It scans the output for:
+#   1. PII: emails, phone numbers, personal data
+#   2. Injection: SQL injection, prompt injection patterns
+#
+# Findings are logged but the response still goes through.
+# In ENFORCE mode, flagged content would be redacted or blocked.
+#
 def post_tool_gate_node(state: AgentState) -> dict[str, Any]:
     """Post-tool scan: PII, injection detection."""
-    gate = PostToolGate()
+    gate = PostToolGate()  # ← AI Protector gate, uses policy.yaml scanners config
     output = state.get("tool_output", "")
+
+    # AI Protector: scan output for sensitive data and injection patterns
     result = gate.scan(output)
 
     log_entry = {
@@ -130,15 +189,28 @@ def post_tool_gate_node(state: AgentState) -> dict[str, Any]:
     return {"post_gate_result": result, "gate_log": gate_log}
 
 
+# ═══════════════════════════════════════════════════════════════════
+
+
 def response_node(state: AgentState) -> dict[str, Any]:
     """Build final response."""
     return {"final_response": state.get("tool_output", ""), "blocked": False}
 
 
 def blocked_response_node(state: AgentState) -> dict[str, Any]:
-    """Build blocked response."""
-    reason = state.get("pre_gate_result", {}).get("reason", "Access denied")
-    return {"final_response": f"BLOCKED: {reason}", "blocked": True}
+    """Build blocked response (real security block — RBAC or limits)."""
+    pre_result = state.get("pre_gate_result") or {}
+    reason = pre_result.get("reason", "Access denied by security policy")
+    decision = pre_result.get("decision", "block")
+    return {
+        "final_response": f"\u26d4 Security {decision.upper()}: {reason}",
+        "blocked": True,
+    }
+
+
+def no_match_response_node(state: AgentState) -> dict[str, Any]:
+    """Pass-through for routing miss — final_response already set."""
+    return {}
 
 
 def confirmation_node(state: AgentState) -> dict[str, Any]:
@@ -152,13 +224,22 @@ def confirmation_node(state: AgentState) -> dict[str, Any]:
     }
 
 
-# ── Conditional routing ─────────────────────────────────────────
+# ═══ AI PROTECTOR — Conditional Routing ══════════════════════════
+#
+# This function reads the pre-tool gate's decision and routes the
+# graph accordingly:
+#   - "blocked"      → tool never executes, user sees BLOCKED message
+#   - "confirmation" → tool paused, user must confirm before execution
+#   - "execute"      → tool runs, then post-tool gate scans output
+#
 
 
 def after_pre_gate(state: AgentState) -> str:
     """Route after pre-tool gate based on decision."""
+    # Routing miss — friendly info, NOT a security block
+    if state.get("no_match"):
+        return "no_match"
     result = state.get("pre_gate_result")
-    # If no tool was matched, pre_gate_result is None → blocked
     if result is None:
         return "blocked"
     if not result.get("allowed", False):
@@ -168,38 +249,67 @@ def after_pre_gate(state: AgentState) -> str:
     return "execute"
 
 
+# ═══════════════════════════════════════════════════════════════════
+
+
 # ── Build graph ─────────────────────────────────────────────────
 
 
+# ═══ AI PROTECTOR — Graph Wiring ════════════════════════════════
+#
+# This is where security gates are wired into the LangGraph:
+#
+#   route_tool ──→ pre_tool_gate ──→ [conditional] ──→ tool_executor
+#                                  │                       │
+#                                  ├─→ blocked_response    ↓
+#                                  ├─→ no_match_response  post_tool_gate
+#                                  └─→ confirmation        │
+#                                                          ↓
+#                                                       response
+#
+# Without AI Protector, the graph would be:
+#   route_tool → tool_executor → response → END
+#
+# AI Protector adds pre_tool_gate and post_tool_gate as mandatory
+# nodes, with conditional routing for block/confirm decisions.
+#
 def build_graph() -> StateGraph:
     graph = StateGraph(AgentState)
 
     graph.add_node("route_tool", route_tool_node)
-    graph.add_node("pre_tool_gate", pre_tool_gate_node)
+    graph.add_node("pre_tool_gate", pre_tool_gate_node)  # ← AI Protector
     graph.add_node("tool_executor", tool_executor_node)
-    graph.add_node("post_tool_gate", post_tool_gate_node)
+    graph.add_node("post_tool_gate", post_tool_gate_node)  # ← AI Protector
     graph.add_node("response", response_node)
-    graph.add_node("blocked_response", blocked_response_node)
-    graph.add_node("confirmation", confirmation_node)
+    graph.add_node("blocked_response", blocked_response_node)  # ← AI Protector
+    graph.add_node("no_match_response", no_match_response_node)  # ← AI Protector
+    graph.add_node("confirmation", confirmation_node)  # ← AI Protector
 
     graph.set_entry_point("route_tool")
+    # AI Protector: security gate runs after routing, before execution
     graph.add_edge("route_tool", "pre_tool_gate")
     graph.add_conditional_edges(
         "pre_tool_gate",
-        after_pre_gate,
+        after_pre_gate,  # ← AI Protector: routes to block/confirm/execute/no_match
         {
             "execute": "tool_executor",
             "blocked": "blocked_response",
+            "no_match": "no_match_response",
             "confirmation": "confirmation",
         },
     )
+    # AI Protector: post-tool scan runs after execution
     graph.add_edge("tool_executor", "post_tool_gate")
     graph.add_edge("post_tool_gate", "response")
     graph.add_edge("response", END)
     graph.add_edge("blocked_response", END)
+    graph.add_edge("no_match_response", END)
     graph.add_edge("confirmation", END)
 
     return graph
+
+
+# ═══════════════════════════════════════════════════════════════════
 
 
 _compiled = None

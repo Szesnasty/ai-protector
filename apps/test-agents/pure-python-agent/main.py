@@ -5,6 +5,22 @@ Dual-mode agent:
   - **llm**: real LLM call via LiteLLM with native function calling
 
 Both modes share the same security gates (RBAC, limits, PII scan).
+
+╔════════════════════════════════════════════════════════════════════╗
+║  AI PROTECTOR — Integration Example (Pure Python)                ║
+║                                                                  ║
+║  This file shows how AI Protector security is integrated into    ║
+║  a plain Python agent (no framework). Look for:                  ║
+║                                                                  ║
+║    # ═══ AI PROTECTOR ═══                                        ║
+║                                                                  ║
+║  Key integration points:                                         ║
+║    1. Import protected_tool_call, scan_output from protection.py ║
+║    2. /load-config   — fetch wizard YAML from proxy              ║
+║    3. _chat_mock()   — calls protected_tool_call() pipeline      ║
+║    4. _chat_llm()    — same pipeline, but with real LLM          ║
+║    5. protected_tool_call = RBAC → limits → execute → scan       ║
+╚════════════════════════════════════════════════════════════════════╝
 """
 
 from __future__ import annotations
@@ -20,12 +36,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+# ═══ AI PROTECTOR — Import security functions ═════════════════════
 from protection import (
     get_config,
-    protected_tool_call,
+    protected_tool_call,  # full pipeline: RBAC → limits → execute → scan
     reset_config,
-    scan_output,
+    scan_output,  # post-tool PII + injection scanner
 )
+# ═══════════════════════════════════════════════════════════════════
 
 # shared tools — copied into container at build time
 from shared.tool_definitions import SYSTEM_PROMPT, TOOL_DEFINITIONS
@@ -82,9 +100,19 @@ async def config_status():
     }
 
 
+# ═══ AI PROTECTOR — Load Config from Wizard Integration Kit ═════
+#
+# This endpoint fetches the wizard-generated security configuration
+# (rbac.yaml, limits.yaml, policy.yaml) from the AI Protector proxy
+# and loads it into the SecurityConfig singleton.
+#
+# After this call, all chat requests will be enforced by the
+# protected_tool_call() pipeline (RBAC → limits → exec → scan).
+#
 @app.post("/load-config")
 async def load_config(req: LoadConfigRequest):
     """Fetch integration kit from wizard API and load configs."""
+    # AI Protector: fetch wizard-generated YAML configs from proxy
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(f"{PROXY_URL}/v1/agents/{req.agent_id}/integration-kit")
         if resp.status_code == 404:
@@ -95,6 +123,7 @@ async def load_config(req: LoadConfigRequest):
             raise HTTPException(502, f"Failed to fetch kit: {resp.status_code}")
 
     kit = resp.json()
+    # AI Protector: parse YAML configs and store in SecurityConfig singleton
     get_config().load_from_kit(kit)
     logger.info("config_loaded", agent_id=req.agent_id, framework=kit.get("framework"))
     return {
@@ -132,20 +161,36 @@ def _chat_mock(req: ChatRequest) -> dict:
     if not tool:
         return {
             "response": (
-                "I couldn't determine which tool to use. "
-                "Try: getOrders, getUsers, searchProducts, updateOrder, updateUser"
+                "I couldn't match your request to a supported action.\n"
+                "Try asking about: orders, users, products — or use "
+                "one of the quick action buttons below."
             ),
-            "gate_log": [],
+            "blocked": False,
+            "no_match": True,
+            "gate_log": [
+                {
+                    "gate": "router",
+                    "decision": "no_match",
+                    "reason": "No tool matched the user message",
+                }
+            ],
         }
 
     args = req.tool_args or _extract_args(req.message, tool)
 
+    # ═══ AI PROTECTOR — Run tool through full security pipeline ═══
+    # protected_tool_call() handles:
+    #   1. RBAC check (role has permission?)
+    #   2. Rate limit check (within budget?)
+    #   3. Tool execution (if allowed)
+    #   4. Output scan (PII, injection)
     result = protected_tool_call(
         role=req.role,
         tool=tool,
         args=args,
         execute_fn=execute_tool,
     )
+    # ═══════════════════════════════════════════════════════════════════
 
     # Handle confirmation flow
     if result.get("requires_confirmation") and not req.confirmed:
@@ -212,17 +257,20 @@ async def _chat_llm(req: ChatRequest) -> dict:
             "mode": "llm",
         }
 
-    # 2. Process the first tool call through security gates
+    # 2. ═══ AI PROTECTOR — Security gate check ════════════════════
+    # Extract tool call info from LLM response
     tc = choice.tool_calls[0]
     tool_name = tc.function.name
     tool_args = json.loads(tc.function.arguments) if tc.function.arguments else {}
 
+    # Same protected_tool_call as mock mode — RBAC + limits + scan
     result = protected_tool_call(
         role=req.role,
         tool=tool_name,
         args=tool_args,
         execute_fn=execute_tool,
     )
+    # ═══════════════════════════════════════════════════════════════════
 
     if not result["allowed"]:
         return _build_response(result, mode="llm")
@@ -285,7 +333,7 @@ def _build_response(result: dict, *, mode: str = "mock") -> dict:
 
     if not result.get("allowed", True):
         return {
-            "response": f"❌ BLOCKED: {result['reason']}",
+            "response": f"⛔ Security BLOCK: {result['reason']}",
             "blocked": True,
             "gate_log": gate_log,
             "mode": mode,
@@ -344,6 +392,131 @@ def _count_tools(rbac: dict) -> int:
     for role_cfg in rbac.get("roles", {}).values():
         tools.update(role_cfg.get("tools", {}).keys())
     return len(tools)
+
+
+# ── Source files endpoint (for frontend source viewer) ──────────
+
+
+def _read_source(path: str) -> str | None:
+    """Read a source file."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+_agent_dir = os.path.dirname(os.path.abspath(__file__))
+_parent_dir = os.path.dirname(_agent_dir)
+
+
+@app.get("/source-files")
+async def source_files():
+    """Return agent source code for the frontend source viewer."""
+    shared_dir = os.path.join(_parent_dir, "shared")
+    files: dict[str, dict] = {}
+
+    agent_files = {
+        "main.py": {
+            "description": "FastAPI app — dual-mode agent (mock + LLM)",
+            "highlight": [],
+        },
+        "protection.py": {
+            "description": "Security layer — RBAC, limits, PII scanning (loads wizard config)",
+            "highlight": [
+                "SecurityConfig",
+                "load_from_kit",
+                "check_rbac",
+                "check_limits",
+                "scan_output",
+                "protected_tool_call",
+            ],
+        },
+    }
+    for fname, meta in agent_files.items():
+        content = _read_source(os.path.join(_agent_dir, fname))
+        if content:
+            files[f"pure-python-agent/{fname}"] = {
+                "content": content,
+                "language": "python",
+                **meta,
+            }
+
+    shared_files = {
+        "__init__.py": {"description": "Re-exports for shared module"},
+        "tools.py": {
+            "description": "Mock tool functions (getOrders, updateUser, etc.)"
+        },
+        "mock_data.py": {
+            "description": "Test data with deliberate PII for scanner testing"
+        },
+        "tool_definitions.py": {"description": "OpenAI function-calling tool schemas"},
+    }
+    for fname, meta in shared_files.items():
+        content = _read_source(os.path.join(shared_dir, fname))
+        if content:
+            files[f"shared/{fname}"] = {
+                "content": content,
+                "language": "python",
+                **meta,
+            }
+
+    return {
+        "framework": "raw_python",
+        "files": files,
+        "tree": [
+            {"path": "pure-python-agent/", "type": "dir", "label": "Agent"},
+            {"path": "pure-python-agent/main.py", "type": "file", "icon": "entry"},
+            {
+                "path": "pure-python-agent/protection.py",
+                "type": "file",
+                "icon": "security",
+            },
+            {
+                "path": "pure-python-agent/config/",
+                "type": "dir",
+                "label": "Wizard Config (loaded at runtime)",
+            },
+            {
+                "path": "pure-python-agent/config/rbac.yaml",
+                "type": "config",
+                "icon": "config",
+            },
+            {
+                "path": "pure-python-agent/config/limits.yaml",
+                "type": "config",
+                "icon": "config",
+            },
+            {
+                "path": "pure-python-agent/config/policy.yaml",
+                "type": "config",
+                "icon": "config",
+            },
+            {"path": "shared/", "type": "dir", "label": "Shared Tools"},
+            {"path": "shared/tools.py", "type": "file", "icon": "tool"},
+            {"path": "shared/mock_data.py", "type": "file", "icon": "data"},
+            {"path": "shared/tool_definitions.py", "type": "file", "icon": "schema"},
+        ],
+    }
+
+
+@app.get("/loaded-config")
+async def loaded_config():
+    """Return the currently loaded YAML configs."""
+    c = get_config()
+    if not c.loaded:
+        return {"loaded": False, "configs": {}}
+
+    import yaml as _yaml
+
+    configs = {}
+    for name in ("rbac", "limits", "policy"):
+        data = getattr(c, name, {})
+        if data:
+            configs[f"{name}.yaml"] = _yaml.dump(
+                data, default_flow_style=False, allow_unicode=True
+            )
+    return {"loaded": True, "configs": configs}
 
 
 if __name__ == "__main__":

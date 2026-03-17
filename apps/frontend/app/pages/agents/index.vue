@@ -140,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAgents } from '~/composables/useAgents'
 import type { AgentRead, RiskLevel, RolloutMode } from '~/types/wizard'
 
@@ -153,22 +153,27 @@ const rolloutFilter = ref<string | null>(null)
 const riskOptions = ['low', 'medium', 'high', 'critical']
 const rolloutOptions = ['observe', 'warn', 'enforce']
 
-const { agents, isLoading, refetch } = useAgents()
-
-const filteredAgents = computed(() => {
-  let result = agents.value
-  if (search.value) {
-    const q = search.value.toLowerCase()
-    result = result.filter(a => a.name.toLowerCase().includes(q) || a.description?.toLowerCase().includes(q))
-  }
-  if (riskFilter.value) {
-    result = result.filter(a => a.risk_level === riskFilter.value)
-  }
-  if (rolloutFilter.value) {
-    result = result.filter(a => a.rollout_mode === rolloutFilter.value)
-  }
-  return result
+// Debounced search value sent to the server
+const debouncedSearch = ref<string | undefined>(undefined)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+watch(search, (v) => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    debouncedSearch.value = v?.trim() || undefined
+  }, 300)
 })
+
+const riskLevel = computed(() => riskFilter.value || undefined)
+const rolloutMode = computed(() => rolloutFilter.value || undefined)
+
+const { agents, isLoading, refetch } = useAgents({
+  search: debouncedSearch,
+  riskLevel,
+  rolloutMode,
+})
+
+// No client-side filtering needed — server handles search + filters
+const filteredAgents = computed(() => agents.value)
 
 const headers = [
   { title: 'Agent', key: 'name', sortable: true },
