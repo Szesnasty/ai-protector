@@ -1,0 +1,16 @@
+[project]
+name = "test-agent-langgraph"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "httpx>=0.28",
+    "pyyaml>=6",
+    "structlog>=24",
+    "langgraph>=0.2",
+    "litellm>=1.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.24"]
