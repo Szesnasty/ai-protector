@@ -28,6 +28,20 @@
         </template>
       </v-list-item>
       <v-divider class="my-2" />
+      <v-list-subheader>Test Agents</v-list-subheader>
+      <v-list-item
+        v-for="item in testAgentItems"
+        :key="item.to"
+        :to="item.to"
+        :title="item.title"
+        active-class="nav-item--active"
+        exact
+      >
+        <template #prepend>
+          <v-icon :icon="item.icon" size="20" />
+        </template>
+      </v-list-item>
+      <v-divider class="my-2" />
       <v-list-subheader>Manage</v-list-subheader>
       <v-list-item
         v-for="item in manageItems"
@@ -121,6 +135,11 @@ const navItems: NavItem[] = [
   { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
   { title: 'Agent Traces', icon: 'mdi-chart-timeline-variant', to: '/agent-traces' },
   { title: 'Security Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
+]
+
+const testAgentItems: NavItem[] = [
+  { title: 'Python Agent', icon: 'mdi-language-python', to: '/test-agents/python' },
+  { title: 'LangGraph Agent', icon: 'mdi-graph-outline', to: '/test-agents/graph' },
 ]
 
 const manageItems: NavItem[] = [
