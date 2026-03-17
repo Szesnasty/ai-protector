@@ -8,14 +8,23 @@
           Test wizard-generated security configs against a live {{ framework }} agent
         </p>
       </div>
-      <v-chip
-        :color="configStatus?.loaded ? 'success' : 'grey'"
-        variant="tonal"
-        size="small"
-        :prepend-icon="configStatus?.loaded ? 'mdi-check-circle' : 'mdi-circle-outline'"
-      >
-        {{ configStatus?.loaded ? 'Config Loaded' : 'No Config' }}
-      </v-chip>
+      <div class="d-flex align-center ga-2">
+        <v-chip
+          :color="configStatus?.loaded ? 'success' : 'grey'"
+          variant="tonal"
+          size="small"
+          :prepend-icon="configStatus?.loaded ? 'mdi-check-circle' : 'mdi-circle-outline'"
+        >
+          {{ configStatus?.loaded ? 'Config Loaded' : 'No Config' }}
+        </v-chip>
+        <v-btn
+          icon="mdi-code-braces"
+          variant="text"
+          size="small"
+          title="View Agent Source & Config"
+          @click="drawerOpen = !drawerOpen"
+        />
+      </div>
     </div>
 
     <!-- Controls Row -->
@@ -126,17 +135,18 @@
               <!-- Agent Response -->
               <div v-else class="d-flex justify-start">
                 <v-card
-                  :color="msg.blocked ? 'error' : msg.requiresConfirmation ? 'warning' : 'surface-light'"
-                  :variant="msg.blocked || msg.requiresConfirmation ? 'tonal' : 'outlined'"
+                  :color="msg.blocked ? 'error' : msg.noMatch ? 'grey-lighten-1' : msg.requiresConfirmation ? 'warning' : 'surface-light'"
+                  :variant="msg.blocked || msg.requiresConfirmation ? 'tonal' : msg.noMatch ? 'tonal' : 'outlined'"
                   class="pa-3"
                   style="max-width: 80%"
                 >
                   <div class="d-flex align-center ga-1 mb-1">
                     <v-icon v-if="msg.blocked" size="16" color="error">mdi-close-circle</v-icon>
+                    <v-icon v-else-if="msg.noMatch" size="16" color="grey">mdi-help-circle-outline</v-icon>
                     <v-icon v-else-if="msg.requiresConfirmation" size="16" color="warning">mdi-alert</v-icon>
                     <v-icon v-else size="16">mdi-robot-outline</v-icon>
                     <span class="text-caption text-medium-emphasis">
-                      {{ msg.blocked ? 'BLOCKED' : msg.requiresConfirmation ? 'CONFIRMATION REQUIRED' : 'Agent' }}
+                      {{ msg.blocked ? 'SECURITY BLOCK' : msg.noMatch ? 'NO MATCH' : msg.requiresConfirmation ? 'CONFIRMATION REQUIRED' : 'Agent' }}
                     </span>
                   </div>
                   <pre class="text-body-2" style="white-space: pre-wrap; font-family: inherit">{{ msg.text }}</pre>
@@ -274,6 +284,13 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Source & Config Drawer -->
+    <TestAgentsAgentSourceDrawer
+      v-model="drawerOpen"
+      :base-url="baseUrl"
+      :config-loaded="!!configStatus?.loaded"
+    />
   </v-container>
 </template>
 
@@ -311,11 +328,13 @@ const selectedRole = ref('user')
 const inputMessage = ref('')
 const isSending = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
+const drawerOpen = ref(false)
 
 interface ChatMsg {
   type: 'user' | 'agent'
   text: string
   blocked?: boolean
+  noMatch?: boolean
   requiresConfirmation?: boolean
   confirmed?: boolean
   tool?: string
@@ -411,6 +430,7 @@ function appendAgentResponse(res: ChatResponse, originalMessage: string) {
     type: 'agent',
     text: res.response,
     blocked: res.blocked,
+    noMatch: res.no_match ?? false,
     requiresConfirmation: res.requires_confirmation ?? false,
     tool: res.tool,
     toolArgs: res.tool_args,
@@ -437,6 +457,7 @@ function gateColor(decision: string): string {
   if (d === 'BLOCK' || d === 'DENY') return 'error'
   if (d === 'CONFIRM') return 'warning'
   if (d === 'FLAGGED' || d === 'REDACT') return 'info'
+  if (d === 'NO_MATCH') return 'grey'
   return 'grey'
 }
 
@@ -446,6 +467,7 @@ function gateIcon(decision: string): string {
   if (d === 'BLOCK' || d === 'DENY') return 'mdi-close-circle'
   if (d === 'CONFIRM') return 'mdi-alert-circle'
   if (d === 'FLAGGED' || d === 'REDACT') return 'mdi-magnify'
+  if (d === 'NO_MATCH') return 'mdi-help-circle-outline'
   return 'mdi-help-circle'
 }
 </script>

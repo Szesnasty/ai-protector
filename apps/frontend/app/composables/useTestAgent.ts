@@ -30,6 +30,7 @@ export interface ChatRequest {
 export interface ChatResponse {
   response: string
   blocked: boolean
+  no_match?: boolean
   requires_confirmation?: boolean
   tool?: string
   tool_args?: Record<string, unknown>

@@ -426,7 +426,7 @@ class TestChatMockMode:
         assert resp.status_code == 200
         data = resp.json()
         assert data["blocked"] is True
-        assert "BLOCKED" in data["response"]
+        assert "Security" in data["response"]
         assert data["gate_log"][0]["decision"] == "block"
 
     @pytest.mark.asyncio
@@ -485,7 +485,9 @@ class TestChatMockMode:
         resp = await client.post("/chat", json={"message": "hello", "role": "user"})
         assert resp.status_code == 200
         data = resp.json()
-        assert "couldn't determine" in data["response"].lower()
+        assert "couldn't match" in data["response"].lower()
+        assert data.get("blocked") is False
+        assert data.get("no_match") is True
 
     @pytest.mark.asyncio
     async def test_explicit_tool_call(self, client: AsyncClient):

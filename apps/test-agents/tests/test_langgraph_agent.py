@@ -383,7 +383,8 @@ class TestGraphNodes:
 
         state = {"tool": None, "role": "user", "gate_log": []}
         result = pre_tool_gate_node(state)
-        assert result["blocked"] is True
+        assert result["blocked"] is False
+        assert result["no_match"] is True
 
     def test_tool_executor(self, loaded_config):
         from graph import tool_executor_node
@@ -447,6 +448,12 @@ class TestConditionalRouting:
         state = {"pre_gate_result": None}
         assert after_pre_gate(state) == "blocked"
 
+    def test_no_match_routes_to_no_match(self, loaded_config):
+        from graph import after_pre_gate
+
+        state = {"no_match": True}
+        assert after_pre_gate(state) == "no_match"
+
 
 class TestFullGraphExecution:
     """End-to-end graph invocation tests."""
@@ -469,7 +476,7 @@ class TestFullGraphExecution:
 
         result = get_graph().invoke({"message": "update order ORD-001", "role": "user"})
         assert result.get("blocked") is True
-        assert "BLOCKED" in result.get("final_response", "")
+        assert "Security" in result.get("final_response", "")
 
     def test_confirmation_flow(self, loaded_config):
         from graph import get_graph
@@ -611,7 +618,7 @@ class TestChatEndpoint:
         assert resp.status_code == 200
         data = resp.json()
         assert data["blocked"] is True
-        assert "BLOCKED" in data["response"]
+        assert "Security" in data["response"]
 
     @pytest.mark.asyncio
     async def test_update_order_admin_confirmation(self, client: httpx.AsyncClient):
@@ -700,4 +707,5 @@ class TestChatEndpoint:
         resp = await client.post("/chat", json={"message": "hello", "role": "user"})
         assert resp.status_code == 200
         data = resp.json()
-        assert data["blocked"] is True
+        assert data["blocked"] is False
+        assert data["no_match"] is True
