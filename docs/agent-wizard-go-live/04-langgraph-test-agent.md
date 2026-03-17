@@ -476,13 +476,13 @@ if __name__ == "__main__":
 
 ## Definition of Done
 
-- [ ] `apps/test-agents/langgraph-agent/` exists with main.py, graph.py, protection.py
-- [ ] `uvicorn main:app --port 8004` starts without errors
-- [ ] `GET /health` returns `{"status": "ok", "config_loaded": false, "framework": "langgraph"}`
-- [ ] `POST /load-config` successfully loads wizard kit
-- [ ] LangGraph graph compiles and runs: `route → pre_gate → executor → post_gate → response`
-- [ ] RBAC block: `{"role": "user", "message": "update order"}` → blocked_response node
-- [ ] Confirmation: `{"role": "admin", "message": "update order"}` → confirmation node
-- [ ] Allow + scan: `{"role": "user", "message": "list users"}` → tool_executor → post_gate (PII flagged)
-- [ ] `gate_log` contains entries for all visited security nodes
-- [ ] `graph_nodes_visited` shows which graph path was taken
+- [x] `apps/test-agents/langgraph-agent/` exists with main.py, graph.py, protection.py
+- [x] `uvicorn main:app --port 8004` starts without errors
+- [x] `GET /health` returns `{"status": "ok", "config_loaded": false, "framework": "langgraph"}`
+- [x] `POST /load-config` successfully loads wizard kit
+- [x] LangGraph graph compiles and runs: `route → pre_gate → executor → post_gate → response`
+- [x] RBAC block: `{"role": "user", "message": "update order"}` → blocked_response node
+- [x] Confirmation: `{"role": "admin", "message": "update order"}` → confirmation node
+- [x] Allow + scan: `{"role": "user", "message": "list users"}` → tool_executor → post_gate (PII flagged)
+- [x] `gate_log` contains entries for all visited security nodes
+- [x] `graph_nodes_visited` shows which graph path was taken
