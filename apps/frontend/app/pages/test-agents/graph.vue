@@ -1,5 +1,5 @@
 <template>
-  <TestAgentChat
+  <TestAgentsTestAgentChat
     :base-url="graphAgentUrl"
     framework="langgraph"
     title="LangGraph Agent"

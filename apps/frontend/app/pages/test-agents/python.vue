@@ -1,5 +1,5 @@
 <template>
-  <TestAgentChat
+  <TestAgentsTestAgentChat
     :base-url="pythonAgentUrl"
     framework="raw_python"
     title="Pure Python Agent"
