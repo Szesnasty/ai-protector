@@ -22,6 +22,25 @@ for p in (_agents_root, _lg_dir):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+# Module names shared between agents (protection, graph, main).
+# When pytest runs multiple test files, the wrong agent's module can
+# get cached in sys.modules.  We purge these at fixture time (not
+# collection time) so every LG test gets the LangGraph version.
+_SHARED_MOD_NAMES = ("protection", "graph", "main")
+
+
+def _purge_shared_modules() -> None:
+    for name in list(sys.modules):
+        if name in _SHARED_MOD_NAMES or any(
+            name.startswith(f"{m}.") for m in _SHARED_MOD_NAMES
+        ):
+            del sys.modules[name]
+    # Ensure langgraph-agent dir is first in sys.path so the correct
+    # protection/graph/main modules are found after the purge.
+    if _lg_dir in sys.path:
+        sys.path.remove(_lg_dir)
+    sys.path.insert(0, _lg_dir)
+
 
 # ── Fixtures ────────────────────────────────────────────────────
 
@@ -70,7 +89,8 @@ SAMPLE_POLICY = {
 
 @pytest.fixture(autouse=True)
 def _reset_config():
-    """Reset SecurityConfig + graph between tests."""
+    """Reset SecurityConfig + graph between tests, purging stale modules."""
+    _purge_shared_modules()
     from protection import reset_config
     from graph import reset_graph
 
