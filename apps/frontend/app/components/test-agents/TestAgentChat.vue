@@ -196,9 +196,9 @@
               <!-- Agent Response -->
               <div v-else class="d-flex justify-start">
                 <v-card
-                  :color="msg.blocked ? 'error' : msg.noMatch ? 'grey-lighten-1' : msg.requiresConfirmation ? 'warning' : 'surface-light'"
-                  :variant="msg.blocked || msg.requiresConfirmation ? 'tonal' : msg.noMatch ? 'tonal' : 'outlined'"
-                  class="pa-3"
+                  :color="msg.blocked ? 'error' : msg.noMatch ? 'grey-darken-2' : msg.requiresConfirmation ? 'warning' : undefined"
+                  :variant="msg.blocked || msg.requiresConfirmation ? 'tonal' : msg.noMatch ? 'tonal' : 'flat'"
+                  class="pa-3 agent-msg-card"
                   style="max-width: 80%"
                 >
                   <div class="d-flex align-center ga-1 mb-1">
@@ -206,11 +206,12 @@
                     <v-icon v-else-if="msg.noMatch" size="16" color="grey">mdi-help-circle-outline</v-icon>
                     <v-icon v-else-if="msg.requiresConfirmation" size="16" color="warning">mdi-alert</v-icon>
                     <v-icon v-else size="16">mdi-robot-outline</v-icon>
-                    <span class="text-caption text-medium-emphasis">
+                    <span class="text-caption font-weight-bold">
                       {{ msg.blocked ? 'SECURITY BLOCK' : msg.noMatch ? 'NO MATCH' : msg.requiresConfirmation ? 'CONFIRMATION REQUIRED' : 'Agent' }}
                     </span>
                   </div>
-                  <pre class="text-body-2" style="white-space: pre-wrap; font-family: inherit">{{ msg.text }}</pre>
+                  <!-- eslint-disable-next-line vue/no-v-html -- sanitized by DOMPurify -->
+                  <div class="text-body-2 agent-msg-content" v-html="renderMarkdown(msg.text)" />
                   <v-btn
                     v-if="msg.requiresConfirmation && !msg.confirmed"
                     color="warning"
@@ -361,6 +362,7 @@ import { useTestAgent, type GateLogEntry, type ChatResponse, type ChatRequest } 
 import { useAgents } from '~/composables/useAgents'
 import { useModels } from '~/composables/useModels'
 import { useApiKeys, getKey, detectProviderClient } from '~/composables/useApiKeys'
+import { renderMarkdown } from '~/utils/markdown'
 import type { AgentFramework } from '~/types/wizard'
 
 // ─── Props ───
@@ -604,7 +606,43 @@ function gateIcon(decision: string): string {
   max-width: 1400px;
 }
 
-pre {
-  margin: 0;
+.agent-msg-card {
+  background: rgba(var(--v-theme-surface), 1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.agent-msg-content {
+  color: rgba(var(--v-theme-on-surface), 0.92) !important;
+  line-height: 1.6;
+
+  :deep(p) {
+    margin-bottom: 0.4em;
+    &:last-child { margin-bottom: 0; }
+  }
+  :deep(ul), :deep(ol) {
+    margin: 0.3em 0;
+    padding-left: 1.4em;
+  }
+  :deep(li) {
+    margin-bottom: 0.2em;
+  }
+  :deep(strong), :deep(b) {
+    color: rgba(var(--v-theme-on-surface), 1);
+    font-weight: 600;
+  }
+  :deep(code) {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  :deep(pre) {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.5em 0.8em;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0.4em 0;
+  }
 }
 </style>
