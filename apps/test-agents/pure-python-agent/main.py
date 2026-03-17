@@ -229,8 +229,10 @@ async def _chat_llm(req: ChatRequest) -> dict:
     except ImportError as exc:
         raise HTTPException(501, "litellm not installed") from exc
 
-    if not req.api_key:
-        raise HTTPException(400, "api_key is required in LLM mode")
+    model = req.model or "ollama/llama3.2:3b"
+    needs_key = not model.startswith("ollama/")
+    if needs_key and not req.api_key:
+        raise HTTPException(400, "api_key is required for cloud models")
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -238,13 +240,18 @@ async def _chat_llm(req: ChatRequest) -> dict:
     ]
 
     # 1. Ask LLM which tool to call
-    response = await litellm.acompletion(
-        model=req.model,
-        messages=messages,
-        tools=TOOL_DEFINITIONS,
-        tool_choice="auto",
-        api_key=req.api_key,
-    )
+    kwargs: dict = {
+        "model": model,
+        "messages": messages,
+        "tools": TOOL_DEFINITIONS,
+        "tool_choice": "auto",
+    }
+    if model.startswith("ollama/"):
+        kwargs["api_base"] = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
+    if req.api_key:
+        kwargs["api_key"] = req.api_key
+
+    response = await litellm.acompletion(**kwargs)
 
     choice = response.choices[0].message
 
@@ -262,6 +269,22 @@ async def _chat_llm(req: ChatRequest) -> dict:
     tc = choice.tool_calls[0]
     tool_name = tc.function.name
     tool_args = json.loads(tc.function.arguments) if tc.function.arguments else {}
+
+    # Guard: if LLM hallucinated a tool not in our catalogue, treat as text
+    known_tools = {t["function"]["name"] for t in TOOL_DEFINITIONS}
+    if tool_name not in known_tools:
+        return {
+            "response": choice.content or f"(LLM tried unknown tool '{tool_name}')",
+            "blocked": False,
+            "gate_log": [
+                {
+                    "gate": "llm_guard",
+                    "decision": "skip",
+                    "reason": f"LLM selected unknown tool '{tool_name}', treated as text",
+                }
+            ],
+            "mode": "llm",
+        }
 
     # Same protected_tool_call as mock mode — RBAC + limits + scan
     result = protected_tool_call(
@@ -285,11 +308,13 @@ async def _chat_llm(req: ChatRequest) -> dict:
         }
     )
 
-    final = await litellm.acompletion(
-        model=req.model,
-        messages=messages,
-        api_key=req.api_key,
-    )
+    final_kwargs: dict = {"model": model, "messages": messages}
+    if model.startswith("ollama/"):
+        final_kwargs["api_base"] = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
+    if req.api_key:
+        final_kwargs["api_key"] = req.api_key
+
+    final = await litellm.acompletion(**final_kwargs)
 
     gate_log = [
         {
