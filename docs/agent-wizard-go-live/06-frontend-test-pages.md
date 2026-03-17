@@ -253,16 +253,16 @@ Each button pre-fills the message and sends it. This makes testing faster than t
 
 ## Definition of Done
 
-- [ ] `/test-agents/python` page loads and shows agent selector
-- [ ] `/test-agents/graph` page loads and shows agent selector
-- [ ] Agent dropdown shows only agents matching the page's framework
-- [ ] "Load Config" fetches kit from wizard API and loads it into test agent
-- [ ] Config status shows loaded roles and policy pack
-- [ ] Chat works: user types message, sees response
-- [ ] Gate log shows color-coded entries for every interaction
-- [ ] RBAC block: user role + write tool → red blocked response + red gate log entry
-- [ ] PII detection: getUsers → response shown + blue "flagged" entry in gate log
-- [ ] Confirmation flow: admin + write tool → amber prompt → confirm button → success
-- [ ] Role switcher changes the role used in chat requests
-- [ ] Sidebar has "Test Agents" section with links to both pages
-- [ ] Quick action buttons work (if implemented)
+- [x] `/test-agents/python` page loads and shows agent selector
+- [x] `/test-agents/graph` page loads and shows agent selector
+- [x] Agent dropdown shows only agents matching the page's framework
+- [x] "Load Config" fetches kit from wizard API and loads it into test agent
+- [x] Config status shows loaded roles and policy pack
+- [x] Chat works: user types message, sees response
+- [x] Gate log shows color-coded entries for every interaction
+- [x] RBAC block: user role + write tool → red blocked response + red gate log entry
+- [x] PII detection: getUsers → response shown + blue "flagged" entry in gate log
+- [x] Confirmation flow: admin + write tool → amber prompt → confirm button → success
+- [x] Role switcher changes the role used in chat requests
+- [x] Sidebar has "Test Agents" section with links to both pages
+- [x] Quick action buttons work (if implemented)
