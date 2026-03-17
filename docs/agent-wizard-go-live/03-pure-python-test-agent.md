@@ -449,13 +449,13 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
 
 ## Definition of Done
 
-- [ ] `apps/test-agents/pure-python-agent/` exists with main.py, protection.py, pyproject.toml
-- [ ] `uvicorn main:app --port 8003` starts without errors
-- [ ] `GET /health` returns `{"status": "ok", "config_loaded": false}`
-- [ ] `POST /load-config {"agent_id": "<wizard-agent-id>"}` loads configs from proxy-service
-- [ ] `GET /config-status` shows roles and tools from loaded config
-- [ ] `POST /chat {"message": "show orders", "role": "user"}` → returns order data
-- [ ] `POST /chat {"message": "update order ORD-001", "role": "user"}` → BLOCKED by RBAC
-- [ ] `POST /chat {"message": "update order ORD-001", "role": "admin"}` → requires confirmation
-- [ ] `POST /chat {"message": "list users", "role": "user"}` → data returned + PII flagged in gate_log
-- [ ] All gate decisions are visible in `gate_log` field of response
+- [x] `apps/test-agents/pure-python-agent/` exists with main.py, protection.py, pyproject.toml
+- [x] `uvicorn main:app --port 8003` starts without errors
+- [x] `GET /health` returns `{"status": "ok", "config_loaded": false}`
+- [x] `POST /load-config {"agent_id": "<wizard-agent-id>"}` loads configs from proxy-service
+- [x] `GET /config-status` shows roles and tools from loaded config
+- [x] `POST /chat {"message": "show orders", "role": "user"}` → returns order data
+- [x] `POST /chat {"message": "update order ORD-001", "role": "user"}` → BLOCKED by RBAC
+- [x] `POST /chat {"message": "update order ORD-001", "role": "admin"}` → requires confirmation
+- [x] `POST /chat {"message": "list users", "role": "user"}` → data returned + PII flagged in gate_log
+- [x] All gate decisions are visible in `gate_log` field of response
