@@ -2,8 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Install dependencies
 COPY langgraph-agent/pyproject.toml .
-RUN pip install --no-cache-dir .[dev]
+RUN pip install --no-cache-dir .
 
 # Copy shared tools
 COPY shared/ /app/shared/
