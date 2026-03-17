@@ -147,14 +147,14 @@ After both scenarios pass, verify these edge cases:
 
 | # | Test | Expected | Passes? |
 |---|------|----------|:-------:|
-| 1 | Chat without loading config | Error: "No config loaded" | ☐ |
-| 2 | Load config with invalid agent ID | Error: 404 | ☐ |
-| 3 | Send empty message | "Could not determine tool" or similar | ☐ |
-| 4 | Unknown tool name (explicit) | Error or "unknown tool" | ☐ |
-| 5 | Switch agent → old config replaced | New roles/tools in effect | ☐ |
-| 6 | Admin confirms write → verify post-gate scan runs | gate_log has post_tool entry | ☐ |
-| 7 | PII in getUsers output detected | gate_log shows PII findings | ☐ |
-| 8 | Re-generate kit in wizard → reload in agent | New config takes effect | ☐ |
+| 1 | Chat without loading config | Error: "No config loaded" | ✅ |
+| 2 | Load config with invalid agent ID | Error: 404 | ✅ |
+| 3 | Send empty message | "Could not determine tool" or similar | ✅ |
+| 4 | Unknown tool name (explicit) | Error or "unknown tool" | ✅ |
+| 5 | Switch agent → old config replaced | New roles/tools in effect | ✅ |
+| 6 | Admin confirms write → verify post-gate scan runs | gate_log has post_tool entry | ✅ |
+| 7 | PII in getUsers output detected | gate_log shows PII findings | ✅ |
+| 8 | Re-generate kit in wizard → reload in agent | New config takes effect | ✅ |
 
 ---
 
@@ -163,32 +163,32 @@ After both scenarios pass, verify these edge cases:
 **All of these must be true to consider the go-live complete:**
 
 ### Backend
-- [ ] All Alembic migrations applied (`aw_001`–`aw_006`)
-- [ ] Wizard API fully functional (create agent, add tools/roles, generate config, generate kit)
-- [ ] Both test agents start and serve `/health`
-- [ ] Test agents can load wizard kit via `/load-config`
-- [ ] RBAC enforcement works: unauthorized role → blocked
-- [ ] Limits enforcement works: call count tracking
-- [ ] PostToolGate PII detection works: emails/phones flagged
-- [ ] Confirmation flow works: high-sensitivity write tools require confirm
+- [x] All Alembic migrations applied (`aw_001`–`aw_006`)
+- [x] Wizard API fully functional (create agent, add tools/roles, generate config, generate kit)
+- [x] Both test agents start and serve `/health`
+- [x] Test agents can load wizard kit via `/load-config`
+- [x] RBAC enforcement works: unauthorized role → blocked
+- [x] Limits enforcement works: call count tracking
+- [x] PostToolGate PII detection works: emails/phones flagged
+- [x] Confirmation flow works: high-sensitivity write tools require confirm
 
 ### Frontend
-- [ ] `/test-agents/python` page renders and functions
-- [ ] `/test-agents/graph` page renders and functions
-- [ ] Agent selector filtered by framework
-- [ ] Role selector works
-- [ ] Chat panel shows messages with correct styling (blocked=red, confirm=amber)
-- [ ] Gate log panel shows all security decisions
-- [ ] Confirmation button triggers re-send with `confirmed: true`
-- [ ] Navigation sidebar includes Test Agents section
+- [x] `/test-agents/python` page renders and functions
+- [x] `/test-agents/graph` page renders and functions
+- [x] Agent selector filtered by framework
+- [x] Role selector works
+- [x] Chat panel shows messages with correct styling (blocked=red, confirm=amber)
+- [x] Gate log panel shows all security decisions
+- [x] Confirmation button triggers re-send with `confirmed: true`
+- [x] Navigation sidebar includes Test Agents section
 
 ### Integration
-- [ ] Full wizard flow (7 steps) → test agent (load → chat → verify gates) works end-to-end
-- [ ] Both frameworks tested: Pure Python + LangGraph
-- [ ] All 10 test cases pass for each framework (20 total)
-- [ ] Regression matrix (8 edge cases) passes
-- [ ] Docker compose with `--profile test-agents` starts all services cleanly
+- [x] Full wizard flow (7 steps) → test agent (load → chat → verify gates) works end-to-end
+- [x] Both frameworks tested: Pure Python + LangGraph
+- [x] All 10 test cases pass for each framework (20 total)
+- [x] Regression matrix (8 edge cases) passes
+- [x] Docker compose with `--profile test-agents` starts all services cleanly
 
 ### Documentation
-- [ ] All 7 go-live spec files completed and accurate
-- [ ] README reflects final architecture
+- [x] All 7 go-live spec files completed and accurate
+- [x] README reflects final architecture
