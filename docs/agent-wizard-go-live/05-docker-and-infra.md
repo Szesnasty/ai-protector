@@ -200,11 +200,11 @@ Data flow:
 
 ## Definition of Done
 
-- [ ] Both Dockerfiles build successfully: `docker compose --profile test-agents build`
-- [ ] `docker compose --profile test-agents up -d` starts both test agents
-- [ ] `curl http://localhost:8003/health` returns OK
-- [ ] `curl http://localhost:8004/health` returns OK
+- [x] Both Dockerfiles build successfully: `docker compose --profile test-agents build`
+- [x] `docker compose --profile test-agents up -d` starts both test agents
+- [x] `curl http://localhost:8003/health` returns OK
+- [x] `curl http://localhost:8004/health` returns OK
 - [ ] Test agents can reach proxy-service: `POST /load-config` succeeds from inside container
-- [ ] Frontend env vars `TEST_AGENT_PYTHON_URL` and `TEST_AGENT_GRAPH_URL` are set
-- [ ] CSP headers allow connections to :8003 and :8004
-- [ ] Normal `docker compose up` (without profile) does NOT start test agents
+- [x] Frontend env vars `TEST_AGENT_PYTHON_URL` and `TEST_AGENT_GRAPH_URL` are set
+- [x] CSP headers allow connections to :8003 and :8004
+- [x] Normal `docker compose up` (without profile) does NOT start test agents
