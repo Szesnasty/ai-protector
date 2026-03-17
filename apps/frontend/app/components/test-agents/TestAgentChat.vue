@@ -93,6 +93,83 @@
       </v-col>
     </v-row>
 
+    <!-- Mode Row -->
+    <v-row class="mb-4" dense>
+      <v-col cols="auto">
+        <v-btn-toggle v-model="chatMode" mandatory density="compact" variant="outlined" divided>
+          <v-btn value="mock" size="small">
+            <v-icon start size="16">mdi-test-tube</v-icon>
+            Mock
+          </v-btn>
+          <v-btn value="llm" size="small">
+            <v-icon start size="16">mdi-brain</v-icon>
+            LLM
+          </v-btn>
+        </v-btn-toggle>
+      </v-col>
+      <v-col v-if="chatMode === 'llm'" cols="12" sm="2">
+        <v-select
+          v-model="selectedProvider"
+          :items="providerList"
+          label="Provider"
+          variant="outlined"
+          density="compact"
+          hide-details
+        >
+          <template #item="{ item, props: itemProps }">
+            <v-list-item v-bind="itemProps">
+              <template #prepend>
+                <v-avatar size="20" :color="providerMeta[item.value]?.color ?? 'grey'" variant="tonal" rounded="sm">
+                  <v-icon size="14">{{ providerMeta[item.value]?.icon ?? 'mdi-brain' }}</v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+          </template>
+          <template #selection="{ item }">
+            <v-avatar size="20" :color="providerMeta[item.value]?.color ?? 'grey'" variant="tonal" rounded="sm" class="mr-2">
+              <v-icon size="14">{{ providerMeta[item.value]?.icon ?? 'mdi-brain' }}</v-icon>
+            </v-avatar>
+            {{ item.title }}
+          </template>
+        </v-select>
+      </v-col>
+      <v-col v-if="chatMode === 'llm'" cols="12" sm="3">
+        <v-select
+          v-model="llmModel"
+          :items="filteredModels"
+          label="Model"
+          variant="outlined"
+          density="compact"
+          hide-details
+        />
+      </v-col>
+      <v-col v-if="chatMode === 'llm' && needsApiKey" cols="12" sm="4">
+        <v-text-field
+          v-model="apiKey"
+          label="API Key"
+          variant="outlined"
+          density="compact"
+          hide-details
+          :type="showApiKey ? 'text' : 'password'"
+          prepend-inner-icon="mdi-key"
+          :append-inner-icon="showApiKey ? 'mdi-eye-off' : 'mdi-eye'"
+          @click:append-inner="showApiKey = !showApiKey"
+          :placeholder="apiKeyPlaceholder"
+        />
+      </v-col>
+      <v-col v-if="chatMode === 'llm'" cols="auto" class="d-flex align-center">
+        <v-chip
+          v-if="!needsApiKey"
+          size="small"
+          color="success"
+          variant="tonal"
+          prepend-icon="mdi-check-circle"
+        >
+          Local — no API key needed
+        </v-chip>
+      </v-col>
+    </v-row>
+
     <!-- Error Alert -->
     <v-alert
       v-if="agent.error.value"
@@ -295,8 +372,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
-import { useTestAgent, type GateLogEntry, type ChatResponse } from '~/composables/useTestAgent'
+import { ref, computed, nextTick, watch } from 'vue'
+import { useTestAgent, type GateLogEntry, type ChatResponse, type ChatRequest } from '~/composables/useTestAgent'
 import { useAgents } from '~/composables/useAgents'
 import type { AgentFramework } from '~/types/wizard'
 
@@ -329,6 +406,80 @@ const inputMessage = ref('')
 const isSending = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
 const drawerOpen = ref(false)
+const chatMode = ref<'mock' | 'llm'>('mock')
+const selectedProvider = ref('ollama')
+const llmModel = ref('ollama/llama3.2:3b')
+const apiKey = ref('')
+const showApiKey = ref(false)
+
+// ── Provider / Model catalogue (Playground-style) ──────────────
+interface ProviderInfo {
+  icon: string
+  color: string
+  keyEnv: string
+  models: { title: string; value: string }[]
+}
+
+const providerMeta: Record<string, ProviderInfo> = {
+  ollama:    { icon: 'mdi-llama',          color: 'grey',    keyEnv: '',                  models: [
+    { title: 'Llama 3.2 3B',   value: 'ollama/llama3.2:3b' },
+    { title: 'Llama 3.1 8B',   value: 'ollama/llama3.1:8b' },
+    { title: 'Mistral 7B',     value: 'ollama/mistral:7b' },
+    { title: 'Gemma 2 9B',     value: 'ollama/gemma2:9b' },
+    { title: 'Phi-3 Mini',     value: 'ollama/phi3:mini' },
+    { title: 'Qwen 2.5 7B',   value: 'ollama/qwen2.5:7b' },
+  ]},
+  openai:    { icon: 'mdi-creation',       color: 'teal',    keyEnv: 'OPENAI_API_KEY',    models: [
+    { title: 'GPT-4o',         value: 'gpt-4o' },
+    { title: 'GPT-4o Mini',    value: 'gpt-4o-mini' },
+    { title: 'GPT-4 Turbo',    value: 'gpt-4-turbo' },
+    { title: 'o3-mini',        value: 'o3-mini' },
+  ]},
+  anthropic: { icon: 'mdi-alpha-a-circle', color: 'deep-orange', keyEnv: 'ANTHROPIC_API_KEY', models: [
+    { title: 'Claude 4 Sonnet',       value: 'anthropic/claude-sonnet-4-20250514' },
+    { title: 'Claude 3.5 Sonnet',     value: 'anthropic/claude-3-5-sonnet-20241022' },
+    { title: 'Claude 3.5 Haiku',      value: 'anthropic/claude-3-5-haiku-20241022' },
+    { title: 'Claude 3 Opus',         value: 'anthropic/claude-3-opus-20240229' },
+  ]},
+  google:    { icon: 'mdi-google',         color: 'blue',    keyEnv: 'GEMINI_API_KEY',    models: [
+    { title: 'Gemini 2.0 Flash',      value: 'gemini/gemini-2.0-flash' },
+    { title: 'Gemini 2.5 Flash',      value: 'gemini/gemini-2.5-flash-preview-04-17' },
+    { title: 'Gemini 1.5 Pro',        value: 'gemini/gemini-1.5-pro' },
+  ]},
+  groq:      { icon: 'mdi-lightning-bolt', color: 'orange',  keyEnv: 'GROQ_API_KEY',      models: [
+    { title: 'Llama 3.3 70B',         value: 'groq/llama-3.3-70b-versatile' },
+    { title: 'Llama 3.1 8B Instant',  value: 'groq/llama-3.1-8b-instant' },
+    { title: 'Mixtral 8x7B',          value: 'groq/mixtral-8x7b-32768' },
+  ]},
+  deepseek:  { icon: 'mdi-fish',           color: 'indigo',  keyEnv: 'DEEPSEEK_API_KEY',  models: [
+    { title: 'DeepSeek Chat',          value: 'deepseek/deepseek-chat' },
+    { title: 'DeepSeek Reasoner',      value: 'deepseek/deepseek-reasoner' },
+  ]},
+}
+
+const providerList = Object.keys(providerMeta).map(k => ({
+  title: k.charAt(0).toUpperCase() + k.slice(1),
+  value: k,
+}))
+
+const filteredModels = computed(() => {
+  return providerMeta[selectedProvider.value]?.models ?? []
+})
+
+// Auto-select first model when provider changes
+watch(selectedProvider, (prov) => {
+  const models = providerMeta[prov]?.models ?? []
+  if (models.length && models[0]) llmModel.value = models[0].value
+})
+
+const needsApiKey = computed(() => {
+  return selectedProvider.value !== 'ollama'
+})
+
+const apiKeyPlaceholder = computed(() => {
+  const info = providerMeta[selectedProvider.value]
+  return info?.keyEnv ? `paste ${info.keyEnv}` : ''
+})
 
 interface ChatMsg {
   type: 'user' | 'agent'
@@ -394,7 +545,13 @@ async function sendMessage(text: string) {
 
   isSending.value = true
   try {
-    const res = await agent.chat({ message: trimmed, role: selectedRole.value })
+    const chatReq: ChatRequest = { message: trimmed, role: selectedRole.value }
+    if (chatMode.value === 'llm') {
+      chatReq.mode = 'llm'
+      chatReq.model = llmModel.value
+      if (apiKey.value) chatReq.api_key = apiKey.value
+    }
+    const res = await agent.chat(chatReq)
     appendAgentResponse(res, trimmed)
   } catch {
     messages.value.push({ type: 'agent', text: agent.error.value ?? 'Request failed', blocked: true })
@@ -408,13 +565,19 @@ async function handleConfirm(msg: ChatMsg) {
   if (!msg.originalMessage) return
   isSending.value = true
   try {
-    const res = await agent.chat({
+    const chatReq: ChatRequest = {
       message: msg.originalMessage,
       role: selectedRole.value,
       tool: msg.tool,
       tool_args: msg.toolArgs,
       confirmed: true,
-    })
+    }
+    if (chatMode.value === 'llm') {
+      chatReq.mode = 'llm'
+      chatReq.model = llmModel.value
+      if (apiKey.value) chatReq.api_key = apiKey.value
+    }
+    const res = await agent.chat(chatReq)
     msg.confirmed = true
     appendAgentResponse(res, msg.originalMessage)
   } catch {

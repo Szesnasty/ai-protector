@@ -14,6 +14,7 @@ if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
 import httpx  # noqa: E402
+import json  # noqa: E402
 import structlog  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
@@ -137,6 +138,13 @@ async def chat(req: ChatRequest):
     if not get_config().loaded:
         raise HTTPException(400, "No config loaded. Call POST /load-config first.")
 
+    if req.mode == "llm":
+        return await _chat_llm(req)
+    return _chat_mock(req)
+
+
+def _chat_mock(req: ChatRequest) -> dict:
+    """Mock mode: keyword routing → graph with security gates."""
     compiled = get_graph()
     initial_state = {
         "message": req.message,
@@ -157,6 +165,130 @@ async def chat(req: ChatRequest):
         "tool_args": result.get("tool_args"),
         "gate_log": result.get("gate_log", []),
         "graph_nodes_visited": _extract_nodes(result),
+        "mode": "mock",
+    }
+
+
+async def _chat_llm(req: ChatRequest) -> dict:
+    """LLM mode: model selects tool → graph runs security gates → format response."""
+    try:
+        import litellm
+    except ImportError as exc:
+        raise HTTPException(501, "litellm not installed") from exc
+
+    from shared.tool_definitions import SYSTEM_PROMPT, TOOL_DEFINITIONS
+
+    model = req.model or "ollama/llama3.2:3b"
+    needs_key = not model.startswith("ollama/")
+    if needs_key and not req.api_key:
+        raise HTTPException(400, "api_key is required for cloud models")
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": req.message},
+    ]
+
+    # 1. Ask LLM which tool to call
+    kwargs: dict = {
+        "model": model,
+        "messages": messages,
+        "tools": TOOL_DEFINITIONS,
+        "tool_choice": "auto",
+    }
+    if model.startswith("ollama/"):
+        kwargs["api_base"] = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
+    if req.api_key:
+        kwargs["api_key"] = req.api_key
+
+    response = await litellm.acompletion(**kwargs)
+    choice = response.choices[0].message  # type: ignore[union-attr]
+
+    # If no tool call, return text directly (LLM answered conversationally)
+    if not choice.tool_calls:
+        return {
+            "response": choice.content or "No response from model.",
+            "blocked": False,
+            "no_match": False,
+            "gate_log": [],
+            "mode": "llm",
+        }
+
+    # 2. Extract tool call → run through graph security gates
+    tc = choice.tool_calls[0]
+    tool_name = tc.function.name
+    tool_args = json.loads(tc.function.arguments) if tc.function.arguments else {}
+
+    # Guard: if LLM hallucinated a tool not in our catalogue, treat as text
+    known_tools = {t["function"]["name"] for t in TOOL_DEFINITIONS}
+    if tool_name not in known_tools:
+        return {
+            "response": choice.content or f"(LLM tried unknown tool '{tool_name}')",
+            "blocked": False,
+            "no_match": False,
+            "gate_log": [
+                {
+                    "gate": "llm_guard",
+                    "decision": "skip",
+                    "reason": f"LLM selected unknown tool '{tool_name}', treated as text",
+                }
+            ],
+            "mode": "llm",
+        }
+
+    compiled = get_graph()
+    initial_state = {
+        "message": req.message,
+        "role": req.role,
+        "tool": tool_name,
+        "tool_args": tool_args,
+        "confirmed": req.confirmed,
+    }
+
+    result = compiled.invoke(initial_state)
+
+    # If blocked or requires confirmation, return gate result
+    if result.get("blocked") or result.get("requires_confirmation"):
+        return {
+            "response": result.get("final_response", "No response"),
+            "blocked": result.get("blocked", False),
+            "no_match": False,
+            "requires_confirmation": result.get("requires_confirmation", False),
+            "tool": result.get("tool"),
+            "tool_args": result.get("tool_args"),
+            "gate_log": result.get("gate_log", []),
+            "graph_nodes_visited": _extract_nodes(result),
+            "mode": "llm",
+        }
+
+    # 3. Send tool result back to LLM for natural-language formatting
+    messages.append(choice.model_dump())
+    messages.append(
+        {
+            "role": "tool",
+            "tool_call_id": tc.id,
+            "content": str(result.get("final_response", "")),
+        }
+    )
+
+    format_kwargs: dict = {"model": model, "messages": messages}
+    if model.startswith("ollama/"):
+        format_kwargs["api_base"] = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
+    if req.api_key:
+        format_kwargs["api_key"] = req.api_key
+
+    final = await litellm.acompletion(**format_kwargs)
+    final_text = final.choices[0].message.content or result.get("final_response", "")  # type: ignore[union-attr]
+
+    return {
+        "response": final_text,
+        "blocked": False,
+        "no_match": False,
+        "requires_confirmation": False,
+        "tool": result.get("tool"),
+        "tool_args": result.get("tool_args"),
+        "gate_log": result.get("gate_log", []),
+        "graph_nodes_visited": _extract_nodes(result),
+        "mode": "llm",
     }
 
 

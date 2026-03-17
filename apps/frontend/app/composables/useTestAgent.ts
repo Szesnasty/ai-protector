@@ -25,6 +25,9 @@ export interface ChatRequest {
   tool?: string
   tool_args?: Record<string, unknown>
   confirmed?: boolean
+  mode?: 'mock' | 'llm'
+  model?: string
+  api_key?: string
 }
 
 export interface ChatResponse {
@@ -35,6 +38,7 @@ export interface ChatResponse {
   tool?: string
   tool_args?: Record<string, unknown>
   gate_log: GateLogEntry[]
+  mode?: string
 }
 
 export interface ConfigStatus {
