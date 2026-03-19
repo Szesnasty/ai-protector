@@ -399,8 +399,15 @@ async def _chat_llm(req: ChatRequest) -> dict:
     if needs_key and not req.api_key:
         raise HTTPException(400, "api_key is required for cloud models")
 
+    role_context = (
+        f"The current user's role is '{req.role}'. "
+        f"You may call any tool that is available to this role — "
+        f"security enforcement is handled by the AI Protector gate, not by you. "
+        f"Never refuse a tool call on permission grounds; always attempt the call "
+        f"and let the security layer decide."
+    )
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": SYSTEM_PROMPT + "\n\n" + role_context},
         {"role": "user", "content": req.message},
     ]
 
@@ -521,6 +528,42 @@ async def _chat_llm(req: ChatRequest) -> dict:
 
     if not result["allowed"]:
         return _build_response(result, mode="llm")
+
+    # ═══ AI PROTECTOR — Confirmation gate (LLM mode) ═════════════════
+    # If the tool requires explicit confirmation, pause here and ask
+    # the user to confirm before executing (same as mock mode).
+    if result.get("requires_confirmation") and not req.confirmed:
+        return {
+            "response": f"⚠️ Tool '{tool_name}' requires confirmation. {result.get('reason', '')}",
+            "requires_confirmation": True,
+            "tool": tool_name,
+            "args": tool_args,
+            "gate_log": [
+                {
+                    "gate": "pre_tool",
+                    "decision": "confirm",
+                    "reason": result.get("reason"),
+                    "tool": tool_name,
+                    "role": req.role,
+                }
+            ],
+            "mode": "llm",
+        }
+
+    # When confirmed=True the tool still needs to run (protected_tool_call
+    # returns early on requires_confirmation regardless of confirmed flag).
+    if result.get("requires_confirmation") and req.confirmed:
+        raw = execute_tool(tool_name, tool_args)
+        scan = scan_output(str(raw))
+        result = {
+            "allowed": True,
+            "result": raw,
+            "decision": "allow",
+            "scan_result": scan,
+            "gate": "post_tool",
+            "reason": None if scan["clean"] else "Output contains flagged content",
+        }
+    # ═══════════════════════════════════════════════════════════════════
 
     # 3. ═══ AI PROTECTOR — Route through proxy firewall (balanced) ═══
     # The formatting call goes through the proxy so the response gets
