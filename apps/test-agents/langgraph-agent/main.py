@@ -342,8 +342,15 @@ async def _chat_llm(req: ChatRequest) -> dict:
     if needs_key and not req.api_key:
         raise HTTPException(400, "api_key is required for cloud models")
 
+    role_context = (
+        f"The current user's role is '{req.role}'. "
+        f"You may call any tool that is available to this role — "
+        f"security enforcement is handled by the AI Protector gate, not by you. "
+        f"Never refuse a tool call on permission grounds; always attempt the call "
+        f"and let the security layer decide."
+    )
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": SYSTEM_PROMPT + "\n\n" + role_context},
         {"role": "user", "content": req.message},
     ]
 
