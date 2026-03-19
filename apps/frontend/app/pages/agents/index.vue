@@ -134,7 +134,30 @@
         <template #item.created_at="{ item }">
           <span class="text-caption">{{ formatDate(item.created_at) }}</span>
         </template>
+
+        <template #item.actions="{ item }">
+          <div class="d-flex ga-1" @click.stop>
+            <v-btn size="x-small" variant="text" icon="mdi-pencil" @click="navigateTo(`/agents/${item.id}/edit`)" />
+            <v-btn size="x-small" variant="text" icon="mdi-delete" color="red" @click="confirmDelete(item)" />
+          </div>
+        </template>
       </v-data-table>
+
+      <!-- Delete confirmation dialog -->
+      <v-dialog v-model="showDeleteDialog" max-width="440">
+        <v-card>
+          <v-card-title class="text-h6">Delete Agent</v-card-title>
+          <v-card-text>
+            Are you sure you want to delete <strong>{{ agentToDelete?.name }}</strong>?
+            This action cannot be undone.
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="showDeleteDialog = false">Cancel</v-btn>
+            <v-btn color="red" variant="flat" :loading="isDeleting" @click="doDelete">Delete</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-card>
   </v-container>
 </template>
@@ -166,7 +189,7 @@ watch(search, (v) => {
 const riskLevel = computed(() => riskFilter.value || undefined)
 const rolloutMode = computed(() => rolloutFilter.value || undefined)
 
-const { agents, isLoading, refetch } = useAgents({
+const { agents, isLoading, refetch, deleteAgent, isDeleting } = useAgents({
   search: debouncedSearch,
   riskLevel,
   rolloutMode,
@@ -181,6 +204,7 @@ const headers = [
   { title: 'Rollout', key: 'rollout_mode', sortable: true, width: '120' },
   { title: 'Config', key: 'tools', sortable: false, width: '80' },
   { title: 'Created', key: 'created_at', sortable: true, width: '160' },
+  { title: '', key: 'actions', sortable: false, width: '100' },
 ]
 
 const riskColor = (level: RiskLevel): string =>
@@ -188,6 +212,25 @@ const riskColor = (level: RiskLevel): string =>
 
 const rolloutColor = (mode: RolloutMode): string =>
   ({ observe: 'blue', warn: 'amber', enforce: 'green' })[mode] ?? 'grey'
+
+// ─── Delete ───
+const showDeleteDialog = ref(false)
+const agentToDelete = ref<AgentRead | null>(null)
+
+const confirmDelete = (agent: AgentRead) => {
+  agentToDelete.value = agent
+  showDeleteDialog.value = true
+}
+
+const doDelete = async () => {
+  if (!agentToDelete.value) return
+  try {
+    await deleteAgent(agentToDelete.value.id)
+    showDeleteDialog.value = false
+    agentToDelete.value = null
+  }
+  catch { /* */ }
+}
 
 const formatDate = (iso: string): string => {
   const d = new Date(iso)

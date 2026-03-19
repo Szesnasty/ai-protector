@@ -203,20 +203,11 @@ interface RolePresetDef {
 
 const rolePresets: RolePresetDef[] = [
   {
-    name: 'Order Manager (user + admin)',
+    name: 'E-commerce (user + admin)',
     description: 'user — read-only; admin — full access (inherits user)',
     roles: [
       { name: 'user', description: 'Standard user — read-only access to orders and products', tool_names: ['getOrders', 'searchProducts'] },
       { name: 'admin', description: 'Administrator — full access including PII and write operations', inherits_from_name: 'user', tool_names: ['getUsers', 'updateOrder', 'updateUser'] },
-    ],
-  },
-  {
-    name: 'Customer Support (3-tier)',
-    description: 'customer → support → admin with escalating access',
-    roles: [
-      { name: 'customer', description: 'End customer — search and order status only', tool_names: ['searchKnowledgeBase', 'getOrderStatus'] },
-      { name: 'support', description: 'Support agent — can view customer profiles', inherits_from_name: 'customer', tool_names: ['getCustomerProfile'] },
-      { name: 'admin', description: 'Admin — refunds and internal secrets access', inherits_from_name: 'support', tool_names: ['issueRefund', 'getInternalSecrets'] },
     ],
   },
 ]

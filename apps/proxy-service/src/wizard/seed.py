@@ -22,13 +22,13 @@ from src.wizard.services.tools import apply_smart_defaults
 logger = structlog.get_logger()
 
 REFERENCE_AGENT = {
-    "name": "Customer Support Copilot",
+    "name": "E-commerce Assistant",
     "description": (
-        "AI-powered customer support agent that handles product inquiries, "
-        "order lookups, and refund processing. Uses tool calls for knowledge "
-        "base search, order status retrieval, and administrative actions."
+        "AI-powered e-commerce assistant that handles order lookups, "
+        "user management, and product search. Uses tool calls for "
+        "retrieving orders, users, products, and admin write operations."
     ),
-    "team": "support",
+    "team": "commerce",
     "framework": AgentFramework.LANGGRAPH,
     "environment": AgentEnvironment.PRODUCTION,
     "is_public_facing": True,
@@ -42,21 +42,12 @@ REFERENCE_AGENT = {
     "rollout_mode": RolloutMode.ENFORCE,
 }
 
-# ── Reference tools (matches rbac_config.yaml) ──────────────────────────
+# ── Reference tools (matches test agents: shared/tool_definitions.py) ────
 
 REFERENCE_TOOLS = [
     {
-        "name": "searchKnowledgeBase",
-        "description": "Search product documentation and FAQ",
-        "category": "knowledge",
-        "access_type": AccessType.READ,
-        "sensitivity": Sensitivity.LOW,
-        "returns_pii": False,
-        "returns_secrets": False,
-    },
-    {
-        "name": "getOrderStatus",
-        "description": "Retrieve order status by order ID",
+        "name": "getOrders",
+        "description": "List all customer orders with status and amounts",
         "category": "orders",
         "access_type": AccessType.READ,
         "sensitivity": Sensitivity.LOW,
@@ -64,17 +55,26 @@ REFERENCE_TOOLS = [
         "returns_secrets": False,
     },
     {
-        "name": "getCustomerProfile",
-        "description": "Retrieve customer profile with personal data",
-        "category": "customers",
+        "name": "getUsers",
+        "description": "List all users. Returns PII (emails, phone numbers). Admin-only",
+        "category": "users",
         "access_type": AccessType.READ,
         "sensitivity": Sensitivity.MEDIUM,
         "returns_pii": True,
         "returns_secrets": False,
     },
     {
-        "name": "issueRefund",
-        "description": "Process a refund for a customer order",
+        "name": "searchProducts",
+        "description": "Search products by name or category",
+        "category": "products",
+        "access_type": AccessType.READ,
+        "sensitivity": Sensitivity.LOW,
+        "returns_pii": False,
+        "returns_secrets": False,
+    },
+    {
+        "name": "updateOrder",
+        "description": "Update an order status. Requires admin role",
         "category": "orders",
         "access_type": AccessType.WRITE,
         "sensitivity": Sensitivity.HIGH,
@@ -82,30 +82,32 @@ REFERENCE_TOOLS = [
         "returns_secrets": False,
     },
     {
-        "name": "getInternalSecrets",
-        "description": "Access internal configuration secrets (admin only)",
-        "category": "admin",
-        "access_type": AccessType.READ,
-        "sensitivity": Sensitivity.CRITICAL,
-        "returns_pii": False,
-        "returns_secrets": True,
+        "name": "updateUser",
+        "description": "Update a user profile. Requires admin role",
+        "category": "users",
+        "access_type": AccessType.WRITE,
+        "sensitivity": Sensitivity.HIGH,
+        "returns_pii": True,
+        "returns_secrets": False,
     },
 ]
 
-# ── Reference roles (matches rbac_config.yaml inheritance chain) ────────
+# ── Reference roles (user + admin with inheritance) ─────────────────────
 
 REFERENCE_ROLES = [
-    {"name": "customer", "description": "End-user customer role", "inherits_from": None},
-    {"name": "support", "description": "Support agent role", "inherits_from": "customer"},
-    {"name": "admin", "description": "Administrative role", "inherits_from": "support"},
+    {"name": "user", "description": "Standard user — read-only access to orders and products", "inherits_from": None},
+    {
+        "name": "admin",
+        "description": "Administrator — full access including PII and write operations",
+        "inherits_from": "user",
+    },
 ]
 
 # ── Permission assignments per role (own, not inherited) ────────────────
 
 REFERENCE_PERMISSIONS: dict[str, list[str]] = {
-    "customer": ["searchKnowledgeBase", "getOrderStatus"],
-    "support": ["getCustomerProfile"],
-    "admin": ["issueRefund", "getInternalSecrets"],
+    "user": ["getOrders", "searchProducts"],
+    "admin": ["getUsers", "updateOrder", "updateUser"],
 }
 
 
