@@ -594,26 +594,33 @@ async def source_files():
     agent_files = {
         "main.py": {
             "description": "FastAPI app — endpoints, config loading",
-            "highlight": [],
+            "highlight": [
+                {"name": "/load-config", "category": "config"},
+                {"name": "protected_tool_call()", "category": "pipeline"},
+                {"name": "_proxy_scan()", "category": "proxy"},
+                {"name": "_proxy_llm_call()", "category": "proxy"},
+                {"name": "PROXY_POLICY", "category": "proxy"},
+            ],
         },
         "graph.py": {
             "description": "LangGraph StateGraph — security gates wired into the graph",
             "highlight": [
-                "pre_tool_gate",
-                "post_tool_gate",
-                "PreToolGate",
-                "PostToolGate",
+                {"name": "PreToolGate", "category": "pipeline"},
+                {"name": "PostToolGate", "category": "scan"},
+                {"name": "pre_tool_gate", "category": "pipeline"},
+                {"name": "post_tool_gate", "category": "scan"},
+                {"name": "build_graph()", "category": "pipeline"},
             ],
         },
         "protection.py": {
             "description": "Security layer — RBAC, limits, PII scanning (loads wizard config)",
             "highlight": [
-                "SecurityConfig",
-                "load_from_kit",
-                "RBACService",
-                "LimitsService",
-                "PreToolGate",
-                "PostToolGate",
+                {"name": "SecurityConfig", "category": "config"},
+                {"name": "load_from_kit()", "category": "config"},
+                {"name": "RBACService", "category": "rbac"},
+                {"name": "LimitsService", "category": "limits"},
+                {"name": "PreToolGate", "category": "pipeline"},
+                {"name": "PostToolGate", "category": "scan"},
             ],
         },
     }

@@ -119,18 +119,24 @@
           <v-icon size="14" color="primary">mdi-information-outline</v-icon>
           <span class="text-caption">{{ selectedFileMeta.description }}</span>
         </div>
-        <div v-if="selectedFileMeta.highlight?.length" class="mt-1">
-          <span class="text-caption text-medium-emphasis">Key symbols: </span>
-          <v-chip
-            v-for="h in selectedFileMeta.highlight"
-            :key="h"
-            size="x-small"
-            variant="tonal"
-            color="warning"
-            class="mr-1"
-          >
-            {{ h }}
-          </v-chip>
+        <!-- Color-coded legend -->
+        <div v-if="fileCategories.length" class="mt-2">
+          <div class="d-flex align-center ga-1 mb-1">
+            <v-icon size="12" color="warning">mdi-palette</v-icon>
+            <span class="text-caption text-medium-emphasis font-weight-medium">AI Protector integration:</span>
+          </div>
+          <div class="d-flex flex-wrap ga-1">
+            <v-chip
+              v-for="cat in fileCategories"
+              :key="cat.key"
+              size="x-small"
+              variant="flat"
+              :style="{ background: cat.bg, color: cat.color, border: `1px solid ${cat.color}40` }"
+            >
+              <v-icon start size="10">{{ cat.icon }}</v-icon>
+              {{ cat.label }}
+            </v-chip>
+          </div>
         </div>
       </div>
 
@@ -357,10 +363,71 @@ const selectedFileContent = computed(() => {
   return selectedFileMeta.value?.content ?? null
 })
 
+// ─── AI Protector highlight categories ───
+
+interface HlCategory {
+  key: string
+  color: string
+  bg: string
+  label: string
+  icon: string
+}
+
+const CATEGORIES: Record<string, HlCategory> = {
+  config:   { key: 'config',   color: '#42A5F5', bg: 'rgba(66,165,245,0.18)',  label: 'Config Loading',     icon: 'mdi-cog' },
+  rbac:     { key: 'rbac',     color: '#FFA726', bg: 'rgba(255,167,38,0.18)',  label: 'RBAC Gate',          icon: 'mdi-account-key' },
+  limits:   { key: 'limits',   color: '#66BB6A', bg: 'rgba(102,187,106,0.18)', label: 'Rate Limits',        icon: 'mdi-speedometer' },
+  scan:     { key: 'scan',     color: '#AB47BC', bg: 'rgba(171,71,188,0.18)',  label: 'Output Scan',        icon: 'mdi-magnify-scan' },
+  proxy:    { key: 'proxy',    color: '#EF5350', bg: 'rgba(239,83,80,0.18)',   label: 'Proxy Firewall',     icon: 'mdi-shield-lock' },
+  pipeline: { key: 'pipeline', color: '#26C6DA', bg: 'rgba(38,198,218,0.18)',  label: 'Security Pipeline',  icon: 'mdi-pipe' },
+}
+
+/** Determine which category a block marker belongs to by its text. */
+function categoryFromMarker(line: string): string | null {
+  if (/check_rbac|RBAC|Role-Based/i.test(line)) return 'rbac'
+  if (/check_limits|Rate Limit|Budget|LimitsService/i.test(line)) return 'limits'
+  if (/scan_output|PII|Injection.*scan|Output scan|post.?tool|PostToolGate/i.test(line)) return 'scan'
+  if (/proxy|Pre-scan|firewall/i.test(line)) return 'proxy'
+  if (/SecurityConfig|Config|Import|Load Config|YAML loader/i.test(line)) return 'config'
+  if (/Security gate|protected_tool_call|security pipeline|PreToolGate|Gate func|Conditional Rout|Graph Wir/i.test(line)) return 'pipeline'
+  return null
+}
+
+/** Determine category for a single (non-block) line. */
+function categoryFromLine(line: string): string | null {
+  // Proxy firewall (most specific first)
+  if (/_proxy_scan\(|_proxy_llm_call\(|PROXY_POLICY|_ATTACK_INTENTS|proxy_firewall|\/v1\/scan/.test(line)) return 'proxy'
+  // RBAC
+  if (/check_rbac\(|RBACService|check_permission\(/.test(line)) return 'rbac'
+  // Limits
+  if (/check_limits\(|LimitsService|record_call\(|max_tool_calls/.test(line)) return 'limits'
+  // Output scan
+  if (/scan_output\(|PostToolGate|post_tool_gate|pii_redaction|injection_detection|\.scan\(/.test(line)) return 'scan'
+  // Security pipeline
+  if (/protected_tool_call\(|PreToolGate|pre_tool_gate|after_pre_gate|build_graph|← AI Protector/.test(line)) return 'pipeline'
+  // Config loading
+  if (/SecurityConfig|load_from_kit|load_from_files|load_from_dicts|get_config\(|reset_config\(/.test(line)) return 'config'
+  if (/^\s*(from\s+protection\s+import|from\s+graph\s+import)/.test(line)) return 'config'
+  return null
+}
+
+/** Categories that actually appear in the current file. */
+const fileCategories = computed(() => {
+  const raw = selectedFileContent.value
+  if (!raw) return []
+  const found = new Set<string>()
+  for (const line of raw.split('\n')) {
+    const cat = categoryFromLine(line) ?? categoryFromMarker(line)
+    if (cat) found.add(cat)
+  }
+  // Stable order matching CATEGORIES declaration
+  return Object.values(CATEGORIES).filter(c => found.has(c.key))
+})
+
 /**
- * Highlight AI Protector code blocks with a yellow/gold left border
- * and background. Detects lines between ═══ AI PROTECTOR markers
- * and also individual lines with AI Protector imports/calls.
+ * Highlight AI Protector code blocks with category-specific colors.
+ * Each line gets a colored left-border + tinted background matching
+ * its security category (config, rbac, limits, scan, proxy, pipeline).
  */
 const highlightedSource = computed(() => {
   const raw = selectedFileContent.value
@@ -368,45 +435,48 @@ const highlightedSource = computed(() => {
 
   const lines = raw.split('\n')
   let inBlock = false
+  let blockCat: string | null = null
   const result: string[] = []
 
   for (const line of lines) {
-    // Escape HTML entities
     const escaped = line
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
 
-    // Detect block start/end markers
+    // Detect block markers: ═══ AI PROTECTOR / ╔═══ / ╚═══
     const isMarkerOpen = /[═╔╗]+.*AI PROTECTOR/.test(line)
     const isMarkerClose = /[═╚╝]+$/.test(line) && inBlock
 
-    if (isMarkerOpen) inBlock = true
+    if (isMarkerOpen) {
+      inBlock = true
+      blockCat = categoryFromMarker(line)
+    }
 
-    // Individual highlight triggers (imports, key calls)
-    const isSingleHighlight = !inBlock && (
-      /^\s*(from\s+protection\s+import|from\s+graph\s+import)/.test(line)
-      || /^\s*#\s*═══.*AI PROTECTOR/.test(line)
-      || /protected_tool_call\(/.test(line)
-      || /check_rbac\(|check_limits\(/.test(line)
-      || /scan_output\(/.test(line)
-      || /PreToolGate|PostToolGate/.test(line)
-      || /pre_tool_gate|post_tool_gate/.test(line)
-      || /_proxy_llm_call\(|_proxy_scan\(/.test(line)
-      || /proxy_firewall/.test(line)
-      || /PROXY_POLICY|_ATTACK_INTENTS/.test(line)
-      || /pre_scan|pre-scan/.test(line)
-    )
+    // Determine this line's category
+    let cat: string | null = null
+    if (inBlock) {
+      cat = blockCat
+    } else {
+      cat = categoryFromLine(line)
+      // Also catch standalone marker comments: # ═══ AI PROTECTOR — ...
+      if (!cat && /^\s*#\s*═══.*AI PROTECTOR/.test(line)) {
+        cat = categoryFromMarker(line)
+      }
+    }
 
-    if (inBlock || isSingleHighlight) {
-      result.push(`<span class="ai-protector-line">${escaped}</span>`)
+    if (cat && cat in CATEGORIES) {
+      const c = CATEGORIES[cat]!
+      result.push(
+        `<span class="hl-line" style="border-left-color:${c.color};background:${c.bg}">${escaped}</span>`
+      )
     } else {
       result.push(escaped)
     }
 
-    if (isMarkerClose) inBlock = false
-    // Also close on single-line ═══...═══ patterns
-    if (isMarkerOpen && /═══\s*$/.test(line)) inBlock = false
+    if (isMarkerClose) { inBlock = false; blockCat = null }
+    // Single-line ═══...═══ patterns
+    if (isMarkerOpen && /═══\s*$/.test(line)) { inBlock = false; blockCat = null }
   }
 
   return result.join('\n')
@@ -468,15 +538,15 @@ const selectedConfigContent = computed(() => {
     font-family: inherit;
   }
 
-  // AI Protector highlighted lines — yellow/gold left border + tinted bg
-  :deep(.ai-protector-line) {
+  // AI Protector highlighted lines — category-colored left border + tinted bg
+  :deep(.hl-line) {
     display: inline-block;
     width: 100%;
-    background: rgba(255, 193, 7, 0.12);  // amber tint
-    border-left: 3px solid #ffc107;       // gold left bar
+    border-left: 3px solid currentColor;
     padding-left: 8px;
     margin-left: -11px;
     padding-right: 4px;
+    border-radius: 2px;
   }
 }
 </style>
