@@ -145,7 +145,7 @@ Send messages as different roles and watch the pre-tool gate allow or block each
   <img src="docs/assets/v1/langGraph-agent.png" alt="LangGraph Agent" />
 </p>
 
-A full LangGraph agent wired with wizard-generated `rbac.yaml` and `config.yaml`. Toggle between Mock and LLM mode, switch roles, and observe how the security gates behave with real model output.
+A full LangGraph agent wired with wizard-generated `rbac.yaml` and `config.yaml`. This is the closed loop — create a config in the Agent Wizard, load it here with one click, and test it against a live agent. Toggle between Mock and LLM mode, switch roles, and observe how the security gates behave with real model output.
 
 </details>
 
