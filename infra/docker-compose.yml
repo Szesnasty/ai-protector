@@ -146,6 +146,7 @@ services:
       - "8003:8003"
     environment:
       PROXY_URL: http://proxy-service:8000
+      PROXY_POLICY: ${PROXY_POLICY:-balanced}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8003/health"]
@@ -165,6 +166,7 @@ services:
       - "8004:8004"
     environment:
       PROXY_URL: http://proxy-service:8000
+      PROXY_POLICY: ${PROXY_POLICY:-balanced}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8004/health"]

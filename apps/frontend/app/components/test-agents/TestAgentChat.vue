@@ -586,6 +586,7 @@ function gateColor(decision: string): string {
   if (d === 'BLOCK' || d === 'DENY') return 'error'
   if (d === 'CONFIRM') return 'warning'
   if (d === 'FLAGGED' || d === 'REDACT') return 'info'
+  if (d === 'SKIP') return 'grey'
   if (d === 'NO_MATCH') return 'grey'
   return 'grey'
 }
@@ -596,6 +597,7 @@ function gateIcon(decision: string): string {
   if (d === 'BLOCK' || d === 'DENY') return 'mdi-close-circle'
   if (d === 'CONFIRM') return 'mdi-alert-circle'
   if (d === 'FLAGGED' || d === 'REDACT') return 'mdi-magnify'
+  if (d === 'SKIP') return 'mdi-debug-step-over'
   if (d === 'NO_MATCH') return 'mdi-help-circle-outline'
   return 'mdi-help-circle'
 }
