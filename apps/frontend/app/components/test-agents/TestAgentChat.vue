@@ -206,7 +206,7 @@
                     <v-icon v-else-if="msg.requiresConfirmation" size="16" color="warning">mdi-alert</v-icon>
                     <v-icon v-else size="16">mdi-robot-outline</v-icon>
                     <span class="text-caption font-weight-bold">
-                      {{ msg.blocked ? 'SECURITY BLOCK' : msg.noMatch ? 'NO MATCH' : msg.requiresConfirmation ? 'CONFIRMATION REQUIRED' : 'Agent' }}
+                      {{ msg.blocked ? 'Security block' : msg.noMatch ? 'No match' : msg.requiresConfirmation ? 'Confirmation required' : 'Agent' }}
                     </span>
                   </div>
                   <!-- eslint-disable-next-line vue/no-v-html -- sanitized by DOMPurify -->
@@ -341,7 +341,7 @@
               <p class="text-body-2">Security gate decisions will appear here</p>
             </div>
 
-            <div v-for="(entry, i) in gateLog" :key="i" class="mb-2">
+            <div v-for="(entry, i) in reversedGateLog" :key="i" class="mb-2">
               <v-card
                 :color="gateColor(entry.decision)"
                 variant="tonal"
@@ -507,6 +507,7 @@ interface ChatMsg {
 
 const messages = ref<ChatMsg[]>([])
 const gateLog = ref<GateLogEntry[]>([])
+const reversedGateLog = computed(() => [...gateLog.value].reverse())
 
 // ─── Computed ───
 
