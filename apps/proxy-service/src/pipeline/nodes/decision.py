@@ -13,7 +13,7 @@ def calculate_risk_score(state: PipelineState) -> float:
     thresholds: dict = state.get("policy_config", {}).get("thresholds", {})
 
     # Policy-configurable scanner weights (defaults match legacy values)
-    injection_weight = thresholds.get("injection_weight", 0.8)
+    injection_weight = thresholds.get("injection_weight", 0.5)
     toxicity_weight = thresholds.get("toxicity_weight", 0.5)
     secrets_weight = thresholds.get("secrets_weight", 0.6)
     invisible_weight = thresholds.get("invisible_weight", 0.4)
@@ -156,13 +156,12 @@ async def decision_node(state: PipelineState) -> PipelineState:
             "risk_score": risk_score,
         }
 
-    # NeMo rail triggered → BLOCK (semantic safety check)
-    if state.get("risk_flags", {}).get("nemo_blocked"):
-        return {
-            **state,
-            "decision": "BLOCK",
-            "blocked_reason": "NeMo guardrail triggered",
-            "risk_score": risk_score,
-        }
+    # NeMo rail triggered — contribute via risk_score, NOT hard-block.
+    # The nemo_blocked signal is already incorporated into calculate_risk_score()
+    # via the weighted formula (nemo_score * nemo_weight). Hard-blocking here
+    # caused false positives on benign queries like "search products laptop"
+    # because NeMo embeddings matched attack intents at low similarity thresholds.
+    # If NeMo + other signals push risk_score >= max_risk, the threshold check
+    # above already handles the block correctly.
 
     return {**state, "decision": "ALLOW", "risk_score": risk_score}

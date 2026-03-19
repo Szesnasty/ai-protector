@@ -16,7 +16,7 @@ rails:
   dialog:
     user_messages:
       embeddings_only: true
-      embeddings_only_similarity_threshold: 0.35
+      embeddings_only_similarity_threshold: 0.50
       embeddings_only_fallback_intent: "safe_input"
 
 embedding_search_provider:
