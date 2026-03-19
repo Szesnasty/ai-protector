@@ -5,6 +5,8 @@ Dual-mode agent:
   - **llm**: real LLM call via LiteLLM with native function calling
 
 Both modes share the same security gates (RBAC, limits, PII scan).
+LLM responses are routed through the AI Protector proxy firewall
+(``balanced`` policy by default) for content-level filtering.
 
 ╔════════════════════════════════════════════════════════════════════╗
 ║  AI PROTECTOR — Integration Example (Pure Python)                ║
@@ -60,6 +62,66 @@ app.add_middleware(
 )
 
 PROXY_URL = os.getenv("PROXY_URL", "http://localhost:8000")
+PROXY_POLICY = os.getenv("PROXY_POLICY", "balanced")
+
+
+# ── Proxy-routed LLM call (balanced firewall) ────────────────────────
+
+
+async def _proxy_llm_call(
+    *,
+    messages: list[dict],
+    model: str,
+    api_key: str | None = None,
+) -> dict | None:
+    """Route an LLM call through the AI Protector proxy firewall.
+
+    The proxy runs the full pipeline: parse → intent → rules → scanners
+    → decision → LLM → post-LLM scan.  This gives content-level
+    protection (injection detection, toxicity, PII redaction) on top of
+    the RBAC/limits enforced locally.
+
+    Returns ``{"content": str, "blocked": bool, "reason": str|None}``
+    or *None* when the proxy is unreachable (caller should fall back to
+    direct LiteLLM).
+    """
+    clean_msgs = [
+        {"role": m["role"], "content": m.get("content", "")}
+        for m in messages
+        if m.get("role") in ("system", "user", "assistant") and m.get("content")
+    ]
+    if not clean_msgs or not any(m["role"] == "user" for m in clean_msgs):
+        return None
+
+    headers: dict[str, str] = {"x-policy": PROXY_POLICY}
+    if api_key:
+        headers["x-api-key"] = api_key
+
+    body = {"model": model, "messages": clean_msgs, "stream": False}
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{PROXY_URL}/v1/chat/completions",
+                json=body,
+                headers=headers,
+            )
+        if resp.status_code == 403:
+            data = resp.json()
+            return {
+                "content": None,
+                "blocked": True,
+                "reason": data.get("detail", "Blocked by proxy firewall"),
+            }
+        if resp.status_code == 200:
+            data = resp.json()
+            content = data["choices"][0]["message"]["content"]
+            return {"content": content, "blocked": False, "reason": None}
+        logger.warning("proxy_llm_non_200", status=resp.status_code)
+    except Exception as exc:
+        logger.warning("proxy_llm_call_failed", error=str(exc))
+
+    return None  # fallback to direct litellm
 
 
 # ── Request / response schemas ────────────────────────────────────────
@@ -298,23 +360,28 @@ async def _chat_llm(req: ChatRequest) -> dict:
     if not result["allowed"]:
         return _build_response(result, mode="llm")
 
-    # 3. Send tool result back to LLM for natural-language formatting
-    messages.append(choice.model_dump())
-    messages.append(
+    # 3. ═══ AI PROTECTOR — Route through proxy firewall (balanced) ═══
+    # The formatting call goes through the proxy so the response gets
+    # content-level filtering: injection detection, toxicity, PII scan.
+    tool_result_str = str(result["result"])
+    proxy_messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": req.message},
         {
-            "role": "tool",
-            "tool_call_id": tc.id,
-            "content": str(result["result"]),
-        }
+            "role": "user",
+            "content": (
+                f"The tool '{tool_name}' was called and returned:\n\n"
+                f"{tool_result_str}\n\n"
+                "Please provide a helpful, natural-language summary."
+            ),
+        },
+    ]
+
+    proxy_result = await _proxy_llm_call(
+        messages=proxy_messages,
+        model=model,
+        api_key=req.api_key,
     )
-
-    final_kwargs: dict = {"model": model, "messages": messages}
-    if model.startswith("ollama/"):
-        final_kwargs["api_base"] = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
-    if req.api_key:
-        final_kwargs["api_key"] = req.api_key
-
-    final = await litellm.acompletion(**final_kwargs)
 
     gate_log = [
         {
@@ -329,8 +396,66 @@ async def _chat_llm(req: ChatRequest) -> dict:
         }
     ]
 
+    if proxy_result and proxy_result["blocked"]:
+        gate_log.append(
+            {
+                "gate": "proxy_firewall",
+                "decision": "block",
+                "reason": proxy_result["reason"],
+                "policy": PROXY_POLICY,
+            }
+        )
+        return {
+            "response": f"⛔ Proxy firewall BLOCK ({PROXY_POLICY}): {proxy_result['reason']}",
+            "blocked": True,
+            "gate_log": gate_log,
+            "mode": "llm",
+            "tool_called": tool_name,
+        }
+
+    if proxy_result and proxy_result["content"]:
+        gate_log.append(
+            {
+                "gate": "proxy_firewall",
+                "decision": "allow",
+                "reason": f"Routed through '{PROXY_POLICY}' policy",
+                "policy": PROXY_POLICY,
+            }
+        )
+        final_text = proxy_result["content"]
+    else:
+        # Fallback: direct LiteLLM if proxy is unavailable
+        messages.append(choice.model_dump())
+        messages.append(
+            {
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": tool_result_str,
+            }
+        )
+
+        final_kwargs: dict = {"model": model, "messages": messages}
+        if model.startswith("ollama/"):
+            final_kwargs["api_base"] = os.environ.get(
+                "OLLAMA_HOST", "http://ollama:11434"
+            )
+        if req.api_key:
+            final_kwargs["api_key"] = req.api_key
+
+        final = await litellm.acompletion(**final_kwargs)
+        final_text = final.choices[0].message.content
+
+        gate_log.append(
+            {
+                "gate": "proxy_firewall",
+                "decision": "skip",
+                "reason": "Proxy unavailable — direct LLM fallback",
+            }
+        )
+    # ═══════════════════════════════════════════════════════════════════
+
     return {
-        "response": final.choices[0].message.content,
+        "response": final_text,
         "blocked": False,
         "gate_log": gate_log,
         "mode": "llm",
