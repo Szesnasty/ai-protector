@@ -22,18 +22,25 @@
           >
             <v-card-title class="text-subtitle-1">
               <v-icon :icon="packIcon(pack.name)" class="mr-2" />
-              {{ pack.name }}
+              {{ pack.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }}
             </v-card-title>
             <v-card-subtitle>{{ pack.description }}</v-card-subtitle>
-            <v-card-text v-if="pack.risk_levels?.length">
+            <v-card-text>
               <v-chip
-                v-for="rl in pack.risk_levels"
-                :key="rl"
                 size="x-small"
                 variant="tonal"
+                color="info"
                 class="mr-1"
               >
-                {{ rl }}
+                injection: {{ pack.scanners?.injection_threshold ?? '–' }}
+              </v-chip>
+              <v-chip
+                size="x-small"
+                variant="tonal"
+                color="info"
+                class="mr-1"
+              >
+                PII: {{ pack.scanners?.pii_mode ?? '–' }}
               </v-chip>
             </v-card-text>
           </v-card>
@@ -82,7 +89,7 @@ const { getAgent } = useAgents()
 const { config, policyPacks, generate, isGenerating } = useAgentConfig(() => props.agentId)
 const { updateAgent } = useAgents()
 
-const selectedPack = ref<string>('standard')
+const selectedPack = ref<string>('customer_support')
 const previewTab = ref('rbac')
 
 const previewContent = computed(() => {
@@ -98,11 +105,11 @@ const previewContent = computed(() => {
 
 const packIcon = (name: string): string => {
   const icons: Record<string, string> = {
-    strict: 'mdi-shield-lock',
-    standard: 'mdi-shield-check',
-    permissive: 'mdi-shield-outline',
-    minimal: 'mdi-shield-off-outline',
-    custom: 'mdi-tune',
+    customer_support: 'mdi-headset',
+    internal_copilot: 'mdi-shield-check',
+    finance: 'mdi-shield-lock',
+    hr: 'mdi-account-lock',
+    research: 'mdi-flask-outline',
   }
   return icons[name] ?? 'mdi-shield'
 }
