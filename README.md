@@ -62,10 +62,10 @@ The wizard generates your security config in 7 steps. The runtime enforces it on
 | 1 — Describe | Name, framework (LangGraph / pure Python / custom), policy pack |
 | 2 — Register tools | Declare each tool: sensitivity (low/medium/high), read or write |
 | 3 — Define roles | RBAC hierarchy with inheritance — each role gets exactly what it needs |
-| 4 — Security policy | Choose a base pack (balanced/strict/paranoid), see activated scanners |
-| 5 — Review | Inspect the full generated RBAC policy before saving |
-| 6 — Integration kit | Generated `rbac.yaml`, `config.yaml`, and framework-specific code snippet |
-| 7 — Validate | Run the built-in attack suite against your config before going live |
+| 4 — Configure security | Choose a base pack (balanced/strict/paranoid), see activated scanners |
+| 5 — Integration kit | Generated `rbac.yaml`, `config.yaml`, and framework-specific code snippet |
+| 6 — Validate | Run the built-in attack suite against your config before going live |
+| 7 — Deploy | Choose rollout mode (monitor / shadow / enforce) and activate the agent |
 
 **What gets enforced at runtime:**
 
@@ -127,7 +127,7 @@ Threat coverage and explicit exclusions: [THREAT_MODEL.md](docs/architecture/THR
 
 ### Internal benchmark — agent security threat model
 
-358 attack scenarios across 38 categories (OWASP LLM Top 10): prompt injection, agent abuse, tool abuse, PII exfiltration, and more.
+358 attack scenarios across 39 categories (OWASP LLM Top 10): prompt injection, agent abuse, tool abuse, PII exfiltration, and more.
 
 | Metric | Value |
 |--------|-------|
