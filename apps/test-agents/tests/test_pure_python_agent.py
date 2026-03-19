@@ -38,21 +38,26 @@ SAMPLE_RBAC = {
     "roles": {
         "user": {
             "tools": {
-                "getOrders": {"scopes": ["read"]},
-                "getUsers": {"scopes": ["read"]},
-                "searchProducts": {"scopes": ["read"]},
+                "getOrders": {"scopes": ["read"], "sensitivity": "low"},
+                "searchProducts": {"scopes": ["read"], "sensitivity": "low"},
             },
         },
         "admin": {
             "inherits": "user",
             "tools": {
+                "getUsers": {
+                    "scopes": ["read"],
+                    "sensitivity": "medium",
+                },
                 "updateOrder": {
                     "scopes": ["read", "write"],
                     "requires_confirmation": True,
+                    "sensitivity": "high",
                 },
                 "updateUser": {
                     "scopes": ["read", "write"],
                     "requires_confirmation": True,
+                    "sensitivity": "high",
                 },
             },
         },

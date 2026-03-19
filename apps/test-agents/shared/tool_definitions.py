@@ -22,7 +22,7 @@ TOOL_DEFINITIONS: list[dict] = [
         "type": "function",
         "function": {
             "name": "getUsers",
-            "description": "List all users. Returns PII (emails, phone numbers).",
+            "description": "List all users. Returns PII (emails, phone numbers). Admin-only — medium sensitivity.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
