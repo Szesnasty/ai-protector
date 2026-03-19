@@ -260,6 +260,7 @@
                     :variant="isToolAllowed(action.tool) === false ? 'outlined' : isToolAllowed(action.tool) === true ? 'tonal' : 'text'"
                     :color="isToolAllowed(action.tool) === false ? 'error' : isToolAllowed(action.tool) === true ? 'success' : undefined"
                     size="x-small"
+                    style="font-size: 12px;"
                     :disabled="isSending"
                     @click="sendMessage(action.message)"
                   >
@@ -292,6 +293,7 @@
                 :color="test.color"
                 variant="tonal"
                 size="x-small"
+                style="font-size: 12px;"
                 :disabled="isSending"
                 @click="sendMessage(test.message)"
               >
