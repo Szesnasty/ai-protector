@@ -329,7 +329,7 @@ class TestCustomWeights:
 
     async def test_custom_weight_changes_decision(self) -> None:
         """High injection_weight can flip ALLOW→BLOCK."""
-        # Default weight 0.8: 0.6 * 0.8 = 0.48 < 0.5 → ALLOW
+        # Default weight 0.5: 0.6 * 0.5 = 0.30 < 0.5 → ALLOW
         state_default = _make_state(
             risk_flags={"promptinjection": 0.6},
             policy_config={"thresholds": {"max_risk": 0.5}},
@@ -357,15 +357,15 @@ class TestDefaultThresholds:
             "intent": "qa",
             "risk_flags": {"promptinjection": 0.9},
         }  # type: ignore[typeddict-item]
-        # Default injection_weight=0.8 → 0.9 * 0.8 = 0.72
-        assert calculate_risk_score(state) == pytest.approx(0.72)
+        # Default injection_weight=0.5 → 0.9 * 0.5 = 0.45
+        assert calculate_risk_score(state) == pytest.approx(0.45)
 
     def test_empty_policy_config(self) -> None:
         state = _make_state(
             risk_flags={"promptinjection": 0.9},
             policy_config={},
         )
-        assert calculate_risk_score(state) == pytest.approx(0.72)
+        assert calculate_risk_score(state) == pytest.approx(0.45)
 
     def test_empty_thresholds(self) -> None:
         state = _make_state(

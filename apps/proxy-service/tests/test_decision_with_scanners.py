@@ -18,8 +18,8 @@ class TestScannerWeights:
             "intent": "qa",
             "risk_flags": {"promptinjection": 0.9},
         }  # type: ignore[typeddict-item]
-        # 0.9 * 0.8 = 0.72
-        assert calculate_risk_score(state) == pytest.approx(0.72)
+        # 0.9 * 0.5 (default injection_weight) = 0.45
+        assert calculate_risk_score(state) == pytest.approx(0.45)
 
     def test_toxicity_weighted(self) -> None:
         state: PipelineState = {
@@ -64,8 +64,8 @@ class TestScannerWeights:
             "intent": "qa",
             "risk_flags": {"promptinjection": 0.9, "toxicity": 0.8},
         }  # type: ignore[typeddict-item]
-        # 0.9*0.8 + 0.8*0.5 = 0.72 + 0.40 = 1.12 → capped at 1.0
-        assert calculate_risk_score(state) == 1.0
+        # 0.9*0.5 + 0.8*0.5 = 0.45 + 0.40 = 0.85
+        assert calculate_risk_score(state) == pytest.approx(0.85)
 
 
 # ── decision_node with PII actions ──────────────────────────────────
