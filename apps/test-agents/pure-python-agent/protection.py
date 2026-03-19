@@ -37,6 +37,12 @@ import yaml
 
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
 
+# Pre-compiled PII patterns — bounded quantifiers prevent ReDoS on user-controlled input.
+_EMAIL_RE = re.compile(
+    r"[a-zA-Z0-9][a-zA-Z0-9._%+-]{0,63}@[a-zA-Z0-9][a-zA-Z0-9.-]{0,253}\.[a-zA-Z]{2,6}"
+)
+_PHONE_RE = re.compile(r"\+?\d[\d\-\s]{5,15}\d")
+
 
 # ── SecurityConfig ────────────────────────────────────────────────────
 
@@ -162,13 +168,11 @@ def scan_output(output: str) -> dict[str, Any]:
     scanners = _config.policy.get("scanners", {})
 
     if scanners.get("pii_redaction", True):
-        email_re = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
-        phone_re = re.compile(r"\+?\d[\d\-\s]{7,}\d")
-        if email_re.search(output):
+        if _EMAIL_RE.search(output):
             findings.append(
                 {"type": "pii", "subtype": "email", "detail": "Email address detected"}
             )
-        if phone_re.search(output):
+        if _PHONE_RE.search(output):
             findings.append(
                 {"type": "pii", "subtype": "phone", "detail": "Phone number detected"}
             )
