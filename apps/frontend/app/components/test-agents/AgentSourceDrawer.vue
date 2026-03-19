@@ -136,7 +136,8 @@
 
       <!-- Code viewer -->
       <div class="flex-grow-1 overflow-y-auto">
-        <pre v-if="selectedFileContent" class="source-code pa-3"><code>{{ selectedFileContent }}</code></pre>
+        <!-- eslint-disable-next-line vue/no-v-html -- AI Protector lines highlighted -->
+        <pre v-if="selectedFileContent" class="source-code pa-3"><code v-html="highlightedSource" /></pre>
         <div v-else class="text-center text-medium-emphasis pa-12">
           <v-icon size="48" class="mb-2">mdi-file-code-outline</v-icon>
           <p class="text-body-2">Select a file to view its source code</p>
@@ -356,6 +357,61 @@ const selectedFileContent = computed(() => {
   return selectedFileMeta.value?.content ?? null
 })
 
+/**
+ * Highlight AI Protector code blocks with a yellow/gold left border
+ * and background. Detects lines between ═══ AI PROTECTOR markers
+ * and also individual lines with AI Protector imports/calls.
+ */
+const highlightedSource = computed(() => {
+  const raw = selectedFileContent.value
+  if (!raw) return ''
+
+  const lines = raw.split('\n')
+  let inBlock = false
+  const result: string[] = []
+
+  for (const line of lines) {
+    // Escape HTML entities
+    const escaped = line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+
+    // Detect block start/end markers
+    const isMarkerOpen = /[═╔╗]+.*AI PROTECTOR/.test(line)
+    const isMarkerClose = /[═╚╝]+$/.test(line) && inBlock
+
+    if (isMarkerOpen) inBlock = true
+
+    // Individual highlight triggers (imports, key calls)
+    const isSingleHighlight = !inBlock && (
+      /^\s*(from\s+protection\s+import|from\s+graph\s+import)/.test(line)
+      || /^\s*#\s*═══.*AI PROTECTOR/.test(line)
+      || /protected_tool_call\(/.test(line)
+      || /check_rbac\(|check_limits\(/.test(line)
+      || /scan_output\(/.test(line)
+      || /PreToolGate|PostToolGate/.test(line)
+      || /pre_tool_gate|post_tool_gate/.test(line)
+      || /_proxy_llm_call\(/.test(line)
+      || /proxy_firewall/.test(line)
+      || /PROXY_POLICY/.test(line)
+      || /pre_scan|pre-scan/.test(line)
+    )
+
+    if (inBlock || isSingleHighlight) {
+      result.push(`<span class="ai-protector-line">${escaped}</span>`)
+    } else {
+      result.push(escaped)
+    }
+
+    if (isMarkerClose) inBlock = false
+    // Also close on single-line ═══...═══ patterns
+    if (isMarkerOpen && /═══\s*$/.test(line)) inBlock = false
+  }
+
+  return result.join('\n')
+})
+
 // ─── Config helpers ───
 
 const configFileItems = computed(() => [
@@ -410,6 +466,17 @@ const selectedConfigContent = computed(() => {
 
   code {
     font-family: inherit;
+  }
+
+  // AI Protector highlighted lines — yellow/gold left border + tinted bg
+  :deep(.ai-protector-line) {
+    display: inline-block;
+    width: 100%;
+    background: rgba(255, 193, 7, 0.12);  // amber tint
+    border-left: 3px solid #ffc107;       // gold left bar
+    padding-left: 8px;
+    margin-left: -11px;
+    padding-right: 4px;
   }
 }
 </style>
