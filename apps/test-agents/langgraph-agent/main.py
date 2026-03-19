@@ -245,6 +245,32 @@ async def _chat_llm(req: ChatRequest) -> dict:
         {"role": "user", "content": req.message},
     ]
 
+    # 0. ═══ AI PROTECTOR — Pre-scan via proxy firewall ════════════════
+    # Scan the user message through the proxy BEFORE calling the LLM.
+    # This catches prompt injection, toxicity, etc. at the gate.
+    pre_scan = await _proxy_llm_call(
+        messages=messages,
+        model=model,
+        api_key=req.api_key,
+    )
+
+    if pre_scan and pre_scan["blocked"]:
+        return {
+            "response": f"⛔ Proxy firewall BLOCK ({PROXY_POLICY}): {pre_scan['reason']}",
+            "blocked": True,
+            "no_match": False,
+            "gate_log": [
+                {
+                    "gate": "proxy_firewall",
+                    "decision": "block",
+                    "reason": pre_scan["reason"],
+                    "policy": PROXY_POLICY,
+                }
+            ],
+            "mode": "llm",
+        }
+    # ═══════════════════════════════════════════════════════════════════
+
     # 1. Ask LLM which tool to call
     kwargs: dict = {
         "model": model,
@@ -260,13 +286,33 @@ async def _chat_llm(req: ChatRequest) -> dict:
     response = await litellm.acompletion(**kwargs)
     choice = response.choices[0].message  # type: ignore[union-attr]
 
-    # If no tool call, return text directly (LLM answered conversationally)
+    # If no tool call, use pre-scanned proxy response (already filtered)
     if not choice.tool_calls:
+        gate_log = []
+        if pre_scan and pre_scan["content"]:
+            gate_log.append(
+                {
+                    "gate": "proxy_firewall",
+                    "decision": "allow",
+                    "reason": f"Pre-scanned via '{PROXY_POLICY}' policy",
+                    "policy": PROXY_POLICY,
+                }
+            )
+            text = pre_scan["content"]
+        else:
+            gate_log.append(
+                {
+                    "gate": "proxy_firewall",
+                    "decision": "skip",
+                    "reason": "Proxy unavailable — direct LLM fallback",
+                }
+            )
+            text = choice.content or "No response from model."
         return {
-            "response": choice.content or "No response from model.",
+            "response": text,
             "blocked": False,
             "no_match": False,
-            "gate_log": [],
+            "gate_log": gate_log,
             "mode": "llm",
         }
 
