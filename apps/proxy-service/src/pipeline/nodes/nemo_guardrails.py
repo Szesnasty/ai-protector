@@ -135,7 +135,7 @@ def _scan_message(text: str) -> dict:
         blocked = True
         rail_name = content.split(":", 1)[1].strip()
         matched_rail = rail_name if rail_name in KNOWN_RAILS else "unknown"
-        score = 0.85  # High confidence when embedding match fires a rail
+        score = 0.7  # Moderate confidence — embedding match is heuristic
         bot_message = content
 
         # Try to get similarity score from explain()
@@ -143,7 +143,7 @@ def _scan_message(text: str) -> dict:
             log = rails.explain()
             if log and log.colang_history:
                 # The colang_history confirms the flow fired
-                score = 0.85
+                score = 0.7
         except Exception:
             pass  # explain() is best-effort
 

@@ -15,6 +15,8 @@ export interface GateLogEntry {
   reason?: string
   tool?: string
   role?: string
+  intent?: string
+  risk_score?: number
   findings?: Array<{ type: string; detail: string }>
   scan_findings?: Array<{ type: string; detail: string }>
 }
@@ -45,7 +47,14 @@ export interface ConfigStatus {
   loaded: boolean
   roles: string[]
   tools_in_rbac?: number
+  tools?: string[]
   policy_pack: string
+  rbac_matrix?: Record<string, Record<string, {
+    allowed: boolean
+    scopes: string[]
+    sensitivity: string
+    requires_confirmation: boolean
+  }>>
 }
 
 export interface HealthStatus {

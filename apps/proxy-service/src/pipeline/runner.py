@@ -56,7 +56,14 @@ async def get_policy_config(policy_name: str) -> dict:
         # Try default policy
         if policy_name != settings.default_policy:
             return await get_policy_config(settings.default_policy)
-        return {"thresholds": {"max_risk": 0.7}}
+        return {
+            "thresholds": {
+                "max_risk": 0.7,
+                "injection_weight": 0.5,
+                "toxicity_weight": 0.5,
+                "nemo_weight": 0.7,
+            }
+        }
 
     # Write back to Redis (best-effort)
     try:
