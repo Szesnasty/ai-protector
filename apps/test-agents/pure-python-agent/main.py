@@ -463,8 +463,8 @@ async def _chat_llm(req: ChatRequest) -> dict:
                     "gate": "proxy_firewall",
                     "decision": "allow",
                     "reason": (
-                        f"Input scanned via '{PROXY_POLICY}' policy "
-                        f"(intent={pre_scan.get('intent', '?')}, "
+                        f"Scanned and allowed by proxy firewall "
+                        f"({PROXY_POLICY} policy, intent={pre_scan.get('intent', '?')}, "
                         f"risk={pre_scan.get('risk_score', 0):.2f})"
                     ),
                     "policy": PROXY_POLICY,
@@ -585,7 +585,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
             {
                 "gate": "proxy_firewall",
                 "decision": "allow",
-                "reason": f"Routed through '{PROXY_POLICY}' policy",
+                "reason": f"Allowed by proxy firewall ({PROXY_POLICY} policy)",
                 "policy": PROXY_POLICY,
             }
         )
@@ -650,7 +650,7 @@ def _build_response(result: dict, *, mode: str = "mock") -> dict:
 
     if not result.get("allowed", True):
         return {
-            "response": f"⛔ Security BLOCK: {result['reason']}",
+            "response": f"⛔ Security block: {result['reason']}",
             "blocked": True,
             "gate_log": gate_log,
             "mode": mode,

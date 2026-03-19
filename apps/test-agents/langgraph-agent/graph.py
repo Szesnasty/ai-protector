@@ -201,9 +201,8 @@ def blocked_response_node(state: AgentState) -> dict[str, Any]:
     """Build blocked response (real security block — RBAC or limits)."""
     pre_result = state.get("pre_gate_result") or {}
     reason = pre_result.get("reason", "Access denied by security policy")
-    decision = pre_result.get("decision", "block")
     return {
-        "final_response": f"\u26d4 Security {decision.upper()}: {reason}",
+        "final_response": f"\u26d4 Security block: {reason}",
         "blocked": True,
     }
 

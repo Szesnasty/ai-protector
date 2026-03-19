@@ -406,8 +406,8 @@ async def _chat_llm(req: ChatRequest) -> dict:
                     "gate": "proxy_firewall",
                     "decision": "allow",
                     "reason": (
-                        f"Input scanned via '{PROXY_POLICY}' policy "
-                        f"(intent={pre_scan.get('intent', '?')}, "
+                        f"Scanned and allowed by proxy firewall "
+                        f"({PROXY_POLICY} policy, intent={pre_scan.get('intent', '?')}, "
                         f"risk={pre_scan.get('risk_score', 0):.2f})"
                     ),
                     "policy": PROXY_POLICY,
@@ -526,7 +526,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
             {
                 "gate": "proxy_firewall",
                 "decision": "allow",
-                "reason": f"Routed through '{PROXY_POLICY}' policy",
+                "reason": f"Allowed by proxy firewall ({PROXY_POLICY} policy)",
                 "policy": PROXY_POLICY,
             }
         )
