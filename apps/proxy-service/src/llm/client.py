@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -18,6 +19,9 @@ from litellm.exceptions import (
 from src.config import get_settings
 from src.llm.exceptions import LLMError, LLMModelNotFoundError, LLMTimeoutError, LLMUpstreamError
 from src.llm.providers import detect_provider, format_litellm_model
+
+_LLM_MAX_RETRIES = 2
+_LLM_RETRY_BACKOFF = 1.5  # seconds; doubles each attempt
 
 logger = structlog.get_logger()
 
@@ -102,31 +106,47 @@ async def llm_completion(
         message_count=len(messages),
     )
 
-    try:
-        response = await acompletion(
-            model=litellm_model,
-            messages=messages,
-            stream=stream,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=settings.request_timeout,
-            **kwargs,
-        )
-    except AuthenticationError:
-        logger.error("llm_auth_error", provider=provider)
-        raise LLMError(f"Invalid API key for {provider}. Check your key in Settings → API Keys.") from None
-    except ServiceUnavailableError as exc:
-        logger.error("llm_upstream_error", error=str(exc))
-        raise LLMUpstreamError(f"{provider} unavailable: {exc}") from exc
-    except NotFoundError as exc:
-        logger.error("llm_model_not_found", model=litellm_model, error=str(exc))
-        raise LLMModelNotFoundError(f"Model '{model}' not found on {provider}") from exc
-    except Timeout as exc:
-        logger.error("llm_timeout", model=litellm_model, error=str(exc))
-        raise LLMTimeoutError(f"LLM request timed out after {settings.request_timeout}s") from exc
-    except Exception as exc:
-        safe_msg = str(exc)[:200] if str(exc) else "unknown"
-        logger.error("llm_error", model=litellm_model, error_type=type(exc).__name__)
-        raise LLMError(f"LLM error ({type(exc).__name__}): {safe_msg}") from exc
+    last_exc: Exception | None = None
+    for attempt in range(_LLM_MAX_RETRIES + 1):
+        try:
+            response = await acompletion(
+                model=litellm_model,
+                messages=messages,
+                stream=stream,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=settings.request_timeout,
+                **kwargs,
+            )
+            return response
+        except AuthenticationError:
+            logger.error("llm_auth_error", provider=provider)
+            raise LLMError(f"Invalid API key for {provider}. Check your key in Settings → API Keys.") from None
+        except ServiceUnavailableError as exc:
+            last_exc = exc
+            if attempt < _LLM_MAX_RETRIES:
+                delay = _LLM_RETRY_BACKOFF * (2**attempt)
+                logger.warning(
+                    "llm_upstream_retry",
+                    provider=provider,
+                    attempt=attempt + 1,
+                    delay=delay,
+                    error=str(exc)[:120],
+                )
+                await asyncio.sleep(delay)
+                continue
+            logger.error("llm_upstream_error", error=str(exc), attempts=attempt + 1)
+            raise LLMUpstreamError(f"{provider} unavailable after {attempt + 1} attempts: {exc}") from exc
+        except NotFoundError as exc:
+            logger.error("llm_model_not_found", model=litellm_model, error=str(exc))
+            raise LLMModelNotFoundError(f"Model '{model}' not found on {provider}") from exc
+        except Timeout as exc:
+            logger.error("llm_timeout", model=litellm_model, error=str(exc))
+            raise LLMTimeoutError(f"LLM request timed out after {settings.request_timeout}s") from exc
+        except Exception as exc:
+            safe_msg = str(exc)[:200] if str(exc) else "unknown"
+            logger.error("llm_error", model=litellm_model, error_type=type(exc).__name__)
+            raise LLMError(f"LLM error ({type(exc).__name__}): {safe_msg}") from exc
 
-    return response
+    # Should not reach here, but satisfy type checker
+    raise LLMUpstreamError(f"{provider} unavailable after retries") from last_exc
