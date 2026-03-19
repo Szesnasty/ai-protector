@@ -27,6 +27,7 @@ LLM responses are routed through the AI Protector proxy firewall
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -158,6 +159,11 @@ async def _proxy_scan(
 # ── Proxy-routed LLM call (balanced firewall) ────────────────────────
 
 
+_PROXY_LLM_MAX_RETRIES = 2
+_PROXY_LLM_RETRY_BACKOFF = 1.5  # seconds; doubles each attempt
+_PROXY_LLM_RETRYABLE = {502, 503, 429}
+
+
 async def _proxy_llm_call(
     *,
     messages: list[dict],
@@ -174,6 +180,9 @@ async def _proxy_llm_call(
     Returns ``{"content": str, "blocked": bool, "reason": str|None}``
     or *None* when the proxy is unreachable (caller should fall back to
     direct LiteLLM).
+
+    Retries up to ``_PROXY_LLM_MAX_RETRIES`` times on transient errors
+    (502, 503, 429) with exponential backoff.
     """
     clean_msgs = [
         {"role": m["role"], "content": m.get("content", "")}
@@ -189,29 +198,60 @@ async def _proxy_llm_call(
 
     body = {"model": model, "messages": clean_msgs, "stream": False}
 
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                f"{PROXY_URL}/v1/chat/completions",
-                json=body,
-                headers=headers,
-            )
-        if resp.status_code == 403:
-            data = resp.json()
-            return {
-                "content": None,
-                "blocked": True,
-                "reason": data.get("detail", "Blocked by proxy firewall"),
-            }
-        if resp.status_code == 200:
-            data = resp.json()
-            content = data["choices"][0]["message"]["content"]
-            return {"content": content, "blocked": False, "reason": None}
-        logger.warning("proxy_llm_non_200", status=resp.status_code)
-    except Exception as exc:
-        logger.warning("proxy_llm_call_failed", error=str(exc))
+    for attempt in range(_PROXY_LLM_MAX_RETRIES + 1):
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    f"{PROXY_URL}/v1/chat/completions",
+                    json=body,
+                    headers=headers,
+                )
+            if resp.status_code == 403:
+                data = resp.json()
+                return {
+                    "content": None,
+                    "blocked": True,
+                    "reason": data.get("detail", "Blocked by proxy firewall"),
+                }
+            if resp.status_code == 200:
+                data = resp.json()
+                content = data["choices"][0]["message"]["content"]
+                return {"content": content, "blocked": False, "reason": None}
 
-    return None  # fallback to direct litellm
+            # Retryable upstream error
+            if (
+                resp.status_code in _PROXY_LLM_RETRYABLE
+                and attempt < _PROXY_LLM_MAX_RETRIES
+            ):
+                delay = _PROXY_LLM_RETRY_BACKOFF * (2**attempt)
+                logger.warning(
+                    "proxy_llm_retry",
+                    status=resp.status_code,
+                    attempt=attempt + 1,
+                    delay=delay,
+                )
+                await asyncio.sleep(delay)
+                continue
+
+            logger.warning(
+                "proxy_llm_non_200", status=resp.status_code, attempts=attempt + 1
+            )
+        except Exception as exc:
+            if attempt < _PROXY_LLM_MAX_RETRIES:
+                delay = _PROXY_LLM_RETRY_BACKOFF * (2**attempt)
+                logger.warning(
+                    "proxy_llm_retry_exc",
+                    error=str(exc)[:120],
+                    attempt=attempt + 1,
+                    delay=delay,
+                )
+                await asyncio.sleep(delay)
+                continue
+            logger.warning(
+                "proxy_llm_call_failed", error=str(exc), attempts=attempt + 1
+            )
+
+    return None  # fallback to direct litellm after all retries exhausted
 
 
 # ── Request / response schemas ────────────────────────────────────────
@@ -484,7 +524,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
                 {
                     "gate": "proxy_firewall",
                     "decision": "skip",
-                    "reason": "Proxy unavailable — direct LLM fallback",
+                    "reason": "Pre-scan unavailable (proxy or upstream LLM down) — direct LLM used",
                 }
             )
         text = choice.content or "No response from model."
@@ -659,7 +699,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
             {
                 "gate": "proxy_firewall",
                 "decision": "skip",
-                "reason": "Proxy unavailable — direct LLM fallback",
+                "reason": "Post-tool proxy LLM failed after retries — formatted directly",
             }
         )
     # ═══════════════════════════════════════════════════════════════════
