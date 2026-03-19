@@ -17,8 +17,25 @@
           {{ agent.rollout_mode }}
         </v-chip>
         <v-btn size="small" variant="text" icon="mdi-pencil" @click="navigateTo(`/agents/${agent.id}/edit`)" />
+        <v-btn size="small" variant="text" icon="mdi-delete" color="red" @click="showDeleteDialog = true" />
       </div>
     </div>
+
+    <!-- Delete confirmation dialog -->
+    <v-dialog v-model="showDeleteDialog" max-width="440">
+      <v-card>
+        <v-card-title class="text-h6">Delete Agent</v-card-title>
+        <v-card-text>
+          Are you sure you want to delete <strong>{{ agent?.name }}</strong>?
+          This action cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showDeleteDialog = false">Cancel</v-btn>
+          <v-btn color="red" variant="flat" :loading="isDeleting" @click="doDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <div v-if="loading" class="text-center py-12">
       <v-progress-circular indeterminate size="48" />
@@ -174,7 +191,7 @@
                 </template>
                 <template #append>
                   <v-chip size="x-small" variant="tonal">
-                    {{ role.permissions.length }} tools
+                    {{ effectivePermCount(role) }} tools
                   </v-chip>
                 </template>
               </v-list-item>
@@ -279,27 +296,32 @@
             </div>
             <template v-if="latestValidation">
               <v-card
-                :color="latestValidation.score >= 1.0 ? 'success' : 'error'"
+                :color="latestValidation.passed === latestValidation.total ? 'success' : 'error'"
                 variant="tonal"
                 class="mb-4 pa-3 text-center"
               >
                 <div class="text-h4 font-weight-bold">{{ latestValidation.passed }}/{{ latestValidation.total }}</div>
-                <div>{{ latestValidation.score >= 1.0 ? 'All tests passed' : `${latestValidation.failed} failed` }}</div>
+                <div>{{ latestValidation.passed === latestValidation.total ? 'All tests passed' : `${latestValidation.failed} failed` }}</div>
               </v-card>
               <v-list density="compact">
                 <v-list-item
-                  v-for="(r, i) in latestValidation.results"
+                  v-for="(r, i) in validationTests"
                   :key="i"
-                  :title="r.name"
-                  :subtitle="r.message"
                 >
                   <template #prepend>
                     <v-icon
                       :icon="r.passed ? 'mdi-check-circle' : 'mdi-close-circle'"
                       :color="r.passed ? 'green' : 'red'"
                       size="18"
+                      class="mr-3"
                     />
                   </template>
+                  <v-list-item-title>{{ r.name }}</v-list-item-title>
+                  <v-list-item-subtitle>
+                    <span class="text-medium-emphasis">{{ r.category }}</span>
+                    <span v-if="!r.passed" class="ml-2">— expected {{ r.expected }}, got {{ r.actual }}</span>
+                    <span v-if="r.recommendation" class="ml-2 text-warning">• {{ r.recommendation }}</span>
+                  </v-list-item-subtitle>
                 </v-list-item>
               </v-list>
             </template>
@@ -397,7 +419,7 @@ import { useAgentKit } from '~/composables/useAgentKit'
 import { useAgentValidation } from '~/composables/useAgentValidation'
 import { useAgentRollout } from '~/composables/useAgentRollout'
 import { useAgentTracesList, useAgentIncidents } from '~/composables/useWizardTraces'
-import type { AgentRead, RolloutMode, Sensitivity, IncidentSeverity, IncidentStatus } from '~/types/wizard'
+import type { AgentRead, RoleRead, RolloutMode, Sensitivity, IncidentSeverity, IncidentStatus } from '~/types/wizard'
 
 definePageMeta({ title: 'Agent Detail' })
 
@@ -408,8 +430,9 @@ const loading = ref(true)
 const agent = ref<AgentRead | null>(null)
 const error = ref(false)
 const activeTab = ref('overview')
+const showDeleteDialog = ref(false)
 
-const { getAgent } = useAgents()
+const { getAgent, deleteAgent, isDeleting } = useAgents()
 const { tools } = useAgentTools(() => agentId.value)
 const { roles, matrix: permMatrix } = useAgentRoles(() => agentId.value)
 const { config, generate: genConfig, isGenerating: configGenerating } = useAgentConfig(() => agentId.value)
@@ -421,6 +444,22 @@ const { incidents, updateIncident } = useAgentIncidents(() => agentId.value)
 
 const configTab = ref('rbac')
 const kitTab = ref('')
+
+// Count effective (direct + inherited) permissions for a role
+const effectivePermCount = (role: RoleRead) => {
+  const directIds = new Set(role.permissions.map(p => p.tool_id))
+  const inheritedIds = (role.inherited_permissions ?? []).map(p => p.tool_id)
+  for (const id of inheritedIds) directIds.add(id)
+  return directIds.size
+}
+
+// Extract test results from the validation run's results dict
+const validationTests = computed(() => {
+  if (!latestValidation.value) return []
+  const res = latestValidation.value.results
+  if (res && Array.isArray(res.tests)) return res.tests
+  return []
+})
 
 const breadcrumbs = computed(() => [
   { title: 'Agents', to: '/agents' },
@@ -494,6 +533,16 @@ const regenerateKit = async () => {
 
 const runValidation = async () => {
   try { await runVal() } catch { /* */ }
+}
+
+const doDelete = async () => {
+  if (!agent.value) return
+  try {
+    await deleteAgent(agent.value.id)
+    showDeleteDialog.value = false
+    navigateTo('/agents')
+  }
+  catch { /* */ }
 }
 
 const updateIncidentStatus = async (incidentId: string, status: IncidentStatus) => {

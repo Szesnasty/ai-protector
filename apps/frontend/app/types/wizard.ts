@@ -206,33 +206,53 @@ export interface IntegrationKit {
 
 // ─── Validation ───
 
-export interface ValidationResult {
-  category: string
+export interface ValidationTestResult {
   name: string
+  category: string
+  expected: string
+  actual: string
   passed: boolean
-  message: string
-  recommendation?: string
+  duration_ms: number
+  recommendation?: string | null
+  version?: string
+}
+
+export interface CategoryBreakdown {
+  passed: number
+  total: number
 }
 
 export interface ValidationResponse {
   agent_id: string
+  pack: string
+  pack_version: string
+  score: number
   total: number
   passed: number
   failed: number
-  score: number
-  results: ValidationResult[]
-  created_at: string
+  categories: Record<string, CategoryBreakdown>
+  tests: ValidationTestResult[]
+  run_at: string
+  duration_ms: number
+}
+
+export interface ValidationRunResults {
+  categories: Record<string, CategoryBreakdown>
+  tests: ValidationTestResult[]
+  run_at: string
 }
 
 export interface ValidationRunRead {
   id: string
   agent_id: string
   pack: string
+  pack_version?: string
   total: number
   passed: number
   failed: number
   score: number
-  results: ValidationResult[]
+  duration_ms?: number
+  results: ValidationRunResults
   created_at: string
 }
 
