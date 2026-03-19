@@ -26,11 +26,11 @@ cd ai-protector
 make demo
 ```
 
-Open **http://localhost:3000**. Done.
+Open **http://localhost:3000**. Done. Start with the **Agent Demo** to see allowed and blocked tool calls immediately.
 
 > **Requirements:** Docker & Docker Compose. No GPU, no API keys, no Ollama.
 >
-> The demo includes two pre-configured agents, 350+ attack scenarios, and a live gate log — you can see allowed and blocked tool calls immediately. Paste an API key in **Settings** to switch to a real LLM provider.
+> The demo ships with two pre-configured agents and 350+ attack scenarios. Paste an API key in **Settings** to switch to a real LLM provider.
 
 ---
 
@@ -89,11 +89,9 @@ The pre-tool gate blocks any call the current role doesn't have, requires confir
 
 ---
 
-## Proxy firewall — for all LLM traffic
+## Proxy firewall — second line of defense
 
-An OpenAI-compatible proxy that sits between any app and any LLM provider. Every request passes through 5 independent detection layers (rules → intent → LLM Guard → Presidio → NeMo embeddings) before reaching the model. Weighted risk score decides BLOCK / MODIFY / ALLOW. All scanners run **locally** — no external API calls, no per-request cost.
-
-One URL change to add it to any existing app:
+An OpenAI-compatible proxy backstop for all LLM traffic. 5 detection layers (rules → intent → LLM Guard → Presidio → NeMo embeddings) run locally before every model call — no external API calls, no per-request cost. One URL change to add it to any app:
 
 ```python
 client = OpenAI(base_url="http://localhost:8000/v1", api_key="your-key")
@@ -107,7 +105,8 @@ Supported providers: OpenAI, Anthropic, Google Gemini, Mistral, Azure, Ollama vi
 
 | Capability | How |
 |---|---|
-| **Tool call gating by role** | RBAC with full inheritance chain, generated from wizard |
+| **Wizard-generated RBAC + integration kit** | `rbac.yaml`, `config.yaml`, and code snippet — ready to drop in |
+| **Tool call gating by role** | Full inheritance chain enforced deterministically at runtime |
 | **Argument-level injection scan** | Pre-tool gate scans every parameter before the tool runs |
 | **High-risk operation confirmation** | Write + high-sensitivity tools require explicit approval |
 | **PII and secrets redaction** | Post-tool gate strips output with Presidio + LLM Guard |
