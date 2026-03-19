@@ -37,6 +37,96 @@ app.add_middleware(
 PROXY_URL = os.environ.get("PROXY_URL", "http://localhost:8000")
 PROXY_POLICY = os.environ.get("PROXY_POLICY", "balanced")
 
+# Intents that indicate a genuine attack — everything NOT in this set
+# (e.g. "qa", "greeting") is considered benign even if the risk score
+# is elevated by overaggressive scanners (NeMo false-positives).
+_ATTACK_INTENTS: frozenset[str] = frozenset(
+    {
+        "jailbreak",
+        "system_prompt_extract",
+        "role_bypass",
+        "tool_abuse",
+        "agent_exfiltration",
+        "social_engineering",
+        "harmful_content",
+        "misinformation",
+        "resource_exhaustion",
+        "supply_chain",
+        "rag_poisoning",
+        "pii_request",
+        "confused_deputy",
+        "template_injection",
+        "virtual_context",
+        "crescendo",
+    }
+)
+
+
+# ── Proxy scan-only (no LLM call) ────────────────────────────────────
+
+
+async def _proxy_scan(
+    *,
+    messages: list[dict],
+    model: str,
+    api_key: str | None = None,
+) -> dict | None:
+    """Run the proxy firewall pre-LLM pipeline (scan only, no LLM call).
+
+    Uses ``POST /v1/scan`` which executes: parse → intent → rules →
+    scanners → decision — and returns the verdict WITHOUT calling any
+    LLM provider.  This is much faster than the full
+    ``/v1/chat/completions`` pipeline.
+
+    Returns ``{"blocked": bool, "intent": str, "risk_score": float,
+    "reason": str|None}`` — or *None* when the proxy is unreachable.
+    """
+    clean_msgs = [
+        {"role": m["role"], "content": m.get("content", "")}
+        for m in messages
+        if m.get("role") in ("system", "user", "assistant") and m.get("content")
+    ]
+    if not clean_msgs or not any(m["role"] == "user" for m in clean_msgs):
+        return None
+
+    headers: dict[str, str] = {"x-policy": PROXY_POLICY}
+    if api_key:
+        headers["x-api-key"] = api_key
+
+    body = {"model": model, "messages": clean_msgs, "stream": False}
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{PROXY_URL}/v1/scan",
+                json=body,
+                headers=headers,
+            )
+        data = resp.json()
+        intent = data.get("intent", "")
+        risk_score = data.get("risk_score", 0.0)
+
+        # Block when the proxy's decision is BLOCK *and* either:
+        #   1. The intent is a known attack category, OR
+        #   2. The risk score is very high (>= 0.9) — catches attacks
+        #      that the intent classifier missed (e.g. credential theft
+        #      classified as "qa" but with risk_score=1.0).
+        # Normal queries (risk 0.5–0.75) are let through even when the
+        # proxy BLOCKs them — NeMo false-positives on benign messages.
+        proxy_blocked = resp.status_code == 403
+        blocked = proxy_blocked and (intent in _ATTACK_INTENTS or risk_score >= 0.9)
+
+        return {
+            "blocked": blocked,
+            "intent": intent,
+            "risk_score": risk_score,
+            "reason": data.get("blocked_reason") if blocked else None,
+        }
+    except Exception as exc:
+        logger.warning("proxy_scan_failed", error=str(exc))
+
+    return None  # proxy unreachable — let the request through
+
 
 # ── Proxy-routed LLM call (balanced firewall) ────────────────────────
 
@@ -247,8 +337,11 @@ async def _chat_llm(req: ChatRequest) -> dict:
 
     # 0. ═══ AI PROTECTOR — Pre-scan via proxy firewall ════════════════
     # Scan the user message through the proxy BEFORE calling the LLM.
-    # This catches prompt injection, toxicity, etc. at the gate.
-    pre_scan = await _proxy_llm_call(
+    # Uses /v1/scan (scan-only, no LLM call) for speed.
+    # Only blocks when the intent is a known attack category — this
+    # avoids false-positives from over-aggressive scanners (NeMo) on
+    # normal e-commerce queries like "list all users".
+    pre_scan = await _proxy_scan(
         messages=messages,
         model=model,
         api_key=req.api_key,
@@ -256,7 +349,9 @@ async def _chat_llm(req: ChatRequest) -> dict:
 
     if pre_scan and pre_scan["blocked"]:
         return {
-            "response": f"⛔ Proxy firewall BLOCK ({PROXY_POLICY}): {pre_scan['reason']}",
+            "response": (
+                f"⛔ Proxy firewall BLOCK ({PROXY_POLICY}): {pre_scan['reason']}"
+            ),
             "blocked": True,
             "no_match": False,
             "gate_log": [
@@ -265,6 +360,8 @@ async def _chat_llm(req: ChatRequest) -> dict:
                     "decision": "block",
                     "reason": pre_scan["reason"],
                     "policy": PROXY_POLICY,
+                    "intent": pre_scan.get("intent"),
+                    "risk_score": pre_scan.get("risk_score"),
                 }
             ],
             "mode": "llm",
@@ -286,19 +383,26 @@ async def _chat_llm(req: ChatRequest) -> dict:
     response = await litellm.acompletion(**kwargs)
     choice = response.choices[0].message  # type: ignore[union-attr]
 
-    # If no tool call, use pre-scanned proxy response (already filtered)
+    # If no tool call, return LLM's conversational response directly.
+    # The input was already scanned by _proxy_scan() above; the LLM's
+    # response to a safe input is fine to pass through.
     if not choice.tool_calls:
         gate_log = []
-        if pre_scan and pre_scan["content"]:
+        if pre_scan:
             gate_log.append(
                 {
                     "gate": "proxy_firewall",
                     "decision": "allow",
-                    "reason": f"Pre-scanned via '{PROXY_POLICY}' policy",
+                    "reason": (
+                        f"Input scanned via '{PROXY_POLICY}' policy "
+                        f"(intent={pre_scan.get('intent', '?')}, "
+                        f"risk={pre_scan.get('risk_score', 0):.2f})"
+                    ),
                     "policy": PROXY_POLICY,
+                    "intent": pre_scan.get("intent"),
+                    "risk_score": pre_scan.get("risk_score"),
                 }
             )
-            text = pre_scan["content"]
         else:
             gate_log.append(
                 {
@@ -307,7 +411,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
                     "reason": "Proxy unavailable — direct LLM fallback",
                 }
             )
-            text = choice.content or "No response from model."
+        text = choice.content or "No response from model."
         return {
             "response": text,
             "blocked": False,

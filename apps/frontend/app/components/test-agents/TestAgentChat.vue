@@ -346,6 +346,14 @@
                 <div v-if="entry.reason" class="text-caption text-medium-emphasis mt-1">
                   {{ entry.reason }}
                 </div>
+                <div v-if="entry.intent || entry.risk_score != null" class="d-flex ga-2 mt-1">
+                  <v-chip v-if="entry.intent" size="x-small" variant="outlined" color="info">
+                    intent: {{ entry.intent }}
+                  </v-chip>
+                  <v-chip v-if="entry.risk_score != null" size="x-small" variant="outlined" :color="entry.risk_score >= 0.7 ? 'error' : entry.risk_score >= 0.4 ? 'warning' : 'success'">
+                    risk: {{ Number(entry.risk_score).toFixed(2) }}
+                  </v-chip>
+                </div>
                 <div
                   v-if="entry.findings?.length || entry.scan_findings?.length"
                   class="mt-1"

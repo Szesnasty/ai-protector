@@ -392,9 +392,9 @@ const highlightedSource = computed(() => {
       || /scan_output\(/.test(line)
       || /PreToolGate|PostToolGate/.test(line)
       || /pre_tool_gate|post_tool_gate/.test(line)
-      || /_proxy_llm_call\(/.test(line)
+      || /_proxy_llm_call\(|_proxy_scan\(/.test(line)
       || /proxy_firewall/.test(line)
-      || /PROXY_POLICY/.test(line)
+      || /PROXY_POLICY|_ATTACK_INTENTS/.test(line)
       || /pre_scan|pre-scan/.test(line)
     )
 
