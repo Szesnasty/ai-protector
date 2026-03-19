@@ -61,9 +61,9 @@ add_protection(graph)
 from protected_agent import protected_tool_call
 
 result = protected_tool_call(
-    role="customer",
-    tool="searchKnowledgeBase",
-    args={"query": "how to reset password"},
+    role="user",
+    tool="getOrders",
+    args={},
     execute_fn=my_tool_executor,
 )
 ```

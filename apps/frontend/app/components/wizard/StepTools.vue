@@ -209,7 +209,7 @@ interface ToolPreset {
 
 const toolPresets: ToolPreset[] = [
   {
-    name: 'Order Manager',
+    name: 'E-commerce Agent',
     description: '5 tools — matches built-in Python & LangGraph test agents',
     tools: [
       { name: 'getOrders', description: 'List all customer orders with status and amounts.', sensitivity: 'low', access_type: 'read', category: 'orders', returns_pii: false, returns_secrets: false },
@@ -217,17 +217,6 @@ const toolPresets: ToolPreset[] = [
       { name: 'searchProducts', description: 'Search products by name or category.', sensitivity: 'low', access_type: 'read', category: 'products', returns_pii: false, returns_secrets: false },
       { name: 'updateOrder', description: 'Update an order status. Requires admin role.', sensitivity: 'high', access_type: 'write', category: 'orders', returns_pii: false, returns_secrets: false },
       { name: 'updateUser', description: 'Update a user profile. Requires admin role.', sensitivity: 'high', access_type: 'write', category: 'users', returns_pii: true, returns_secrets: false },
-    ],
-  },
-  {
-    name: 'Customer Support',
-    description: '5 tools — knowledge base, orders, refunds',
-    tools: [
-      { name: 'searchKnowledgeBase', description: 'Search product documentation and FAQ.', sensitivity: 'low', access_type: 'read', category: 'knowledge', returns_pii: false, returns_secrets: false },
-      { name: 'getOrderStatus', description: 'Check order status by order ID.', sensitivity: 'low', access_type: 'read', category: 'orders', returns_pii: false, returns_secrets: false },
-      { name: 'getCustomerProfile', description: 'Retrieve customer profile with PII.', sensitivity: 'medium', access_type: 'read', category: 'customers', returns_pii: true, returns_secrets: false },
-      { name: 'issueRefund', description: 'Issue a refund for an order. Admin action.', sensitivity: 'high', access_type: 'write', category: 'orders', returns_pii: false, returns_secrets: false },
-      { name: 'getInternalSecrets', description: 'Access internal API keys and secrets.', sensitivity: 'critical', access_type: 'read', category: 'internal', returns_pii: false, returns_secrets: true },
     ],
   },
 ]
