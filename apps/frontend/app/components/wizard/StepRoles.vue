@@ -9,6 +9,48 @@
     <v-card-subtitle>Define roles and assign tool permissions</v-card-subtitle>
 
     <v-card-text>
+      <!-- Preset banner -->
+      <v-alert
+        v-if="!roles.length && !isLoading && tools.length"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+        prominent
+      >
+        <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+          <div>
+            <p class="text-body-2 font-weight-bold mb-1">Quick start with a preset</p>
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              Load matching roles for your tools, or create custom roles from scratch.
+            </p>
+          </div>
+          <v-menu>
+            <template #activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                color="primary"
+                variant="tonal"
+                prepend-icon="mdi-package-down"
+                size="small"
+                :loading="presetLoading"
+              >
+                Load preset
+              </v-btn>
+            </template>
+            <v-list density="compact">
+              <v-list-item
+                v-for="preset in rolePresets"
+                :key="preset.name"
+                @click="loadRolePreset(preset)"
+              >
+                <v-list-item-title>{{ preset.name }}</v-list-item-title>
+                <v-list-item-subtitle>{{ preset.description }}</v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
+      </v-alert>
+
       <div v-if="isLoading" class="text-center py-8">
         <v-progress-circular indeterminate />
       </div>
@@ -151,6 +193,63 @@ import { computed, ref, watch } from 'vue'
 import { useAgentRoles } from '~/composables/useAgentRoles'
 import { useAgentTools } from '~/composables/useAgentTools'
 import type { RoleCreate, RoleRead } from '~/types/wizard'
+
+// ─── Role Presets ───
+interface RolePresetDef {
+  name: string
+  description: string
+  roles: { name: string; description: string; inherits_from_name?: string; tool_names: string[] }[]
+}
+
+const rolePresets: RolePresetDef[] = [
+  {
+    name: 'Order Manager (user + admin)',
+    description: 'user — read-only; admin — full access (inherits user)',
+    roles: [
+      { name: 'user', description: 'Standard user — read-only access to orders and products', tool_names: ['getOrders', 'searchProducts'] },
+      { name: 'admin', description: 'Administrator — full access including PII and write operations', inherits_from_name: 'user', tool_names: ['getUsers', 'updateOrder', 'updateUser'] },
+    ],
+  },
+  {
+    name: 'Customer Support (3-tier)',
+    description: 'customer → support → admin with escalating access',
+    roles: [
+      { name: 'customer', description: 'End customer — search and order status only', tool_names: ['searchKnowledgeBase', 'getOrderStatus'] },
+      { name: 'support', description: 'Support agent — can view customer profiles', inherits_from_name: 'customer', tool_names: ['getCustomerProfile'] },
+      { name: 'admin', description: 'Admin — refunds and internal secrets access', inherits_from_name: 'support', tool_names: ['issueRefund', 'getInternalSecrets'] },
+    ],
+  },
+]
+
+const presetLoading = ref(false)
+
+const loadRolePreset = async (preset: RolePresetDef) => {
+  presetLoading.value = true
+  try {
+    // Map tool names to tool IDs from currently registered tools
+    const toolMap = new Map(tools.value.map(t => [t.name, t.id]))
+    const createdRoles = new Map<string, string>() // name → id
+
+    for (const r of preset.roles) {
+      const inheritsId = r.inherits_from_name ? (createdRoles.get(r.inherits_from_name) ?? null) : null
+      const created = await createRole({ name: r.name, description: r.description, inherits_from: inheritsId })
+      createdRoles.set(r.name, created.id)
+
+      // Set permissions for tools that exist
+      const toolIds = r.tool_names.map(n => toolMap.get(n)).filter((id): id is string => !!id)
+      if (toolIds.length) {
+        await setPermissions({
+          roleId: created.id,
+          body: { permissions: toolIds.map(tid => ({ tool_id: tid, scopes: ['read'] })) },
+        })
+      }
+    }
+    await refetchMatrix()
+  }
+  finally {
+    presetLoading.value = false
+  }
+}
 
 const props = defineProps<{
   agentId: string
