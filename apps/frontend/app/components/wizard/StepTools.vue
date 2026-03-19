@@ -14,6 +14,47 @@
     <v-card-subtitle>Define the tools your agent can call</v-card-subtitle>
 
     <v-card-text>
+      <!-- Preset banner -->
+      <v-alert
+        v-if="!tools.length && !isLoading"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+        prominent
+      >
+        <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+          <div>
+            <p class="text-body-2 font-weight-bold mb-1">Quick start with a preset</p>
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              Load a ready-made tool set to test with our built-in agents, or add your own tools from scratch.
+            </p>
+          </div>
+          <v-menu>
+            <template #activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                color="primary"
+                variant="tonal"
+                prepend-icon="mdi-package-down"
+                size="small"
+              >
+                Load preset
+              </v-btn>
+            </template>
+            <v-list density="compact">
+              <v-list-item
+                v-for="preset in toolPresets"
+                :key="preset.name"
+                @click="loadToolPreset(preset)"
+              >
+                <v-list-item-title>{{ preset.name }}</v-list-item-title>
+                <v-list-item-subtitle>{{ preset.description }}</v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
+      </v-alert>
+
       <div v-if="isLoading" class="text-center py-8">
         <v-progress-circular indeterminate />
       </div>
@@ -158,6 +199,53 @@
 import { reactive, ref, watch } from 'vue'
 import { useAgentTools } from '~/composables/useAgentTools'
 import type { Sensitivity, ToolCreate, ToolRead } from '~/types/wizard'
+
+// ─── Tool Presets ───
+interface ToolPreset {
+  name: string
+  description: string
+  tools: (ToolCreate & { returns_pii: boolean; returns_secrets: boolean })[]
+}
+
+const toolPresets: ToolPreset[] = [
+  {
+    name: 'Order Manager',
+    description: '5 tools — matches built-in Python & LangGraph test agents',
+    tools: [
+      { name: 'getOrders', description: 'List all customer orders with status and amounts.', sensitivity: 'low', access_type: 'read', category: 'orders', returns_pii: false, returns_secrets: false },
+      { name: 'getUsers', description: 'List all users. Returns PII (emails, phone numbers). Admin-only.', sensitivity: 'medium', access_type: 'read', category: 'users', returns_pii: true, returns_secrets: false },
+      { name: 'searchProducts', description: 'Search products by name or category.', sensitivity: 'low', access_type: 'read', category: 'products', returns_pii: false, returns_secrets: false },
+      { name: 'updateOrder', description: 'Update an order status. Requires admin role.', sensitivity: 'high', access_type: 'write', category: 'orders', returns_pii: false, returns_secrets: false },
+      { name: 'updateUser', description: 'Update a user profile. Requires admin role.', sensitivity: 'high', access_type: 'write', category: 'users', returns_pii: true, returns_secrets: false },
+    ],
+  },
+  {
+    name: 'Customer Support',
+    description: '5 tools — knowledge base, orders, refunds',
+    tools: [
+      { name: 'searchKnowledgeBase', description: 'Search product documentation and FAQ.', sensitivity: 'low', access_type: 'read', category: 'knowledge', returns_pii: false, returns_secrets: false },
+      { name: 'getOrderStatus', description: 'Check order status by order ID.', sensitivity: 'low', access_type: 'read', category: 'orders', returns_pii: false, returns_secrets: false },
+      { name: 'getCustomerProfile', description: 'Retrieve customer profile with PII.', sensitivity: 'medium', access_type: 'read', category: 'customers', returns_pii: true, returns_secrets: false },
+      { name: 'issueRefund', description: 'Issue a refund for an order. Admin action.', sensitivity: 'high', access_type: 'write', category: 'orders', returns_pii: false, returns_secrets: false },
+      { name: 'getInternalSecrets', description: 'Access internal API keys and secrets.', sensitivity: 'critical', access_type: 'read', category: 'internal', returns_pii: false, returns_secrets: true },
+    ],
+  },
+]
+
+const presetLoading = ref(false)
+
+const loadToolPreset = async (preset: ToolPreset) => {
+  presetLoading.value = true
+  try {
+    for (const t of preset.tools) {
+      await createTool({ ...t })
+    }
+    await refetch()
+  }
+  finally {
+    presetLoading.value = false
+  }
+}
 
 const props = defineProps<{
   agentId: string
