@@ -718,17 +718,24 @@ async def source_files():
     agent_files = {
         "main.py": {
             "description": "FastAPI app — dual-mode agent (mock + LLM)",
-            "highlight": [],
+            "highlight": [
+                {"name": "/load-config", "category": "config"},
+                {"name": "protected_tool_call()", "category": "pipeline"},
+                {"name": "scan_output()", "category": "scan"},
+                {"name": "_proxy_scan()", "category": "proxy"},
+                {"name": "_proxy_llm_call()", "category": "proxy"},
+                {"name": "PROXY_POLICY", "category": "proxy"},
+            ],
         },
         "protection.py": {
             "description": "Security layer — RBAC, limits, PII scanning (loads wizard config)",
             "highlight": [
-                "SecurityConfig",
-                "load_from_kit",
-                "check_rbac",
-                "check_limits",
-                "scan_output",
-                "protected_tool_call",
+                {"name": "SecurityConfig", "category": "config"},
+                {"name": "load_from_kit()", "category": "config"},
+                {"name": "check_rbac()", "category": "rbac"},
+                {"name": "check_limits()", "category": "limits"},
+                {"name": "scan_output()", "category": "scan"},
+                {"name": "protected_tool_call()", "category": "pipeline"},
             ],
         },
     }
