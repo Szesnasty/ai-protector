@@ -19,7 +19,6 @@
     <v-navigation-drawer v-model="drawer" width="280">
       <nuxt-link to="/playground" class="sidebar-logo-item d-block text-decoration-none">
         <img :src="isDark ? '/logo-white.png' : '/logo.png'" alt="AI Protector" class="sidebar-logo" />
-        <div class="text-caption text-secondary mt-1">LLM Firewall</div>
       </nuxt-link>
       <v-divider color="primary" thickness="2" />
       <app-nav-drawer />

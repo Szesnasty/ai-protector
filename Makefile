@@ -7,24 +7,28 @@
 
 demo:
 	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
-	cd infra && MODE=demo docker compose --profile demo up --build -d
+	cd infra && MODE=demo docker compose --profile demo --profile test-agents up --build -d
 	@echo ""
 	@echo "🚀  AI Protector Demo is starting..."
 	@echo "    Frontend:       http://localhost:3000"
 	@echo "    Proxy API:      http://localhost:8000"
 	@echo "    Agent Demo:     http://localhost:8002"
+	@echo "    Python Agent:   http://localhost:8003"
+	@echo "    LangGraph Agent:http://localhost:8004"
 	@echo ""
 	@echo "    Mode: DEMO (mock LLM, real security pipeline)"
 	@echo "    Paste an API key in Settings to use a real model."
 
 up:
 	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
-	cd infra && MODE=real docker compose --profile full up --build -d
+	cd infra && MODE=real docker compose --profile full --profile test-agents up --build -d
 	@echo ""
 	@echo "🚀  AI Protector is starting (full stack)..."
 	@echo "    Frontend:       http://localhost:3000"
 	@echo "    Proxy API:      http://localhost:8000"
 	@echo "    Agent Demo:     http://localhost:8002"
+	@echo "    Python Agent:   http://localhost:8003"
+	@echo "    LangGraph Agent:http://localhost:8004"
 	@echo "    Langfuse:       http://localhost:3001"
 	@echo ""
 	@echo "    First time? Run: make pull-model"
@@ -50,10 +54,10 @@ seed:
 
 # ── Docker ──────────────────────────────────────────────
 down:
-	cd infra && docker compose --profile demo --profile full down
+	cd infra && docker compose --profile demo --profile full --profile test-agents down
 
 reset:
-	cd infra && docker compose --profile demo --profile full down -v
+	cd infra && docker compose --profile demo --profile full --profile test-agents down -v
 	@echo "🗑️  All data wiped (volumes removed)"
 
 logs:
