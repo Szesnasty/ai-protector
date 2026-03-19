@@ -13,7 +13,7 @@ AI Protector is a self-hosted runtime security layer for tool-calling agents. Ge
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
 <p align="center">
-  <img src="docs/assets/agent-demo.png" alt="AI Protector — live agent with gate log showing allowed and blocked tool calls" />
+  <img src="docs/assets/v1/langGraph-agent.png" alt="AI Protector — LangGraph agent with RBAC enforcement and gate log" />
 </p>
 
 ---
@@ -52,7 +52,7 @@ Agents make real API calls — `deleteUser`, `transferFunds`, `updateOrder`. A s
 The wizard generates your security config in 7 steps. The runtime enforces it on every tool call.
 
 <p align="center">
-  <img src="docs/assets/agent-wizard.png" alt="Agent Wizard" />
+  <img src="docs/assets/v1/agent-wizard.png" alt="Agent Wizard" />
 </p>
 
 **What the wizard produces:**
@@ -120,6 +120,82 @@ Supported providers: OpenAI, Anthropic, Google Gemini, Mistral, Azure, Ollama vi
 Scanners: [Presidio](https://github.com/microsoft/presidio) · [LLM Guard](https://github.com/protectai/llm-guard) · [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails)
 
 Threat coverage and explicit exclusions: [THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md)
+
+---
+
+## See it in action
+
+<details>
+<summary><strong>Agent Demo</strong> — RBAC + tool gating on a live e-commerce agent</summary>
+
+<br/>
+<p align="center">
+  <img src="docs/assets/v1/agent-demo.png" alt="Agent Demo" />
+</p>
+
+Send messages as different roles and watch the pre-tool gate allow or block each call in real time. The gate log shows every RBAC decision, argument scan, and post-tool redaction.
+
+</details>
+
+<details>
+<summary><strong>LangGraph Agent</strong> — wizard-generated config enforced inside a real graph</summary>
+
+<br/>
+<p align="center">
+  <img src="docs/assets/v1/langGraph-agent.png" alt="LangGraph Agent" />
+</p>
+
+A full LangGraph agent wired with wizard-generated `rbac.yaml` and `config.yaml`. Toggle between Mock and LLM mode, switch roles, and observe how the security gates behave with real model output.
+
+</details>
+
+<details>
+<summary><strong>Agent Wizard</strong> — 7-step config generator</summary>
+
+<br/>
+<p align="center">
+  <img src="docs/assets/v1/agent-wizard.png" alt="Agent Wizard" />
+</p>
+
+Describe your agent, register tools, define roles, pick a policy pack — the wizard produces an integration kit (`rbac.yaml`, `config.yaml`, code snippet) ready to drop into your codebase.
+
+</details>
+
+<details>
+<summary><strong>Playground</strong> — test any prompt through the proxy firewall</summary>
+
+<br/>
+<p align="center">
+  <img src="docs/assets/v1/playground.png" alt="Playground" />
+</p>
+
+Send a prompt and inspect the full scan pipeline: intent classification, risk score, scanner verdicts (LLM Guard, Presidio, NeMo), and the final allow/block decision.
+
+</details>
+
+<details>
+<summary><strong>Policies</strong> — tune thresholds, scanners, and detection sensitivity</summary>
+
+<br/>
+<p align="center">
+  <img src="docs/assets/v1/policies.png" alt="Policies" />
+</p>
+
+Switch between balanced, strict, and paranoid policy packs. Adjust scanner weights, injection thresholds, and PII redaction rules to match your domain.
+
+</details>
+
+<details>
+<summary><strong>Agent Traces</strong> — full request-level observability</summary>
+
+<br/>
+<p align="center">
+  <img src="docs/assets/v1/agent-tracers.png" alt="Agent Traces" />
+</p>
+
+Every request gets a trace: gate decisions, risk scores, RBAC path, scanner timings. Drill into any request to see exactly why it was allowed or blocked.
+
+</details>
 
 ---
 
