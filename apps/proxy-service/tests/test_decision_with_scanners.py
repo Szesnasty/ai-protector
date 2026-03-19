@@ -115,14 +115,14 @@ class TestDecisionWithPII:
         assert result["decision"] == "ALLOW"
 
     async def test_injection_balanced_block(self) -> None:
-        """Injection + balanced → BLOCK (risk > 0.7)."""
+        """Injection + balanced → BLOCK (risk > threshold)."""
         state: PipelineState = {
             "intent": "qa",
             "risk_flags": {"promptinjection": 0.92},
-            "policy_config": {"thresholds": {"max_risk": 0.7}},
+            "policy_config": {"thresholds": {"max_risk": 0.4}},
             "scanner_results": {},
         }  # type: ignore[typeddict-item]
-        # 0.92 * 0.8 = 0.736 > 0.7
+        # 0.92 * 0.5 (default injection_weight) = 0.46 > 0.4
         result = await decision_node(state)
         assert result["decision"] == "BLOCK"
 
