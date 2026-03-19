@@ -23,6 +23,7 @@
         :to="item.to"
         :title="item.title"
         active-class="nav-item--active"
+        :class="{ 'nav-item--highlight': item.highlight }"
         exact
       >
         <template #prepend>
@@ -141,10 +142,11 @@ interface NavItem {
   title: string
   icon: string
   to: string
+  highlight?: boolean
 }
 
 const createItems: NavItem[] = [
-  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new' },
+  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new', highlight: true },
   { title: 'Agents', icon: 'mdi-robot-outline', to: '/agents' },
 ]
 
@@ -185,6 +187,21 @@ const configureItems: NavItem[] = [
 
   .v-icon {
     color: rgb(var(--v-theme-on-primary)) !important;
+  }
+}
+
+.nav-item--highlight {
+  background: rgba(var(--v-theme-primary), 0.08);
+  border-radius: 12px;
+  border-left: 3px solid rgb(var(--v-theme-primary));
+  margin-bottom: 2px;
+
+  :deep(.v-icon) {
+    color: rgb(var(--v-theme-primary));
+  }
+
+  &.nav-item--active {
+    border-left-color: transparent;
   }
 }
 </style>
