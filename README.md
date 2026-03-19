@@ -1,8 +1,8 @@
 # AI Protector
 
-**Runtime security for tool-calling agents — wizard-generated guardrails, no SaaS, no LLM-as-judge.**
+**Ship AI agents with guardrails — not prayers.**
 
-AI Protector wraps your agent in a deterministic security layer. A 7-step wizard generates your RBAC policy and integration code; the runtime gates every tool call before and after execution. An OpenAI-compatible proxy firewall provides a second line of defense for all LLM traffic.
+AI Protector is a self-hosted runtime security layer for tool-calling agents. Generate RBAC policies in a 7-step wizard, wire them into your agent, and enforce every tool call deterministically at runtime — with an OpenAI-compatible proxy firewall as a second line of defense.
 
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-green)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
