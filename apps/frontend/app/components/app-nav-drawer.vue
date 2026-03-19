@@ -15,8 +15,10 @@
     </v-chip>
 
     <v-list density="compact" nav color="primary">
+      <!-- Build -->
+      <v-list-subheader>Build</v-list-subheader>
       <v-list-item
-        v-for="item in navItems"
+        v-for="item in buildItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -27,10 +29,13 @@
           <v-icon :icon="item.icon" size="20" />
         </template>
       </v-list-item>
+
       <v-divider class="my-2" />
-      <v-list-subheader>Test Agents</v-list-subheader>
+
+      <!-- Test -->
+      <v-list-subheader>Test</v-list-subheader>
       <v-list-item
-        v-for="item in testAgentItems"
+        v-for="item in testItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -41,10 +46,30 @@
           <v-icon :icon="item.icon" size="20" />
         </template>
       </v-list-item>
+
       <v-divider class="my-2" />
-      <v-list-subheader>Manage</v-list-subheader>
+
+      <!-- Monitor -->
+      <v-list-subheader>Monitor</v-list-subheader>
       <v-list-item
-        v-for="item in manageItems"
+        v-for="item in monitorItems"
+        :key="item.to"
+        :to="item.to"
+        :title="item.title"
+        active-class="nav-item--active"
+        exact
+      >
+        <template #prepend>
+          <v-icon :icon="item.icon" size="20" />
+        </template>
+      </v-list-item>
+
+      <v-divider class="my-2" />
+
+      <!-- Configure -->
+      <v-list-subheader>Configure</v-list-subheader>
+      <v-list-item
+        v-for="item in configureItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -57,18 +82,8 @@
       </v-list-item>
     </v-list>
 
-    <div class="wizard-cta mx-4" style="margin-top: 48px">
-      <v-btn
-        to="/agents/new"
-        color="primary"
-        variant="tonal"
-        block
-        prepend-icon="mdi-magic-staff"
-        class="text-none"
-      >
-        Agent Wizard
-      </v-btn>
-      <p class="text-caption text-medium-emphasis text-center mt-2 mb-0" style="opacity: 0.7">
+    <div class="wizard-cta mx-4 mt-6">
+      <p class="text-caption text-medium-emphasis text-center mb-0" style="opacity: 0.7">
         Ship agents with guardrails — not prayers.
       </p>
     </div>
@@ -128,24 +143,28 @@ interface NavItem {
   to: string
 }
 
-const navItems: NavItem[] = [
+const buildItems: NavItem[] = [
+  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new' },
   { title: 'Agents', icon: 'mdi-robot-outline', to: '/agents' },
+]
+
+const testItems: NavItem[] = [
   { title: 'Playground', icon: 'mdi-chat-processing', to: '/playground' },
   { title: 'Compare', icon: 'mdi-compare', to: '/compare' },
-  { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
-  { title: 'Agent Traces', icon: 'mdi-chart-timeline-variant', to: '/agent-traces' },
-  { title: 'Security Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
-]
-
-const testAgentItems: NavItem[] = [
   { title: 'Python Agent', icon: 'mdi-language-python', to: '/test-agents/python' },
   { title: 'LangGraph Agent', icon: 'mdi-graph-outline', to: '/test-agents/graph' },
+  { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
 ]
 
-const manageItems: NavItem[] = [
-  { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
+const monitorItems: NavItem[] = [
+  { title: 'Agent Traces', icon: 'mdi-chart-timeline-variant', to: '/agent-traces' },
   { title: 'Request Log', icon: 'mdi-format-list-bulleted', to: '/requests' },
   { title: 'Analytics', icon: 'mdi-chart-bar', to: '/analytics' },
+]
+
+const configureItems: NavItem[] = [
+  { title: 'Security Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
+  { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
   { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>

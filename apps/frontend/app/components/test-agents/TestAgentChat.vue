@@ -28,56 +28,40 @@
     </div>
 
     <!-- Controls Row -->
-    <v-row class="mb-4">
-      <!-- Agent Selector -->
-      <v-col cols="12" sm="4">
-        <v-select
-          v-model="selectedAgentId"
-          :items="filteredAgents"
-          item-title="name"
-          item-value="id"
-          label="Select Agent"
-          variant="outlined"
-          density="compact"
-          hide-details
-          prepend-inner-icon="mdi-robot-outline"
-          :loading="agentsLoading"
-          no-data-text="No agents with this framework"
-        />
-      </v-col>
-
-      <!-- Role Selector -->
-      <v-col cols="12" sm="3">
-        <v-select
-          v-model="selectedRole"
-          :items="availableRoles"
-          label="Role"
-          variant="outlined"
-          density="compact"
-          hide-details
-          prepend-inner-icon="mdi-account-outline"
-          :disabled="!configStatus?.loaded"
-        />
-      </v-col>
-
-      <!-- Load Config Button + Status -->
-      <v-col cols="12" sm="5">
+    <v-row class="mb-4" align="center">
+      <!-- Agent Selector + Load + Reset -->
+      <v-col cols="12" sm="7">
         <div class="d-flex align-center ga-2">
+          <v-select
+            v-model="selectedAgentId"
+            :items="filteredAgents"
+            item-title="name"
+            item-value="id"
+            label="Select Agent"
+            variant="outlined"
+            density="compact"
+            hide-details
+            prepend-inner-icon="mdi-robot-outline"
+            :loading="agentsLoading"
+            no-data-text="No agents with this framework"
+            style="max-width: 260px"
+          />
           <v-btn
             color="primary"
             variant="tonal"
             :loading="agent.isLoading.value"
             :disabled="!selectedAgentId"
             prepend-icon="mdi-download"
+            size="small"
             @click="handleLoadConfig"
           >
-            Load Config
+            Load
           </v-btn>
           <v-btn
             v-if="configStatus?.loaded"
             variant="text"
             icon="mdi-refresh"
-            size="small"
+            size="x-small"
             title="Reset config"
             @click="handleReset"
           />
@@ -90,6 +74,21 @@
             <span v-if="configStatus.tools_in_rbac">{{ configStatus.tools_in_rbac }} tools</span>
           </div>
         </div>
+      </v-col>
+
+      <!-- Role Selector (right) -->
+      <v-col cols="12" sm="5" class="d-flex justify-end">
+        <v-select
+          v-model="selectedRole"
+          :items="availableRoles"
+          label="Role"
+          variant="outlined"
+          density="compact"
+          hide-details
+          prepend-inner-icon="mdi-account-outline"
+          :disabled="!configStatus?.loaded"
+          style="max-width: 220px"
+        />
       </v-col>
     </v-row>
 

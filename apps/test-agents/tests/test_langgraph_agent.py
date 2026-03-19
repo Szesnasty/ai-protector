@@ -49,13 +49,16 @@ SAMPLE_RBAC = {
         "user": {
             "tools": {
                 "getOrders": {"scopes": ["read"], "sensitivity": "low"},
-                "getUsers": {"scopes": ["read"], "sensitivity": "medium"},
                 "searchProducts": {"scopes": ["read"], "sensitivity": "low"},
             },
         },
         "admin": {
             "inherits": "user",
             "tools": {
+                "getUsers": {
+                    "scopes": ["read"],
+                    "sensitivity": "medium",
+                },
                 "updateOrder": {
                     "scopes": ["write"],
                     "requires_confirmation": True,
