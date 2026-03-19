@@ -1,14 +1,8 @@
 # AI Protector
 
-**Ship agents with guardrails — not prayers.**
+**Runtime security for tool-calling agents — zero config, no SaaS, no LLM-as-judge.**
 
-Open-source, self-hosted security layer for tool-calling agents and LLM backends.
-Deterministically block unsafe prompts, gate tool calls, and redact sensitive output — without LLM-as-judge or third-party SaaS.
-
-- **Block prompt injection** before it reaches the model
-- **Enforce tool access** by role, arguments, and session budget
-- **Redact secrets and PII** before data leaves the system
-- **Protect any provider** through a single OpenAI-compatible endpoint
+AI Protector wraps your agent in a deterministic security layer: register your tools and roles in a 7-step wizard, get generated RBAC policy and integration code, then ship with every tool call gated at runtime. An OpenAI-compatible proxy firewall provides a second line of defense across all LLM traffic.
 
 [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-green)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
@@ -19,7 +13,7 @@ Deterministically block unsafe prompts, gate tool calls, and redact sensitive ou
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 
 <p align="center">
-  <img src="docs/assets/agent-demo.png" alt="AI Protector — Agent Demo blocking a fake API call" />
+  <img src="docs/assets/agent-wizard.png" alt="AI Protector — Agent Onboarding Wizard" />
 </p>
 
 ---
@@ -36,55 +30,79 @@ Open **http://localhost:3000**. Done.
 
 > **Requirements:** Docker & Docker Compose. No GPU, no API keys, no Ollama.
 >
-> Demo mode runs the full security pipeline with real scanners — only model responses are simulated.
-> Paste an API key in **Settings** to switch to a real provider instantly.
+> Demo ships with two pre-configured agents so you can explore the full security pipeline immediately.
+> Paste an API key in **Settings** to switch to a real LLM provider.
 
 ---
 
-## The problem
-
-LLM apps usually fail at the edges:
+## The problem with agent security today
 
 | Approach | Why it fails |
 |---|---|
-| System prompt instructions | Ignored, overridden, or leaked by the model |
+| System prompt instructions | Overridden or ignored by the model under adversarial input |
 | LLM-as-judge | Non-deterministic, adds latency, fooled by the same attacks |
-| Provider moderation | Doesn't know your roles, tools, or business rules |
-| App-layer `if/else` | Duplicated across services, impossible to audit |
+| Provider content filters | Unaware of your roles, tools, or business rules |
+| Hand-rolled app-layer checks | Scattered, untested, impossible to audit at scale |
 
-AI Protector enforces policy **deterministically** — the protected LLM is the target, not the judge.
+Agents make real API calls — `deleteUser`, `transferFunds`, `updateOrder`. A single bypassed check is a real incident. AI Protector enforces policy **deterministically** before and after every tool call — the model is the thing being protected, not the thing doing the protecting.
 
 ---
 
-## How it works
+## Agent Wizard — from zero to secured agent in minutes
 
-Two cooperating enforcement layers — each catches what the other cannot.
+The wizard walks you through registering an agent in 7 steps and generates everything you need to enforce security at runtime.
 
-### Proxy firewall
+<p align="center">
+  <img src="docs/assets/agent-wizard.png" alt="Agent Wizard" />
+</p>
 
-Sits between your app and the LLM provider. Every request passes through **5 independent detection layers** before reaching the model:
+### What the wizard produces
+
+**Step 1 — Describe** your agent: name, framework (LangGraph / pure Python / custom), and the policy pack that matches your use case (e-commerce, internal copilot, customer support, …).
+
+**Step 2 — Register tools** — declare every callable tool, its sensitivity level (low / medium / high), and whether it reads or writes. Presets for common tool sets are included.
+
+**Step 3 — Define roles** — build your RBAC hierarchy. Roles inherit from each other. Each role gets exactly the tools it needs, nothing more.
+
+**Step 4 — Security policy** — choose a base policy pack (balanced / strict / paranoid) and see which scanners activate and at what thresholds.
+
+**Step 5 — Review** — inspect the full generated RBAC policy before it's saved.
+
+**Step 6 — Integration kit** — generated `rbac.yaml`, `config.yaml`, and a framework-specific code snippet to drop into your agent.
+
+**Step 7 — Validate** — run the built-in attack suite against your agent's config and see the results before going live.
+
+### What gets enforced at runtime
+
+Once integrated, every tool call your agent makes passes through two deterministic gates:
 
 ```
-Request
-  │
-  ├─ Layer 1: Rules      denylist · length · encoded content
-  ├─ Layer 2: Intent     pattern classification → jailbreak / tool_abuse / exfiltration / …
-  │
-  ├─ Layer 3: LLM Guard  ML classifiers — injection · toxicity · secrets  (local, free)
-  ├─ Layer 4: Presidio   spaCy NER — PII detection  (email · phone · card · ID)
-  ├─ Layer 5: NeMo       semantic embeddings — 12 rails, catches paraphrases + multilingual
-  │           (layers 3–5 run in parallel)
-  │
-  └─ Decision  weighted risk score → BLOCK / MODIFY / ALLOW
-                    │                        │
-               return error            Transform → LLM Call → Output Filter → Logging
+Agent decides to call a tool
+          ↓
+  ┌───────────────────┐
+  │   Pre-tool gate   │  RBAC check · argument validation · injection scan
+  │                   │  session budget · confirmation for high-risk tools
+  └───────────────────┘
+          ↓ allowed
+    Tool executes
+          ↓
+  ┌───────────────────┐
+  │  Post-tool gate   │  PII redaction · secrets scan · indirect injection
+  │                   │  output size limits
+  └───────────────────┘
+          ↓ sanitized
+  LLM receives clean output
 ```
 
-All scanners run **locally** — no external API calls, no per-request cost. → [Full pipeline diagram](docs/architecture/PROXY_FIREWALL_PIPELINE.md)
+**Pre-tool gate** — the agent cannot call a tool the current role doesn't have. Write operations with high sensitivity require explicit user confirmation before execution. Argument injection is scanned before parameters reach the tool.
 
-### Agent runtime
+**Post-tool gate** — tool output is scrubbed for PII (Presidio), secrets (LLM Guard), and indirect prompt injection before it's fed back to the model. If the output would carry an exfiltration payload hidden in a JSON field, it gets caught here.
 
-Runs inside the agent graph, enforcing security **around every tool call**:
+**Proxy firewall backstop** — on the final assembled message set, the full 5-layer proxy pipeline runs as a last line of defense before the provider call is made.
+
+---
+
+## Full agent pipeline
 
 ```
 User request
@@ -93,65 +111,81 @@ Input limits & sanitization      (rate limit · token budget · cost cap)
   ↓
 Intent classification + policy check
   ↓
-Tool router                       (LLM decides which tools are needed)
+Tool router                       (LLM chooses tool + args)
   ↓
-Pre-tool gate                     (RBAC · arg validation · injection · limits · confirmation)
-  ↓
+Pre-tool gate  ─── BLOCKED → 403 + reason logged
+  ↓ allowed
 Tool execution
   ↓
-Post-tool gate                    (PII · secrets · indirect injection · size truncation)
-  ↓
+Post-tool gate ─── BLOCKED → sanitized / truncated output
+  ↓ clean
 LLM call
-  ├─ Phase 1: Proxy firewall scan  ← runs full 5-layer pipeline as backstop
+  ├─ Phase 1: Proxy firewall scan  (5-layer pipeline)
   └─ Phase 2: Provider call
   ↓
-Response + Memory + Trace
+Response + Trace
 ```
 
-Three lines of defense for every agent request:
-
-- **Pre-tool gate** blocks unsafe or unauthorized tool calls before execution
-- **Post-tool gate** sanitizes tool outputs before they reach the LLM
-- **Proxy firewall** scans the final message set before provider invocation
-
-→ [Full agent pipeline diagram](docs/architecture/AGENT_PIPELINE.md)
+Three independent layers. Each catches what the others cannot. → [Full pipeline diagram](docs/architecture/AGENT_PIPELINE.md)
 
 ---
 
-## Use it as an OpenAI-compatible proxy
+## Proxy firewall — second layer for all LLM traffic
 
-*One URL change. Your existing app gets a security layer.*
+An OpenAI-compatible proxy that sits between any app and any LLM provider. Every request passes through 5 detection layers before reaching the model:
+
+```
+Request
+  │
+  ├─ Layer 1: Rules      denylist · length · encoded content
+  ├─ Layer 2: Intent     pattern classification → jailbreak / tool_abuse / exfiltration / …
+  │
+  ├─ Layer 3: LLM Guard  ML classifiers — injection · toxicity · secrets  (local, no cost)
+  ├─ Layer 4: Presidio   spaCy NER — PII detection  (email · phone · card · ID)
+  ├─ Layer 5: NeMo       semantic embeddings — 12 rails, catches paraphrases + multilingual
+  │           (layers 3–5 run in parallel)
+  │
+  └─ Decision  weighted risk score → BLOCK / MODIFY / ALLOW
+```
+
+One URL change adds the firewall to any existing app:
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:8000/v1",  # ← only change
-    api_key="your-key",                   # or "not-needed" in demo mode
-)
-
-response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "Hello!"}],
+    api_key="your-key",
 )
 ```
 
-Supported providers: OpenAI, Anthropic, Google Gemini, Mistral, Azure, Ollama — routed by model name via [LiteLLM](https://docs.litellm.ai/docs/providers).
+All scanners run **locally** — no external API calls, no per-request cost, no data leaving your environment. → [Full pipeline diagram](docs/architecture/PROXY_FIREWALL_PIPELINE.md)
 
-<p align="center">
-  <img src="docs/assets/playground.gif" alt="AI Protector Playground" />
-</p>
+Supported providers: OpenAI, Anthropic, Google Gemini, Mistral, Azure, Ollama — routed by model name via [LiteLLM](https://docs.litellm.ai/docs/providers).
 
 ---
 
 ## See it in action
 
 <details>
-<summary><strong>Attack Scenarios</strong> — launch pre-built prompt injection, jailbreak, PII, and exfiltration tests</summary>
+<summary><strong>Agent Demo</strong> — interact with a secured tool-calling agent, switch roles, trigger the gates</summary>
 
-Fire 350+ pre-built attack scenarios against the proxy and see whether
-they are blocked, modified, or allowed. Each scenario is mapped to an
-OWASP LLM Top 10 category.
+<img src="docs/assets/agent-demo.png" alt="Agent Demo" />
+
+Live agent with 5 tools gated by RBAC. Switch between `user` and `admin` roles and watch which tool calls are allowed, blocked, or held for confirmation.
+
+**What you can inspect:**
+- Pre-tool gate decisions with RBAC reason
+- Post-tool gate: PII and secrets redacted from tool output
+- Confirmation flow for high-sensitivity write operations
+- Per-request gate log and trace
+
+</details>
+
+<details>
+<summary><strong>Attack Scenarios</strong> — 350+ pre-built prompt injection, jailbreak, tool abuse, and exfiltration tests</summary>
+
+Fire attack scenarios against the proxy and see whether they are blocked, modified, or allowed. Each is mapped to an OWASP LLM Top 10 category.
 
 **What you can inspect:**
 - Detected threat category and intent classification
@@ -165,14 +199,7 @@ OWASP LLM Top 10 category.
 
 <img src="docs/assets/playground.png" alt="Playground" />
 
-Send any prompt through the full 9-node security pipeline and see the
-firewall's decision in real time. Switch between policies to compare
-how thresholds affect the outcome.
-
-**What you can inspect:**
-- Live risk score and scanner breakdown per message
-- Policy decision with full explanation
-- Side-by-side policy comparison (Compare mode)
+Send any prompt through the full pipeline and see the firewall's decision in real time. Switch policies to compare how thresholds change the outcome.
 
 </details>
 
@@ -181,43 +208,25 @@ how thresholds affect the outcome.
 
 <img src="docs/assets/compare.png" alt="Compare" />
 
-Send one prompt and see both paths: through the firewall (protected) and straight to the model (direct). Spot exactly what the security pipeline catches, modifies, or blocks compared to the raw model output.
+One prompt, two paths: through the firewall and straight to the model. See exactly what the security pipeline catches.
 
 </details>
 
 <details>
-<summary><strong>Agent Demo</strong> — test a tool-calling agent with RBAC, budgets, and confirmation flows</summary>
-
-<img src="docs/assets/agent-demo.png" alt="Agent Demo" />
-
-Interact with a Customer Support Copilot that uses 5 tools gated by
-role-based access control. Switch roles (customer → support → admin)
-to see how permissions change what the agent can do.
-
-**What you can inspect:**
-- RBAC enforcement: which tools each role can call
-- Pre-tool gate: argument validation and permission checks
-- Post-tool gate: PII/secrets scanning on tool outputs
-- Budget limits: token and tool call caps per session
-
-</details>
-
-<details>
-<summary><strong>Policies</strong> — configure firewall thresholds and scanner weights</summary>
+<summary><strong>Policies</strong> — configure thresholds and scanner weights</summary>
 
 <img src="docs/assets/Policies.png" alt="Policies" />
 
-Four built-in policies (fast, balanced, strict, paranoid) with adjustable risk thresholds and scanner weights. Switch policies per request or set a global default.
+Four built-in policies (fast, balanced, strict, paranoid) with fully adjustable risk thresholds and scanner weights.
 
 </details>
 
 <details>
-<summary><strong>Analytics</strong> — view blocked vs allowed, risk distribution, and timeline</summary>
+<summary><strong>Analytics</strong> — blocked vs allowed, risk distribution, timeline</summary>
 
 <img src="docs/assets/analytics.png" alt="Analytics" />
 
-Dashboard with charts showing how the firewall is performing across all
-requests. Filter by time window, policy, or threat category.
+Dashboard across all requests. Filter by time window, policy, or threat category.
 
 </details>
 
@@ -225,52 +234,30 @@ requests. Filter by time window, policy, or threat category.
 
 ## What you get
 
-- **Prompt injection blocked** before the model call — via intent classification, pattern rules, and embedding-based rails
-- **Unauthorized tool calls denied** by role, arguments, and session budget — RBAC with 3 roles × 5 tools
-- **PII and secrets redacted** before output leaves the system — Presidio, LLM Guard, custom rules
-- **Policy decisions logged and traceable** per request — Langfuse tracing, analytics dashboard, risk scoring
-- **350+ attack scenarios** — one-click, mapped to OWASP LLM Top 10
-- **4 firewall policies** — fast, balanced, strict, paranoid — with adjustable thresholds
-
-Scanners: [Presidio](https://github.com/microsoft/presidio) (PII) · [LLM Guard](https://github.com/protectai/llm-guard) (injection/toxicity) · [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails) (dialog rails via embeddings)
-
-Covers key application-layer risks: prompt injection, insecure output, sensitive data disclosure, insecure tool use, and excessive agency.
-Full scope and exclusions: [THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md).
-
----
-
-## Documentation
-
-| Doc | What |
-|-----|------|
-| [architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | System design, pipeline internals, two-phase LLM call flow |
-| [architecture/PROXY_FIREWALL_PIPELINE.md](docs/architecture/PROXY_FIREWALL_PIPELINE.md) | Full 9-node proxy pipeline — node internals, risk score calculator, scanner models |
-| [architecture/AGENT_PIPELINE.md](docs/architecture/AGENT_PIPELINE.md) | Full 11-node agent pipeline — pre/post-tool gates, three lines of defense |
-| [architecture/THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md) | Threat categories, scanner mapping, what's in/out of scope |
-| [agents-v1.spec.md](docs/agents-v1.spec.md) | Next milestone: self-serve agent onboarding spec |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
-
----
-
-## Quality & trust
-
-| | |
-|-|-|
-| **1 500+ automated tests** | Across proxy and agent runtime — decisions, tool gating, attack scenarios |
-| **~83% line coverage** | Proxy-service (CI-enforced) |
+| Capability | How |
+|---|---|
+| **Tool call gating by role** | RBAC with full inheritance chain, generated from wizard |
+| **Argument-level injection scan** | Pre-tool gate scans every parameter before the tool runs |
+| **High-risk operation confirmation** | Write + high-sensitivity tools require explicit approval |
+| **PII and secrets redaction** | Post-tool gate strips output with Presidio + LLM Guard |
+| **Indirect injection protection** | Post-tool gate detects payload hidden in tool output |
+| **Session budgets** | Per-agent token and tool call caps |
+| **Proxy firewall backstop** | 5-layer scan on final message set before provider call |
+| **Per-request traces** | Full gate log, risk scores, RBAC decision per request |
 | **350+ attack scenarios** | One-click, mapped to OWASP LLM Top 10 |
-| **No telemetry** | Zero third-party analytics; requests go only to your LLM provider |
-| **API keys stay in browser** | sessionStorage, never stored or logged server-side |
-| **Security headers** | Strict CSP, X-Frame-Options DENY, nosniff, restrictive Permissions-Policy |
+| **No telemetry, no SaaS** | All scanners local; API keys never logged server-side |
+
+Scanners: [Presidio](https://github.com/microsoft/presidio) · [LLM Guard](https://github.com/protectai/llm-guard) · [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails)
+
+Threat coverage and explicit exclusions: [THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md)
 
 ---
 
 ## Benchmarks
 
-### Internal benchmark — broad threat coverage
+### Internal benchmark — agent security threat model
 
-358 attack scenarios across 38 categories (OWASP LLM Top 10), covering prompt injection,
-agent abuse, PII, tool abuse, exfiltration, and more.
+358 attack scenarios across 38 categories (OWASP LLM Top 10): prompt injection, agent abuse, tool abuse, PII exfiltration, and more.
 
 | Metric | Value |
 |--------|-------|
@@ -278,52 +265,55 @@ agent abuse, PII, tool abuse, exfiltration, and more.
 | Pre-LLM pipeline overhead | **~50 ms** (balanced policy) |
 | Memory (all scanners) | ~1.1 GB |
 
-→ Full results: [BENCHMARK.md](BENCHMARK.md)
+→ [BENCHMARK.md](BENCHMARK.md)
 
-### External benchmark — JailbreakBench (NeurIPS 2024)
+### JailbreakBench (NeurIPS 2024) — external reference
 
-698 published jailbreak artifacts from [JailbreakBench](https://jailbreakbench.github.io/) —
-real attack prompts that bypassed target models in the original research. Pre-LLM pipeline only.
+698 published jailbreak artifacts — real prompts that bypassed target models in the original research.
 
 | Metric | Value |
 |--------|-------|
-| Overall pre-LLM detection rate | **94.8%** |
-| Human-crafted & random search attacks | **100%** |
+| Overall detection rate | **94.8%** |
+| Human-crafted & random search | **100%** |
 | PAIR (iterative black-box) | 88.8% |
 | GCG (gradient-based) | 90.0% |
 
-Strongest performance appears on human-crafted and random-search jailbreaks, with lower but still high detection on PAIR and GCG-style attacks.
+→ [BENCHMARK_JAILBREAKBENCH.md](BENCHMARK_JAILBREAKBENCH.md)
 
-→ Full results: [BENCHMARK_JAILBREAKBENCH.md](BENCHMARK_JAILBREAKBENCH.md)
+> All results are deterministic and reproducible with `make benchmark`.
 
-> Internal suite covers the broader agent/runtime threat model.
-> JailbreakBench provides an external reference point for jailbreak-style prompt attacks.
-> All results deterministic, reproducible with `make benchmark`.
+---
 
-**AI Protector blocks 94.8% of published JailbreakBench artifacts and 97.9% of attacks in an internal agent-security benchmark, with ~50 ms median pre-LLM overhead — without relying on LLM-as-judge.**
+## Quality & trust
+
+| | |
+|-|-|
+| **1 500+ automated tests** | Proxy pipeline, agent gates, attack scenarios, RBAC decisions |
+| **~83% line coverage** | Proxy-service, CI-enforced |
+| **No telemetry** | Zero third-party analytics |
+| **API keys stay in browser** | sessionStorage only, never logged server-side |
+| **Security headers** | Strict CSP, X-Frame-Options DENY, nosniff, restrictive Permissions-Policy |
+
+---
+
+## Documentation
+
+| Doc | What |
+|-----|------|
+| [architecture/AGENT_PIPELINE.md](docs/architecture/AGENT_PIPELINE.md) | Full 11-node agent pipeline — pre/post-tool gates, three lines of defense |
+| [architecture/PROXY_FIREWALL_PIPELINE.md](docs/architecture/PROXY_FIREWALL_PIPELINE.md) | Full 9-node proxy pipeline — scanner models, risk score calculator |
+| [architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | System design, two-phase LLM call flow |
+| [architecture/THREAT_MODEL.md](docs/architecture/THREAT_MODEL.md) | Threat categories, scanner mapping, scope |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 
 ---
 
 ## Known limitations
 
-- **Semantic attacks** — pattern-based scanners can miss novel injection techniques. Defense-in-depth mitigates but doesn't eliminate.
-- **No formal tool verification** — tool behavior is gated by RBAC/validation, but runtime side effects are not verified.
-- **Domain-specific tuning** — default thresholds cover general use; production needs calibration.
+- **Semantic attacks** — novel injection techniques can evade pattern-based scanners; defense-in-depth mitigates but doesn't eliminate.
+- **No formal tool verification** — tool behavior is gated by RBAC and argument validation, but side effects after execution are not verified.
+- **Domain-specific tuning** — default thresholds cover general use; production deployments need calibration.
 - **Single-node** — horizontal scaling and HA not yet implemented.
-
----
-
-## Roadmap
-
-**Next milestone: [Agents v1](docs/agents-v1.spec.md)** — self-serve agent registration, tool/role CRUD, generated integration kits, attack validation runner, rollout modes, per-agent traces.
-
-<p align="center">
-  <img src="docs/assets/agent-wizard.png" alt="Agent Onboarding Wizard Screenshot" />
-</p>
-
-Branch: [`feat/agent-onboarding-wizard`](https://github.com/Szesnasty/ai-protector/tree/feat/agent-onboarding-wizard)
-
-Full plan: [ROADMAP.spec.md](docs/ROADMAP.spec.md).
 
 ---
 
