@@ -15,10 +15,10 @@
     </v-chip>
 
     <v-list density="compact" nav color="primary">
-      <!-- Build -->
-      <v-list-subheader>Build</v-list-subheader>
+      <!-- Create -->
+      <v-list-subheader>Create</v-list-subheader>
       <v-list-item
-        v-for="item in buildItems"
+        v-for="item in createItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -32,10 +32,10 @@
 
       <v-divider class="my-2" />
 
-      <!-- Test -->
-      <v-list-subheader>Test</v-list-subheader>
+      <!-- Validate -->
+      <v-list-subheader>Validate</v-list-subheader>
       <v-list-item
-        v-for="item in testItems"
+        v-for="item in validateItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -49,10 +49,10 @@
 
       <v-divider class="my-2" />
 
-      <!-- Monitor -->
-      <v-list-subheader>Monitor</v-list-subheader>
+      <!-- Observe -->
+      <v-list-subheader>Observe</v-list-subheader>
       <v-list-item
-        v-for="item in monitorItems"
+        v-for="item in observeItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -143,12 +143,12 @@ interface NavItem {
   to: string
 }
 
-const buildItems: NavItem[] = [
+const createItems: NavItem[] = [
   { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new' },
   { title: 'Agents', icon: 'mdi-robot-outline', to: '/agents' },
 ]
 
-const testItems: NavItem[] = [
+const validateItems: NavItem[] = [
   { title: 'Playground', icon: 'mdi-chat-processing', to: '/playground' },
   { title: 'Compare', icon: 'mdi-compare', to: '/compare' },
   { title: 'Python Agent', icon: 'mdi-language-python', to: '/test-agents/python' },
@@ -156,15 +156,15 @@ const testItems: NavItem[] = [
   { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
 ]
 
-const monitorItems: NavItem[] = [
+const observeItems: NavItem[] = [
   { title: 'Agent Traces', icon: 'mdi-chart-timeline-variant', to: '/agent-traces' },
   { title: 'Request Log', icon: 'mdi-format-list-bulleted', to: '/requests' },
   { title: 'Analytics', icon: 'mdi-chart-bar', to: '/analytics' },
 ]
 
 const configureItems: NavItem[] = [
-  { title: 'Security Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
   { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
+  { title: 'Security Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
   { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>
