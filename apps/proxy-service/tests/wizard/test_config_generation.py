@@ -117,7 +117,7 @@ async def test_rbac_roles_present(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    assert set(data["roles"].keys()) == {"customer", "support", "admin"}
+    assert set(data["roles"].keys()) == {"user", "admin"}
 
 
 @pytest.mark.asyncio
@@ -126,9 +126,9 @@ async def test_rbac_tools_present(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    customer_tools = set(data["roles"]["customer"]["tools"].keys())
-    assert "searchKnowledgeBase" in customer_tools
-    assert "getOrderStatus" in customer_tools
+    user_tools = set(data["roles"]["user"]["tools"].keys())
+    assert "getOrders" in user_tools
+    assert "searchProducts" in user_tools
 
 
 @pytest.mark.asyncio
@@ -137,9 +137,8 @@ async def test_rbac_inheritance_chain(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    assert "inherits" not in data["roles"]["customer"]
-    assert data["roles"]["support"]["inherits"] == "customer"
-    assert data["roles"]["admin"]["inherits"] == "support"
+    assert "inherits" not in data["roles"]["user"]
+    assert data["roles"]["admin"]["inherits"] == "user"
 
 
 @pytest.mark.asyncio
@@ -149,8 +148,7 @@ async def test_rbac_roles_sorted_by_depth(client):
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
     role_names = list(data["roles"].keys())
-    assert role_names.index("customer") < role_names.index("support")
-    assert role_names.index("support") < role_names.index("admin")
+    assert role_names.index("user") < role_names.index("admin")
 
 
 @pytest.mark.asyncio
@@ -159,9 +157,9 @@ async def test_rbac_scopes_correct(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    # issueRefund is write → scopes should include write
+    # updateOrder is write → scopes should include write
     admin_tools = data["roles"]["admin"]["tools"]
-    assert "write" in admin_tools["issueRefund"]["scopes"]
+    assert "write" in admin_tools["updateOrder"]["scopes"]
 
 
 @pytest.mark.asyncio
@@ -170,8 +168,8 @@ async def test_rbac_sensitivity_correct(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    assert data["roles"]["customer"]["tools"]["searchKnowledgeBase"]["sensitivity"] == "low"
-    assert data["roles"]["admin"]["tools"]["getInternalSecrets"]["sensitivity"] == "critical"
+    assert data["roles"]["user"]["tools"]["getOrders"]["sensitivity"] == "low"
+    assert data["roles"]["admin"]["tools"]["updateUser"]["sensitivity"] == "high"
 
 
 @pytest.mark.asyncio
@@ -180,7 +178,7 @@ async def test_rbac_confirmation_flag(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    assert data["roles"]["admin"]["tools"]["issueRefund"].get("requires_confirmation") is True
+    assert data["roles"]["admin"]["tools"]["updateOrder"].get("requires_confirmation") is True
 
 
 @pytest.mark.asyncio
@@ -191,18 +189,18 @@ async def test_rbac_matches_existing_config(client):
     generated = yaml.safe_load(resp.json()["rbac_yaml"])
 
     # Semantic comparison: same roles, same tools per role, same scopes
-    assert set(generated["roles"].keys()) == {"customer", "support", "admin"}
-    assert generated["roles"]["support"]["inherits"] == "customer"
-    assert generated["roles"]["admin"]["inherits"] == "support"
-    # customer has searchKnowledgeBase + getOrderStatus
-    assert set(generated["roles"]["customer"]["tools"].keys()) == {
-        "searchKnowledgeBase",
-        "getOrderStatus",
+    assert set(generated["roles"].keys()) == {"user", "admin"}
+    assert generated["roles"]["admin"]["inherits"] == "user"
+    # user has getOrders + searchProducts
+    assert set(generated["roles"]["user"]["tools"].keys()) == {
+        "getOrders",
+        "searchProducts",
     }
-    # admin has issueRefund + getInternalSecrets
+    # admin has getUsers + updateOrder + updateUser
     assert set(generated["roles"]["admin"]["tools"].keys()) == {
-        "issueRefund",
-        "getInternalSecrets",
+        "getUsers",
+        "updateOrder",
+        "updateUser",
     }
 
 
@@ -263,7 +261,7 @@ async def test_limits_all_roles_present(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["limits_yaml"])
-    assert set(data["roles"].keys()) == {"customer", "support", "admin"}
+    assert set(data["roles"].keys()) == {"user", "admin"}
 
 
 @pytest.mark.asyncio
@@ -273,10 +271,10 @@ async def test_limits_defaults_from_pack(client):
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["limits_yaml"])
     pack = get_policy_pack("customer_support")
-    # customer is depth 0 → "low" tier
+    # user is depth 0 → "low" tier
     low_tier = pack.limit_tiers["low"]
-    assert data["roles"]["customer"]["max_tool_calls_per_session"] == low_tier.max_tool_calls_per_session
-    assert data["roles"]["customer"]["max_cost_usd"] == low_tier.max_cost_usd
+    assert data["roles"]["user"]["max_tool_calls_per_session"] == low_tier.max_tool_calls_per_session
+    assert data["roles"]["user"]["max_cost_usd"] == low_tier.max_cost_usd
 
 
 @pytest.mark.asyncio
@@ -292,14 +290,14 @@ async def test_limits_override_single_value(client):
             await generate_limits_yaml(
                 uuid.UUID(ref["id"]),
                 db,
-                overrides={"customer": {"max_cost_usd": 99.0}},
+                overrides={"user": {"max_cost_usd": 99.0}},
             )
         )
-        assert overridden["roles"]["customer"]["max_cost_usd"] == 99.0
+        assert overridden["roles"]["user"]["max_cost_usd"] == 99.0
         # Other values unchanged
         assert (
-            overridden["roles"]["customer"]["max_tool_calls_per_session"]
-            == normal["roles"]["customer"]["max_tool_calls_per_session"]
+            overridden["roles"]["user"]["max_tool_calls_per_session"]
+            == normal["roles"]["user"]["max_tool_calls_per_session"]
         )
         break
 

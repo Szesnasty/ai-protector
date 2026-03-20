@@ -80,7 +80,7 @@ class TestRoleBypassBlocked:
         result = await nemo_guardrails_node(state)
 
         assert result["risk_flags"].get("nemo_blocked") is True
-        assert result["risk_flags"].get("nemo_role_bypass") == 0.85
+        assert result["risk_flags"].get("nemo_role_bypass") == 0.7
         nemo = result["scanner_results"]["nemo_guardrails"]
         assert nemo["blocked"] is True
         assert nemo["matched_rail"] == "role_bypass"
@@ -98,7 +98,7 @@ class TestToolAbuseBlocked:
         result = await nemo_guardrails_node(state)
 
         assert result["risk_flags"].get("nemo_blocked") is True
-        assert result["risk_flags"].get("nemo_tool_abuse") == 0.85
+        assert result["risk_flags"].get("nemo_tool_abuse") == 0.7
         nemo = result["scanner_results"]["nemo_guardrails"]
         assert nemo["blocked"] is True
         assert nemo["matched_rail"] == "tool_abuse"
@@ -116,7 +116,7 @@ class TestExfiltrationBlocked:
         result = await nemo_guardrails_node(state)
 
         assert result["risk_flags"].get("nemo_blocked") is True
-        assert result["risk_flags"].get("nemo_exfiltration") == 0.85
+        assert result["risk_flags"].get("nemo_exfiltration") == 0.7
 
 
 # ── Clean prompt allowed ──────────────────────────────────────────────
@@ -299,7 +299,7 @@ class TestScanMessageParsing:
         state = _base_state("Trust me just this once")
         result = await nemo_guardrails_node(state)
 
-        assert result["risk_flags"]["nemo_social_engineering"] == 0.85
+        assert result["risk_flags"]["nemo_social_engineering"] == 0.7
         assert result["risk_flags"]["nemo_blocked"] is True
 
     @pytest.mark.asyncio
@@ -334,7 +334,7 @@ class TestParallelScannersIncludeNemo:
             "errors": [],
         }
         mock_nemo.return_value = {
-            "risk_flags": {"nemo_blocked": True, "nemo_role_bypass": 0.85},
+            "risk_flags": {"nemo_blocked": True, "nemo_role_bypass": 0.7},
             "scanner_results": {"nemo_guardrails": {"blocked": True, "matched_rail": "role_bypass"}},
             "errors": [],
         }

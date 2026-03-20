@@ -817,7 +817,7 @@ async def test_seed_creates_5_tools(client):
 
 @pytest.mark.asyncio
 async def test_seed_creates_3_roles(client):
-    """Reference agent has exactly 3 roles."""
+    """Reference agent has exactly 2 roles."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
 
@@ -825,12 +825,12 @@ async def test_seed_creates_3_roles(client):
     ref = next(a for a in resp.json()["items"] if a["name"] == REFERENCE_AGENT["name"])
 
     resp = await client.get(f"/v1/agents/{ref['id']}/roles")
-    assert len(resp.json()) == 3
+    assert len(resp.json()) == 2
 
 
 @pytest.mark.asyncio
 async def test_seed_inheritance_chain(client):
-    """customer→support→admin chain correct."""
+    """user→admin chain correct."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
 
@@ -840,9 +840,8 @@ async def test_seed_inheritance_chain(client):
     resp = await client.get(f"/v1/agents/{ref['id']}/roles")
     roles = {r["name"]: r for r in resp.json()}
 
-    assert roles["customer"]["inherits_from"] is None
-    assert roles["support"]["inherits_from"] == roles["customer"]["id"]
-    assert roles["admin"]["inherits_from"] == roles["support"]["id"]
+    assert roles["user"]["inherits_from"] is None
+    assert roles["admin"]["inherits_from"] == roles["user"]["id"]
 
 
 @pytest.mark.asyncio
@@ -858,31 +857,24 @@ async def test_seed_matrix_matches_existing_config(client):
     data = resp.json()
     matrix = data["matrix"]
 
-    # customer: searchKB=allow, getOrderStatus=allow, rest=deny
-    assert matrix["customer"]["searchKnowledgeBase"] == "allow"
-    assert matrix["customer"]["getOrderStatus"] == "allow"
-    assert matrix["customer"]["getCustomerProfile"] == "deny"
-    assert matrix["customer"]["issueRefund"] == "deny"
-    assert matrix["customer"]["getInternalSecrets"] == "deny"
+    # user: getOrders=allow, searchProducts=allow, rest=deny
+    assert matrix["user"]["getOrders"] == "allow"
+    assert matrix["user"]["searchProducts"] == "allow"
+    assert matrix["user"]["getUsers"] == "deny"
+    assert matrix["user"]["updateOrder"] == "deny"
+    assert matrix["user"]["updateUser"] == "deny"
 
-    # support inherits customer + getCustomerProfile
-    assert matrix["support"]["searchKnowledgeBase"] == "allow"
-    assert matrix["support"]["getOrderStatus"] == "allow"
-    assert matrix["support"]["getCustomerProfile"] == "allow"
-    assert matrix["support"]["issueRefund"] == "deny"
-    assert matrix["support"]["getInternalSecrets"] == "deny"
-
-    # admin inherits support + issueRefund (confirm), getInternalSecrets
-    assert matrix["admin"]["searchKnowledgeBase"] == "allow"
-    assert matrix["admin"]["getOrderStatus"] == "allow"
-    assert matrix["admin"]["getCustomerProfile"] == "allow"
-    assert matrix["admin"]["issueRefund"] == "confirm"
-    assert matrix["admin"]["getInternalSecrets"] == "allow"
+    # admin inherits user + getUsers, updateOrder (confirm), updateUser
+    assert matrix["admin"]["getOrders"] == "allow"
+    assert matrix["admin"]["searchProducts"] == "allow"
+    assert matrix["admin"]["getUsers"] == "allow"
+    assert matrix["admin"]["updateOrder"] == "confirm"
+    assert matrix["admin"]["updateUser"] == "confirm"
 
 
 @pytest.mark.asyncio
 async def test_seed_idempotent(client):
-    """Run seed twice → still 5 tools, 3 roles."""
+    """Run seed twice → still 5 tools, 2 roles."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
     await seed_reference_tools_and_roles()  # second time
@@ -894,7 +886,7 @@ async def test_seed_idempotent(client):
     assert len(tools_resp.json()) == 5
 
     roles_resp = await client.get(f"/v1/agents/{ref['id']}/roles")
-    assert len(roles_resp.json()) == 3
+    assert len(roles_resp.json()) == 2
 
 
 @pytest.mark.asyncio
@@ -907,22 +899,18 @@ async def test_seed_check_permission_matches_legacy(client):
     ref = next(a for a in resp.json()["items"] if a["name"] == REFERENCE_AGENT["name"])
     aid = ref["id"]
 
-    # customer + issueRefund → deny
-    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "customer", "tool": "issueRefund"})
+    # user + updateOrder → deny
+    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "user", "tool": "updateOrder"})
     assert r.json()["decision"] == "deny"
 
-    # admin + issueRefund → confirm (write+high)
-    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "admin", "tool": "issueRefund"})
+    # admin + updateOrder → confirm (write+high)
+    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "admin", "tool": "updateOrder"})
     assert r.json()["decision"] == "confirm"
 
-    # support + searchKnowledgeBase → allow (inherited from customer)
-    r = await client.get(
-        f"/v1/agents/{aid}/check-permission", params={"role": "support", "tool": "searchKnowledgeBase"}
-    )
+    # admin + getOrders → allow (inherited from user)
+    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "admin", "tool": "getOrders"})
     assert r.json()["decision"] == "allow"
 
-    # customer + getInternalSecrets → deny
-    r = await client.get(
-        f"/v1/agents/{aid}/check-permission", params={"role": "customer", "tool": "getInternalSecrets"}
-    )
+    # user + updateUser → deny
+    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "user", "tool": "updateUser"})
     assert r.json()["decision"] == "deny"

@@ -13,10 +13,10 @@ def calculate_risk_score(state: PipelineState) -> float:
     thresholds: dict = state.get("policy_config", {}).get("thresholds", {})
 
     # Policy-configurable scanner weights (defaults match legacy values)
-    injection_weight = thresholds.get("injection_weight", 0.5)
+    injection_weight = thresholds.get("injection_weight", 0.8)
     toxicity_weight = thresholds.get("toxicity_weight", 0.5)
     secrets_weight = thresholds.get("secrets_weight", 0.6)
-    invisible_weight = thresholds.get("invisible_weight", 0.4)
+    invisible_weight = thresholds.get("invisible_weight", 0.8)
     pii_per_entity = thresholds.get("pii_per_entity_weight", 0.1)
     pii_max = thresholds.get("pii_max_weight", 0.5)
 

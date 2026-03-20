@@ -376,11 +376,11 @@ async def test_delete_soft_deletes(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_seed_creates_reference_agent(client: AsyncClient):
-    """After seed, 'Customer Support Copilot' exists."""
+    """After seed, 'E-commerce Assistant' exists."""
     await seed_reference_agent()
     resp = await client.get("/v1/agents", params={"status": "active"})
     names = [a["name"] for a in resp.json()["items"]]
-    assert "Customer Support Copilot" in names
+    assert "E-commerce Assistant" in names
 
 
 @pytest.mark.asyncio
@@ -408,9 +408,9 @@ async def test_reference_agent_top_of_list(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_seed_idempotent(client: AsyncClient):
-    """Run seed twice → still 1 reference agent."""
+    """Run seed twice → still 2 reference agents (both SEED_AGENTS)."""
     await seed_reference_agent()
     await seed_reference_agent()
     resp = await client.get("/v1/agents", params={"status": "active"})
     ref_count = sum(1 for a in resp.json()["items"] if a["is_reference"])
-    assert ref_count == 1
+    assert ref_count == 2
