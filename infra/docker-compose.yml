@@ -149,7 +149,7 @@ services:
       PROXY_POLICY: ${PROXY_POLICY:-balanced}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8003/health"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\""]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -169,7 +169,7 @@ services:
       PROXY_POLICY: ${PROXY_POLICY:-balanced}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8004/health"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/health')\""]
       interval: 10s
       timeout: 5s
       retries: 3
