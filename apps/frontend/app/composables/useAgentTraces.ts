@@ -8,7 +8,7 @@ import type {
   AgentTraceFilters,
 } from '~/types/agentTrace'
 
-const baseURL = import.meta.env.NUXT_PUBLIC_AGENT_API_BASE ?? 'http://localhost:8002'
+const baseURL = import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
 
 const agentTracesApi = axios.create({
   baseURL,
@@ -16,7 +16,7 @@ const agentTracesApi = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-export function useAgentTraces() {
+export function useAgentTraces(agentId: Ref<string | null>) {
   const filters = ref<AgentTraceFilters>({
     session_id: null,
     user_role: null,
@@ -29,8 +29,10 @@ export function useAgentTraces() {
   const pageSize = ref(25)
 
   const { data, isLoading, error, refetch } = useQuery<AgentTraceListResponse>({
-    queryKey: ['agent-traces', filters, page, pageSize] as const,
+    queryKey: ['agent-traces', agentId, filters, page, pageSize] as const,
     queryFn: async () => {
+      if (!agentId.value) return { items: [], total: 0, limit: 25, offset: 0 }
+
       const params = new URLSearchParams()
       const offset = (page.value - 1) * pageSize.value
       params.set('limit', String(pageSize.value))
@@ -44,10 +46,11 @@ export function useAgentTraces() {
       if (f.date_to) params.set('date_to', f.date_to)
 
       const { data: resp } = await agentTracesApi.get<AgentTraceListResponse>(
-        `/agent/traces?${params.toString()}`,
+        `/v1/agents/${agentId.value}/traces/runs?${params.toString()}`,
       )
       return resp
     },
+    enabled: computed(() => !!agentId.value),
     placeholderData: (prev) => prev,
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -57,15 +60,17 @@ export function useAgentTraces() {
   const total = computed(() => data.value?.total ?? 0)
 
   async function fetchDetail(traceId: string): Promise<AgentTraceDetail> {
+    if (!agentId.value) throw new Error('No agent selected')
     const { data: resp } = await agentTracesApi.get<AgentTraceDetail>(
-      `/agent/traces/${traceId}`,
+      `/v1/agents/${agentId.value}/traces/runs/${traceId}`,
     )
     return resp
   }
 
   async function fetchExport(traceId: string): Promise<AgentTraceExport> {
+    if (!agentId.value) throw new Error('No agent selected')
     const { data: resp } = await agentTracesApi.get<AgentTraceExport>(
-      `/agent/traces/${traceId}/export`,
+      `/v1/agents/${agentId.value}/traces/runs/${traceId}`,
     )
     return resp
   }

@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     mode: str = "demo"  # "demo" | "real" — demo uses MockProvider when no API key
     default_policy: str = "balanced"
     log_level: str = "INFO"
-    app_version: str = "0.1.0"
+    app_version: str = "0.1.10"
 
     # Security scanners
     enable_llm_guard: bool = True

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     # Proxy
     proxy_base_url: str = "http://localhost:8000/v1"
 
+    # Agent identity (for centralized trace ingestion)
+    agent_id: str = ""
+
     # Direct LLM access (used for full-context call after firewall scan)
     ollama_base_url: str = "http://localhost:11434"
 
@@ -32,7 +35,7 @@ class Settings(BaseSettings):
     # App
     mode: str = "demo"  # "demo" | "real" — demo uses mock LLM when no API key
     log_level: str = "INFO"
-    app_version: str = "0.1.0"
+    app_version: str = "0.1.10"
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
 

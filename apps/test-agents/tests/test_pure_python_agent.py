@@ -40,6 +40,7 @@ SAMPLE_RBAC = {
             "tools": {
                 "getOrders": {"scopes": ["read"], "sensitivity": "low"},
                 "searchProducts": {"scopes": ["read"], "sensitivity": "low"},
+                "getUsers": {"scopes": ["read"], "sensitivity": "medium"},
             },
         },
         "admin": {

@@ -34,11 +34,11 @@ export function useAppMode(): UseAppMode {
       )
       appMode.value = {
         mode: (data.mode as AppMode['mode']) ?? 'real',
-        version: (data.version as string) ?? '0.1.0',
+        version: (data.version as string) ?? '0.1.10',
       }
     } catch {
       // Fallback — assume real mode if health fails
-      appMode.value = { mode: 'real', version: '0.1.0' }
+      appMode.value = { mode: 'real', version: '0.1.10' }
     }
   }
 

@@ -450,3 +450,86 @@ class TraceStatsResponse(BaseModel):
     by_gate: dict[str, int]
     avg_latency_ms: float
     incidents: IncidentStatsBreakdown
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Trace Run schemas (structured agent traces — spec tracing)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TraceRunCreate(BaseModel):
+    """Ingest a full structured agent trace."""
+
+    trace_id: str = Field(..., max_length=64)
+    session_id: str = Field(default="default", max_length=128)
+    timestamp: datetime | None = None
+    user_role: str = Field(default="user", max_length=128)
+    model: str = Field(default="", max_length=128)
+    intent: str | None = Field(default=None, max_length=128)
+    intent_confidence: float = 0.0
+    total_duration_ms: int = 0
+    counters: dict = Field(default_factory=dict)
+    iterations: list[dict] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+    limits_hit: str | None = None
+    # Overflow: user_message, final_response, policy, node_timings
+    user_message: str | None = None
+    final_response: str | None = None
+    policy: str | None = None
+    node_timings: dict | None = None
+
+
+class TraceRunSummary(BaseModel):
+    """Summary view for trace list (no iterations blob)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    trace_id: str
+    agent_id: uuid.UUID
+    session_id: str
+    timestamp: datetime
+    user_role: str
+    model: str
+    intent: str | None
+    total_duration_ms: int
+    iterations_count: int = 0
+    tool_calls_count: int = 0
+    tool_calls_blocked: int = 0
+    firewall_blocked: bool = False
+    tokens_in: int = 0
+    tokens_out: int = 0
+    has_errors: bool = False
+    limits_hit: str | None
+
+
+class TraceRunDetail(BaseModel):
+    """Full trace detail with iterations."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    trace_id: str
+    agent_id: uuid.UUID
+    session_id: str
+    timestamp: datetime
+    user_role: str
+    model: str
+    intent: str | None
+    intent_confidence: float = 0.0
+    total_duration_ms: int
+    counters: dict
+    iterations: list[dict]
+    errors: list
+    limits_hit: str | None
+    user_message: str | None = None
+    final_response: str | None = None
+    policy: str | None = None
+    node_timings: dict | None = None
+
+
+class TraceRunListResponse(BaseModel):
+    """Paginated trace run list."""
+
+    items: list[TraceRunSummary]
+    total: int
+    limit: int
+    offset: int

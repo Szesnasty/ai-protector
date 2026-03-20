@@ -51,10 +51,11 @@ from protection import (
 # shared tools — copied into container at build time
 from shared.tool_definitions import SYSTEM_PROMPT, TOOL_DEFINITIONS
 from shared.tools import execute_tool
+from shared.tracing import TraceCollector
 
 logger = structlog.get_logger()
 
-app = FastAPI(title="Test Agent — Pure Python", version="0.1.0")
+app = FastAPI(title="Test Agent — Pure Python", version="0.1.10")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -64,6 +65,7 @@ app.add_middleware(
 
 PROXY_URL = os.getenv("PROXY_URL", "http://localhost:8000")
 PROXY_POLICY = os.getenv("PROXY_POLICY", "balanced")
+AGENT_ID = os.getenv("AGENT_ID", "")
 
 # Intents that indicate a genuine attack — everything NOT in this set
 # (e.g. "qa", "greeting") is considered benign even if the risk score
@@ -317,6 +319,7 @@ async def config_status():
 @app.post("/load-config")
 async def load_config(req: LoadConfigRequest):
     """Fetch integration kit from wizard API and load configs."""
+    global AGENT_ID  # noqa: PLW0603
     # AI Protector: fetch wizard-generated YAML configs from proxy
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(f"{PROXY_URL}/v1/agents/{req.agent_id}/integration-kit")
@@ -330,6 +333,9 @@ async def load_config(req: LoadConfigRequest):
     kit = resp.json()
     # AI Protector: parse YAML configs and store in SecurityConfig singleton
     get_config().load_from_kit(kit)
+    # Store agent_id for trace flushing
+    if not AGENT_ID:
+        AGENT_ID = req.agent_id
     logger.info("config_loaded", agent_id=req.agent_id, framework=kit.get("framework"))
     return {
         "loaded": True,
@@ -353,8 +359,20 @@ async def chat(req: ChatRequest):
         raise HTTPException(400, "No config loaded. Call POST /load-config first.")
 
     if req.mode == "llm":
-        return await _chat_llm(req)
-    return _chat_mock(req)
+        result = await _chat_llm(req)
+    else:
+        result = _chat_mock(req)
+
+    # ═══ AI PROTECTOR — Flush trace to proxy-service ═══════════
+    trace_id = result.pop("_trace_id", None)
+    if trace_id:
+        result["trace_id"] = trace_id
+    tc = result.pop("_trace_collector", None)
+    if tc is not None:
+        await tc.flush()
+    # ═══════════════════════════════════════════════════════════
+
+    return result
 
 
 # ── Mock mode (keyword routing) ──────────────────────────────────────
@@ -362,9 +380,17 @@ async def chat(req: ChatRequest):
 
 def _chat_mock(req: ChatRequest) -> dict:
     """Mock mode: keyword-route → security gates → execute."""
+    # ═══ AI PROTECTOR — Start trace ═══════════════════════════
+    tc = TraceCollector(proxy_url=PROXY_URL, agent_id=AGENT_ID) if AGENT_ID else None
+    if tc:
+        tc.start(session_id="mock", user_role=req.role, user_message=req.message)
+    # ═══════════════════════════════════════════════════════════
+
     tool = req.tool or _route_to_tool(req.message)
     if not tool:
-        return {
+        if tc:
+            tc.finalize("no_match")
+        resp = {
             "response": (
                 "I couldn't match your request to a supported action.\n"
                 "Try asking about: orders, users, products — or use "
@@ -380,15 +406,18 @@ def _chat_mock(req: ChatRequest) -> dict:
                 }
             ],
         }
+        if tc:
+            resp["_trace_collector"] = tc
+            resp["_trace_id"] = tc.trace_id
+        return resp
 
     args = req.tool_args or _extract_args(req.message, tool)
 
     # ═══ AI PROTECTOR — Run tool through full security pipeline ═══
-    # protected_tool_call() handles:
-    #   1. RBAC check (role has permission?)
-    #   2. Rate limit check (within budget?)
-    #   3. Tool execution (if allowed)
-    #   4. Output scan (PII, injection)
+
+    if tc:
+        tc.start_iteration()
+
     result = protected_tool_call(
         role=req.role,
         tool=tool,
@@ -397,9 +426,32 @@ def _chat_mock(req: ChatRequest) -> dict:
     )
     # ═══════════════════════════════════════════════════════════════════
 
+    # ═══ AI PROTECTOR — Record trace decisions ═══════════════════
+    if tc:
+        gate = result.get("gate", "pre_tool")
+        decision = result.get("decision", "allow").upper()
+        reason = result.get("reason")
+        if gate == "pre_tool":
+            tc.record_pre_tool(tool, decision, reason)
+        if result.get("allowed") and result.get("result") is not None:
+            tc.record_tool_exec(tool, args, str(result["result"]))
+        scan = result.get("scan_result")
+        if scan is not None:
+            tc.record_post_tool(
+                tool,
+                "clean" if scan["clean"] else "flagged",
+                scan.get("findings", []),
+                pii_count=sum(
+                    1 for f in scan.get("findings", []) if f.get("type") == "pii"
+                ),
+            )
+    # ═══════════════════════════════════════════════════════════════════
+
     # Handle confirmation flow
     if result.get("requires_confirmation") and not req.confirmed:
-        return {
+        if tc:
+            tc.finalize("requires_confirmation")
+        resp = {
             "response": f"⚠️ Tool '{tool}' requires confirmation. Reason: {result['reason']}",
             "requires_confirmation": True,
             "tool": tool,
@@ -408,6 +460,10 @@ def _chat_mock(req: ChatRequest) -> dict:
                 {"gate": "pre_tool", "decision": "confirm", "reason": result["reason"]}
             ],
         }
+        if tc:
+            resp["_trace_collector"] = tc
+            resp["_trace_id"] = tc.trace_id
+        return resp
 
     if result.get("requires_confirmation") and req.confirmed:
         raw = execute_tool(tool, args)
@@ -420,8 +476,20 @@ def _chat_mock(req: ChatRequest) -> dict:
             "gate": "post_tool",
             "reason": None if scan["clean"] else "Output contains flagged content",
         }
+        if tc:
+            tc.record_tool_exec(tool, args, str(raw))
+            tc.record_post_tool(
+                tool,
+                "clean" if scan["clean"] else "flagged",
+                scan.get("findings", []),
+            )
 
-    return _build_response(result)
+    resp = _build_response(result)
+    if tc:
+        tc.finalize(resp.get("response", ""))
+        resp["_trace_collector"] = tc
+        resp["_trace_id"] = tc.trace_id
+    return resp
 
 
 # ── LLM mode (real model call via LiteLLM) ───────────────────────────
@@ -429,6 +497,26 @@ def _chat_mock(req: ChatRequest) -> dict:
 
 async def _chat_llm(req: ChatRequest) -> dict:
     """LLM mode: model → tool_calls → security gates → execute → model."""
+    # ═══ AI PROTECTOR — Start trace ═══════════════════════════════
+    tc_trace = (
+        TraceCollector(proxy_url=PROXY_URL, agent_id=AGENT_ID) if AGENT_ID else None
+    )
+    if tc_trace:
+        tc_trace.start(
+            session_id="llm",
+            user_role=req.role,
+            model=req.model or "gpt-4o-mini",
+            user_message=req.message,
+        )
+    # ═══════════════════════════════════════════════════════════════════
+
+    def _attach_trace(resp: dict) -> dict:
+        if tc_trace:
+            tc_trace.finalize(resp.get("response", ""))
+            resp["_trace_collector"] = tc_trace
+            resp["_trace_id"] = tc_trace.trace_id
+        return resp
+
     try:
         import litellm
     except ImportError as exc:
@@ -528,12 +616,14 @@ async def _chat_llm(req: ChatRequest) -> dict:
                 }
             )
         text = choice.content or "No response from model."
-        return {
-            "response": text,
-            "blocked": False,
-            "gate_log": gate_log,
-            "mode": "llm",
-        }
+        return _attach_trace(
+            {
+                "response": text,
+                "blocked": False,
+                "gate_log": gate_log,
+                "mode": "llm",
+            }
+        )
 
     # 2. ═══ AI PROTECTOR — Security gate check ════════════════════
     # Extract tool call info from LLM response
@@ -544,18 +634,20 @@ async def _chat_llm(req: ChatRequest) -> dict:
     # Guard: if LLM hallucinated a tool not in our catalogue, treat as text
     known_tools = {t["function"]["name"] for t in TOOL_DEFINITIONS}
     if tool_name not in known_tools:
-        return {
-            "response": choice.content or f"(LLM tried unknown tool '{tool_name}')",
-            "blocked": False,
-            "gate_log": [
-                {
-                    "gate": "llm_guard",
-                    "decision": "skip",
-                    "reason": f"LLM selected unknown tool '{tool_name}', treated as text",
-                }
-            ],
-            "mode": "llm",
-        }
+        return _attach_trace(
+            {
+                "response": choice.content or f"(LLM tried unknown tool '{tool_name}')",
+                "blocked": False,
+                "gate_log": [
+                    {
+                        "gate": "llm_guard",
+                        "decision": "skip",
+                        "reason": f"LLM selected unknown tool '{tool_name}', treated as text",
+                    }
+                ],
+                "mode": "llm",
+            }
+        )
 
     # Same protected_tool_call as mock mode — RBAC + limits + scan
     result = protected_tool_call(
@@ -567,28 +659,41 @@ async def _chat_llm(req: ChatRequest) -> dict:
     # ═══════════════════════════════════════════════════════════════════
 
     if not result["allowed"]:
-        return _build_response(result, mode="llm")
+        if tc_trace:
+            tc_trace.start_iteration()
+            tc_trace.record_pre_tool(tool_name, "BLOCK", result.get("reason"))
+        return _attach_trace(_build_response(result, mode="llm"))
+
+    # ═══ AI PROTECTOR — Record trace for allowed tool call ═════════
+    if tc_trace:
+        tc_trace.start_iteration()
+        tc_trace.record_pre_tool(
+            tool_name, result.get("decision", "allow").upper(), result.get("reason")
+        )
+    # ═════════════════════════════════════════════════════════════════
 
     # ═══ AI PROTECTOR — Confirmation gate (LLM mode) ═════════════════
     # If the tool requires explicit confirmation, pause here and ask
     # the user to confirm before executing (same as mock mode).
     if result.get("requires_confirmation") and not req.confirmed:
-        return {
-            "response": f"⚠️ Tool '{tool_name}' requires confirmation. {result.get('reason', '')}",
-            "requires_confirmation": True,
-            "tool": tool_name,
-            "args": tool_args,
-            "gate_log": [
-                {
-                    "gate": "pre_tool",
-                    "decision": "confirm",
-                    "reason": result.get("reason"),
-                    "tool": tool_name,
-                    "role": req.role,
-                }
-            ],
-            "mode": "llm",
-        }
+        return _attach_trace(
+            {
+                "response": f"⚠️ Tool '{tool_name}' requires confirmation. {result.get('reason', '')}",
+                "requires_confirmation": True,
+                "tool": tool_name,
+                "args": tool_args,
+                "gate_log": [
+                    {
+                        "gate": "pre_tool",
+                        "decision": "confirm",
+                        "reason": result.get("reason"),
+                        "tool": tool_name,
+                        "role": req.role,
+                    }
+                ],
+                "mode": "llm",
+            }
+        )
 
     # When confirmed=True the tool still needs to run (protected_tool_call
     # returns early on requires_confirmation regardless of confirmed flag).
@@ -603,6 +708,13 @@ async def _chat_llm(req: ChatRequest) -> dict:
             "gate": "post_tool",
             "reason": None if scan["clean"] else "Output contains flagged content",
         }
+        if tc_trace:
+            tc_trace.record_tool_exec(tool_name, tool_args, str(raw))
+            tc_trace.record_post_tool(
+                tool_name,
+                "clean" if scan["clean"] else "flagged",
+                scan.get("findings", []),
+            )
     # ═══════════════════════════════════════════════════════════════════
 
     # 3. ═══ AI PROTECTOR — Route through proxy firewall (balanced) ═══
@@ -704,13 +816,31 @@ async def _chat_llm(req: ChatRequest) -> dict:
         )
     # ═══════════════════════════════════════════════════════════════════
 
-    return {
-        "response": final_text,
-        "blocked": False,
-        "gate_log": gate_log,
-        "mode": "llm",
-        "tool_called": tool_name,
-    }
+    # Record tool exec + post-tool in trace if not from confirmation path
+    if (
+        tc_trace
+        and result.get("allowed")
+        and result.get("result") is not None
+        and not (result.get("requires_confirmation") and req.confirmed)
+    ):
+        tc_trace.record_tool_exec(tool_name, tool_args, str(result["result"]))
+        scan = result.get("scan_result")
+        if scan:
+            tc_trace.record_post_tool(
+                tool_name,
+                "clean" if scan["clean"] else "flagged",
+                scan.get("findings", []),
+            )
+
+    return _attach_trace(
+        {
+            "response": final_text,
+            "blocked": False,
+            "gate_log": gate_log,
+            "mode": "llm",
+            "tool_called": tool_name,
+        }
+    )
 
 
 # ── Helpers ───────────────────────────────────────────────────────────

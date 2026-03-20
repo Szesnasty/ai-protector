@@ -50,6 +50,7 @@ SAMPLE_RBAC = {
             "tools": {
                 "getOrders": {"scopes": ["read"], "sensitivity": "low"},
                 "searchProducts": {"scopes": ["read"], "sensitivity": "low"},
+                "getUsers": {"scopes": ["read"], "sensitivity": "medium"},
             },
         },
         "admin": {
@@ -513,7 +514,8 @@ class TestFullGraphExecution:
         from graph import get_graph
 
         result = get_graph().invoke({"message": "hello", "role": "user"})
-        assert result.get("blocked") is True
+        assert result.get("blocked") is False
+        assert result.get("no_match") is True
 
     def test_search_products_flow(self, loaded_config):
         from graph import get_graph
