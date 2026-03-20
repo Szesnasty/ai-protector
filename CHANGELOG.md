@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.12](https://github.com/Szesnasty/ai-protector/compare/v0.1.11...v0.1.12) (2026-03-20)
+
+
+### Bug Fixes
+
+* remove bloated 0.1.12 changelog, revert versions to 0.1.11 ([89949ce](https://github.com/Szesnasty/ai-protector/commit/89949cea5412467033e898bdc52dfea6fa195ce1))
+
 ## [0.1.11](https://github.com/Szesnasty/ai-protector/compare/v0.1.10...v0.1.11) (2026-03-20)
 
 
