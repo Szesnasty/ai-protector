@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.1.10](https://github.com/Szesnasty/ai-protector/compare/v0.1.9...v0.1.10) (2026-03-20)
+
+
+### Features
+
+* add integration guide page with links from Agents & Wizard ([327fc38](https://github.com/Szesnasty/ai-protector/commit/327fc384c676ed7cf2c55e2b44a8caed9d99d9c8))
+* add tagline below wizard CTA in sidebar ([0272e0d](https://github.com/Szesnasty/ai-protector/commit/0272e0df0c7fd911982616737d13f2a9b5a70954))
+* **agents:** pre-scan + security test buttons + highlighted source ([156014d](https://github.com/Szesnasty/ai-protector/commit/156014d07ff1fc97375d710cb57851c6fef889c1))
+* **agents:** route LLM responses through proxy firewall (balanced) ([a453dbf](https://github.com/Szesnasty/ai-protector/commit/a453dbf666f0c95a85dc19b85ab51ba45d8028c9))
+* differentiate no_match from security block in UX ([fd06ce5](https://github.com/Szesnasty/ai-protector/commit/fd06ce5c561266d78fe18a7c334571834266ecd6))
+* **frontend:** add test agent pages with chat and gate log ([ec1c010](https://github.com/Szesnasty/ai-protector/commit/ec1c0108c6c106d0678db2c5e3e253b89f648ced))
+* **frontend:** spec 33 — Agent Wizard UI with composables, stepper, 7 wizard steps, list page, detail page with 8 tabs ([ae50cf8](https://github.com/Szesnasty/ai-protector/commit/ae50cf8d73b747e61210d5bdf90be3834e2a72da))
+* **infra:** add Docker profiles for test agents, update CSP and frontend config ([36e7429](https://github.com/Szesnasty/ai-protector/commit/36e7429488f8d716f1288172f130c72ba9d4b50b))
+* **seed:** two fully-configured demo agents on first startup ([2b719a6](https://github.com/Szesnasty/ai-protector/commit/2b719a6036b0102f688e07692cb64f8014203aec))
+* **source-viewer:** color-coded AI Protector highlight categories ([d605dfa](https://github.com/Szesnasty/ai-protector/commit/d605dfa463884ded424a676b91a1567fa051ccaf))
+* **test-agents:** add LangGraph test agent with security graph ([878d4d3](https://github.com/Szesnasty/ai-protector/commit/878d4d318d91721f7fcb26e45388ead9b6d0fb0d))
+* **test-agents:** add pure Python test agent with protection layer ([b3fbfb6](https://github.com/Szesnasty/ai-protector/commit/b3fbfb6a60eb16f41f72df182df9aeb4558bea4c))
+* **test-agents:** add shared mock tools, tool definitions & 85 tests ([84048b8](https://github.com/Szesnasty/ai-protector/commit/84048b85d676ad4de4959e7865dfb8305d2f46de))
+* **test-agents:** playground-style LLM/mock mode with provider picker ([d524ec5](https://github.com/Szesnasty/ai-protector/commit/d524ec53b455ffba0b4b5639b5eac7c1bfbd0b3c))
+* **test-agents:** use shared model catalog + stored API keys from Settings ([9839422](https://github.com/Szesnasty/ai-protector/commit/983942276cbb3f2e65ad2168216fdbdb8c08f276))
+* **ui:** highlight Agent Wizard nav item + fix policy pack display ([8350b61](https://github.com/Szesnasty/ai-protector/commit/8350b61b415539400bd7bb122179b422c724bd1e))
+* wizard button 48px below Settings, add 81 kit variant tests ([e5fc454](https://github.com/Szesnasty/ai-protector/commit/e5fc45406abea7658b504824f12fdd930fec3ce2))
+* **wizard:** add aw_006 migration for traces, incidents, gates, promotions ([05efa9d](https://github.com/Szesnasty/ai-protector/commit/05efa9db8241a9348bb8ff0ed2cf090777af9a73))
+* **wizard:** add tool and role presets for quick-start users ([7aad2a3](https://github.com/Szesnasty/ai-protector/commit/7aad2a3769fd6da3d74f8d228c45cd0af5625ffc))
+* **wizard:** implement spec 26 — Agent CRUD in self-contained src/wizard/ package ([cd207a9](https://github.com/Szesnasty/ai-protector/commit/cd207a94c0cebbc3c5263a305830be784d8620dc))
+* **wizard:** spec 27 - Tools & Roles CRUD with permissions, 52 tests ([151da32](https://github.com/Szesnasty/ai-protector/commit/151da32fc4e9881f50b8c596e4f34d453e75c631))
+* **wizard:** spec 28 — config generation (rbac/limits/policy YAML + policy packs + ZIP download) ([b926a7b](https://github.com/Szesnasty/ai-protector/commit/b926a7b9f8a87991046ffd46cb02d26e6e7feb3b))
+* **wizard:** spec 29 — integration kit generator (7 Jinja2 templates + API + ZIP download) ([68863e1](https://github.com/Szesnasty/ai-protector/commit/68863e1451822fbb4a9f5b6aeffc03c836f4d296))
+* **wizard:** spec 30 — validation runner (42/42 tests) ([6115e62](https://github.com/Szesnasty/ai-protector/commit/6115e6219b6a19913b66ff2db455ddb3b980ab60))
+* **wizard:** spec 31 — rollout modes (observe/warn/enforce) with promotion flow (48/48 tests) ([c5239cb](https://github.com/Szesnasty/ai-protector/commit/c5239cb33841f447446501d6150c6f7a02bfc37d))
+* **wizard:** spec 32 — agent traces & incidents persistence (50/50 tests) ([c900153](https://github.com/Szesnasty/ai-protector/commit/c900153fc3d27f3435686689bf944a7cb6c0777f))
+
+
+### Bug Fixes
+
+* agent detail – validation results, perm count, edit routing, delete button ([65e4574](https://github.com/Szesnasty/ai-protector/commit/65e4574ee63703821c22424d6d4ce18f6b0b5a43))
+* align presets and seed with actual test agent tools, add table actions ([0b0e29a](https://github.com/Szesnasty/ai-protector/commit/0b0e29ad5b3c6dbea12aec52f92e5215d931b814))
+* correct RAM estimates — include LLM Guard, NeMo, Presidio ML models ([06082fe](https://github.com/Szesnasty/ai-protector/commit/06082fe4580b34ecc4a7a76ba34b06731b458657))
+* **frontend:** force 12px font on Quick Actions and Security Tests chips ([6d11262](https://github.com/Szesnasty/ai-protector/commit/6d11262cf142d39ef6219f93d501905415687b83))
+* **frontend:** use correct Nuxt auto-import name for TestAgentChat component ([d7b8c5d](https://github.com/Szesnasty/ai-protector/commit/d7b8c5d73a461023c56ee05068fab2f37a2b22d5))
+* include test agents in make demo/up, remove LLM Firewall subtitle ([2a84730](https://github.com/Szesnasty/ai-protector/commit/2a84730a53c2ed86b86d8e664dd14ecf089b98bb))
+* **infra:** replace curl healthchecks with python urllib for test agents ([865e4c0](https://github.com/Szesnasty/ai-protector/commit/865e4c044c484c06df3efcb268fea89adadf7c56))
+* **proxy:** eliminate false-positive blocking + add RBAC matrix UI ([9829801](https://github.com/Szesnasty/ai-protector/commit/98298014fede04db88834cb3f01dc7ddd4d63f38))
+* RBAC getUsers admin-only, rearrange controls layout, reorganize sidebar nav ([c252d6b](https://github.com/Szesnasty/ai-protector/commit/c252d6b25d292477d509d0d309aa8f0496e58b22))
+* **resilience:** add retry with exponential backoff to LLM calls ([d1d0a1b](https://github.com/Szesnasty/ai-protector/commit/d1d0a1bf3e25e3baf7bfaba2c8a94bfdafaaa398))
+* restore versions to 0.1.9 and CHANGELOG from main ([0050941](https://github.com/Szesnasty/ai-protector/commit/0050941ac5691bcd092abd8a4d31ca9cfca59a15))
+* **security:** eliminate ReDoS risk in PII regex patterns (CodeQL high) ([77b2596](https://github.com/Szesnasty/ai-protector/commit/77b2596fe4c68f872286ce31d404a6fc42cdbc78))
+* sidebar overflow, wizard reset, kit template bugs (RBAC test + LimitsService) ([8760de8](https://github.com/Szesnasty/ai-protector/commit/8760de8e3089597ebbdb1bf8750551b35d0885d0))
+* sync invisible_weight schema default to 0.8, fix test comments and nemo test values ([27812ad](https://github.com/Szesnasty/ai-protector/commit/27812adae9bd4d50b66c8d574ef5f93770ae5ee6))
+* **test-agents:** pin exact package versions, fix module isolation, clarify protection.py role ([248d457](https://github.com/Szesnasty/ai-protector/commit/248d4572225e0497fd5f01765afa47e3cb3ff220))
+* **test-agents:** render markdown in agent responses + improve text visibility ([8a60c44](https://github.com/Szesnasty/ai-protector/commit/8a60c4454c8dd55357af9a8324e0c1354446f06b))
+* **test-agents:** two LLM-mode bugs in pure-python and langgraph agents ([cda99f7](https://github.com/Szesnasty/ai-protector/commit/cda99f78b17fab030bd791785822a7ea1c662cf3))
+* **test-agents:** use /v1/scan for pre-scan, fix false positives ([c5f32a1](https://github.com/Szesnasty/ai-protector/commit/c5f32a1e8b74c3f4272d24253025c6fd2d2b7dcf))
+* **test:** lower threshold in injection_balanced_block test ([054ffc4](https://github.com/Szesnasty/ai-protector/commit/054ffc47ded49a1fbac60866259229d712cbe771))
+* **test:** revert injection_weight to 0.8, raise invisible_weight to 0.8, fix nemo/wizard test expectations ([895cb78](https://github.com/Szesnasty/ai-protector/commit/895cb78d0a9a155bca04dce2d6b224ba086117f7))
+* **test:** sync all risk score expectations to injection_weight=0.5 default ([d6278a2](https://github.com/Szesnasty/ai-protector/commit/d6278a2765aff34444a7111a1b0e82f62fcac2c1))
+* **test:** update injection risk score expectation to match 0.5 weight ([f3487a5](https://github.com/Szesnasty/ai-protector/commit/f3487a546dfbeffa139c26111281b2f9a1ffe5cd))
+* **test:** use seed_wizard in test_seed_idempotent for CI compatibility ([5aba07c](https://github.com/Szesnasty/ai-protector/commit/5aba07c1353ad70b9fd9f7caf3f8485a6c12796a))
+* **wizard:** use UPPERCASE enum names in aw_006 migration ([7af0c69](https://github.com/Szesnasty/ai-protector/commit/7af0c696d5c3aafafa811bc407413f483ed97794))
+
 ## [0.1.9](https://github.com/Szesnasty/ai-protector/compare/v0.1.8...v0.1.9) (2026-03-16)
 
 
