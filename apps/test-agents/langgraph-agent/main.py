@@ -24,10 +24,11 @@ from pydantic import BaseModel  # noqa: E402
 # ═══ AI PROTECTOR — Import security config + graph ═════════════════
 from protection import get_config, reset_config  # noqa: E402
 from graph import get_graph, reset_graph  # noqa: E402
+from shared.tracing import TraceCollector  # noqa: E402
 # ═══════════════════════════════════════════════════════════════════
 
 logger = structlog.get_logger()
-app = FastAPI(title="Test Agent — LangGraph", version="0.1.0")
+app = FastAPI(title="Test Agent — LangGraph", version="0.1.10")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,6 +38,7 @@ app.add_middleware(
 
 PROXY_URL = os.environ.get("PROXY_URL", "http://localhost:8000")
 PROXY_POLICY = os.environ.get("PROXY_POLICY", "balanced")
+AGENT_ID = os.environ.get("AGENT_ID", "")
 
 # Intents that indicate a genuine attack — everything NOT in this set
 # (e.g. "qa", "greeting") is considered benign even if the risk score
@@ -309,6 +311,10 @@ async def load_config(req: LoadConfigRequest):
     get_config().load_from_kit(kit)
     # AI Protector: force graph recompilation with new security config
     reset_graph()
+    # Store agent_id for trace flushing
+    global AGENT_ID  # noqa: PLW0603
+    if not AGENT_ID:
+        AGENT_ID = req.agent_id
     logger.info("config_loaded", agent_id=req.agent_id, framework="langgraph")
     return {
         "loaded": True,
@@ -338,12 +344,31 @@ async def chat(req: ChatRequest):
         raise HTTPException(400, "No config loaded. Call POST /load-config first.")
 
     if req.mode == "llm":
-        return await _chat_llm(req)
-    return _chat_mock(req)
+        result = await _chat_llm(req)
+    else:
+        result = _chat_mock(req)
+
+    # ═══ AI PROTECTOR — Flush trace to proxy-service ═══════════
+    trace_id = result.pop("_trace_id", None)
+    if trace_id:
+        result["trace_id"] = trace_id
+    tc = result.pop("_trace_collector", None)
+    if tc is not None:
+        await tc.flush()
+    # ═══════════════════════════════════════════════════════════
+
+    return result
 
 
 def _chat_mock(req: ChatRequest) -> dict:
     """Mock mode: keyword routing → graph with security gates."""
+    # ═══ AI PROTECTOR — Start trace ═══════════════════════════
+    tc = TraceCollector(proxy_url=PROXY_URL, agent_id=AGENT_ID) if AGENT_ID else None
+    if tc:
+        tc.start(session_id="mock", user_role=req.role, user_message=req.message)
+        tc.start_iteration()
+    # ═══════════════════════════════════════════════════════════
+
     compiled = get_graph()
     initial_state = {
         "message": req.message,
@@ -355,7 +380,43 @@ def _chat_mock(req: ChatRequest) -> dict:
 
     result = compiled.invoke(initial_state)
 
-    return {
+    # ═══ AI PROTECTOR — Record trace from gate_log ════════════
+    if tc:
+        for entry in result.get("gate_log", []):
+            gate = entry.get("gate", "")
+            if gate == "pre_tool":
+                tc.record_pre_tool(
+                    entry.get("tool", ""),
+                    entry.get("decision", "allow").upper(),
+                    entry.get("reason"),
+                )
+            elif gate == "post_tool":
+                findings = entry.get("findings", [])
+                tc.record_post_tool(
+                    entry.get("tool", result.get("tool", "")),
+                    entry.get("decision", "clean"),
+                    findings,
+                )
+            elif gate == "router" and entry.get("decision") == "no_match":
+                pass  # no_match is not a security event
+
+        # Record tool execution if it happened
+        tool_output = result.get("tool_output") or result.get("final_response", "")
+        if (
+            result.get("tool")
+            and not result.get("blocked")
+            and not result.get("no_match")
+        ):
+            tc.record_tool_exec(
+                result["tool"],
+                result.get("tool_args", {}),
+                str(tool_output),
+            )
+
+        tc.finalize(str(result.get("final_response", "")))
+    # ═══════════════════════════════════════════════════════════
+
+    resp = {
         "response": result.get("final_response", "No response"),
         "blocked": result.get("blocked", False),
         "no_match": result.get("no_match", False),
@@ -366,6 +427,10 @@ def _chat_mock(req: ChatRequest) -> dict:
         "graph_nodes_visited": _extract_nodes(result),
         "mode": "mock",
     }
+    if tc:
+        resp["_trace_collector"] = tc
+        resp["_trace_id"] = tc.trace_id
+    return resp
 
 
 async def _chat_llm(req: ChatRequest) -> dict:
@@ -382,6 +447,28 @@ async def _chat_llm(req: ChatRequest) -> dict:
     if needs_key and not req.api_key:
         raise HTTPException(400, "api_key is required for cloud models")
 
+    # ═══ AI PROTECTOR — Start trace ═══════════════════════════
+    trc = TraceCollector(proxy_url=PROXY_URL, agent_id=AGENT_ID) if AGENT_ID else None
+    if trc:
+        trc.start(
+            session_id="llm",
+            user_role=req.role,
+            model=model,
+            user_message=req.message,
+            policy=PROXY_POLICY,
+        )
+        trc.start_iteration()
+
+    def _attach_trace(resp: dict) -> dict:
+        """Attach trace collector to any response dict."""
+        if trc:
+            trc.finalize(str(resp.get("response", "")))
+            resp["_trace_collector"] = trc
+            resp["_trace_id"] = trc.trace_id
+        return resp
+
+    # ═══════════════════════════════════════════════════════════
+
     role_context = (
         f"The current user's role is '{req.role}'. "
         f"You may call any tool that is available to this role — "
@@ -395,11 +482,6 @@ async def _chat_llm(req: ChatRequest) -> dict:
     ]
 
     # 0. ═══ AI PROTECTOR — Pre-scan via proxy firewall ════════════════
-    # Scan the user message through the proxy BEFORE calling the LLM.
-    # Uses /v1/scan (scan-only, no LLM call) for speed.
-    # Only blocks when the intent is a known attack category — this
-    # avoids false-positives from over-aggressive scanners (NeMo) on
-    # normal e-commerce queries like "list all users".
     pre_scan = await _proxy_scan(
         messages=messages,
         model=model,
@@ -407,24 +489,44 @@ async def _chat_llm(req: ChatRequest) -> dict:
     )
 
     if pre_scan and pre_scan["blocked"]:
-        return {
-            "response": (
-                f"⛔ Proxy firewall BLOCK ({PROXY_POLICY}): {pre_scan['reason']}"
-            ),
-            "blocked": True,
-            "no_match": False,
-            "gate_log": [
-                {
-                    "gate": "proxy_firewall",
-                    "decision": "block",
-                    "reason": pre_scan["reason"],
-                    "policy": PROXY_POLICY,
-                    "intent": pre_scan.get("intent"),
-                    "risk_score": pre_scan.get("risk_score"),
-                }
-            ],
-            "mode": "llm",
-        }
+        if trc:
+            trc.record_firewall(
+                "block",
+                intent=pre_scan.get("intent"),
+                risk_score=pre_scan.get("risk_score", 0.0),
+                reason=pre_scan.get("reason"),
+            )
+            trc.record_intent(
+                pre_scan.get("intent", ""), pre_scan.get("risk_score", 0.0)
+            )
+        return _attach_trace(
+            {
+                "response": (
+                    f"⛔ Proxy firewall BLOCK ({PROXY_POLICY}): {pre_scan['reason']}"
+                ),
+                "blocked": True,
+                "no_match": False,
+                "gate_log": [
+                    {
+                        "gate": "proxy_firewall",
+                        "decision": "block",
+                        "reason": pre_scan["reason"],
+                        "policy": PROXY_POLICY,
+                        "intent": pre_scan.get("intent"),
+                        "risk_score": pre_scan.get("risk_score"),
+                    }
+                ],
+                "mode": "llm",
+            }
+        )
+
+    if trc and pre_scan:
+        trc.record_firewall(
+            "allow",
+            intent=pre_scan.get("intent"),
+            risk_score=pre_scan.get("risk_score", 0.0),
+        )
+        trc.record_intent(pre_scan.get("intent", ""), pre_scan.get("risk_score", 0.0))
     # ═══════════════════════════════════════════════════════════════════
 
     # 1. Ask LLM which tool to call
@@ -442,9 +544,16 @@ async def _chat_llm(req: ChatRequest) -> dict:
     response = await litellm.acompletion(**kwargs)
     choice = response.choices[0].message  # type: ignore[union-attr]
 
+    # Record LLM call in trace
+    if trc:
+        usage = getattr(response, "usage", None)
+        trc.record_llm_call(
+            tokens_in=getattr(usage, "prompt_tokens", 0) if usage else 0,
+            tokens_out=getattr(usage, "completion_tokens", 0) if usage else 0,
+            messages_count=len(messages),
+        )
+
     # If no tool call, return LLM's conversational response directly.
-    # The input was already scanned by _proxy_scan() above; the LLM's
-    # response to a safe input is fine to pass through.
     if not choice.tool_calls:
         gate_log = []
         if pre_scan:
@@ -471,35 +580,41 @@ async def _chat_llm(req: ChatRequest) -> dict:
                 }
             )
         text = choice.content or "No response from model."
-        return {
-            "response": text,
-            "blocked": False,
-            "no_match": False,
-            "gate_log": gate_log,
-            "mode": "llm",
-        }
+        return _attach_trace(
+            {
+                "response": text,
+                "blocked": False,
+                "no_match": False,
+                "gate_log": gate_log,
+                "mode": "llm",
+            }
+        )
 
     # 2. Extract tool call → run through graph security gates
-    tc = choice.tool_calls[0]
-    tool_name = tc.function.name
-    tool_args = json.loads(tc.function.arguments) if tc.function.arguments else {}
+    tool_call = choice.tool_calls[0]
+    tool_name = tool_call.function.name
+    tool_args = (
+        json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+    )
 
     # Guard: if LLM hallucinated a tool not in our catalogue, treat as text
     known_tools = {t["function"]["name"] for t in TOOL_DEFINITIONS}
     if tool_name not in known_tools:
-        return {
-            "response": choice.content or f"(LLM tried unknown tool '{tool_name}')",
-            "blocked": False,
-            "no_match": False,
-            "gate_log": [
-                {
-                    "gate": "llm_guard",
-                    "decision": "skip",
-                    "reason": f"LLM selected unknown tool '{tool_name}', treated as text",
-                }
-            ],
-            "mode": "llm",
-        }
+        return _attach_trace(
+            {
+                "response": choice.content or f"(LLM tried unknown tool '{tool_name}')",
+                "blocked": False,
+                "no_match": False,
+                "gate_log": [
+                    {
+                        "gate": "llm_guard",
+                        "decision": "skip",
+                        "reason": f"LLM selected unknown tool '{tool_name}', treated as text",
+                    }
+                ],
+                "mode": "llm",
+            }
+        )
 
     compiled = get_graph()
     initial_state = {
@@ -512,23 +627,47 @@ async def _chat_llm(req: ChatRequest) -> dict:
 
     result = compiled.invoke(initial_state)
 
+    # ═══ AI PROTECTOR — Record graph gate decisions in trace ══════
+    if trc:
+        for entry in result.get("gate_log", []):
+            gate = entry.get("gate", "")
+            if gate == "pre_tool":
+                trc.record_pre_tool(
+                    entry.get("tool", tool_name),
+                    entry.get("decision", "allow").upper(),
+                    entry.get("reason"),
+                )
+            elif gate == "post_tool":
+                trc.record_post_tool(
+                    entry.get("tool", tool_name),
+                    entry.get("decision", "clean"),
+                    entry.get("findings", []),
+                )
+        if not result.get("blocked") and not result.get("no_match"):
+            trc.record_tool_exec(
+                tool_name,
+                tool_args,
+                str(result.get("tool_output", "")),
+            )
+    # ═══════════════════════════════════════════════════════════════
+
     # If blocked or requires confirmation, return gate result
     if result.get("blocked") or result.get("requires_confirmation"):
-        return {
-            "response": result.get("final_response", "No response"),
-            "blocked": result.get("blocked", False),
-            "no_match": False,
-            "requires_confirmation": result.get("requires_confirmation", False),
-            "tool": result.get("tool"),
-            "tool_args": result.get("tool_args"),
-            "gate_log": result.get("gate_log", []),
-            "graph_nodes_visited": _extract_nodes(result),
-            "mode": "llm",
-        }
+        return _attach_trace(
+            {
+                "response": result.get("final_response", "No response"),
+                "blocked": result.get("blocked", False),
+                "no_match": False,
+                "requires_confirmation": result.get("requires_confirmation", False),
+                "tool": result.get("tool"),
+                "tool_args": result.get("tool_args"),
+                "gate_log": result.get("gate_log", []),
+                "graph_nodes_visited": _extract_nodes(result),
+                "mode": "llm",
+            }
+        )
 
     # 3. ═══ AI PROTECTOR — Route through proxy firewall (balanced) ═══
-    # The formatting call goes through the proxy for content-level
-    # filtering: injection detection, toxicity, PII scan.
     tool_result_str = str(result.get("final_response", ""))
     proxy_messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -552,12 +691,6 @@ async def _chat_llm(req: ChatRequest) -> dict:
     existing_gate_log = result.get("gate_log", [])
 
     if proxy_result and proxy_result["blocked"]:
-        # ── AI PROTECTOR — graceful fallback ─────────────────────────
-        # The post-tool formatting call was blocked by the proxy firewall
-        # (likely a NeMo Guardrails false-positive on normal tool output).
-        # RBAC, limits, and output-scan gates have already passed, so we
-        # fall back to direct LiteLLM formatting and log a "flagged" entry
-        # instead of returning a hard SECURITY BLOCK to the user.
         existing_gate_log.append(
             {
                 "gate": "proxy_firewall",
@@ -584,7 +717,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
         messages.append(
             {
                 "role": "tool",
-                "tool_call_id": tc.id,
+                "tool_call_id": tool_call.id,
                 "content": tool_result_str,
             }
         )
@@ -609,17 +742,19 @@ async def _chat_llm(req: ChatRequest) -> dict:
         )
     # ═══════════════════════════════════════════════════════════════════
 
-    return {
-        "response": final_text,
-        "blocked": False,
-        "no_match": False,
-        "requires_confirmation": False,
-        "tool": result.get("tool"),
-        "tool_args": result.get("tool_args"),
-        "gate_log": existing_gate_log,
-        "graph_nodes_visited": _extract_nodes(result),
-        "mode": "llm",
-    }
+    return _attach_trace(
+        {
+            "response": final_text,
+            "blocked": False,
+            "no_match": False,
+            "requires_confirmation": False,
+            "tool": result.get("tool"),
+            "tool_args": result.get("tool_args"),
+            "gate_log": existing_gate_log,
+            "graph_nodes_visited": _extract_nodes(result),
+            "mode": "llm",
+        }
+    )
 
 
 def _extract_nodes(result: dict) -> list[str]:

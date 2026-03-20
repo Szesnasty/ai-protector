@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { useAgentTraces } from '~/composables/useAgentTraces'
+import { useAgents } from '~/composables/useAgents'
 
 definePageMeta({ title: 'Agent Traces' })
+
+const { agents } = useAgents()
+const selectedAgentId = ref<string | null>(null)
 
 const {
   items,
@@ -15,7 +19,7 @@ const {
   resetFilters,
   hasActiveFilters,
   refetch,
-} = useAgentTraces()
+} = useAgentTraces(selectedAgentId)
 </script>
 
 <template>
@@ -28,6 +32,19 @@ const {
         </p>
       </div>
       <v-spacer />
+      <v-select
+        v-model="selectedAgentId"
+        :items="agents"
+        item-title="name"
+        item-value="id"
+        label="Agent"
+        density="compact"
+        variant="outlined"
+        hide-details
+        clearable
+        style="max-width: 260px"
+        class="mr-2"
+      />
       <v-chip v-if="hasActiveFilters" variant="tonal" size="small" class="mr-2">
         Filtered
       </v-chip>
@@ -43,20 +60,26 @@ const {
       </v-btn>
     </div>
 
-    <agent-traces-filters
-      v-model="filters"
-      :has-active="hasActiveFilters"
-      @clear="resetFilters"
-    />
+    <v-alert v-if="!selectedAgentId" type="info" variant="tonal" class="mb-4">
+      Select an agent above to view its traces.
+    </v-alert>
 
-    <agent-traces-table
-      :items="items"
-      :total="total"
-      :loading="isLoading"
-      v-model:page="page"
-      v-model:page-size="pageSize"
-      :fetch-detail="fetchDetail"
-      :fetch-export="fetchExport"
-    />
+    <template v-if="selectedAgentId">
+      <agent-traces-filters
+        v-model="filters"
+        :has-active="hasActiveFilters"
+        @clear="resetFilters"
+      />
+
+      <agent-traces-table
+        :items="items"
+        :total="total"
+        :loading="isLoading"
+        v-model:page="page"
+        v-model:page-size="pageSize"
+        :fetch-detail="fetchDetail"
+        :fetch-export="fetchExport"
+      />
+    </template>
   </v-container>
 </template>

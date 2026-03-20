@@ -2,6 +2,7 @@
 
 export interface AgentTraceSummary {
   trace_id: string
+  agent_id?: string
   session_id: string
   timestamp: string
   user_role: string
@@ -11,6 +12,7 @@ export interface AgentTraceSummary {
   iterations_count: number
   tool_calls_count: number
   tool_calls_blocked: number
+  firewall_blocked?: boolean
   tokens_in: number
   tokens_out: number
   has_errors: boolean
@@ -76,8 +78,9 @@ export interface TraceIteration {
 
 export interface AgentTraceDetail {
   trace_id: string
+  agent_id?: string
   session_id: string
-  request_id: string
+  request_id?: string
   timestamp: string
   user_role: string
   policy: string

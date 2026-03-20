@@ -105,6 +105,7 @@ services:
       - "8002:8002"
     environment:
       PROXY_BASE_URL: http://proxy-service:8000/v1
+      AGENT_ID: ${AGENT_ID_DEMO:-}
       OLLAMA_BASE_URL: http://ollama:11434
       DEFAULT_MODEL: llama3.2:3b
       DEFAULT_MODEL_PREFIX: openai
@@ -147,7 +148,10 @@ services:
     environment:
       PROXY_URL: http://proxy-service:8000
       PROXY_POLICY: ${PROXY_POLICY:-balanced}
+      AGENT_ID: ${AGENT_ID_PYTHON:-}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+    depends_on:
+      - proxy-service
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\""]
       interval: 10s
@@ -167,7 +171,10 @@ services:
     environment:
       PROXY_URL: http://proxy-service:8000
       PROXY_POLICY: ${PROXY_POLICY:-balanced}
+      AGENT_ID: ${AGENT_ID_LANGGRAPH:-}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+    depends_on:
+      - proxy-service
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/health')\""]
       interval: 10s

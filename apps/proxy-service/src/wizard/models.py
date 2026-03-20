@@ -570,3 +570,60 @@ class AgentTrace(UUIDMixin, Base):
 
     def __repr__(self) -> str:
         return f"<AgentTrace gate={self.gate} decision={self.decision} agent={self.agent_id}>"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# AgentTraceRun — full structured trace per agent request (spec tracing)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class AgentTraceRun(UUIDMixin, Base):
+    """Full structured trace for a single agent request.
+
+    Stores the complete trace dict (iterations, gate decisions, tool
+    executions, LLM calls) as JSONB — one row per agent /chat call.
+    """
+
+    __tablename__ = "agent_trace_runs"
+
+    agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    trace_id: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        unique=True,
+    )
+    session_id: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+        default="default",
+        index=True,
+    )
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    user_role: Mapped[str] = mapped_column(String(128), nullable=False, default="user")
+    model: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    intent: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    total_duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    counters: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    iterations: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    errors: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    limits_hit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    # Relationships
+    agent: Mapped[Agent] = relationship("Agent", backref="trace_runs", lazy="selectin")
+
+    __table_args__ = (
+        Index("ix_trace_runs_agent_timestamp", "agent_id", "timestamp"),
+        Index("ix_trace_runs_agent_session", "agent_id", "session_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<AgentTraceRun trace_id={self.trace_id} agent={self.agent_id}>"

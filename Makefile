@@ -94,6 +94,7 @@ pre-commit:
 test:
 	cd apps/proxy-service && pytest tests/ -v
 	cd apps/agent-demo && pytest tests/ -v
+	cd apps/test-agents && pytest tests/ -v
 
 test-cov:
 	cd apps/proxy-service && pytest tests/ -v --cov=src --cov-report=html
