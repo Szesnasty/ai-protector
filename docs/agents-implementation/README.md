@@ -22,7 +22,7 @@ You want your agent safe in 30–60 minutes.
 
 ## The flow
 
-AI Protector solves this in 8 steps — not 8 weeks.
+The 7-step wizard sets you up — not 7 weeks. Step 8 is ongoing monitoring after deployment.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -34,10 +34,13 @@ AI Protector solves this in 8 steps — not 8 weeks.
 │   5. Generate Kit    →  copy-paste code, config, env vars   │
 │   6. Run Validation  →  attack tests against your setup     │
 │   7. Deploy Safely   →  observe → warn → enforce            │
-│   8. Monitor Live    →  traces, incidents, blocked calls     │
-│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│   8. Monitor Live    →  traces, incidents, blocked calls     │  ← ongoing
 └─────────────────────────────────────────────────────────────┘
 ```
+
+Steps 1–7 are the guided wizard (available in the UI). Step 8 is
+ongoing post-deployment — not a wizard step.
 
 Each step has a dedicated guide. Start at step 1 — you'll have a
 protected agent by step 5.
