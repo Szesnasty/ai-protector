@@ -168,8 +168,8 @@ async def test_context_builder_tools_populated(client):
     async for db in get_db():
         ctx = await build_kit_context(uuid.UUID(ref["id"]), db)
         tool_names = {t["name"] for t in ctx["tools"]}
-        assert "searchKnowledgeBase" in tool_names
-        assert "issueRefund" in tool_names
+        assert "getOrders" in tool_names
+        assert "updateOrder" in tool_names
         assert len(ctx["tools"]) == 5
         break
 
@@ -183,7 +183,7 @@ async def test_context_builder_roles_populated(client):
     async for db in get_db():
         ctx = await build_kit_context(uuid.UUID(ref["id"]), db)
         role_names = {r["name"] for r in ctx["roles"]}
-        assert role_names == {"customer", "support", "admin"}
+        assert role_names == {"user", "admin"}
         break
 
 
@@ -471,8 +471,8 @@ async def test_langgraph_tool_names_parameterized(client):
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         code = kit["files"]["protected_agent.py"]
-        assert "searchKnowledgeBase" in code
-        assert "issueRefund" in code
+        assert "getOrders" in code
+        assert "updateOrder" in code
         break
 
 
@@ -485,7 +485,7 @@ async def test_langgraph_role_names_parameterized(client):
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         code = kit["files"]["protected_agent.py"]
-        assert '"customer"' in code
+        assert '"user"' in code
         assert '"admin"' in code
         break
 

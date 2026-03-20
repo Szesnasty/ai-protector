@@ -114,7 +114,7 @@ class TestBalancedPolicy:
         assert result["decision"] == "ALLOW"
 
     async def test_injection_above_threshold_block(self) -> None:
-        """Injection 0.92 * 0.8 = 0.736 > 0.7 → BLOCK."""
+        """Injection 0.92 * 0.8 = 0.736 >= 0.7 → BLOCK."""
         state = _make_state(
             risk_flags={"promptinjection": 0.92},
             policy_config=BALANCED_CONFIG,
@@ -186,7 +186,7 @@ class TestStrictPolicy:
         assert result["decision"] == "MODIFY"
 
     async def test_injection_moderate_blocks(self) -> None:
-        """Injection 0.7 * 0.8 = 0.56 > 0.5 → BLOCK."""
+        """Injection 0.7 * 0.8 = 0.56 >= 0.5 → BLOCK."""
         state = _make_state(
             risk_flags={"promptinjection": 0.7},
             policy_config=STRICT_CONFIG,
@@ -239,7 +239,7 @@ class TestParanoidPolicy:
         assert result["decision"] == "BLOCK"
 
     async def test_any_injection_blocks(self) -> None:
-        """Even small injection 0.4 * 0.8 = 0.32 > 0.3 → BLOCK."""
+        """Even small injection 0.4 * 0.8 = 0.32 >= 0.3 → BLOCK."""
         state = _make_state(
             risk_flags={"promptinjection": 0.4},
             policy_config=PARANOID_CONFIG,
@@ -329,7 +329,7 @@ class TestCustomWeights:
 
     async def test_custom_weight_changes_decision(self) -> None:
         """High injection_weight can flip ALLOW→BLOCK."""
-        # Default weight 0.5: 0.6 * 0.5 = 0.30 < 0.5 → ALLOW
+        # Default weight 0.8: 0.6 * 0.8 = 0.48 < 0.5 → ALLOW
         state_default = _make_state(
             risk_flags={"promptinjection": 0.6},
             policy_config={"thresholds": {"max_risk": 0.5}},
@@ -357,15 +357,15 @@ class TestDefaultThresholds:
             "intent": "qa",
             "risk_flags": {"promptinjection": 0.9},
         }  # type: ignore[typeddict-item]
-        # Default injection_weight=0.5 → 0.9 * 0.5 = 0.45
-        assert calculate_risk_score(state) == pytest.approx(0.45)
+        # Default injection_weight=0.8 → 0.9 * 0.8 = 0.72
+        assert calculate_risk_score(state) == pytest.approx(0.72)
 
     def test_empty_policy_config(self) -> None:
         state = _make_state(
             risk_flags={"promptinjection": 0.9},
             policy_config={},
         )
-        assert calculate_risk_score(state) == pytest.approx(0.45)
+        assert calculate_risk_score(state) == pytest.approx(0.72)
 
     def test_empty_thresholds(self) -> None:
         state = _make_state(

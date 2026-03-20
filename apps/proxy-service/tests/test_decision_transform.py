@@ -69,8 +69,8 @@ class TestCalculateRiskScore:
             "intent": "qa",
             "risk_flags": {"promptinjection": 0.9},
         }  # type: ignore[typeddict-item]
-        # injection_weight default = 0.5 → 0.9 * 0.5 = 0.45
-        assert calculate_risk_score(state) == pytest.approx(0.45)
+        # injection_weight default = 0.8 → 0.9 * 0.8 = 0.72
+        assert calculate_risk_score(state) == pytest.approx(0.72)
 
     def test_pii_flag(self) -> None:
         state: PipelineState = {

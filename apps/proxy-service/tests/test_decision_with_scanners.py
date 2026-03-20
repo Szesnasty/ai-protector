@@ -18,8 +18,8 @@ class TestScannerWeights:
             "intent": "qa",
             "risk_flags": {"promptinjection": 0.9},
         }  # type: ignore[typeddict-item]
-        # 0.9 * 0.5 (default injection_weight) = 0.45
-        assert calculate_risk_score(state) == pytest.approx(0.45)
+        # 0.9 * 0.8 (default injection_weight) = 0.72
+        assert calculate_risk_score(state) == pytest.approx(0.72)
 
     def test_toxicity_weighted(self) -> None:
         state: PipelineState = {
@@ -41,7 +41,7 @@ class TestScannerWeights:
             "intent": "qa",
             "risk_flags": {"invisibletext": 1.0},
         }  # type: ignore[typeddict-item]
-        assert calculate_risk_score(state) == 0.4
+        assert calculate_risk_score(state) == 0.8
 
     def test_pii_count_scoring(self) -> None:
         state: PipelineState = {
@@ -64,8 +64,8 @@ class TestScannerWeights:
             "intent": "qa",
             "risk_flags": {"promptinjection": 0.9, "toxicity": 0.8},
         }  # type: ignore[typeddict-item]
-        # 0.9*0.5 + 0.8*0.5 = 0.45 + 0.40 = 0.85
-        assert calculate_risk_score(state) == pytest.approx(0.85)
+        # 0.9*0.8 + 0.8*0.5 = 0.72 + 0.40 = 1.12 → capped 1.0
+        assert calculate_risk_score(state) == pytest.approx(1.0)
 
 
 # ── decision_node with PII actions ──────────────────────────────────
@@ -122,7 +122,7 @@ class TestDecisionWithPII:
             "policy_config": {"thresholds": {"max_risk": 0.4}},
             "scanner_results": {},
         }  # type: ignore[typeddict-item]
-        # 0.92 * 0.5 (default injection_weight) = 0.46 > 0.4
+        # 0.92 * 0.8 (default injection_weight) = 0.736 > 0.4
         result = await decision_node(state)
         assert result["decision"] == "BLOCK"
 
@@ -134,7 +134,7 @@ class TestDecisionWithPII:
             "policy_config": {"thresholds": {"max_risk": 0.7}},
             "scanner_results": {},
         }  # type: ignore[typeddict-item]
-        # 0.6 (jailbreak) + 0.9*0.5=0.45 = 1.05 → capped 1.0 > 0.7
+        # 0.6 (jailbreak) + 0.9*0.8=0.72 = 1.32 → capped 1.0 > 0.7
         result = await decision_node(state)
         assert result["decision"] == "BLOCK"
 
