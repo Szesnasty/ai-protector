@@ -39,7 +39,7 @@ class ThresholdsSchema(BaseModel):
     injection_weight: float = Field(0.8, ge=0.0, le=1.0)
     toxicity_weight: float = Field(0.5, ge=0.0, le=1.0)
     secrets_weight: float = Field(0.6, ge=0.0, le=1.0)
-    invisible_weight: float = Field(0.4, ge=0.0, le=1.0)
+    invisible_weight: float = Field(0.8, ge=0.0, le=1.0)
     pii_per_entity_weight: float = Field(0.1, ge=0.0, le=1.0)
     pii_max_weight: float = Field(0.5, ge=0.0, le=1.0)
     nemo_weight: float = Field(0.7, ge=0.0, le=1.0)

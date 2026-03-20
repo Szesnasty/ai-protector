@@ -487,39 +487,39 @@ class TestNemoGuardrailsWeight:
     """NeMo blocked signal contributes to risk score."""
 
     async def test_nemo_blocked_adds_weight(self) -> None:
-        """nemo_blocked + nemo_role_bypass 0.85 → 0.85 * 0.7 = 0.595."""
+        """nemo_blocked + nemo_role_bypass 0.7 → 0.7 * 0.7 = 0.49."""
         state = _make_state(
-            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.85},
+            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.7},
             policy_config=BALANCED_CONFIG,
         )
         score = calculate_risk_score(state)
-        assert score == pytest.approx(0.85 * 0.7)
+        assert score == pytest.approx(0.7 * 0.7)
 
     async def test_nemo_blocked_with_intent_blocks(self) -> None:
-        """role_bypass(0.5) + nemo(0.85*0.7=0.595) = 1.0(capped) > 0.7 → BLOCK."""
+        """role_bypass(0.5) + nemo(0.7*0.7=0.49) = 0.99 > 0.7 → BLOCK."""
         state = _make_state(
             intent="role_bypass",
-            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.85},
+            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.7},
             policy_config=BALANCED_CONFIG,
         )
         result = await decision_node(state)
         assert result["decision"] == "BLOCK"
-        assert result["risk_score"] == pytest.approx(1.0)
+        assert result["risk_score"] == pytest.approx(0.99)
 
     async def test_nemo_custom_weight(self) -> None:
-        """Custom nemo_weight=0.9 → nemo_role_bypass 0.85 * 0.9 = 0.765."""
+        """Custom nemo_weight=0.9 → nemo_role_bypass 0.7 * 0.9 = 0.63."""
         config = {"thresholds": {"max_risk": 0.7, "nemo_weight": 0.9}}
         state = _make_state(
-            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.85},
+            risk_flags={"nemo_blocked": True, "nemo_role_bypass": 0.7},
             policy_config=config,
         )
         score = calculate_risk_score(state)
-        assert score == pytest.approx(0.85 * 0.9)
+        assert score == pytest.approx(0.7 * 0.9)
 
     async def test_no_nemo_flag_no_weight(self) -> None:
         """Without nemo_blocked flag, NeMo weight not applied."""
         state = _make_state(
-            risk_flags={"nemo_role_bypass": 0.85},
+            risk_flags={"nemo_role_bypass": 0.7},
             policy_config=BALANCED_CONFIG,
         )
         score = calculate_risk_score(state)
