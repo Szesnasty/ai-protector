@@ -412,6 +412,7 @@ import { useTestAgent, type GateLogEntry, type ChatResponse, type ChatRequest } 
 import { useAgents } from '~/composables/useAgents'
 import { useModels } from '~/composables/useModels'
 import { useApiKeys, getKey, detectProviderClient } from '~/composables/useApiKeys'
+import { useRememberedModel } from '~/composables/useRememberedModel'
 import { renderMarkdown } from '~/utils/markdown'
 import type { AgentFramework } from '~/types/wizard'
 
@@ -450,6 +451,7 @@ const llmModel = ref('')
 // ── Model catalogue from /v1/models + browser-stored keys ──────
 const { availableModels, isLoading: modelsLoading } = useModels()
 const { hasKeyForProvider } = useApiKeys()
+const rememberedModel = useRememberedModel(`test-agent-${props.framework}`)
 
 const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
@@ -478,12 +480,22 @@ const modelItems = computed(() =>
   })),
 )
 
-// Auto-select first available model
+// Auto-select model: restore from localStorage → first external → first any
 watch(modelItems, (items) => {
-  if (items.length && !llmModel.value) {
-    llmModel.value = items[0]!.value
+  if (!items.length) return
+  const saved = rememberedModel.get()
+  if (saved) {
+    const mem = items.find((m) => m.value === saved)
+    if (mem) { llmModel.value = mem.value; return }
   }
+  if (llmModel.value && items.find((m) => m.value === llmModel.value)) return
+  const firstExternal = items.find((m) => m.provider !== 'ollama' && m.provider !== 'mock')
+  if (firstExternal) { llmModel.value = firstExternal.value; return }
+  llmModel.value = items[0]!.value
 }, { immediate: true })
+
+// Persist model choice to localStorage
+watch(llmModel, (id) => { if (id) rememberedModel.set(id) })
 
 const selectedModelProvider = computed(() => {
   const item = modelItems.value.find(m => m.value === llmModel.value)
