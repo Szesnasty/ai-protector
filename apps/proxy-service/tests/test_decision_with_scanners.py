@@ -134,7 +134,7 @@ class TestDecisionWithPII:
             "policy_config": {"thresholds": {"max_risk": 0.7}},
             "scanner_results": {},
         }  # type: ignore[typeddict-item]
-        # 0.6 (jailbreak) + 0.9*0.8=0.72 = 1.32 → capped 1.0 > 0.7
+        # 0.6 (jailbreak) + 0.9*0.5=0.45 = 1.05 → capped 1.0 > 0.7
         result = await decision_node(state)
         assert result["decision"] == "BLOCK"
 
