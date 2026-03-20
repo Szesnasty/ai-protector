@@ -21,7 +21,7 @@ from src.wizard.models import (
     RiskLevel,
 )
 from src.wizard.schemas import AgentCreate, AgentUpdate
-from src.wizard.seed import seed_reference_agent
+from src.wizard.seed import seed_reference_agent, seed_wizard
 from src.wizard.services.risk import compute_risk_level, recommend_protection_level
 
 
@@ -409,8 +409,8 @@ async def test_reference_agent_top_of_list(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_seed_idempotent(client: AsyncClient):
     """Run seed twice → still 2 reference agents (both SEED_AGENTS)."""
-    await seed_reference_agent()
-    await seed_reference_agent()
+    await seed_wizard()
+    await seed_wizard()
     resp = await client.get("/v1/agents", params={"status": "active"})
     ref_count = sum(1 for a in resp.json()["items"] if a["is_reference"])
     assert ref_count == 2
