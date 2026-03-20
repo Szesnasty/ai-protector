@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.11](https://github.com/Szesnasty/ai-protector/compare/v0.1.10...v0.1.11) (2026-03-20)
+
+
+### Features
+
+* agent-demo auto-registers with wizard + centralized trace ingestion ([eb26f16](https://github.com/Szesnasty/ai-protector/commit/eb26f163c061d85e33cb8e40f4db1973dc71df4f))
+
+
+### Bug Fixes
+
+* persist last selected model in test agent chat (useRememberedModel) ([f9d5565](https://github.com/Szesnasty/ai-protector/commit/f9d55658bea38c873de04e8c56ace11c257f9e0c))
+
 ## [0.1.10](https://github.com/Szesnasty/ai-protector/compare/v0.1.9...v0.1.10) (2026-03-20)
 
 
