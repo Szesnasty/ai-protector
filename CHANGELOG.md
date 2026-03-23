@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.12](https://github.com/Szesnasty/ai-protector/compare/v0.1.11...v0.1.12) (2026-03-23)
+
+
+### Bug Fixes
+
+* CSV-aware CORS_ORIGINS env parsing + config tests ([f127257](https://github.com/Szesnasty/ai-protector/commit/f127257d8571e59cebaea49c3512f5841b4d2395))
+* remove bloated 0.1.12 changelog, revert versions to 0.1.11 ([89949ce](https://github.com/Szesnasty/ai-protector/commit/89949cea5412467033e898bdc52dfea6fa195ce1))
+* single-source version, env-driven CORS origins and json_logs ([a9c3dd8](https://github.com/Szesnasty/ai-protector/commit/a9c3dd865ead0f2695b2293c8e02ec7f376e3303))
+
 ## [0.1.11](https://github.com/Szesnasty/ai-protector/compare/v0.1.10...v0.1.11) (2026-03-20)
 
 
