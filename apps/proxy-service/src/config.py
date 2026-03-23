@@ -1,18 +1,51 @@
 """AI Protector Proxy Service — application configuration."""
 
+from __future__ import annotations
+
 from functools import lru_cache
+from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings.sources import EnvSettingsSource
 
 
 def _get_package_version() -> str:
-    """Read version from installed package metadata (pyproject.toml)."""
+    """Return version from installed package metadata, or a fallback."""
     try:
         from importlib.metadata import version
 
         return version("ai-protector-proxy")
     except Exception:
         return "0.0.0-unknown"
+
+
+# ---------------------------------------------------------------------------
+# Custom env source — accept comma-separated strings for list fields
+# ---------------------------------------------------------------------------
+
+# Fields where a plain CSV string (no leading '[') is split into a list
+# before pydantic-settings tries ``json.loads()``.
+_CSV_LIST_FIELDS: frozenset[str] = frozenset({"cors_origins"})
+
+
+class _CsvAwareEnvSource(EnvSettingsSource):
+    """EnvSettingsSource that accepts ``a,b,c`` for list fields."""
+
+    def prepare_field_value(
+        self,
+        field_name: str,
+        field: Any,
+        value: Any,
+        value_is_complex: bool,
+    ) -> Any:
+        if field_name in _CSV_LIST_FIELDS and isinstance(value, str) and not value.startswith("["):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return super().prepare_field_value(field_name, field, value, value_is_complex)
+
+
+# ---------------------------------------------------------------------------
+# Settings
+# ---------------------------------------------------------------------------
 
 
 class Settings(BaseSettings):
@@ -46,7 +79,9 @@ class Settings(BaseSettings):
     json_logs: bool = False  # True for production (structured JSON to stdout)
     app_version: str = _get_package_version()
 
-    # CORS
+    # CORS — accepts JSON array or comma-separated string from env:
+    #   CORS_ORIGINS='["https://app.example.com"]'
+    #   CORS_ORIGINS='https://app.example.com,https://admin.example.com'
     cors_origins: list[str] = [
         "http://localhost:3000",
         "http://frontend:3000",
@@ -70,6 +105,23 @@ class Settings(BaseSettings):
     enable_langfuse: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: Any,
+        env_settings: Any,
+        dotenv_settings: Any,
+        file_secret_settings: Any,
+    ) -> tuple[Any, ...]:
+        """Replace default env source with CSV-aware variant."""
+        return (
+            init_settings,
+            _CsvAwareEnvSource(settings_cls),
+            dotenv_settings,
+            file_secret_settings,
+        )
 
 
 @lru_cache
