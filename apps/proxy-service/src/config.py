@@ -5,6 +5,16 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _get_package_version() -> str:
+    """Read version from installed package metadata (pyproject.toml)."""
+    try:
+        from importlib.metadata import version
+
+        return version("ai-protector-proxy")
+    except Exception:
+        return "0.0.0-unknown"
+
+
 class Settings(BaseSettings):
     """Central configuration loaded from environment / .env file."""
 
@@ -33,7 +43,14 @@ class Settings(BaseSettings):
     mode: str = "demo"  # "demo" | "real" — demo uses MockProvider when no API key
     default_policy: str = "balanced"
     log_level: str = "INFO"
-    app_version: str = "0.1.10"
+    json_logs: bool = False  # True for production (structured JSON to stdout)
+    app_version: str = _get_package_version()
+
+    # CORS
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://frontend:3000",
+    ]
 
     # Security scanners
     enable_llm_guard: bool = True

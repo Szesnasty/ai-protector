@@ -34,7 +34,7 @@ logger = structlog.get_logger()
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup / shutdown lifecycle."""
     settings = get_settings()
-    setup_logging(log_level=settings.log_level, json_logs=False)
+    setup_logging(log_level=settings.log_level, json_logs=settings.json_logs)
 
     # Silence verbose LiteLLM logs
     os.environ["LITELLM_LOG"] = settings.litellm_log_level
@@ -107,7 +107,7 @@ app = FastAPI(
 # -- Middleware --
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://frontend:3000"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=[
