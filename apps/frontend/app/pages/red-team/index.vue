@@ -52,9 +52,9 @@
               color="primary"
               variant="flat"
               size="small"
-              prepend-icon="mdi-play"
+              :prepend-icon="card.key === 'demo' ? 'mdi-play' : 'mdi-cog'"
             >
-              Start
+              {{ card.key === 'demo' ? 'Start' : 'Configure' }}
             </v-btn>
           </v-card-text>
         </v-card>
@@ -98,23 +98,23 @@ const targetCards: TargetCard[] = [
   {
     key: 'local_agent',
     title: 'Local Agent',
-    description: 'Run benchmarks against your local agent endpoint.',
+    description: 'Agent running on localhost — test before you deploy.',
     icon: 'mdi-laptop',
     color: 'secondary',
-    disabled: true,
+    disabled: false,
   },
   {
     key: 'hosted_endpoint',
     title: 'Hosted Endpoint',
-    description: 'Test a hosted LLM or agent API endpoint.',
+    description: 'Staging, prod, or internal URL behind auth.',
     icon: 'mdi-web',
     color: 'info',
-    disabled: true,
+    disabled: false,
   },
   {
     key: 'registered_agent',
     title: 'Registered Agent',
-    description: 'Benchmark an agent registered in AI Protector.',
+    description: 'Benchmark an agent registered in AI Protector (Iteration 2+).',
     icon: 'mdi-shield-check',
     color: 'success',
     disabled: true,
@@ -126,6 +126,8 @@ const router = useRouter()
 function onCardClick(key: string) {
   if (key === 'demo') {
     router.push('/red-team/configure?target=demo')
+  } else if (key === 'local_agent' || key === 'hosted_endpoint') {
+    router.push(`/red-team/target?type=${key}`)
   }
 }
 </script>
