@@ -6,7 +6,7 @@
 
 | # | Spec | Module | Status |
 |---|------|--------|--------|
-| 01 | [Scenario Schema](01-scenario-schema.spec.md) | `red-team/schemas/` | not started |
+| 01 | [Scenario Schema](01-scenario-schema.spec.md) | `red-team/schemas/` | ✅ done |
 | 02 | [Pack Loader](02-pack-loader.spec.md) | `red-team/packs/` | not started |
 | 03 | [Evaluator Engine](03-evaluator-engine.spec.md) | `red-team/evaluators/` | not started |
 | 04 | [Score Calculator](04-score-calculator.spec.md) | `red-team/scoring/` | not started |
