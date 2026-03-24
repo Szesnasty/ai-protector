@@ -89,6 +89,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/ai_protector}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       DEFAULT_POLICY: ${DEFAULT_POLICY:-balanced}
+      BENCHMARK_SECRET_KEY: ${BENCHMARK_SECRET_KEY:-}
     depends_on:
       db:
         condition: service_healthy

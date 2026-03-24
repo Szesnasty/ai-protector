@@ -58,11 +58,16 @@ def test_decrypt_invalid_token():
         decrypt("not-valid-base64-ciphertext!!!")
 
 
-def test_missing_key(monkeypatch: pytest.MonkeyPatch):
-    """encrypt raises RuntimeError when key env var is missing."""
+def test_missing_key_generates_dev_key(monkeypatch: pytest.MonkeyPatch):
+    """When BENCHMARK_SECRET_KEY is unset, a random dev key is auto-generated."""
     monkeypatch.delenv("BENCHMARK_SECRET_KEY", raising=False)
-    with pytest.raises(RuntimeError, match="not set"):
-        encrypt("secret")
+    # Reset the cached dev key so we get a fresh one
+    import src.red_team.secrets.encryption as _enc
+
+    monkeypatch.setattr(_enc, "_DEV_KEY", None)
+    # Should NOT raise — dev key is auto-generated
+    token = encrypt("secret")
+    assert decrypt(token) == "secret"
 
 
 # ---------------------------------------------------------------------------

@@ -5,8 +5,18 @@
 # Full stack (Ollama + real LLM):  make up
 # Contributor (infra only):        make dev
 
+# Generate BENCHMARK_SECRET_KEY if empty in infra/.env
+define ensure-benchmark-key
+	@if grep -q '^BENCHMARK_SECRET_KEY=$$' infra/.env 2>/dev/null; then \
+		KEY=$$(openssl rand -hex 32) && \
+		sed -i '' "s/^BENCHMARK_SECRET_KEY=$$/BENCHMARK_SECRET_KEY=$$KEY/" infra/.env && \
+		echo "🔑  Generated BENCHMARK_SECRET_KEY"; \
+	fi
+endef
+
 demo:
 	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
+	$(ensure-benchmark-key)
 	cd infra && MODE=demo docker compose --profile demo --profile test-agents up --build -d
 	@echo ""
 	@echo "🚀  AI Protector Demo is starting..."
@@ -21,6 +31,7 @@ demo:
 
 up:
 	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
+	$(ensure-benchmark-key)
 	cd infra && MODE=real docker compose --profile full --profile test-agents up --build -d
 	@echo ""
 	@echo "🚀  AI Protector is starting (full stack)..."
