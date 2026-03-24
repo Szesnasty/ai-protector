@@ -7,7 +7,7 @@
 | # | Spec | Layer | Status |
 |---|------|-------|--------|
 | 01 | [API Routes](01-api-routes.spec.md) | Backend | ✅ done |
-| 02 | [Frontend Landing](02-frontend-landing.spec.md) | Frontend | not started |
+| 02 | [Frontend Landing](02-frontend-landing.spec.md) | Frontend | ✅ done |
 | 03 | [Frontend Configure](03-frontend-configure.spec.md) | Frontend | not started |
 | 04 | [Frontend Progress](04-frontend-progress.spec.md) | Frontend | not started |
 | 05 | [Frontend Results](05-frontend-results.spec.md) | Frontend | not started |
