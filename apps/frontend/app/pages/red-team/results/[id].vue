@@ -166,8 +166,8 @@
         </div>
       </v-card>
 
-      <!-- CTA section — Demo Agent variant -->
-      <v-card variant="flat" class="mb-6 pa-6" data-testid="cta-section">
+      <!-- CTA section — Variant A (Demo Agent / Registered Agent) -->
+      <v-card v-if="ctaVariant === 'A'" variant="flat" class="mb-6 pa-6" data-testid="cta-section">
         <h2 class="text-h6 mb-2">Want to improve this score?</h2>
         <p class="text-body-2 text-medium-emphasis mb-4">
           AI Protector detected {{ failedCount }} unprotected attack vector{{ failedCount !== 1 ? 's' : '' }}.
@@ -212,6 +212,87 @@
           <v-icon icon="mdi-check" size="small" /> Policy changed to {{ rerunPolicy }}.
           Click Re-run to see the improvement.
         </p>
+      </v-card>
+
+      <!-- CTA section — Variant B (Local Agent / Hosted Endpoint) -->
+      <v-card v-else variant="flat" class="mb-6 pa-6" data-testid="cta-section-b">
+        <h2 class="text-h6 mb-2">Protect this endpoint</h2>
+        <p class="text-body-2 text-medium-emphasis mb-4">
+          Your agent has {{ criticalCount || failedCount }} critical security gap{{ (criticalCount || failedCount) !== 1 ? 's' : '' }}.
+          Choose a protection path:
+        </p>
+
+        <v-row class="mb-4">
+          <!-- Quick — Proxy Setup -->
+          <v-col cols="12" sm="6">
+            <v-card variant="tonal" class="pa-4 h-100" data-testid="proxy-path-card">
+              <div class="d-flex align-center mb-2">
+                <v-avatar color="primary" variant="tonal" size="36" class="mr-2">
+                  <v-icon icon="mdi-shield-half-full" size="20" />
+                </v-avatar>
+                <span class="text-subtitle-2 font-weight-bold">Quick — Proxy Setup</span>
+              </div>
+              <p class="text-body-2 text-medium-emphasis mb-3">
+                Route traffic through AI Protector. No code changes.
+              </p>
+              <v-btn
+                color="primary"
+                variant="flat"
+                size="small"
+                append-icon="mdi-arrow-right"
+                data-testid="proxy-setup-btn"
+                :to="`/proxy/setup?endpoint=${encodeURIComponent(targetEndpointUrl)}`"
+              >
+                Set up Proxy
+              </v-btn>
+            </v-card>
+          </v-col>
+
+          <!-- Deep — Agent Wizard -->
+          <v-col cols="12" sm="6">
+            <v-card variant="tonal" class="pa-4 h-100" data-testid="wizard-path-card">
+              <div class="d-flex align-center mb-2">
+                <v-avatar color="secondary" variant="tonal" size="36" class="mr-2">
+                  <v-icon icon="mdi-wizard-hat" size="20" />
+                </v-avatar>
+                <span class="text-subtitle-2 font-weight-bold">Deep — Agent Wizard</span>
+              </div>
+              <p class="text-body-2 text-medium-emphasis mb-3">
+                Register tools, roles, RBAC. Most precise protection.
+              </p>
+              <v-btn
+                color="secondary"
+                variant="flat"
+                size="small"
+                append-icon="mdi-arrow-right"
+                data-testid="wizard-btn"
+                :to="`/agents/new?url=${encodeURIComponent(targetEndpointUrl)}&name=${encodeURIComponent(run?.pack ?? 'agent')}&type=${run?.target_type}`"
+              >
+                Open Wizard
+              </v-btn>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <div class="d-flex flex-wrap ga-3">
+          <v-btn
+            variant="outlined"
+            prepend-icon="mdi-replay"
+            :loading="isRerunning"
+            data-testid="rerun-btn-b"
+            @click="onRerun"
+          >
+            Re-run Benchmark
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            prepend-icon="mdi-download"
+            data-testid="export-btn-b"
+            @click="onExport"
+          >
+            Export Report
+          </v-btn>
+        </div>
       </v-card>
 
       <!-- Apply Recommended Profile dialog -->
@@ -296,6 +377,17 @@ const failedCount = computed(() => {
 
 const skippedMutating = computed(() => {
   return run.value?.skipped_reasons?.safe_mode ?? 0
+})
+
+const ctaVariant = computed(() => {
+  const t = run.value?.target_type
+  if (t === 'local_agent' || t === 'hosted_endpoint') return 'B'
+  return 'A'
+})
+
+const targetEndpointUrl = computed(() => {
+  const cfg = (run.value as RunDetail & { target_config?: Record<string, string> })?.target_config
+  return cfg?.endpoint_url ?? ''
 })
 
 const timeAgo = computed(() => {
