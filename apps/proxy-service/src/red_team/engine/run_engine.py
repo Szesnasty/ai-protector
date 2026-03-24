@@ -80,9 +80,17 @@ class BenchmarkRun:
 # ---------------------------------------------------------------------------
 
 
+_FINGERPRINT_EXCLUDE_KEYS = frozenset({"auth_secret_ref", "auth_header"})
+
+
 def compute_target_fingerprint(target_type: str, target_config: dict[str, Any]) -> str:
-    """Compute a stable fingerprint from target_type + target_config."""
-    payload = json.dumps({"type": target_type, "config": target_config}, sort_keys=True)
+    """Compute a stable fingerprint from target_type + target_config.
+
+    Auth-related fields are excluded so that re-encryptions with
+    different nonces produce the same fingerprint for the same target.
+    """
+    safe_config = {k: v for k, v in target_config.items() if k not in _FINGERPRINT_EXCLUDE_KEYS}
+    payload = json.dumps({"type": target_type, "config": safe_config}, sort_keys=True)
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 

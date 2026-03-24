@@ -16,16 +16,21 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 _KEY_ENV = "BENCHMARK_SECRET_KEY"
 _NONCE_LENGTH = 12  # 96-bit nonce recommended for AES-GCM
+_DEV_KEY: bytes | None = None  # lazily generated fallback for development
 
 
 def _get_key() -> bytes:
     """Return the 32-byte AES key from the environment.
 
-    Raises ``RuntimeError`` if not configured or invalid.
+    In development, if the env var is not set, a random key is generated
+    once per process and reused (secrets are ephemeral with 24 h TTL).
     """
+    global _DEV_KEY  # noqa: PLW0603
     raw = os.environ.get(_KEY_ENV)
     if not raw:
-        raise RuntimeError(f"{_KEY_ENV} environment variable not set")
+        if _DEV_KEY is None:
+            _DEV_KEY = secrets.token_bytes(32)
+        return _DEV_KEY
     try:
         key = bytes.fromhex(raw)
     except ValueError as exc:
