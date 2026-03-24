@@ -10,7 +10,7 @@
 | 02 | [Pack Loader](02-pack-loader.spec.md) | `red-team/packs/` | ✅ done |
 | 03 | [Evaluator Engine](03-evaluator-engine.spec.md) | `red-team/evaluators/` | ✅ done |
 | 04 | [Score Calculator](04-score-calculator.spec.md) | `red-team/scoring/` | ✅ done |
-| 05 | [Run Engine](05-run-engine.spec.md) | `red-team/engine/` | not started |
+| 05 | [Run Engine](05-run-engine.spec.md) | `red-team/engine/` | ✅ done |
 | 06 | [Persistence](06-persistence.spec.md) | `red-team/persistence/` | not started |
 | 07 | [Progress Emitter](07-progress-emitter.spec.md) | `red-team/progress/` | not started |
 | 08 | [HTTP Client](08-http-client.spec.md) | `red-team/engine/http_client` | not started |
