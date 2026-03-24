@@ -30,6 +30,7 @@ export interface RunDetail {
   pack: string
   status: string
   target_type: string
+  target_config: Record<string, string>
   score_simple: number | null
   score_weighted: number | null
   confidence: string | null
@@ -42,6 +43,7 @@ export interface RunDetail {
   skipped_reasons: Record<string, number>
   policy: string | null
   source_run_id: string | null
+  error: string | null
   created_at: string | null
   completed_at: string | null
 }

@@ -31,6 +31,27 @@
       Connection lost. Attempting to reconnect...
     </v-alert>
 
+    <!-- Mid-run failure banner -->
+    <v-alert
+      v-if="consecutiveFailures >= 3 && !isTerminal"
+      type="error"
+      variant="tonal"
+      class="mb-4"
+      data-testid="target-failure-banner"
+    >
+      Target stopped responding after {{ completed }}/{{ total }} scenarios. Partial results saved.
+      <template #append>
+        <v-btn
+          variant="text"
+          size="small"
+          color="error"
+          :to="`/red-team/results/${runId}`"
+        >
+          View Partial Results
+        </v-btn>
+      </template>
+    </v-alert>
+
     <!-- Progress bar -->
     <v-card variant="flat" class="mb-4 pa-4">
       <div class="d-flex align-center justify-space-between mb-2">
@@ -44,7 +65,7 @@
       </div>
       <v-progress-linear
         :model-value="progressPercent"
-        color="primary"
+        :color="consecutiveFailures >= 3 ? 'error' : 'primary'"
         height="8"
         rounded
         data-testid="progress-bar"
@@ -162,6 +183,7 @@ const showCancelDialog = ref(false)
 const isCancelling = ref(false)
 const isTerminal = ref(false)
 const latencies = ref<number[]>([])
+const consecutiveFailures = ref(0)
 
 // Timers
 let elapsedTimer: ReturnType<typeof setInterval> | null = null
@@ -232,6 +254,13 @@ function connectSSE() {
     completed.value++
     latencies.value.push(data.latency_ms)
 
+    // Track consecutive failures for mid-run error detection
+    if (data.passed) {
+      consecutiveFailures.value = 0
+    } else {
+      consecutiveFailures.value++
+    }
+
     // Replace the running item
     const idx = feedItems.value.findIndex((f) => f.scenarioId === data.scenario_id && f.status === 'running')
     const item: FeedItem = {
@@ -258,8 +287,8 @@ function connectSSE() {
     const item: FeedItem = {
       key: `skipped-${data.scenario_id}`,
       scenarioId: data.scenario_id,
-      icon: '⚠️',
-      detail: `Skipped: ${data.reason}`,
+      icon: data.reason === 'timeout' ? '⏱️' : '⚠️',
+      detail: data.reason === 'timeout' ? 'Timeout — skipped' : `Skipped: ${data.reason}`,
       status: 'skipped',
     }
     if (idx >= 0) {

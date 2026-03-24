@@ -75,8 +75,43 @@
         </template>
       </v-alert>
 
-      <!-- Hero section — Score badge -->
-      <v-card variant="flat" class="mb-6 pa-6 text-center" data-testid="score-section">
+      <!-- All-skipped: no score display -->
+      <v-alert
+        v-if="run.executed === 0 && run.total_applicable === 0"
+        type="warning"
+        variant="tonal"
+        class="mb-6"
+        data-testid="all-skipped-banner"
+      >
+        No scenarios were applicable. Try disabling Safe mode or selecting a different pack.
+      </v-alert>
+
+      <!-- Few-executed warning -->
+      <v-alert
+        v-else-if="run.executed > 0 && run.executed < 5"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        class="mb-6"
+        data-testid="few-executed-warning"
+      >
+        Score based on only {{ run.executed }} scenario{{ run.executed !== 1 ? 's' : '' }}. May not be representative.
+      </v-alert>
+
+      <!-- Partial results (cancelled / failed mid-run) -->
+      <v-alert
+        v-else-if="run.status === 'cancelled' || (run.status === 'failed' && run.executed > 0)"
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mb-6"
+        data-testid="partial-results-banner"
+      >
+        Partial score &mdash; {{ run.executed }} of {{ run.total_applicable }} scenarios completed.
+      </v-alert>
+
+      <!-- Hero section — Score badge (hidden if nothing was executed) -->
+      <v-card v-if="run.executed > 0" variant="flat" class="mb-6 pa-6 text-center" data-testid="score-section">
         <div class="d-flex flex-column align-center">
           <div
             class="score-badge mb-3"
@@ -386,8 +421,7 @@ const ctaVariant = computed(() => {
 })
 
 const targetEndpointUrl = computed(() => {
-  const cfg = (run.value as RunDetail & { target_config?: Record<string, string> })?.target_config
-  return cfg?.endpoint_url ?? ''
+  return run.value?.target_config?.endpoint_url ?? ''
 })
 
 const timeAgo = computed(() => {

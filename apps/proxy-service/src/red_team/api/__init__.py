@@ -144,9 +144,24 @@ class TestConnectionResponse(BaseModel):
     latency_ms: int | None = None
     content_type: str | None = None
     error: str | None = None
+    error_code: str | None = None  # "connection_failed" | "auth_invalid" | "timeout" | "ssl_error"
 
 
 class ErrorResponse(BaseModel):
     """Standard error response."""
 
     detail: str
+
+
+class StructuredError(BaseModel):
+    """Structured error with code and optional details."""
+
+    code: str  # e.g. "connection_failed", "auth_invalid", "timeout", etc.
+    message: str
+    details: dict[str, Any] | None = None
+
+
+class StructuredErrorResponse(BaseModel):
+    """Wraps a structured error for API responses."""
+
+    error: StructuredError
