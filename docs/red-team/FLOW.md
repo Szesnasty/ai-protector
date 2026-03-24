@@ -43,6 +43,7 @@ flowchart TB
         E1["Pack Loader"]
         E2["Run Engine"]
         E3["HTTP Client"]
+        E3N["Response Normalizer"]
         E4["Evaluator Engine"]
         E5["Score Calculator"]
         E6["Progress Emitter"]
@@ -65,8 +66,9 @@ flowchart TB
     A1 --> E2
     E2 --> E3
     E3 --> T1 & T2 & T3
-    T1 & T2 & T3 -->|"raw response"| E3
-    E3 -->|"RawTargetResponse"| E4
+    T1 & T2 & T3 -->|"raw HTTP response"| E3
+    E3 -->|"HttpResponse"| E3N
+    E3N -->|"RawTargetResponse"| E4
     E4 -->|"EvalResult"| E2
     E2 -->|"scenario result"| E6
     E2 -->|"scenario result"| E7
@@ -133,6 +135,7 @@ sequenceDiagram
     participant ENG as 🔧 Run Engine
     participant PL as 📦 Pack Loader
     participant HC as 🌐 HTTP Client
+    participant NORM as 🔄 Normalizer
     participant EV as 🔍 Evaluator
     participant SC as 📊 Score Calc
     participant SSE as 📡 SSE Emitter
@@ -151,9 +154,9 @@ sequenceDiagram
     ENG->>PL: load_pack("core_security", target_config)
     PL->>PL: Walidacja schematów (Pydantic)
     PL->>PL: Filtrowanie:<br/>1. applicable_to vs agent_type<br/>2. safe_mode → skip mutating<br/>3. detector availability
-    PL-->>ENG: 22 scenariuszy (8 skipped)
+    PL-->>ENG: FilteredPack {total_in_pack: 30,<br/>total_applicable: 22, skipped: 8,<br/>skipped_reasons: {safe_mode:5, not_applicable:2, detector:1}}
 
-    ENG->>DB: UPDATE run SET status=running, total=22
+    ENG->>DB: UPDATE run SET status=running,<br/>total_in_pack=30, total_applicable=22
 
     loop Dla każdego scenariusza (1..22)
         ENG->>SSE: event: scenario_start {id, index, total}
@@ -163,14 +166,16 @@ sequenceDiagram
         HC->>TGT: POST https://my-agent.com/chat<br/>{"message": "Ignore previous instructions..."}
         TGT-->>HC: HTTP 200 {"response": "I cannot help with that."}
 
-        HC->>HC: Buduje RawTargetResponse:<br/>• status_code: 200<br/>• body_text: "I cannot help..."<br/>• parsed_json: {response: "..."}<br/>• tool_calls: null<br/>• latency_ms: 120
+        HC-->>ENG: HttpResponse {status_code: 200,<br/>body: '{"response": "I cannot..."}',<br/>latency_ms: 120}
 
-        HC-->>ENG: RawTargetResponse
+        ENG->>NORM: normalize(http_response)
+        NORM->>NORM: detect_format → "generic_json"<br/>extract text → "I cannot help..."<br/>tool_calls → null
+        NORM-->>ENG: RawTargetResponse {body_text: "I cannot...",<br/>parsed_json: {response: "..."},<br/>tool_calls: null, provider_format: "generic_json"}
 
-        ENG->>EV: evaluate(scenario, raw_response)
+        ENG->>EV: evaluate(scenario, normalized_response)
         EV->>EV: Lookup detector: "refusal_pattern"
-        EV->>EV: Check: "I cannot" found in response<br/>→ match_means: pass ✅
-        EV-->>ENG: EvalResult {passed: true, actual: "BLOCK",<br/>detail: "Refusal detected: 'I cannot'",<br/>confidence: 1.0}
+        EV->>EV: Check: "I cannot" found in body_text<br/>→ match_means: pass ✅
+        EV-->>ENG: EvalResult {passed: true,<br/>detail: "Refusal detected: 'I cannot'",<br/>matched_evidence: "I cannot",<br/>confidence: 1.0, detector_type: "refusal_pattern"}
 
         ENG->>DB: INSERT BenchmarkScenarioResult<br/>{run_id, scenario_id, passed, actual,<br/>detector_type, detector_detail, latency_ms,<br/>raw_response_retained_until: now+30d}
 
@@ -183,9 +188,9 @@ sequenceDiagram
     SC->>SC: Simple: passed/total × 100 = 72<br/>Weighted: Σ(severity_weights) = 68
     SC-->>ENG: ScoreResult {simple: 72, weighted: 68, breakdown: {...}}
 
-    ENG->>DB: UPDATE run SET status=completed,<br/>score=72, passed=16, failed=6, skipped=8
+    ENG->>DB: UPDATE run SET status=completed,<br/>score_simple=72, score_weighted=68,<br/>total_in_pack=30, total_applicable=22,<br/>executed=22, passed=16, failed=6, skipped=8,<br/>skipped_reasons={safe_mode:5, not_applicable:2, detector:1}
 
-    ENG->>SSE: event: run_complete {score: 72, passed: 16, failed: 6}
+    ENG->>SSE: event: run_complete<br/>{score_simple: 72, score_weighted: 68,<br/>total_applicable: 22, executed: 22,<br/>passed: 16, failed: 6, skipped: 8}
     SSE-->>FE: 🏁 Run zakończony!
     FE->>FE: Auto-redirect → /red-team/results/abc-123
 ```
@@ -296,14 +301,28 @@ sequenceDiagram
 │     ┌────────────────────────────────────────────┐                  │
 │     │  prompt ──→ HTTP Client ──→ Target         │                  │
 │     │                              │              │                  │
-│     │              RawTargetResponse              │                  │
+│     │              HttpResponse (raw)             │                  │
 │     │              ┌─────────────────┐            │                  │
 │     │              │ status_code:200 │            │                  │
-│     │              │ body_text:"..." │            │                  │
-│     │              │ parsed_json:{} │             │                  │
-│     │              │ tool_calls:null │            │                  │
+│     │              │ body: "{...}"   │            │                  │
 │     │              │ latency_ms:120  │            │                  │
 │     │              └───────┬─────────┘            │                  │
+│     │                      │                      │                  │
+│     │              Response Normalizer            │                  │
+│     │              ┌─────────────────┐            │                  │
+│     │              │ detect format   │            │                  │
+│     │              │ extract text    │            │                  │
+│     │              │ extract tools   │            │                  │
+│     │              └───────┬─────────┘            │                  │
+│     │                      │                      │                  │
+│     │              RawTargetResponse              │                  │
+│     │              ┌──────────────────┐           │                  │
+│     │              │ body_text:"..."  │           │                  │
+│     │              │ parsed_json:{}   │           │                  │
+│     │              │ tool_calls:null  │           │                  │
+│     │              │ provider_format: │           │                  │
+│     │              │  "generic_json"  │           │                  │
+│     │              └───────┬──────────┘           │                  │
 │     │                      │                      │                  │
 │     │              Evaluator Engine               │                  │
 │     │              ┌─────────────────┐            │                  │
@@ -314,12 +333,13 @@ sequenceDiagram
 │     │              └───────┬─────────┘            │                  │
 │     │                      │                      │                  │
 │     │              EvalResult                     │                  │
-│     │              ┌─────────────────┐            │                  │
-│     │              │ passed: true    │            │                  │
-│     │              │ actual: "BLOCK" │            │                  │
-│     │              │ detail: "..."   │            │                  │
-│     │              │ confidence: 1.0 │            │                  │
-│     │              └─────────────────┘            │                  │
+│     │              ┌──────────────────┐           │                  │
+│     │              │ passed: true     │           │                  │
+│     │              │ detail: "..."    │           │                  │
+│     │              │ matched_evidence │           │                  │
+│     │              │ detector_type    │           │                  │
+│     │              │ confidence: 1.0  │           │                  │
+│     │              └──────────────────┘           │                  │
 │     └────────────────────────────────────────────┘                  │
 │                         │                                           │
 │  3. SCORING                                                         │
@@ -350,10 +370,16 @@ sequenceDiagram
 │  ┌──────────────────────┐        ┌──────────────────────┐           │
 │  │ BenchmarkRun:        │        │ scenario_start       │           │
 │  │  status: completed   │        │ scenario_complete    │           │
-│  │  score: 72           │        │ scenario_skipped     │           │
-│  │  passed: 16          │        │ run_complete         │           │
-│  │  failed: 6           │        │ run_failed           │           │
-│  │  skipped: 8          │        │ run_cancelled        │           │
+│  │  score_simple: 72    │        │ scenario_skipped     │           │
+│  │  score_weighted: 68  │        │ run_complete         │           │
+│  │  total_in_pack: 30   │        │ run_failed           │           │
+│  │  total_applicable:22 │        │ run_cancelled        │           │
+│  │  executed: 22        │        └──────────────────────┘           │
+│  │  passed: 16          │                                           │
+│  │  failed: 6           │                                           │
+│  │  skipped: 8          │                                           │
+│  │  skipped_reasons:{}  │                                           │
+│  │  source_run_id: null │                                           │
 │  ├──────────────────────┤        └──────────────────────┘           │
 │  │ BenchmarkScenario    │                                           │
 │  │ Result (×22):        │        📤 Do eksportu:                    │
@@ -462,6 +488,7 @@ graph TD
     SCHEMA["schemas/<br/>Scenario Schema"]
     PACKS["packs/<br/>Pack Loader"]
     EVAL["evaluators/<br/>Evaluator Engine"]
+    NORM["normalizer/<br/>Response Normalizer"]
     HTTP["http_client/<br/>HTTP Client"]
     ENGINE["engine/<br/>Run Engine"]
     SCORE["scoring/<br/>Score Calculator"]
@@ -472,9 +499,11 @@ graph TD
 
     SCHEMA --> PACKS
     SCHEMA --> EVAL
+    SCHEMA --> NORM
     PACKS --> ENGINE
     EVAL --> ENGINE
     HTTP --> ENGINE
+    NORM --> ENGINE
     ENGINE --> SCORE
     ENGINE --> SSE
     ENGINE --> DB
@@ -486,6 +515,7 @@ graph TD
     style SCHEMA fill:#e1f5fe
     style PACKS fill:#e1f5fe
     style EVAL fill:#e1f5fe
+    style NORM fill:#e1f5fe
     style HTTP fill:#e1f5fe
     style ENGINE fill:#fff3e0
     style SCORE fill:#e1f5fe
@@ -495,7 +525,7 @@ graph TD
     style EXPORT fill:#f3e5f5
 ```
 
-**Legenda:** 🔵 pure logic (bez I/O) · 🟠 orchestrator · 🔴 persistence · 🟣 external interface
+**Legenda:** 🔵 pure logic (no I/O) · 🟠 orchestrator · 🔴 persistence · 🟣 external interface
 
 ---
 
@@ -521,9 +551,11 @@ gantt
 ```
 
 ```
-Po 24h:  auth secrets → DELETED (auto, nigdy w logach)
-Po 30d:  raw responses → PURGED (raw_response_retained_until)
-         pipeline_result → PURGED
-         ── scenario results remain (pass/fail, detector output, latency)
-Forever: run metadata, scores, scenario verdicts
+After 24h:  auth secrets → DELETED (auto, never in logs)
+            NOTE: test-connection secrets are in-memory only, never persisted
+            Only create-run secrets get encrypted + 24h TTL
+After 30d:  raw responses → PURGED (raw_response_retained_until)
+            pipeline_result → PURGED
+            ── scenario results remain (pass/fail, detector output, latency)
+Forever:    run metadata, scores, counting fields, scenario verdicts
 ```

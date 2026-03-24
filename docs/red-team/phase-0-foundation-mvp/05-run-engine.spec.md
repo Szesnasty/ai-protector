@@ -2,7 +2,8 @@
 
 > **Module:** `red-team/engine/`
 > **Phase:** 0 (Foundation) — MVP
-> **Depends on:** Pack Loader, Evaluator Engine, Score Calculator, HTTP Client, Persistence, Progress Emitter
+> **Depends on:** Pack Loader, Evaluator Engine, Score Calculator, HTTP Client, Response Normalizer, Persistence, Progress Emitter
+> **Updated:** 2026-03-24 — aligned with counting / normalizer / worker boundary contracts
 
 ## Scope
 
@@ -19,6 +20,7 @@ class RunConfig:
     target_config: dict    # endpoint_url, agent_type, safe_mode, timeout_s, etc.
     pack: str              # "core_security" | "agent_threats"
     policy: str | None     # nullable for external targets
+    source_run_id: UUID | None = None  # Set when this is a re-run (3 types: same, clone, after-protection)
 ```
 
 ### Step 2: Implement run lifecycle state machine
@@ -41,9 +43,10 @@ States: `created → running → completed | cancelled | failed`
 ```python
 async def execute_run(run: BenchmarkRun, scenarios: list[Scenario]):
     for i, scenario in enumerate(scenarios):
-        emit(scenario_start(scenario, i, total))
+        emit(scenario_start(scenario, i, total_applicable))
         try:
-            response = await http_client.send(scenario.prompt, run.target_config)
+            raw_http = await http_client.send(scenario.prompt, run.target_config)
+            response = normalizer.normalize(raw_http)   # HTTP → RawTargetResponse
             eval_result = evaluator.evaluate_scenario(scenario, response)
             persist_result(run.id, scenario, eval_result, response)
             emit(scenario_complete(scenario, eval_result))
@@ -56,6 +59,8 @@ async def execute_run(run: BenchmarkRun, scenarios: list[Scenario]):
     finalize_run(run.id, scores)
     emit(run_complete(scores))
 ```
+
+> **Pipeline:** HTTP Client → Response Normalizer → Evaluator Engine → Score Calculator
 
 ### Step 4: Implement retry logic
 
@@ -70,9 +75,39 @@ async def execute_run(run: BenchmarkRun, scenarios: list[Scenario]):
 - Before creating a run, check for `status = running` on same target
 - Return 409 Conflict if a run is already active
 
-### Step 6: Wire all modules together
+### Step 6: Execution boundary (API vs Worker)
 
-- Run Engine imports: Pack Loader, Evaluator, Score Calculator, HTTP Client, Persistence, Progress
+```
+API process (FastAPI)          Worker process (BackgroundTasks MVP → Celery future)
+─────────────────────          ──────────────────────────────────────────────────────
+POST /runs                     execute_run()
+  → validate config              → iterate scenarios
+  → load & filter pack           → HTTP Client → Normalizer → Evaluator
+  → persist run (status=created) → persist each result
+  → enqueue to worker            → compute scores
+  → return 202 + run_id          → finalize run (status=completed)
+```
+
+- API creates the run record, returns immediately with `202 Accepted` + `run_id`
+- Worker picks up execution asynchronously
+- MVP: `BackgroundTasks` (single-process); future: Celery with Redis broker
+- The worker writes directly to the same DB — no message-passing for results
+
+### Step 7: Re-run support
+
+3 re-run operations supported via `source_run_id`:
+
+| Operation | Description | Config change |
+|-----------|-------------|---------------|
+| Re-run (same) | Repeat exact config | `source_run_id` = original, config copied |
+| Clone & modify | New run based on original | `source_run_id` = original, config modified |
+| Re-run after protection | Compare before/after | `source_run_id` = original, policy added/changed |
+
+All 3 create a new `BenchmarkRun` record — immutable history, no overwrites.
+
+### Step 8: Wire all modules together
+
+- Run Engine imports: Pack Loader, Evaluator, Score Calculator, HTTP Client, Response Normalizer, Persistence, Progress
 - Each dependency is injected (constructor / parameter), not hard-imported
 - This enables testing with mocks for every dependency
 
@@ -93,6 +128,12 @@ async def execute_run(run: BenchmarkRun, scenarios: list[Scenario]):
 | `test_progress_events_emitted` | Each scenario emits start/complete/skipped events |
 | `test_run_with_mock_http_client` | Full run against mocked HTTP → correct results |
 | `test_skipped_scenarios_excluded_from_score` | Skipped scenarios don't affect score |
+| `test_normalizer_in_pipeline` | HTTP response goes through normalizer before evaluator |
+| `test_worker_execution_async` | `execute_run()` runs in background, API returns 202 |
+| `test_rerun_same_config` | Re-run copies config exactly, sets `source_run_id` |
+| `test_rerun_clone_modify` | Clone allows config changes, sets `source_run_id` |
+| `test_rerun_after_protection` | Re-run with policy change, sets `source_run_id` |
+| `test_counting_fields_in_result` | Completed run has `total_in_pack`, `total_applicable`, `executed`, `skipped_reasons` |
 
 ## Definition of Done
 
@@ -100,7 +141,11 @@ async def execute_run(run: BenchmarkRun, scenarios: list[Scenario]):
 - [ ] Scenario execution loop with per-scenario timeout and error handling
 - [ ] Retry logic (1 retry, 3 consecutive = fail)
 - [ ] Concurrency guard (1 run per target)
-- [ ] All dependencies injected, testable with mocks
+- [ ] All dependencies injected (incl. Response Normalizer), testable with mocks
+- [ ] Response Normalizer sits between HTTP Client and Evaluator in pipeline
+- [ ] Worker boundary: API returns 202, execution is async
+- [ ] Re-run support with `source_run_id` (3 operations)
+- [ ] Counting fields populated: `total_in_pack`, `total_applicable`, `executed`, `skipped_reasons`
 - [ ] Full integration test with mock HTTP client passes
 - [ ] Partial results always persisted on cancel/fail
 - [ ] All tests pass, >90% coverage
