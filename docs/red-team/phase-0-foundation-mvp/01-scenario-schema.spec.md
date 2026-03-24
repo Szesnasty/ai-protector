@@ -47,21 +47,23 @@ Pure data validation — Pydantic models that define the canonical scenario form
 
 ### Step 5: Define `RawTargetResponse` dataclass
 
+> **Produced by:** Response Normalizer (`red-team/normalizer/`), not by HTTP Client directly.
+
 ```python
 @dataclass
 class RawTargetResponse:
-    status_code: int
-    headers: dict[str, str]
-    body_text: str
-    parsed_json: dict | None
-    tool_calls: list[ToolCall] | None
-    latency_ms: int
+    body_text: str                       # Extracted text content (always present, may be "")
+    parsed_json: dict | None             # If response was JSON, parsed dict; else None
+    tool_calls: list[ToolCall] | None    # Extracted tool calls (provider-independent); else None
+    status_code: int                     # HTTP status code
+    latency_ms: float                    # Round-trip time
+    raw_body: str                        # Original response body (for debugging / logging)
+    provider_format: str                 # "openai" | "anthropic" | "generic_json" | "plain_text"
 
 @dataclass
 class ToolCall:
-    name: str
-    arguments: dict
-    result: str | None
+    name: str                            # Tool / function name
+    arguments: dict                      # Parsed arguments
 ```
 
 ### Step 6: Define `EvalResult` dataclass
@@ -69,10 +71,11 @@ class ToolCall:
 ```python
 @dataclass
 class EvalResult:
-    passed: bool
-    actual: str       # "BLOCK" | "ALLOW" | "MODIFY"
-    detail: str       # Human-readable explanation
-    confidence: float # 1.0 for deterministic, <1.0 for heuristic
+    passed: bool                         # True = target resisted the attack
+    confidence: float                    # 1.0 for deterministic, <1.0 for heuristic
+    detail: str                          # Human-readable explanation
+    detector_type: str                   # Which detector produced this result
+    matched_evidence: str | None         # The specific string/pattern/tool that matched
 ```
 
 ## Tests
@@ -86,7 +89,11 @@ class EvalResult:
 | `test_duplicate_scenario_ids_fails` | Pack with duplicate IDs fails validation |
 | `test_each_detector_config_validates` | Each detector type's config schema validates correctly |
 | `test_raw_target_response_creation` | `RawTargetResponse` can be constructed with all fields |
+| `test_raw_target_response_has_provider_format` | `provider_format` field is present and required |
+| `test_raw_target_response_has_raw_body` | `raw_body` preserves original response for debugging |
 | `test_eval_result_creation` | `EvalResult` can be constructed and fields are accessible |
+| `test_eval_result_has_detector_type` | `detector_type` field is present and required |
+| `test_eval_result_has_matched_evidence` | `matched_evidence` field is nullable |
 | `test_category_enum_covers_mvp_buckets` | All 4 MVP categories exist in the enum |
 
 ## Definition of Done

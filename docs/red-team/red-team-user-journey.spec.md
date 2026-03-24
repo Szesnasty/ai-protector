@@ -29,6 +29,7 @@ The Red Team system is built as a set of **self-contained modules** that:
 | **Run Engine** | Orchestrates a full benchmark run | Run config + pack | Stream of scenario results | Pack Loader, Evaluator Engine, HTTP Client |
 | **Score Calculator** | Computes scores from results | List of `EvalResult` | `ScoreResult {simple, weighted, breakdown}` | Nothing |
 | **HTTP Client** | Sends attack prompts to target | Prompt + target config | Raw HTTP response | Nothing |
+| **Response Normalizer** | Normalizes diverse target response formats | Raw HTTP response | `RawTargetResponse` (canonical) | Scenario Schema |
 | **Progress Emitter** | Emits SSE events during run | Scenario results (stream) | SSE events | Nothing |
 | **Persistence** | Stores runs + results | Run & result objects | DB rows | Nothing (uses DB) |
 | **Export** | Generates reports from stored data | Run ID | JSON / Markdown / PDF | Persistence |
@@ -48,6 +49,7 @@ red-team/
 ├── packs/            # Pack Loader — reads JSON packs, filters by config
 ├── evaluators/       # Evaluator Engine — deterministic + heuristic detectors
 ├── engine/           # Run Engine — orchestration, HTTP calls, result collection
+├── normalizer/       # Response Normalizer — parses diverse target formats into RawTargetResponse
 ├── scoring/          # Score Calculator — pure math, no side effects
 ├── progress/         # Progress Emitter — SSE formatting
 ├── persistence/      # DB models + repository (thin layer)
@@ -392,6 +394,10 @@ After clicking "Local Agent" or "Hosted Endpoint" → [Configure]:
     - ephemeral per run (deleted after the benchmark completes or after TTL)
     - never returned to the UI or logs (masked in trace, API response, export)
   - In MVP: encrypted column in DB + auto-delete after 24h. Eventually: Vault / KMS integration.
+  - **Test Connection vs. Create Run — secret lifecycle:**
+    - `[Test Connection]` uses the auth header **in-memory only**. The backend decrypts/forwards it for the ping and discards it. No `auth_secret_ref` is created. No DB write.
+    - `POST /v1/benchmark/runs` (Create Run) is the first moment the secret is encrypted and persisted as `auth_secret_ref`.
+    - This limits unnecessary secret storage for users who test the form but never start a run.
 - **Type** — in Advanced section (collapsed). Default: **Chatbot / API** (lower barrier). Most users never touch this. The system auto-recommends the right pack. Only tool-calling agent developers need to change it. Chatbot / API → Core Security pre-selected; Tool-calling agent → Agent Threats pre-selected.
 - **Request timeout** — default 30s, max 120s. For slow agents.
 - **Safe / read-only mode** — changes the scenario composition in the benchmark. Precise definition:
@@ -571,15 +577,15 @@ For the demo agent: the user can literally change nothing and click "Run Benchma
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │  Category Breakdown                                    │  │
 │  │                                                        │  │
-│  │  Prompt injection resistance    ████████████░░  83%    │  │
-│  │  Jailbreak resistance           █████████░░░░░  62%    │  │
-│  │  System prompt leak resistance  ██████░░░░░░░░  40%    │  │
-│  │  PII leak prevention            ████████████░░  83%    │  │
-│  │  Unsafe compliance resistance   █████████░░░░░  60%    │  │
-│  │  Harmful output detection       ████████████████ 100%  │  │
+│  │  Prompt injection / jailbreak   ████████████░░  83%    │  │
+│  │  Data leakage / PII             ██████░░░░░░░░  40%    │  │
+│  │  Tool abuse                     ████████████████  N/A  │  │
+│  │  Access control                 ████████████████  N/A  │  │
 │  │                                                        │  │
 │  └────────────────────────────────────────────────────────┘  │
 ```
+
+> **Note — 4 buckets in MVP.** The breakdown shows exactly the 4 canonical categories from the Scenario Schema. Categories with no applicable scenarios for the target show "N/A". A finer-grained breakdown (splitting Prompt Injection into sub-types like "jailbreak", "system prompt override", "DAN") may be added in Phase 4 as an expandable detail row — but MVP stays at 4.
 
 ### What the user sees — Top Failures section
 
@@ -623,6 +629,28 @@ If this is a **re-run** of the same target, a mini-compare appears immediately o
 ```
 
 **Behavior:** This section appears automatically if the system detects a previous run on the same target. Clicking "Full Comparison" → screen 6 (`/red-team/compare`). Does not require Iteration 2 — can be implemented in Iter 1 as a simplified version (score delta only, without category breakdown).
+
+### Re-run semantics
+
+"Re-run" in the UI is a single button, but the backend must distinguish three distinct operations:
+
+| Operation | What happens | When used | Backend behavior |
+|-----------|-------------|-----------|-----------------|
+| **Re-run same config** | Exact same target + pack + policy | "Run again" to verify consistency | `POST /runs` with identical `target_config`, `pack`, `policy`. New `run_id`. `source_run_id` set to previous run. |
+| **Clone & modify** | Same target, different policy or pack | "Re-run with Strict Policy" | `POST /runs` with `target_config` copied, `policy` changed. `source_run_id` set to original. |
+| **Re-run after protection** | Same target URL, now routed through proxy | "Re-run Benchmark" after proxy setup | `POST /runs` with same logical target. `source_run_id` set. Compare detects improvement. |
+
+**Backend contract:**
+- Every run may carry an optional `source_run_id: UUID | null` — the run it was derived from.
+- `source_run_id` is set when the run is created from a CTA (Apply Profile, Re-run, Clone).
+- `source_run_id` is `null` for the first run on a target.
+- The "same target" detection for Before/After uses `source_run_id` first, then falls back to `target_type + endpoint_url` matching.
+- This makes comparison deterministic — no heuristic guessing about which previous run to compare against.
+
+**UI simplicity:**
+- User sees one button: **[Re-run Benchmark]** or **[Re-run with Strict Policy]**.
+- The backend handles the clone + `source_run_id` linkage silently.
+- User never sees "clone" or "source_run_id".
 
 ### What the user sees — Call-to-Action section (THE BRIDGE)
 
@@ -809,12 +837,10 @@ The user tested a bare endpoint. The CTA leads to **protection** — this is the
 │                                                              │
 │  Category                     Before    After    Change      │
 │  ─────────────────────────────────────────────────────────   │
-│  Prompt injection              83%       93%     ▲ +10%      │
-│  Jailbreak resistance          62%       81%     ▲ +19%      │
-│  Data exfiltration             40%       80%     ▲ +40%      │
-│  PII leak prevention           83%       92%     ▲ +9%       │
-│  Tool abuse resistance         33%       67%     ▲ +34%      │
-│  RBAC enforcement             100%      100%     ━ 0%        │
+│  Prompt injection / jailbreak  83%       93%     ▲ +10%      │
+│  Data leakage / PII            40%       80%     ▲ +40%      │
+│  Tool abuse                    33%       67%     ▲ +34%      │
+│  Access control               100%      100%     ━ 0%        │
 │                                                              │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
@@ -995,10 +1021,10 @@ Two entry points (Local Agent / Hosted Endpoint) lead to the same flow.
     └─────────────────────────────────────────────┘
 
     Category breakdown:
-    - Prompt injection resistance — 72%
-    - Jailbreak resistance — 40%
-    - System prompt leak resistance — 20%
-    - PII leak prevention — 33%
+    - Prompt injection / jailbreak — 56%
+    - Data leakage / PII — 27%
+    - Tool abuse — N/A (not applicable)
+    - Access control — N/A (not applicable)
 
     User thinks: "OK, the agent works, but the security is full of holes."
     This is the moment they came here for.
@@ -1095,16 +1121,19 @@ target_config:  JSON {
 pack:           "core_security" | "agent_threats" | "full_suite" | "jailbreakbench"
 pack_version:   str  // semver of pack at run time, e.g. "1.2.0" — enables reliable compare/history
 policy:         str (policy name, nullable for external targets)
+source_run_id:  UUID | null  // the run this was derived from (re-run, clone & modify). Null for first run.
 status:         "created" | "running" | "completed" | "cancelled" | "failed"
 score:          int (0-100, nullable until completed)  // displayed score (simple in Iter1, weighted from Iter2)
 score_simple:   int  // passed/total × 100
 score_weighted: int  // weighted formula (computed from start, displayed from Iter 2)
 confidence:     "high" | "medium"  // based on target_type
-total:          int
+total_in_pack:  int  // total scenarios in the pack file (before any filtering)
+total_applicable: int  // after filtering (applicable_to + safe_mode + detector availability)
+executed:       int  // actually sent to target and evaluated (total_applicable - timeouts)
 passed:         int
 failed:         int
-skipped:        int  // scenarios skipped (e.g. safe mode)
-skipped_mutating: int  // subset of skipped that were mutating scenarios
+skipped:        int  // total_in_pack - total_applicable (filtered out before run)
+skipped_reasons: JSON  // breakdown: {"safe_mode": 5, "not_applicable": 2, "detector_unavailable": 1}
 false_positives: int
 started_at:     datetime
 completed_at:   datetime (nullable)
@@ -1306,11 +1335,51 @@ class ToolCall:
     result: str | None              # Tool result if available (None if not captured)
 ```
 
-**Why this matters:**
-- Evaluators don't need to know HTTP details — they receive a clean struct.
-- `tool_calls` extraction is done **once** by the HTTP Client module, not re-parsed by each evaluator.
-- `parsed_json` is attempted automatically — evaluators that need structured data check `parsed_json is not None`.
-- `body_text` is always available as a fallback for regex/keyword detectors.
+### Response Normalizer — bridging HTTP Client and Evaluators
+
+> **Module:** `red-team/normalizer/` — pure functions, no network calls. Transforms raw HTTP responses into the canonical `RawTargetResponse`.
+
+**Why this is a separate module:**
+In practice, external targets return wildly different response formats:
+- Plain text (`"I cannot help with that."`)
+- JSON with `response` field (`{"response": "..."}`)
+- OpenAI-compatible (`{"choices": [{"message": {"content": "..."}}]}`)
+- Anthropic-style (`{"content": [{"text": "..."}]}`)
+- Tool calls in various schemas (OpenAI `tool_calls`, generic `function_calls`)
+- Error pages (HTML), empty bodies, non-UTF-8
+
+Without normalization, every evaluator would need to handle all these formats. That's fragile and violates single-responsibility.
+
+**Pipeline:**
+```
+HTTP Client              Response Normalizer           Evaluator Engine
+  raw HTTP response  →   parse & normalize         →   RawTargetResponse
+  (bytes, headers,       - detect format                (canonical struct)
+   status code)          - extract body_text
+                         - attempt JSON parse
+                         - extract tool_calls
+                         - normalize field names
+```
+
+**Format detection strategy (ordered):**
+1. **OpenAI-compatible** — `choices[0].message.content` present? Extract content + tool_calls.
+2. **Anthropic-style** — `content[0].text` present? Extract.
+3. **Generic JSON** — `response`, `text`, `message`, `output`, `answer` field? Extract.
+4. **Plain text** — `Content-Type: text/*`. Use raw body as `body_text`.
+5. **Fallback** — anything else: `body_text = raw_body.decode()`, `parsed_json = None`.
+
+**Tool call extraction (best-effort):**
+- OpenAI: `choices[0].message.tool_calls` → `list[ToolCall]`
+- Generic: `tool_calls` or `function_calls` top-level key
+- Absent: `tool_calls = None` (not an error)
+
+**Rules:**
+- Normalizer is a **pure function**: `(status_code, headers, body_bytes) → RawTargetResponse`
+- No retries, no HTTP calls, no side effects.
+- Unknown formats don't fail — they fall through to plain text.
+- `body_text` is **always** populated (even for JSON responses — evaluators may need raw text for regex/keyword checks).
+- `parsed_json` is populated if and only if the response is valid JSON.
+- Normalizer is separately testable with fixture responses from different providers.
 
 ### Evaluation hierarchy (MVP)
 
@@ -1388,12 +1457,22 @@ The run results explicitly show what was skipped and why:
 
 ```
 Score: 72/100
-Executed: 22 of 30 scenarios
-Skipped: 8
+Pack: Core Security (30 scenarios)
+Applicable: 22 │ Skipped: 8
   ├── 5 × safe_mode (mutating scenarios)
   ├── 2 × not_applicable (tool-calling only)
   └── 1 × unsupported_target (requires internal trace)
+Executed: 22 │ Passed: 16 │ Failed: 6
 ```
+
+**Counting rules (hard contract):**
+- `total_in_pack` = number of scenarios in the pack file (e.g., 30)
+- `total_applicable` = after filtering pipeline (e.g., 22). This is the denominator for scoring.
+- `executed` = scenarios actually sent + evaluated. Usually equals `total_applicable`, unless some timed out mid-run.
+- `skipped` = `total_in_pack - total_applicable` (filtered out before run starts)
+- `skipped_reasons` = JSON breakdown of why scenarios were skipped
+- Score is **always** computed from `executed` scenarios only — never from `total_in_pack`.
+- UI shows: "22 of 30 scenarios tested" — not raw field names.
 
 This is transparent — the user knows exactly why their run has fewer scenarios, and the score is calculated only from executed scenarios.
 
@@ -1444,12 +1523,39 @@ Most Core Security scenarios are `["chatbot_api", "tool_calling"]`. Most Agent T
 | From | To | Trigger | Side effects |
 |------|----|---------|--------------|
 | — | `created` | `POST /v1/benchmark/runs` | Validate config, load & filter pack, persist run record |
-| `created` | `running` | Immediate (async task starts) | Begin sending prompts to target |
+| `created` | `running` | Worker picks up task | Begin sending prompts to target |
 | `running` | `running` | Each scenario completes | Persist scenario result, emit SSE event, update counters |
 | `running` | `completed` | All scenarios done | Compute scores, persist final state, emit SSE "done" |
 | `running` | `cancelled` | `DELETE /v1/benchmark/runs/:id` or user clicks Cancel | Stop sending, persist partial results, compute partial score |
 | `running` | `failed` | Fatal error (target unreachable mid-run, internal error) | Persist error detail, partial results if any |
 | `created` | `failed` | Pack load fails, target unreachable on first attempt | Persist error, no results |
+
+### Execution boundary — API vs. Worker
+
+> **Hard rule:** The API layer only **creates** the run. A background worker **executes** it.
+
+```
+API (FastAPI)                        Worker (background)
+─────────────                        ──────────────────
+POST /runs                           poll / pick up run
+  → validate config                    → load & filter pack
+  → persist run (status: created)      → transition to running
+  → enqueue task(run_id)               → execute scenario loop
+  → return {run_id} immediately        → persist results per scenario
+                                       → emit SSE events
+                                       → compute scores
+                                       → finalize (completed/failed)
+```
+
+**Why this matters:**
+- **No long-running HTTP requests.** The POST returns immediately with `run_id`. The frontend subscribes via SSE.
+- **Cancellation is clean.** API sets a cancel flag; worker checks it between scenarios.
+- **Future scalability.** Worker can run on a separate process/node without changing the API.
+- **Retry semantics.** If a worker crashes mid-run, the run is stuck in `running`. A watchdog can detect stale runs and mark them `failed`.
+
+**MVP implementation:** FastAPI `BackgroundTasks` or a simple Celery task. The boundary exists regardless — API returns immediately, worker runs asynchronously.
+
+**Future:** Celery / ARQ / Dramatiq for proper job queue with retry, priority, and horizontal scaling.
 
 ### Rules
 

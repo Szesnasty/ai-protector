@@ -28,8 +28,8 @@ class ProgressEventType(str, Enum):
 @dataclass
 class ScenarioStartEvent:
     scenario_id: str
-    index: int        # 1-based
-    total: int
+    index: int              # 1-based
+    total_applicable: int   # Denominator for progress (not total_in_pack)
 
 @dataclass
 class ScenarioCompleteEvent:
@@ -45,10 +45,15 @@ class ScenarioSkippedEvent:
 
 @dataclass
 class RunCompleteEvent:
-    score: int
+    score_simple: int
+    score_weighted: int
+    total_in_pack: int
+    total_applicable: int
+    executed: int
     passed: int
     failed: int
     skipped: int
+    skipped_reasons: dict[str, int]
 
 @dataclass
 class RunFailedEvent:

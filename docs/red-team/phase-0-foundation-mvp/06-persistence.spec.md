@@ -16,9 +16,16 @@ All fields from the spec data model:
 - `id` (UUID, PK)
 - `target_type`, `target_config` (JSON), `pack`, `pack_version`, `policy`
 - `status` (enum: created | running | completed | cancelled | failed)
-- `score`, `score_simple`, `score_weighted` (nullable int)
+- `score_simple`, `score_weighted` (nullable int)
 - `confidence` (enum: high | medium)
-- `total`, `passed`, `failed`, `skipped`, `skipped_mutating`, `false_positives`
+- `total_in_pack` (int) — total scenarios in the pack file
+- `total_applicable` (int) — after filtering, denominator for scoring
+- `executed` (int) — actually sent to target
+- `passed`, `failed` (int)
+- `skipped` (int) — total_in_pack - total_applicable
+- `skipped_reasons` (JSON) — `{"safe_mode": 5, "not_applicable": 2, ...}`
+- `false_positives` (int)
+- `source_run_id` (UUID FK → self, nullable) — set when this is a re-run
 - `started_at`, `completed_at` (datetime)
 - `created_at`, `updated_at` (timestamps)
 
@@ -92,10 +99,16 @@ async def purge_expired_responses():
 | `test_purge_preserves_metadata` | Purged results still have passed, detector_type, latency |
 | `test_retained_until_set_on_create` | New results have correct retention timestamp |
 | `test_migration_applies_cleanly` | Alembic migration up + down works |
+| `test_source_run_id_nullable` | Regular run has `source_run_id = None` |
+| `test_source_run_id_set_on_rerun` | Re-run references original via `source_run_id` |
+| `test_skipped_reasons_json` | `skipped_reasons` persists and retrieves as dict |
+| `test_counting_invariant_on_read` | `total_in_pack = total_applicable + skipped` after retrieval |
 
 ## Definition of Done
 
 - [ ] Both DB models created with all spec fields
+- [ ] `BenchmarkRun` uses new counting fields: `total_in_pack`, `total_applicable`, `executed`, `skipped`, `skipped_reasons`
+- [ ] `source_run_id` FK (nullable, self-referencing) on `BenchmarkRun`
 - [ ] `raw_response_retained_until` column on `BenchmarkScenarioResult`
 - [ ] Alembic migration with proper indexes
 - [ ] Repository layer with all CRUD methods

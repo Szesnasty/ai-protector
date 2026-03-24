@@ -61,12 +61,14 @@ def compute_category_breakdown(results: list[ScenarioResult]) → dict[str, Cate
 class ScoreResult:
     score_simple: int
     score_weighted: int
-    breakdown: dict[str, CategoryScore]
-    total: int
+    breakdown: dict[str, CategoryScore]    # 4 canonical categories
+    total_in_pack: int                     # Total scenarios in the pack file
+    total_applicable: int                  # After filtering — denominator for scoring
+    executed: int                          # Actually sent to target
     passed: int
     failed: int
-    skipped: int
-    skipped_mutating: int
+    skipped: int                           # total_in_pack - total_applicable
+    skipped_reasons: dict[str, int]        # {"safe_mode": 5, "not_applicable": 2, ...}
     false_positives: int
 ```
 
@@ -98,6 +100,9 @@ def score_badge(score: int) → str:
 | `test_score_result_aggregate` | `compute_scores()` returns correct `ScoreResult` |
 | `test_score_badge_boundaries` | 39→critical, 40→weak, 60→needs_hardening, 80→good, 90→strong |
 | `test_score_clamped_to_0_100` | Extreme weighted penalties don't go below 0 |
+| `test_counting_invariants` | `total_in_pack = total_applicable + skipped` always holds |
+| `test_executed_equals_passed_plus_failed` | `executed = passed + failed` (no other states) |
+| `test_skipped_reasons_breakdown_sums` | `sum(skipped_reasons.values()) == skipped` |
 
 ## Definition of Done
 
