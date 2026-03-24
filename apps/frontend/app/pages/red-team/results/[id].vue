@@ -24,6 +24,37 @@
         </p>
       </div>
 
+      <!-- Mini Before/After comparison (only shows if previous run exists) -->
+      <v-card
+        v-if="comparison"
+        variant="flat"
+        class="mb-6 pa-4"
+        data-testid="before-after"
+      >
+        <div class="d-flex align-center flex-wrap ga-3">
+          <span class="text-body-2">
+            Before: <strong>{{ comparison.run_a.score_simple ?? 0 }}/100</strong>
+            {{ scoreEmoji(comparison.run_a.score_simple ?? 0) }}
+          </span>
+          <v-icon icon="mdi-arrow-right" size="small" />
+          <span class="text-body-2">
+            After: <strong>{{ comparison.run_b.score_simple ?? 0 }}/100</strong>
+            {{ scoreEmoji(comparison.run_b.score_simple ?? 0) }}
+          </span>
+          <v-chip
+            :color="comparison.score_delta >= 0 ? 'success' : 'error'"
+            variant="tonal"
+            size="small"
+          >
+            {{ comparison.score_delta >= 0 ? '▲' : '▼' }} {{ comparison.score_delta >= 0 ? '+' : '' }}{{ comparison.score_delta }}
+          </v-chip>
+        </div>
+        <p class="text-caption text-medium-emphasis mt-2">
+          {{ comparison.fixed.length }} failure{{ comparison.fixed.length !== 1 ? 's' : '' }} fixed
+          &nbsp;│&nbsp; {{ comparison.new_failures.length }} new failure{{ comparison.new_failures.length !== 1 ? 's' : '' }}
+        </p>
+      </v-card>
+
       <!-- Hero section — Score badge -->
       <v-card variant="flat" class="mb-6 pa-6 text-center" data-testid="score-section">
         <div class="d-flex flex-column align-center">
@@ -115,8 +146,69 @@
         </div>
       </v-card>
 
-      <!-- Confidence (demo agent = High, no banner needed per spec) -->
-      <!-- For future phases with Medium confidence, a banner will go here -->
+      <!-- CTA section — Demo Agent variant -->
+      <v-card variant="flat" class="mb-6 pa-6" data-testid="cta-section">
+        <h2 class="text-h6 mb-2">Want to improve this score?</h2>
+        <p class="text-body-2 text-medium-emphasis mb-4">
+          AI Protector detected {{ failedCount }} unprotected attack vector{{ failedCount !== 1 ? 's' : '' }}.
+          Apply recommended policies to harden your agent.
+        </p>
+        <div class="d-flex flex-wrap ga-3">
+          <v-btn
+            color="primary"
+            variant="flat"
+            prepend-icon="mdi-shield-plus"
+            data-testid="apply-profile-btn"
+            @click="showApplyDialog = true"
+          >
+            Apply Recommended Profile
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            prepend-icon="mdi-cog"
+            :to="'/policies'"
+          >
+            Open Policies
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            prepend-icon="mdi-replay"
+            :loading="isRerunning"
+            data-testid="rerun-btn"
+            @click="onRerun"
+          >
+            Re-run with {{ rerunPolicy }} Policy
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            prepend-icon="mdi-download"
+            data-testid="export-btn"
+            @click="onExport"
+          >
+            Export Report
+          </v-btn>
+        </div>
+        <p v-if="policyApplied" class="text-body-2 text-success mt-3">
+          <v-icon icon="mdi-check" size="small" /> Policy changed to {{ rerunPolicy }}.
+          Click Re-run to see the improvement.
+        </p>
+      </v-card>
+
+      <!-- Apply Recommended Profile dialog -->
+      <v-dialog v-model="showApplyDialog" max-width="450">
+        <v-card>
+          <v-card-title>Switch to Strict Policy?</v-card-title>
+          <v-card-text class="text-body-2">
+            This enables stricter thresholds for prompt injection, jailbreak, and data leak detectors.
+            It may increase false positives but will block more attacks.
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="showApplyDialog = false">Cancel</v-btn>
+            <v-btn color="primary" variant="flat" @click="onApplyProfile">Apply Strict</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </template>
 
     <!-- Error state -->
@@ -127,7 +219,8 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '~/services/api'
+import { benchmarkService } from '~/services/benchmarkService'
+import type { RunDetail, ScenarioResult, CompareResult } from '~/services/benchmarkService'
 
 definePageMeta({ layout: 'default' })
 
@@ -138,39 +231,6 @@ const runId = computed(() => route.params.id as string)
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface RunDetail {
-  id: string
-  pack: string
-  status: string
-  target_type: string
-  score_simple: number | null
-  score_weighted: number | null
-  confidence: string | null
-  total_in_pack: number
-  total_applicable: number
-  executed: number
-  passed: number
-  failed: number
-  skipped: number
-  created_at: string | null
-  completed_at: string | null
-}
-
-interface ScenarioResult {
-  id: string
-  scenario_id: string
-  category: string
-  severity: string
-  prompt: string
-  expected: string
-  actual: string | null
-  passed: boolean | null
-  skipped: boolean
-  skipped_reason: string | null
-  detector_type: string | null
-  latency_ms: number | null
-}
 
 interface ScoreMeta {
   label: string
@@ -185,6 +245,11 @@ interface ScoreMeta {
 const loading = ref(true)
 const run = ref<RunDetail | null>(null)
 const scenarios = ref<ScenarioResult[]>([])
+const comparison = ref<CompareResult | null>(null)
+const showApplyDialog = ref(false)
+const policyApplied = ref(false)
+const rerunPolicy = ref('Strict')
+const isRerunning = ref(false)
 
 // ---------------------------------------------------------------------------
 // Computed
@@ -203,6 +268,10 @@ const criticalCount = computed(() => {
   return scenarios.value.filter(
     (s) => s.passed === false && (s.severity === 'critical' || s.severity === 'high'),
   ).length
+})
+
+const failedCount = computed(() => {
+  return scenarios.value.filter((s) => s.passed === false).length
 })
 
 const timeAgo = computed(() => {
@@ -253,6 +322,77 @@ const topFailures = computed(() => {
     .slice(0, 5)
 })
 
+function scoreEmoji(score: number): string {
+  if (score >= 80) return '\uD83D\uDFE2'
+  if (score >= 60) return '\uD83D\uDFE1'
+  if (score >= 40) return '\uD83D\uDFE0'
+  return '\uD83D\uDD34'
+}
+
+// ---------------------------------------------------------------------------
+// CTA actions
+// ---------------------------------------------------------------------------
+
+function onApplyProfile() {
+  showApplyDialog.value = false
+  policyApplied.value = true
+  rerunPolicy.value = 'Strict'
+}
+
+async function onRerun() {
+  if (!run.value) return
+  isRerunning.value = true
+  try {
+    const result = await benchmarkService.createRun({
+      target_type: run.value.target_type,
+      pack: run.value.pack,
+      policy: policyApplied.value ? 'strict' : (run.value.policy ?? 'balanced'),
+      source_run_id: run.value.id,
+    })
+    router.push(`/red-team/run/${result.id}`)
+  } catch {
+    isRerunning.value = false
+  }
+}
+
+function onExport() {
+  if (!run.value) return
+  const report = {
+    run: {
+      id: run.value.id,
+      target_type: run.value.target_type,
+      pack: run.value.pack,
+      status: run.value.status,
+      score_simple: run.value.score_simple,
+      score_weighted: run.value.score_weighted,
+      total_applicable: run.value.total_applicable,
+      passed: run.value.passed,
+      failed: run.value.failed,
+      skipped: run.value.skipped,
+      policy: run.value.policy,
+      created_at: run.value.created_at,
+      completed_at: run.value.completed_at,
+    },
+    categories: categoryBars.value,
+    scenarios: scenarios.value.map((s) => ({
+      scenario_id: s.scenario_id,
+      category: s.category,
+      severity: s.severity,
+      passed: s.passed,
+      expected: s.expected,
+      actual: s.actual,
+      latency_ms: s.latency_ms,
+    })),
+  }
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `red-team-report-${run.value.id}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 // ---------------------------------------------------------------------------
 // Fetch
 // ---------------------------------------------------------------------------
@@ -260,12 +400,21 @@ const topFailures = computed(() => {
 async function fetchData() {
   loading.value = true
   try {
-    const [runRes, scenariosRes] = await Promise.all([
-      api.get<RunDetail>(`/v1/benchmark/runs/${runId.value}`),
-      api.get<ScenarioResult[]>(`/v1/benchmark/runs/${runId.value}/scenarios?limit=1000`),
+    const [runData, scenariosData] = await Promise.all([
+      benchmarkService.getRun(runId.value),
+      benchmarkService.getScenarios(runId.value),
     ])
-    run.value = runRes.data
-    scenarios.value = scenariosRes.data
+    run.value = runData
+    scenarios.value = scenariosData
+
+    // If this run has a source_run_id, fetch comparison
+    if (runData.source_run_id) {
+      try {
+        comparison.value = await benchmarkService.compareRuns(runData.source_run_id, runData.id)
+      } catch {
+        // Comparison is optional — don't fail the page
+      }
+    }
   } catch {
     run.value = null
   } finally {
