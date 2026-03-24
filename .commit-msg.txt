@@ -1,0 +1,10 @@
+docs(red-team): translate FLOW.md to English
+
+Full translation of all 7 sections:
+- High-level diagram labels
+- Phase A-D sequence diagrams (actors, messages, notes)
+- Data flow ASCII art (input/processing/output sections)
+- State machine notes
+- Target types comparison table
+- Module dependency graph legend
+- Data retention lifecycle (gantt title, labels)
