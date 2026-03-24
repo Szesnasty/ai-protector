@@ -21,7 +21,10 @@ class RunConfig:
     pack: str              # "core_security" | "agent_threats"
     policy: str | None     # nullable for external targets
     source_run_id: UUID | None = None  # Set when this is a re-run (3 types: same, clone, after-protection)
+    idempotency_key: UUID | None = None  # Client-generated, prevents double-click duplicates
 ```
+
+> `target_fingerprint` is computed from `target_type + target_config` on run creation (see main spec → Target fingerprint). Not a RunConfig field — derived automatically.
 
 ### Step 2: Implement run lifecycle state machine
 
@@ -72,8 +75,9 @@ async def execute_run(run: BenchmarkRun, scenarios: list[Scenario]):
 ### Step 5: Implement concurrency guard
 
 - MVP: one run at a time per target
-- Before creating a run, check for `status = running` on same target
+- Before creating a run, compute `target_fingerprint` and check for `status = running` with same fingerprint
 - Return 409 Conflict if a run is already active
+- Use `idempotency_key` (from request) to detect double-click: if same key within 60s → return existing `run_id` (200), don't create new run
 
 ### Step 6: Execution boundary (API vs Worker)
 
@@ -122,7 +126,7 @@ All 3 create a new `BenchmarkRun` record — immutable history, no overwrites.
 | `test_run_lifecycle_fail_on_connection` | 3 consecutive failures → `failed`, partial results |
 | `test_scenario_timeout_skips` | Slow response → scenario skipped with reason `timeout` |
 | `test_retry_on_first_failure` | First connection failure retried, second succeeds |
-| `test_concurrency_guard` | Second run on same target → 409 |
+| `test_concurrency_guard` | Second run on same `target_fingerprint` → 409 |
 | `test_partial_results_persisted` | Failed run still has results for completed scenarios |
 | `test_scores_computed_on_complete` | Completion triggers score calculation |
 | `test_progress_events_emitted` | Each scenario emits start/complete/skipped events |
@@ -134,13 +138,18 @@ All 3 create a new `BenchmarkRun` record — immutable history, no overwrites.
 | `test_rerun_clone_modify` | Clone allows config changes, sets `source_run_id` |
 | `test_rerun_after_protection` | Re-run with policy change, sets `source_run_id` |
 | `test_counting_fields_in_result` | Completed run has `total_in_pack`, `total_applicable`, `executed`, `skipped_reasons` |
+| `test_idempotency_key_prevents_duplicate` | Same key within 60s → returns existing run_id, not new |
+| `test_idempotency_key_expired` | Same key after 60s → creates new run |
+| `test_target_fingerprint_computed` | Fingerprint derived correctly from target_type + config |
 
 ## Definition of Done
 
 - [ ] Run lifecycle state machine implemented (created → running → completed/cancelled/failed)
 - [ ] Scenario execution loop with per-scenario timeout and error handling
 - [ ] Retry logic (1 retry, 3 consecutive = fail)
-- [ ] Concurrency guard (1 run per target)
+- [ ] Concurrency guard (1 run per `target_fingerprint`)
+- [ ] Idempotency key: duplicate POST within 60s → return existing run_id
+- [ ] `target_fingerprint` computed on creation, stored on run record
 - [ ] All dependencies injected (incl. Response Normalizer), testable with mocks
 - [ ] Response Normalizer sits between HTTP Client and Evaluator in pipeline
 - [ ] Worker boundary: API returns 202, execution is async
