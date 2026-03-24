@@ -10,8 +10,10 @@ This service is a thin adapter that:
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.red_team.engine.run_engine import (
@@ -24,6 +26,17 @@ from src.red_team.persistence.repository import (
     BenchmarkRunRepository,
     BenchmarkScenarioResultRepository,
 )
+
+
+def strip_auth_from_config(config: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of *config* with auth_secret_ref masked."""
+    if not config:
+        return config
+    out = dict(config)
+    if "auth_secret_ref" in out:
+        out["auth_secret_ref"] = "***"
+    return out
+
 
 # ---------------------------------------------------------------------------
 # Service
@@ -52,9 +65,19 @@ class BenchmarkService:
         """Create a new benchmark run record (DB-level).
 
         Checks concurrency guard (409 if same target already running).
+        If ``target_config`` contains ``auth_header`` it is encrypted
+        and stored as ``auth_secret_ref``; the plaintext is removed.
         Returns the ORM record; background execution is handled by the caller.
         """
-        fingerprint = compute_target_fingerprint(target_type, target_config)
+        # Encrypt auth header before storing
+        config = dict(target_config)  # shallow copy
+        if auth_header := config.pop("auth_header", None):
+            from src.red_team.secrets.store import EncryptedColumnSecretStore
+
+            store = EncryptedColumnSecretStore()
+            config["auth_secret_ref"] = await store.store("auth", auth_header, ttl_hours=24)
+
+        fingerprint = compute_target_fingerprint(target_type, config)
 
         # Concurrency guard
         active = await self._run_repo.find_running_for_target(fingerprint)
@@ -65,15 +88,15 @@ class BenchmarkService:
         from src.red_team.packs import TargetConfig as PackTargetConfig
         from src.red_team.packs import filter_pack, load_pack
 
-        agent_type = target_config.get("agent_type", "chatbot_api")
-        safe_mode = target_config.get("safe_mode", False)
+        agent_type = config.get("agent_type", "chatbot_api")
+        safe_mode = config.get("safe_mode", False)
         pack_obj = load_pack(pack)
         target_cfg = PackTargetConfig(agent_type=agent_type, safe_mode=safe_mode)
         filtered = filter_pack(pack_obj, target_cfg)
 
         run = BenchmarkRun(
             target_type=target_type,
-            target_config=target_config,
+            target_config=config,
             target_fingerprint=fingerprint,
             pack=pack,
             pack_version=filtered.pack_version,
@@ -94,6 +117,23 @@ class BenchmarkService:
 
     async def get_run(self, run_id: uuid.UUID) -> BenchmarkRun | None:
         return await self._run_repo.get(run_id)
+
+    async def get_run_safe(self, run_id: uuid.UUID) -> BenchmarkRun | None:
+        """Get run with auth_secret_ref masked (for API responses)."""
+        run = await self._run_repo.get(run_id)
+        if run and run.target_config:
+            run.target_config = strip_auth_from_config(run.target_config)
+        return run
+
+    async def decrypt_auth_for_run(self, run: BenchmarkRun) -> str | None:
+        """Decrypt auth_secret_ref from target_config for in-memory use only."""
+        ref = (run.target_config or {}).get("auth_secret_ref")
+        if not ref:
+            return None
+        from src.red_team.secrets.store import EncryptedColumnSecretStore
+
+        store = EncryptedColumnSecretStore()
+        return await store.retrieve(ref)
 
     async def list_runs(
         self,
@@ -174,3 +214,40 @@ class BenchmarkService:
             "fixed_failures": fixed,
             "new_failures": new_failures,
         }
+
+
+# ---------------------------------------------------------------------------
+# Standalone helpers (no BenchmarkService instance needed)
+# ---------------------------------------------------------------------------
+
+
+async def cleanup_expired_secrets(session: AsyncSession) -> int:
+    """Null out ``auth_secret_ref`` from target_config 24 h after completion.
+
+    Scans completed runs whose ``completed_at + 24h < now()`` and whose
+    ``target_config`` still contains an ``auth_secret_ref``.
+
+    Returns the number of runs cleaned.
+    """
+    cutoff = datetime.now(UTC) - timedelta(hours=24)
+    stmt = (
+        select(BenchmarkRun)
+        .where(BenchmarkRun.completed_at.isnot(None))
+        .where(BenchmarkRun.completed_at < cutoff)
+        .where(BenchmarkRun.status.in_(["completed", "failed", "cancelled"]))
+    )
+    result = await session.execute(stmt)
+    runs = list(result.scalars().all())
+
+    cleaned = 0
+    for run in runs:
+        cfg = run.target_config or {}
+        if "auth_secret_ref" in cfg:
+            cfg = dict(cfg)
+            del cfg["auth_secret_ref"]
+            run.target_config = cfg
+            cleaned += 1
+
+    if cleaned:
+        await session.commit()
+    return cleaned

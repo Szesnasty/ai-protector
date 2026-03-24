@@ -114,8 +114,8 @@ async def get_run(
     run_id: uuid.UUID,
     svc: BenchmarkService = Depends(_get_service),  # noqa: B008
 ) -> RunDetailResponse:
-    """Return full details for a benchmark run."""
-    run = await svc.get_run(run_id)
+    """Return full details for a benchmark run (auth secrets masked)."""
+    run = await svc.get_run_safe(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     return RunDetailResponse.model_validate(run)
