@@ -12,7 +12,7 @@
 | 04 | [Frontend Progress](04-frontend-progress.spec.md) | Frontend | ✅ done |
 | 05 | [Frontend Results](05-frontend-results.spec.md) | Frontend | ✅ done |
 | 06 | [Frontend Scenario Detail](06-frontend-scenario-detail.spec.md) | Frontend | ✅ done |
-| 07 | [CTA + Re-run + Before/After](07-cta-rerun-before-after.spec.md) | Full-stack | not started |
+| 07 | [CTA + Re-run + Before/After](07-cta-rerun-before-after.spec.md) | Full-stack | ✅ done |
 
 ## What is NOT in Phase 1
 
