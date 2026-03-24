@@ -245,6 +245,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 latency_ms=latency_ms,
                 content_type=content_type,
                 error=f"HTTP {resp.status_code}",
+                error_code="auth_invalid",
             )
 
         return TestConnectionResponse(
@@ -254,14 +255,14 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
             content_type=content_type,
         )
     except _httpx.TimeoutException:
-        return TestConnectionResponse(status="error", error="Timeout")
+        return TestConnectionResponse(status="error", error="Timeout", error_code="timeout")
     except _httpx.ConnectError:
-        return TestConnectionResponse(status="error", error="Connection refused")
+        return TestConnectionResponse(status="error", error="Connection refused", error_code="connection_failed")
     except Exception as exc:
         error_msg = str(exc)
         if "ssl" in error_msg.lower() or "certificate" in error_msg.lower():
-            return TestConnectionResponse(status="error", error="SSL error")
-        return TestConnectionResponse(status="error", error=error_msg[:200])
+            return TestConnectionResponse(status="error", error="SSL error", error_code="ssl_error")
+        return TestConnectionResponse(status="error", error=error_msg[:200], error_code="internal_error")
 
 
 # ---------------------------------------------------------------------------
