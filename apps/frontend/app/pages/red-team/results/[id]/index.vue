@@ -6,7 +6,7 @@
     </div>
 
     <template v-else-if="run">
-      <!-- Header info bar -->
+      <!-- Header -->
       <div class="mb-6">
         <div class="d-flex align-center mb-1">
           <v-btn
@@ -19,12 +19,14 @@
           <h1 class="text-h5">Benchmark Results</h1>
         </div>
         <p class="text-body-2 text-medium-emphasis" data-testid="header-info">
-          Target: Demo Agent &nbsp;│&nbsp; Pack: {{ run.pack }}
-          &nbsp;│&nbsp; {{ timeAgo }}
+          <v-icon :icon="targetIcon" size="x-small" class="mr-1" />
+          {{ targetLabel }}
+          &nbsp;·&nbsp; {{ humanPack(run.pack) }}
+          &nbsp;·&nbsp; {{ timeAgo }}
         </p>
       </div>
 
-      <!-- Mini Before/After comparison (only shows if previous run exists) -->
+      <!-- Before / After comparison (high up per spec) -->
       <v-card
         v-if="comparison"
         variant="flat"
@@ -34,28 +36,26 @@
         <div class="d-flex align-center flex-wrap ga-3">
           <span class="text-body-2">
             Before: <strong>{{ comparison.run_a.score_simple ?? 0 }}/100</strong>
-            {{ scoreEmoji(comparison.run_a.score_simple ?? 0) }}
           </span>
           <v-icon icon="mdi-arrow-right" size="small" />
           <span class="text-body-2">
             After: <strong>{{ comparison.run_b.score_simple ?? 0 }}/100</strong>
-            {{ scoreEmoji(comparison.run_b.score_simple ?? 0) }}
           </span>
           <v-chip
             :color="comparison.score_delta >= 0 ? 'success' : 'error'"
             variant="tonal"
             size="small"
           >
-            {{ comparison.score_delta >= 0 ? '▲' : '▼' }} {{ comparison.score_delta >= 0 ? '+' : '' }}{{ comparison.score_delta }}
+            {{ comparison.score_delta >= 0 ? '+' : '' }}{{ comparison.score_delta }}
           </v-chip>
         </div>
         <p class="text-caption text-medium-emphasis mt-2">
-          {{ comparison.fixed.length }} failure{{ comparison.fixed.length !== 1 ? 's' : '' }} fixed
-          &nbsp;│&nbsp; {{ comparison.new_failures.length }} new failure{{ comparison.new_failures.length !== 1 ? 's' : '' }}
+          {{ comparison.fixed.length }} fixed
+          &nbsp;·&nbsp; {{ comparison.new_failures.length }} new failure{{ comparison.new_failures.length !== 1 ? 's' : '' }}
         </p>
       </v-card>
 
-      <!-- Safe mode info banner -->
+      <!-- Safe mode banner -->
       <v-alert
         v-if="skippedMutating > 0"
         type="info"
@@ -65,17 +65,17 @@
         data-testid="safe-mode-banner"
       >
         <template #text>
-          Safe mode was enabled. {{ skippedMutating }} mutating scenario{{ skippedMutating !== 1 ? 's were' : ' was' }} skipped.
+          Safe mode was enabled — {{ skippedMutating }} mutating scenario{{ skippedMutating !== 1 ? 's were' : ' was' }} skipped.
           <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <a v-bind="props" class="text-primary" style="cursor: pointer;">What are mutating scenarios?</a>
+            <template #activator="{ props: tp }">
+              <a v-bind="tp" class="text-primary" style="cursor: pointer;">What are mutating scenarios?</a>
             </template>
-            <span>Mutating scenarios trigger real actions (delete, modify, transfer) that could affect your target system. Safe mode skips these to prevent unintended side effects.</span>
+            <span>Mutating scenarios trigger real actions (delete, modify, transfer) that could affect your target. Safe mode skips them.</span>
           </v-tooltip>
         </template>
       </v-alert>
 
-      <!-- All-skipped: no score display -->
+      <!-- All-skipped banner -->
       <v-alert
         v-if="run.executed === 0 && run.total_applicable === 0"
         type="warning"
@@ -95,10 +95,10 @@
         class="mb-6"
         data-testid="few-executed-warning"
       >
-        Score based on only {{ run.executed }} scenario{{ run.executed !== 1 ? 's' : '' }}. May not be representative.
+        Score based on only {{ run.executed }} scenario{{ run.executed !== 1 ? 's' : '' }}. May not be fully representative.
       </v-alert>
 
-      <!-- Partial results (cancelled / failed mid-run) -->
+      <!-- Partial results -->
       <v-alert
         v-else-if="run.status === 'cancelled' || (run.status === 'failed' && run.executed > 0)"
         type="info"
@@ -110,7 +110,9 @@
         Partial score &mdash; {{ run.executed }} of {{ run.total_applicable }} scenarios completed.
       </v-alert>
 
-      <!-- Hero section — Score badge (hidden if nothing was executed) -->
+      <!-- ================================================================ -->
+      <!-- Hero — Score                                                      -->
+      <!-- ================================================================ -->
       <v-card v-if="run.executed > 0" variant="flat" class="mb-6 pa-6 text-center" data-testid="score-section">
         <div class="d-flex flex-column align-center">
           <div
@@ -131,24 +133,34 @@
             {{ scoreMeta.label }}
           </v-chip>
           <p class="text-body-2 text-medium-emphasis" data-testid="score-summary">
-            {{ criticalCount }} critical gap{{ criticalCount !== 1 ? 's' : '' }}
-            &nbsp;│&nbsp; {{ run.passed }} attacks blocked
-            &nbsp;│&nbsp; {{ run.total_applicable }} tested
+            Based on {{ run.executed }} executed scenario{{ run.executed !== 1 ? 's' : '' }}
+          </p>
+          <p class="text-body-2 text-medium-emphasis mt-1">
+            {{ run.passed }} blocked &nbsp;·&nbsp;
+            {{ failedCount }} got through &nbsp;·&nbsp;
+            {{ run.skipped }} skipped
+          </p>
+          <p v-if="criticalCount > 0" class="text-body-2 font-weight-medium mt-2" style="color: #d32f2f;">
+            {{ criticalCount }} critical / high severity gap{{ criticalCount !== 1 ? 's' : '' }}
           </p>
         </div>
       </v-card>
 
-      <!-- Category breakdown -->
+      <!-- ================================================================ -->
+      <!-- Category Breakdown                                                -->
+      <!-- ================================================================ -->
       <h2 class="text-h6 mb-3">Category Breakdown</h2>
       <v-card variant="flat" class="mb-6 pa-4" data-testid="category-breakdown">
         <div
           v-for="cat in categoryBars"
-          :key="cat.name"
+          :key="cat.slug"
           class="mb-4"
         >
           <div class="d-flex justify-space-between mb-1">
-            <span class="text-body-2 font-weight-medium">{{ cat.name }}</span>
-            <span class="text-body-2 text-medium-emphasis">{{ cat.passedCount }}/{{ cat.total }} ({{ cat.percent }}%)</span>
+            <span class="text-body-2 font-weight-medium">{{ cat.label }}</span>
+            <span class="text-body-2 text-medium-emphasis">
+              {{ cat.passedCount }}/{{ cat.total }} blocked ({{ cat.percent }}%)
+            </span>
           </div>
           <v-progress-linear
             :model-value="cat.percent"
@@ -162,46 +174,64 @@
         </p>
       </v-card>
 
-      <!-- Top failures -->
+      <!-- ================================================================ -->
+      <!-- Top Failures                                                      -->
+      <!-- ================================================================ -->
       <h2 class="text-h6 mb-3">Top Failures</h2>
       <v-card variant="flat" class="mb-6 pa-4" data-testid="top-failures">
         <template v-if="topFailures.length > 0">
-          <v-list density="compact">
+          <v-list density="compact" class="bg-transparent">
             <v-list-item
               v-for="fail in topFailures"
               :key="fail.scenario_id"
-              class="px-0"
+              class="px-0 mb-2"
+              @click="router.push(`/red-team/results/${runId}/scenario/${fail.scenario_id}`)"
+              style="cursor: pointer;"
             >
               <template #prepend>
-                <v-icon icon="mdi-close-circle" color="error" size="small" class="mr-2" />
+                <v-icon
+                  :icon="severityMeta(fail.severity).icon"
+                  :color="severityMeta(fail.severity).color"
+                  size="small"
+                  class="mr-3"
+                />
               </template>
               <v-list-item-title class="text-body-2 font-weight-medium">
-                {{ fail.scenario_id }}
+                {{ fail.title || fail.scenario_id }}
               </v-list-item-title>
               <v-list-item-subtitle class="text-caption">
-                Expected: {{ fail.expected }} → Got: {{ fail.actual ?? 'ALLOW' }}
-                &nbsp;·&nbsp; {{ fail.category }}
+                {{ fail.scenario_id }}
+                &nbsp;·&nbsp; {{ humanCategory(fail.category) }}
+                <template v-if="fail.description">
+                  &nbsp;·&nbsp; {{ fail.description }}
+                </template>
               </v-list-item-subtitle>
               <template #append>
-                <v-btn
-                  variant="text"
-                  size="x-small"
-                  color="primary"
-                  @click="router.push(`/red-team/results/${runId}/scenario/${fail.scenario_id}`)"
-                >
-                  View Details
-                </v-btn>
+                <div class="d-flex align-center ga-2">
+                  <v-chip
+                    :color="severityMeta(fail.severity).color"
+                    variant="tonal"
+                    size="x-small"
+                    :prepend-icon="severityMeta(fail.severity).icon"
+                  >
+                    {{ severityMeta(fail.severity).label }}
+                  </v-chip>
+                  <v-icon icon="mdi-chevron-right" size="small" />
+                </div>
               </template>
             </v-list-item>
           </v-list>
         </template>
         <div v-else class="text-center pa-4">
-          <v-icon icon="mdi-check-circle" color="success" size="48" class="mb-2" />
-          <p class="text-body-2 text-medium-emphasis">No failures! All scenarios passed.</p>
+          <v-icon icon="mdi-shield-check" color="success" size="48" class="mb-2" />
+          <p class="text-body-1 font-weight-medium">All attacks blocked</p>
+          <p class="text-body-2 text-medium-emphasis">No scenarios got through your agent's defenses.</p>
         </div>
       </v-card>
 
-      <!-- CTA section — Variant A (Demo Agent / Registered Agent) -->
+      <!-- ================================================================ -->
+      <!-- CTA — Variant A (Demo Agent / Registered Agent)                   -->
+      <!-- ================================================================ -->
       <v-card v-if="ctaVariant === 'A'" variant="flat" class="mb-6 pa-6" data-testid="cta-section">
         <h2 class="text-h6 mb-2">Want to improve this score?</h2>
         <p class="text-body-2 text-medium-emphasis mb-4">
@@ -220,27 +250,20 @@
           </v-btn>
           <v-btn
             variant="outlined"
-            prepend-icon="mdi-cog"
-            :to="'/policies'"
-          >
-            Open Policies
-          </v-btn>
-          <v-btn
-            variant="outlined"
             prepend-icon="mdi-replay"
             :loading="isRerunning"
             data-testid="rerun-btn"
             @click="onRerun"
           >
-            Re-run with {{ rerunPolicy }} Policy
+            Re-run Benchmark
           </v-btn>
           <v-btn
-            variant="outlined"
+            variant="text"
             prepend-icon="mdi-download"
             data-testid="export-btn"
             @click="onExport"
           >
-            Export Report
+            Export JSON
           </v-btn>
         </div>
         <p v-if="policyApplied" class="text-body-2 text-success mt-3">
@@ -249,7 +272,7 @@
         </p>
       </v-card>
 
-      <!-- CTA section — Variant B (Local Agent / Hosted Endpoint) -->
+      <!-- CTA — Variant B (Local Agent / Hosted Endpoint) -->
       <v-card v-else variant="flat" class="mb-6 pa-6" data-testid="cta-section-b">
         <h2 class="text-h6 mb-2">Protect this endpoint</h2>
         <p class="text-body-2 text-medium-emphasis mb-4">
@@ -258,7 +281,6 @@
         </p>
 
         <v-row class="mb-4">
-          <!-- Quick — Proxy Setup -->
           <v-col cols="12" sm="6">
             <v-card variant="tonal" class="pa-4 h-100" data-testid="proxy-path-card">
               <div class="d-flex align-center mb-2">
@@ -282,8 +304,6 @@
               </v-btn>
             </v-card>
           </v-col>
-
-          <!-- Deep — Agent Wizard -->
           <v-col cols="12" sm="6">
             <v-card variant="tonal" class="pa-4 h-100" data-testid="wizard-path-card">
               <div class="d-flex align-center mb-2">
@@ -320,12 +340,12 @@
             Re-run Benchmark
           </v-btn>
           <v-btn
-            variant="outlined"
+            variant="text"
             prepend-icon="mdi-download"
             data-testid="export-btn-b"
             @click="onExport"
           >
-            Export Report
+            Export JSON
           </v-btn>
         </div>
       </v-card>
@@ -357,22 +377,13 @@
 <script setup lang="ts">
 import { benchmarkService } from '~/services/benchmarkService'
 import type { RunDetail, ScenarioResult, CompareResult } from '~/services/benchmarkService'
+import { humanCategory, severityMeta, humanPack, scoreLabel } from '~/utils/redTeamLabels'
 
 definePageMeta({ layout: 'default' })
 
 const route = useRoute()
 const router = useRouter()
 const runId = computed(() => route.params.id as string)
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface ScoreMeta {
-  label: string
-  color: string
-  vuetifyColor: string
-}
 
 // ---------------------------------------------------------------------------
 // Data
@@ -388,17 +399,25 @@ const rerunPolicy = ref('Strict')
 const isRerunning = ref(false)
 
 // ---------------------------------------------------------------------------
-// Computed
+// Computed — target label
 // ---------------------------------------------------------------------------
 
-const scoreMeta = computed<ScoreMeta>(() => {
-  const score = run.value?.score_simple ?? 0
-  if (score >= 90) return { label: 'Strong', color: '#2e7d32', vuetifyColor: 'green-darken-2' }
-  if (score >= 80) return { label: 'Good', color: '#4caf50', vuetifyColor: 'success' }
-  if (score >= 60) return { label: 'Needs Hardening', color: '#fb8c00', vuetifyColor: 'warning' }
-  if (score >= 40) return { label: 'Weak', color: '#ff9800', vuetifyColor: 'orange' }
-  return { label: 'Critical', color: '#d32f2f', vuetifyColor: 'error' }
-})
+const TARGET_LABELS: Record<string, { label: string; icon: string }> = {
+  demo_agent: { label: 'Demo Agent', icon: 'mdi-robot-outline' },
+  registered_agent: { label: 'Registered Agent', icon: 'mdi-shield-check' },
+  local_agent: { label: 'Local Agent', icon: 'mdi-laptop' },
+  hosted_endpoint: { label: 'Hosted Endpoint', icon: 'mdi-cloud-outline' },
+}
+
+const targetMeta = computed(() => TARGET_LABELS[run.value?.target_type ?? ''] ?? { label: run.value?.target_type ?? 'Agent', icon: 'mdi-robot-outline' })
+const targetLabel = computed(() => targetMeta.value.label)
+const targetIcon = computed(() => targetMeta.value.icon)
+
+// ---------------------------------------------------------------------------
+// Computed — score
+// ---------------------------------------------------------------------------
+
+const scoreMeta = computed(() => scoreLabel(run.value?.score_simple ?? 0))
 
 const criticalCount = computed(() => {
   return scenarios.value.filter(
@@ -435,12 +454,15 @@ const timeAgo = computed(() => {
   return `${Math.round(diff / 86400)}d ago`
 })
 
-// Group scenarios by category
+// ---------------------------------------------------------------------------
+// Computed — category bars (human-readable names)
+// ---------------------------------------------------------------------------
+
 const categoryBars = computed(() => {
   const groups = new Map<string, { passed: number; total: number }>()
   for (const s of scenarios.value) {
     if (s.skipped) continue
-    const cat = s.category || 'Uncategorized'
+    const cat = s.category || 'uncategorized'
     const g = groups.get(cat) ?? { passed: 0, total: 0 }
     g.total++
     if (s.passed) g.passed++
@@ -448,8 +470,9 @@ const categoryBars = computed(() => {
   }
 
   return Array.from(groups.entries())
-    .map(([name, g]) => ({
-      name,
+    .map(([slug, g]) => ({
+      slug,
+      label: humanCategory(slug),
       passedCount: g.passed,
       total: g.total,
       percent: g.total > 0 ? Math.round((g.passed / g.total) * 100) : 0,
@@ -457,7 +480,10 @@ const categoryBars = computed(() => {
     .sort((a, b) => a.percent - b.percent) // worst first
 })
 
-// Severity weight for sorting
+// ---------------------------------------------------------------------------
+// Computed — top failures (with enriched fields)
+// ---------------------------------------------------------------------------
+
 const severityWeight: Record<string, number> = {
   critical: 0,
   high: 1,
@@ -471,13 +497,6 @@ const topFailures = computed(() => {
     .sort((a, b) => (severityWeight[a.severity] ?? 9) - (severityWeight[b.severity] ?? 9))
     .slice(0, 5)
 })
-
-function scoreEmoji(score: number): string {
-  if (score >= 80) return '\uD83D\uDFE2'
-  if (score >= 60) return '\uD83D\uDFE1'
-  if (score >= 40) return '\uD83D\uDFE0'
-  return '\uD83D\uDD34'
-}
 
 // ---------------------------------------------------------------------------
 // CTA actions
@@ -526,6 +545,7 @@ function onExport() {
     categories: categoryBars.value,
     scenarios: scenarios.value.map((s) => ({
       scenario_id: s.scenario_id,
+      title: s.title,
       category: s.category,
       severity: s.severity,
       passed: s.passed,
@@ -557,12 +577,11 @@ async function fetchData() {
     run.value = runData
     scenarios.value = scenariosData
 
-    // If this run has a source_run_id, fetch comparison
     if (runData.source_run_id) {
       try {
         comparison.value = await benchmarkService.compareRuns(runData.source_run_id, runData.id)
       } catch {
-        // Comparison is optional — don't fail the page
+        // Comparison is optional
       }
     }
   } catch {

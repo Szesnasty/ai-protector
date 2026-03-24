@@ -94,6 +94,21 @@ class BenchmarkRunRepository:
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def cancel_stale_runs(self) -> int:
+        """Mark all 'created' / 'running' runs as 'cancelled'.
+
+        Called at startup to clean up runs orphaned by a previous crash
+        or container restart.  Returns the number of affected rows.
+        """
+        now = datetime.now(UTC)
+        stmt = (
+            update(BenchmarkRun)
+            .where(BenchmarkRun.status.in_(["created", "running"]))
+            .values(status="cancelled", completed_at=now, error="Cancelled: stale after restart")
+        )
+        result = await self._session.execute(stmt)
+        return result.rowcount  # type: ignore[return-value]
+
     async def delete(self, run_id: uuid.UUID) -> None:
         run = await self.get(run_id)
         if run:

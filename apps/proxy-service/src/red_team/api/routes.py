@@ -6,6 +6,7 @@ No business logic here.
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 from collections.abc import AsyncGenerator
@@ -29,9 +30,29 @@ from src.red_team.api import (
     TestConnectionResponse,
 )
 from src.red_team.api.service import BenchmarkService
+from src.red_team.engine.worker import run_benchmark_background
+from src.red_team.packs import load_pack
 from src.red_team.progress.emitter import ProgressEmitter
 
 router = APIRouter(prefix="/benchmark", tags=["Red Team Benchmark"])
+
+
+def _enrich_scenario(resp: ScenarioResultResponse, pack_name: str) -> ScenarioResultResponse:
+    """Look up scenario metadata from the pack YAML and inject title/description/why/fix."""
+    try:
+        pack = load_pack(pack_name)
+        for s in pack.scenarios:
+            if s.id == resp.scenario_id:
+                resp.title = s.title
+                resp.description = getattr(s, "description", None) or None
+                resp.why_it_passes = getattr(s, "why_it_passes", None) or None
+                raw_hints = getattr(s, "fix_hints", None) or []
+                resp.fix_hints = list(raw_hints)
+                break
+    except Exception:
+        pass  # Enrichment is best-effort
+    return resp
+
 
 # Singleton progress emitter shared across requests
 _progress_emitter = ProgressEmitter()
@@ -73,7 +94,9 @@ async def create_run(
     except ConcurrencyConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
-    # TODO: launch engine.execute_run() as background task (Phase 1 integration)
+    # Launch engine execution as a background task
+    asyncio.create_task(run_benchmark_background(run.id, _progress_emitter))
+
     return RunCreatedResponse(
         id=run.id,
         status=run.status,
@@ -140,8 +163,12 @@ async def list_scenarios(
     svc: BenchmarkService = Depends(_get_service),  # noqa: B008
 ) -> list[ScenarioResultResponse]:
     """List scenario results for a specific run."""
+    # Get pack name for enrichment
+    run = await svc.get_run_safe(run_id)
+    pack_name = run.pack if run else ""
+
     results = await svc.list_scenarios(run_id, limit=limit, offset=offset, passed=passed, category=category)
-    return [ScenarioResultResponse.model_validate(r) for r in results]
+    return [_enrich_scenario(ScenarioResultResponse.model_validate(r), pack_name) for r in results]
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +190,12 @@ async def get_scenario(
     result = await svc.get_scenario(run_id, scenario_id)
     if not result:
         raise HTTPException(status_code=404, detail="Scenario result not found")
-    return ScenarioResultResponse.model_validate(result)
+
+    # Get pack name for enrichment
+    run = await svc.get_run_safe(run_id)
+    pack_name = run.pack if run else ""
+
+    return _enrich_scenario(ScenarioResultResponse.model_validate(result), pack_name)
 
 
 # ---------------------------------------------------------------------------

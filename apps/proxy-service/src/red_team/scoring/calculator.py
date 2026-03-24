@@ -44,6 +44,7 @@ class ScenarioResult:
     outcome: ScenarioOutcome
     confidence: float = 1.0
     skip_reason: str | None = None  # Only set when outcome == SKIPPED
+    latency_ms: float = 0.0  # Round-trip time
 
 
 @dataclass(frozen=True, slots=True)

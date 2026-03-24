@@ -29,6 +29,7 @@ class ScenarioStartEvent:
     scenario_id: str
     index: int  # 1-based
     total_applicable: int  # denominator for progress (not total_in_pack)
+    title: str = ""
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class ScenarioCompleteEvent:
     passed: bool
     actual: str  # "BLOCK" | "ALLOW" | "MODIFY"
     latency_ms: int
+    title: str = ""
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,7 @@ class ScenarioSkippedEvent:
 
     scenario_id: str
     reason: str  # "safe_mode" | "not_applicable" | "timeout" | etc.
+    title: str = ""
 
 
 @dataclass(frozen=True)

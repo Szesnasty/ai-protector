@@ -228,6 +228,7 @@ class RunEngine:
                     "type": "scenario_start",
                     "scenario_id": scenario.id,
                     "scenario_title": scenario.title,
+                    "title": scenario.title,
                     "index": i,
                     "total": total,
                 },
@@ -248,6 +249,11 @@ class RunEngine:
                         "severity": result.severity,
                         "category": result.category,
                         "confidence": result.confidence,
+                        "latency_ms": result.latency_ms,
+                        "prompt": scenario.prompt,
+                        "expected": scenario.expected.value
+                        if hasattr(scenario.expected, "value")
+                        else str(scenario.expected),
                     },
                 )
 
@@ -256,9 +262,11 @@ class RunEngine:
                     {
                         "type": "scenario_complete",
                         "scenario_id": scenario.id,
+                        "title": scenario.title,
                         "outcome": result.outcome.value,
                         "index": i,
                         "total": total,
+                        "latency_ms": result.latency_ms,
                     },
                 )
 
@@ -278,6 +286,7 @@ class RunEngine:
                     {
                         "type": "scenario_skipped",
                         "scenario_id": scenario.id,
+                        "title": scenario.title,
                         "reason": "connection_error",
                     },
                 )
@@ -319,6 +328,7 @@ class RunEngine:
                     {
                         "type": "scenario_skipped",
                         "scenario_id": scenario.id,
+                        "title": scenario.title,
                         "reason": "timeout",
                     },
                 )
@@ -349,6 +359,13 @@ class RunEngine:
                     "type": "run_complete",
                     "score_simple": run.score.score_simple,
                     "score_weighted": run.score.score_weighted,
+                    "total_in_pack": run.filtered_pack.total_in_pack,
+                    "total_applicable": run.filtered_pack.total_applicable,
+                    "executed": run.score.executed,
+                    "passed": run.score.passed,
+                    "failed": run.score.failed,
+                    "skipped": run.score.skipped,
+                    "skipped_reasons": run.filtered_pack.skipped_reasons,
                 },
             )
 
@@ -432,6 +449,7 @@ class RunEngine:
             severity=severity,
             outcome=outcome,
             confidence=eval_result.confidence,
+            latency_ms=http_response.latency_ms,
         )
 
     def _validate_config(self, config: RunConfig) -> None:
