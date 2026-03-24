@@ -6,9 +6,11 @@ No business logic here.
 
 from __future__ import annotations
 
+import time
 import uuid
 from collections.abc import AsyncGenerator
 
+import httpx as _httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +25,8 @@ from src.red_team.api import (
     RunDetailResponse,
     RunSummary,
     ScenarioResultResponse,
+    TestConnectionRequest,
+    TestConnectionResponse,
 )
 from src.red_team.api.service import BenchmarkService
 from src.red_team.progress.emitter import ProgressEmitter
@@ -204,6 +208,60 @@ async def run_progress(run_id: uuid.UUID) -> StreamingResponse:
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /v1/benchmark/test-connection — connectivity check
+# ---------------------------------------------------------------------------
+
+
+@router.post("/test-connection", response_model=TestConnectionResponse)
+async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse:
+    """Ping a target endpoint to verify reachability.
+
+    Auth header is used for this request only; it is NOT persisted.
+    """
+    headers: dict[str, str] = {"Content-Type": "application/json"}
+    if body.auth_header:
+        headers["Authorization"] = body.auth_header
+
+    try:
+        start = time.monotonic()
+        async with _httpx.AsyncClient() as client:
+            resp = await client.post(
+                body.endpoint_url,
+                json={"message": "hello"},
+                headers=headers,
+                timeout=body.timeout_s,
+            )
+        latency_ms = int((time.monotonic() - start) * 1000)
+
+        content_type = resp.headers.get("content-type", "")
+
+        if resp.status_code == 401 or resp.status_code == 403:
+            return TestConnectionResponse(
+                status="error",
+                status_code=resp.status_code,
+                latency_ms=latency_ms,
+                content_type=content_type,
+                error=f"HTTP {resp.status_code}",
+            )
+
+        return TestConnectionResponse(
+            status="ok",
+            status_code=resp.status_code,
+            latency_ms=latency_ms,
+            content_type=content_type,
+        )
+    except _httpx.TimeoutException:
+        return TestConnectionResponse(status="error", error="Timeout")
+    except _httpx.ConnectError:
+        return TestConnectionResponse(status="error", error="Connection refused")
+    except Exception as exc:
+        error_msg = str(exc)
+        if "ssl" in error_msg.lower() or "certificate" in error_msg.lower():
+            return TestConnectionResponse(status="error", error="SSL error")
+        return TestConnectionResponse(status="error", error=error_msg[:200])
 
 
 # ---------------------------------------------------------------------------
