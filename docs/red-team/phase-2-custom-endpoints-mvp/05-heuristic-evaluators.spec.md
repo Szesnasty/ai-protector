@@ -39,8 +39,10 @@ For external targets (Local Agent, Hosted Endpoint), the pipeline trace isn't av
 
 - External target results get `confidence: "medium"`
 - Add confidence field to `EvalResult` for heuristic evaluations
-- Frontend displays confidence appropriately:
-  - "Assessment confidence: Medium — Heuristic scan, no internal trace available"
+- Frontend displays confidence with **positive framing** (upgrade path, not disclaimer):
+  - ℹ️ "External scan — based on response analysis. For deeper analysis, route traffic through AI Protector proxy."
+  - NOT: "Assessment confidence: Medium — Heuristic scan, no internal trace available"
+  - The user should feel "I can go deeper" not "these results might be wrong"
 
 ### Step 5: Heuristic check registry
 

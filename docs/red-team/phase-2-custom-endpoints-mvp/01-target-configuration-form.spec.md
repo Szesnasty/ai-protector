@@ -22,15 +22,17 @@ The target configuration form shared by Local Agent and Hosted Endpoint flows. C
   - Local Agent prefill: `http://localhost:`
   - Hosted Endpoint prefill: `https://`
 
-### Step 3: Optional fields
+### Step 3: Optional fields (visible)
 
 - **Target name** — free text, shown in results/reports instead of raw URL
 - **Auth header** — masked input (password-type), "Bearer sk-..." placeholder
-- **Type** — radio: "Chatbot / API" (default) | "Tool-calling agent"
-  - Affects pack recommendation on configure screen
 
 ### Step 4: Advanced section (collapsed by default)
 
+- **Type** — radio: "Chatbot / API" (default) | "Tool-calling agent"
+  - Affects pack recommendation on configure screen
+  - Most users never touch this — default "Chatbot / API" works for 80%+ of cases
+  - Only tool-calling agent developers need to change it
 - **Request timeout** — dropdown: 10s, 30s (default), 60s, 120s
 - **Safe mode** — toggle: Off (Local default) / On (Hosted default)
   - Tooltip: "Skip scenarios that may trigger real actions (delete, transfer, etc.)"
@@ -68,7 +70,8 @@ The target configuration form shared by Local Agent and Hosted Endpoint flows. C
 | `test_form_renders_for_hosted` | Hosted form with auth + environment |
 | `test_url_validation` | Invalid URL → error message |
 | `test_safe_mode_defaults` | Local=Off, Hosted=On |
-| `test_type_selection` | Chatbot/API vs Tool-calling radio works |
+| `test_type_selection` | Chatbot/API vs Tool-calling radio works in Advanced |
+| `test_type_default_chatbot` | Type defaults to "Chatbot / API" without user interaction |
 | `test_continue_disabled_without_test` | [Continue] greyed out before [Test Connection] |
 | `test_continue_navigates` | After test → [Continue] → configure page |
 | `test_safety_notice_visible` | Warning always shown, not in collapsed Advanced |

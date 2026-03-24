@@ -26,8 +26,9 @@ The most important screen — score badge, category breakdown, top failures, and
   - 80–89: green (Good)
   - 90–100: dark green (Strong)
 - Below badge: label ("Needs Hardening")
-- Summary line: "3 critical failures │ 27 passed │ 0 false pos."
-- Score breakdown: "+42 passed −18 critical fails −3 minor fails = 61/100"
+- Summary line: "3 critical gaps │ 27 attacks blocked │ 30 tested"
+- **No scoring formula visible.** No "+42 passed −18 critical fails". Just the score, label, and simple counts.
+- Optional: collapsible "Score details" for advanced users (scoring breakdown, weighted formula)
 
 ### Step 3: Category breakdown section
 
@@ -39,14 +40,18 @@ The most important screen — score badge, category breakdown, top failures, and
 
 ### Step 4: Top failures section
 
-- List of max 5–10 failed scenarios, sorted by severity weight (critical first)
+- List of max 3–5 failed scenarios, sorted by severity weight (critical first)
+- Keep the list short — user reads top 3, not top 10
 - Each entry: scenario ID, title, "Expected: BLOCK → Got: ALLOW", category
 - [View Details] link → navigates to scenario detail page
 
 ### Step 5: Confidence banner (for demo agent = High)
 
-- "Assessment confidence: High — Full pipeline trace available"
-- Different text for Medium confidence (future phases)
+- For High confidence: no banner needed (don't add noise when everything is fine)
+- For Medium confidence (future phases): use positive framing:
+  - ℹ️ "External scan — based on response analysis. For deeper analysis, route traffic through AI Protector proxy."
+  - NOT: "Assessment confidence: Medium — Heuristic scan"
+  - Frame as upgrade path, not a disclaimer of unreliability
 
 ### Step 6: Header info bar
 
