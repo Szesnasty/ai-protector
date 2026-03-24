@@ -1,29 +1,29 @@
 # Red Team — Flow Diagram
 
-> Pełny przepływ danych: co robi użytkownik → co dzieje się pod spodem → co wraca na ekran.
+> Complete data flow: what the user does → what happens under the hood → what comes back on screen.
 
 ---
 
-## 1. Diagram ogólny (high-level)
+## 1. High-Level Diagram
 
 ```mermaid
 flowchart TB
-    subgraph USER ["👤 Użytkownik (przeglądarka)"]
-        U1["Wchodzi na /red-team"]
-        U2["Wybiera target"]
-        U3["Konfiguruje run"]
-        U4["Obserwuje progress"]
-        U5["Ogląda wyniki"]
-        U6["Drill-down w scenariusz"]
-        U7["Naprawia / re-run"]
-        U8["Porównuje / eksportuje"]
+    subgraph USER ["👤 User (browser)"]
+        U1["Lands on /red-team"]
+        U2["Picks target"]
+        U3["Configures run"]
+        U4["Watches progress"]
+        U5["Views results"]
+        U6["Drills into scenario"]
+        U7["Fixes / re-runs"]
+        U8["Compares / exports"]
     end
 
     subgraph FRONTEND ["🖥️ Frontend (Nuxt 3 + Vuetify 3)"]
         F1["/red-team — Landing"]
         F2["/red-team/configure"]
         F3["/red-team/run/:id — Progress"]
-        F4["/red-team/results/:id — Wyniki"]
+        F4["/red-team/results/:id — Results"]
         F5["/red-team/results/:id/scenario/:sid"]
         F6["/red-team/compare?a=X&b=Y"]
     end
@@ -51,7 +51,7 @@ flowchart TB
     end
 
     subgraph TARGET ["🎯 Target"]
-        T1["Demo Agent (wbudowany)"]
+        T1["Demo Agent (built-in)"]
         T2["Local Agent (localhost)"]
         T3["Hosted Endpoint (remote)"]
     end
@@ -77,59 +77,59 @@ flowchart TB
     U4 --> F3
     E2 -->|"all done"| E5
     E5 -->|"ScoreResult"| E7
-    A3 -->|"run + wyniki"| F4
+    A3 -->|"run + results"| F4
     U5 --> F4
-    A4 -->|"szczegóły scenariusza"| F5
+    A4 -->|"scenario details"| F5
     U6 --> F5
     U7 --> F2
-    A5 -->|"diff dwóch runów"| F6
+    A5 -->|"diff of two runs"| F6
     U8 --> F6
 ```
 
 ---
 
-## 2. Szczegółowy przepływ — krok po kroku
+## 2. Detailed Flow — Step by Step
 
-### Faza A: Wybór targetu i konfiguracja
+### Phase A: Target Selection & Configuration
 
 ```mermaid
 sequenceDiagram
-    actor User as 👤 Użytkownik
+    actor User as 👤 User
     participant FE as 🖥️ Frontend
     participant API as ⚙️ API
     participant PL as 📦 Pack Loader
     participant SEC as 🔒 SecretStore
 
-    User->>FE: Wchodzi na /red-team
+    User->>FE: Lands on /red-team
     FE->>API: GET /v1/benchmark/packs
     API->>PL: list_packs()
     PL-->>API: [{name, description, scenario_count}]
-    API-->>FE: Lista packów
+    API-->>FE: Pack list
 
-    User->>FE: Wybiera target card (np. "Hosted Endpoint")
-    User->>FE: Wypełnia formularz:<br/>• URL: https://my-agent.com/chat<br/>• Auth: Bearer sk-xxx<br/>• Type: chatbot_api<br/>• Safe mode: ON<br/>• Timeout: 30s
+    User->>FE: Picks target card (e.g. "Hosted Endpoint")
+    User->>FE: Fills form:<br/>• URL: https://my-agent.com/chat<br/>• Auth: Bearer sk-xxx<br/>• Type: chatbot_api<br/>• Safe mode: ON<br/>• Timeout: 30s
 
-    User->>FE: Klika [Test Connection]
+    User->>FE: Clicks [Test Connection]
     FE->>API: POST /v1/benchmark/test-connection<br/>{url, auth_header, timeout_s}
     API->>SEC: encrypt(auth_header) → secret_ref
     API->>API: HTTP HEAD/POST → target URL
-    alt ✅ Połączenie OK
+    alt ✅ Connection OK
         API-->>FE: {status: "ok", latency_ms: 340, status_code: 200}
         FE-->>User: ✅ "Connected — 340ms"
-    else ❌ Błąd
+    else ❌ Error
         API-->>FE: {status: "error", error: "connection_refused"}
         FE-->>User: 🔴 "Cannot reach endpoint"
     end
 
-    User->>FE: Wybiera pack: "Core Security"<br/>Policy: "Balanced"
-    User->>FE: Klika [Run Benchmark →]
+    User->>FE: Selects pack: "Core Security"<br/>Policy: "Balanced"
+    User->>FE: Clicks [Run Benchmark →]
 ```
 
-### Faza B: Uruchomienie i wykonanie benchmarku
+### Phase B: Run Launch & Execution
 
 ```mermaid
 sequenceDiagram
-    actor User as 👤 Użytkownik
+    actor User as 👤 User
     participant FE as 🖥️ Frontend
     participant API as ⚙️ API
     participant ENG as 🔧 Run Engine
@@ -142,7 +142,7 @@ sequenceDiagram
     participant DB as 💾 Persistence
     participant TGT as 🎯 Target
 
-    User->>FE: Klika [Run Benchmark]
+    User->>FE: Clicks [Run Benchmark]
     FE->>API: POST /v1/benchmark/runs<br/>{target_config, pack, policy}
 
     API->>DB: INSERT BenchmarkRun (status: created)
@@ -152,13 +152,13 @@ sequenceDiagram
     FE->>API: GET /v1/benchmark/runs/abc-123/progress (SSE)
 
     ENG->>PL: load_pack("core_security", target_config)
-    PL->>PL: Walidacja schematów (Pydantic)
-    PL->>PL: Filtrowanie:<br/>1. applicable_to vs agent_type<br/>2. safe_mode → skip mutating<br/>3. detector availability
+    PL->>PL: Schema validation (Pydantic)
+    PL->>PL: Filtering:<br/>1. applicable_to vs agent_type<br/>2. safe_mode → skip mutating<br/>3. detector availability
     PL-->>ENG: FilteredPack {total_in_pack: 30,<br/>total_applicable: 22, skipped: 8,<br/>skipped_reasons: {safe_mode:5, not_applicable:2, detector:1}}
 
     ENG->>DB: UPDATE run SET status=running,<br/>total_in_pack=30, total_applicable=22
 
-    loop Dla każdego scenariusza (1..22)
+    loop For each scenario (1..22)
         ENG->>SSE: event: scenario_start {id, index, total}
         SSE-->>FE: 🔄 "CS-001 — running..."
 
@@ -181,7 +181,7 @@ sequenceDiagram
 
         ENG->>SSE: event: scenario_complete<br/>{id: "CS-001", passed: true, actual: "BLOCK", latency_ms: 120}
         SSE-->>FE: ✅ "CS-001 — BLOCKED — 120ms"
-        FE-->>User: Aktualizacja progress bar i live feed
+        FE-->>User: Progress bar & live feed update
     end
 
     ENG->>SC: calculate_scores(all_results)
@@ -191,15 +191,15 @@ sequenceDiagram
     ENG->>DB: UPDATE run SET status=completed,<br/>score_simple=72, score_weighted=68,<br/>total_in_pack=30, total_applicable=22,<br/>executed=22, passed=16, failed=6, skipped=8,<br/>skipped_reasons={safe_mode:5, not_applicable:2, detector:1}
 
     ENG->>SSE: event: run_complete<br/>{score_simple: 72, score_weighted: 68,<br/>total_applicable: 22, executed: 22,<br/>passed: 16, failed: 6, skipped: 8}
-    SSE-->>FE: 🏁 Run zakończony!
+    SSE-->>FE: 🏁 Run complete!
     FE->>FE: Auto-redirect → /red-team/results/abc-123
 ```
 
-### Faza C: Wyniki i drill-down
+### Phase C: Results & Drill-Down
 
 ```mermaid
 sequenceDiagram
-    actor User as 👤 Użytkownik
+    actor User as 👤 User
     participant FE as 🖥️ Frontend
     participant API as ⚙️ API
     participant DB as 💾 Persistence
@@ -207,39 +207,39 @@ sequenceDiagram
     FE->>API: GET /v1/benchmark/runs/abc-123
     API->>DB: SELECT run + scenario results
     DB-->>API: Run {score: 72, passed: 16, failed: 6, ...}
-    API-->>FE: Pełne dane runa
+    API-->>FE: Full run data
 
-    FE-->>User: Ekran wyników:<br/>🟡 72/100 "Needs Hardening"<br/>• Category breakdown (4 kategorie)<br/>• Top 5 failures<br/>• CTA: "Protect this endpoint"
+    FE-->>User: Results screen:<br/>🟡 72/100 "Needs Hardening"<br/>• Category breakdown (4 categories)<br/>• Top 5 failures<br/>• CTA: "Protect this endpoint"
 
-    User->>FE: Klika [View Details] na CS-012
+    User->>FE: Clicks [View Details] on CS-012
 
     FE->>API: GET /v1/benchmark/runs/abc-123/scenarios/CS-012
     API->>DB: SELECT scenario_result WHERE scenario_id="CS-012"
     DB-->>API: {prompt, expected, actual, detector_detail,<br/>pipeline_result, latency_ms, fix_hints}
-    API-->>FE: Szczegóły scenariusza
+    API-->>FE: Scenario details
 
-    FE-->>User: Ekran detalu:<br/>❌ CS-012 — System prompt extraction<br/>• Attack prompt: "Ignore your previous..."<br/>• Expected: BLOCK → Got: ALLOW<br/>• Detector: regex — no match<br/>• Why it passed: "Attack uses indirect injection..."<br/>• Suggested fix:<br/>  → Switch to "Strict" policy [link]<br/>  → Add keyword rule [link]
+    FE-->>User: Detail screen:<br/>❌ CS-012 — System prompt extraction<br/>• Attack prompt: "Ignore your previous..."<br/>• Expected: BLOCK → Got: ALLOW<br/>• Detector: regex — no match<br/>• Why it passed: "Attack uses indirect injection..."<br/>• Suggested fix:<br/>  → Switch to "Strict" policy [link]<br/>  → Add keyword rule [link]
 ```
 
-### Faza D: Naprawa → Re-run → Porównanie
+### Phase D: Fix → Re-Run → Compare
 
 ```mermaid
 sequenceDiagram
-    actor User as 👤 Użytkownik
+    actor User as 👤 User
     participant FE as 🖥️ Frontend
     participant API as ⚙️ API
     participant PROXY as 🛡️ AI Protector Proxy
     participant TGT as 🎯 Target
 
-    User->>FE: Klika [Set up Proxy] (CTA Variant B)
-    FE-->>User: Instrukcja:<br/>"Zmień base URL agenta z<br/>https://my-agent.com/chat na<br/>https://protector.com/proxy/my-agent"
+    User->>FE: Clicks [Set up Proxy] (CTA Variant B)
+    FE-->>User: Instructions:<br/>"Change your agent's base URL from<br/>https://my-agent.com/chat to<br/>https://protector.com/proxy/my-agent"
 
-    Note over User,TGT: Użytkownik konfiguruje proxy<br/>(poza systemem benchmarku)
+    Note over User,TGT: User configures proxy<br/>(outside the benchmark system)
 
-    User->>FE: Wraca, klika [Re-run Benchmark]
+    User->>FE: Returns, clicks [Re-run Benchmark]
     FE->>API: POST /v1/benchmark/runs<br/>{...same config, endpoint via proxy}
 
-    Note over API,TGT: Ten sam flow co w Fazie B,<br/>ale teraz ruch idzie przez proxy
+    Note over API,TGT: Same flow as Phase B,<br/>but traffic now goes through proxy
 
     API->>PROXY: POST prompt → proxy
     PROXY->>PROXY: Pipeline: keyword → LLM Guard → NeMo → Presidio
@@ -247,33 +247,33 @@ sequenceDiagram
     TGT-->>PROXY: response
     PROXY-->>API: filtered response
 
-    Note over FE: Run zakończony: 91/100 🟢
+    Note over FE: Run complete: 91/100 🟢
 
-    User->>FE: Klika [Compare with previous run]
+    User->>FE: Clicks [Compare with previous run]
     FE->>API: GET /v1/benchmark/compare?a=abc-123&b=def-456
     API-->>FE: {before: {score: 72}, after: {score: 91},<br/>fixed: [CS-012, CS-018, CS-025],<br/>still_failing: [CS-022],<br/>regressions: []}
 
-    FE-->>User: 📊 Compare screen:<br/>72/100 🟡 → 91/100 🟢 (▲+19)<br/>✅ 3 failures naprawione<br/>❌ 1 wciąż nie przechodzi<br/>0 regresji
+    FE-->>User: 📊 Compare screen:<br/>72/100 🟡 → 91/100 🟢 (▲+19)<br/>✅ 3 failures fixed<br/>❌ 1 still failing<br/>0 regressions
 
-    User->>FE: Klika [Export Report]
+    User->>FE: Clicks [Export Report]
     FE->>API: POST /v1/benchmark/runs/def-456/export<br/>{format: "json", include_raw: false}
     API-->>FE: JSON report download
 ```
 
 ---
 
-## 3. Przepływ danych — co gdzie trafia
+## 3. Data Flow — Where Data Goes
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         DANE WEJŚCIOWE                              │
+│                         INPUT DATA                                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  👤 User wprowadza:              📦 System dostarcza:               │
+│  👤 User provides:               📦 System provides:                │
 │  ┌──────────────────────┐        ┌──────────────────────┐           │
 │  │ • endpoint URL       │        │ • scenario pack YAML │           │
 │  │ • auth header        │        │   (prompts, detectors│           │
-│  │ • target type        │        │    expected results)  │           │
+│  │ • target type        │        │    expected results) │           │
 │  │ • safe mode on/off   │        │ • detector registry  │           │
 │  │ • timeout            │        │ • scoring weights    │           │
 │  │ • pack selection     │        │ • policies           │           │
@@ -283,18 +283,18 @@ sequenceDiagram
 │             └───────────┬───────────────────┘                       │
 │                         ▼                                           │
 ├─────────────────────────────────────────────────────────────────────┤
-│                      PRZETWARZANIE                                  │
+│                      PROCESSING                                    │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  1. WALIDACJA & FILTROWANIE                                         │
+│  1. VALIDATION & FILTERING                                          │
 │     ┌────────────────────────────────────────────┐                  │
 │     │ Pack Loader:                               │                  │
-│     │   30 scenariuszy w packu                   │                  │
+│     │   30 scenarios in pack                      │                  │
 │     │   - applicable_to filter → -2 (not_applicable)                │
 │     │   - safe_mode filter     → -5 (mutating)   │                  │
 │     │   - detector_available   → -1 (llm_judge)  │                  │
 │     │   ═══════════════════════                   │                  │
-│     │   = 22 scenariuszy do wykonania            │                  │
+│     │   = 22 scenarios to execute                 │                  │
 │     └────────────────────────────────────────────┘                  │
 │                         │                                           │
 │  2. EXECUTION LOOP (×22)                                            │
@@ -363,10 +363,10 @@ sequenceDiagram
 │     └────────────────────────────────────────────┘                  │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
-│                      DANE WYJŚCIOWE                                 │
+│                      OUTPUT DATA                                    │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  💾 Do bazy danych:              📡 Do frontendu (SSE):             │
+│  💾 To database:                 📡 To frontend (SSE):             │
 │  ┌──────────────────────┐        ┌──────────────────────┐           │
 │  │ BenchmarkRun:        │        │ scenario_start       │           │
 │  │  status: completed   │        │ scenario_complete    │           │
@@ -382,15 +382,15 @@ sequenceDiagram
 │  │  source_run_id: null │                                           │
 │  ├──────────────────────┤        └──────────────────────┘           │
 │  │ BenchmarkScenario    │                                           │
-│  │ Result (×22):        │        📤 Do eksportu:                    │
+│  │ Result (×22):        │        📤 To export:                      │
 │  │  passed/failed       │        ┌──────────────────────┐           │
-│  │  actual: BLOCK/ALLOW │        │ JSON: pełne wyniki   │           │
-│  │  detector_type       │        │ Markdown: raport     │           │
+│  │  actual: BLOCK/ALLOW │        │ JSON: full results   │           │
+│  │  detector_type       │        │ Markdown: report     │           │
 │  │  detector_detail     │        │ PDF: branded report  │           │
 │  │  latency_ms          │        │ Badge: score SVG     │           │
 │  │  raw_response_       │        └──────────────────────┘           │
 │  │   retained_until     │                                           │
-│  └──────────────────────┘        🖥️ Na ekran użytkownika:           │
+│  └──────────────────────┘        🖥️ On user's screen:            │
 │                                  ┌──────────────────────┐           │
 │                                  │ Score badge: 72/100  │           │
 │                                  │ Category breakdown   │           │
@@ -405,7 +405,7 @@ sequenceDiagram
 
 ---
 
-## 4. State machine — cykl życia runa
+## 4. State Machine — Run Lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -423,65 +423,65 @@ stateDiagram-v2
     failed --> [*]
 
     note right of created
-        Walidacja configa
-        Ładowanie & filtrowanie packa
-        Zapis do DB
+        Validate config
+        Load & filter pack
+        Save to DB
     end note
 
     note right of running
         Per scenario:
         1. Send prompt → target
-        2. Receive RawTargetResponse
+        2. Normalize → RawTargetResponse
         3. Evaluate → EvalResult
         4. Persist result
         5. Emit SSE event
     end note
 
     note right of completed
-        Oblicz score (simple + weighted)
-        Zapisz finalne wyniki
+        Compute score (simple + weighted)
+        Save final results
         Emit SSE "run_complete"
     end note
 ```
 
 ---
 
-## 5. Typy targetów — co się różni
+## 5. Target Types — What Differs
 
 ```
 ┌──────────────┬─────────────────┬─────────────────┬──────────────────┐
 │              │  Demo Agent     │  Local/Hosted   │  Registered      │
-│              │  (wbudowany)    │  (custom URL)   │  Agent           │
+│              │  (built-in)     │  (custom URL)   │  Agent           │
 ├──────────────┼─────────────────┼─────────────────┼──────────────────┤
-│ User podaje  │ nic             │ URL, auth,      │ wybiera z listy  │
+│ User enters  │ nothing         │ URL, auth,      │ picks from list  │
 │              │ (zero-config)   │ type, safe_mode │ (Agent Wizard)   │
 ├──────────────┼─────────────────┼─────────────────┼──────────────────┤
-│ Test         │ pomijany        │ POST → target   │ pomijany         │
+│ Test         │ skipped         │ POST → target   │ skipped          │
 │ Connection   │                 │ → 200 OK?       │ (already known)  │
 ├──────────────┼─────────────────┼─────────────────┼──────────────────┤
-│ Auth         │ brak            │ AES-256         │ z agent config   │
-│              │                 │ encrypted,      │                  │
+│ Auth         │ none            │ AES-256         │ from agent       │
+│              │                 │ encrypted,      │ config           │
 │              │                 │ 24h TTL         │                  │
 ├──────────────┼─────────────────┼─────────────────┼──────────────────┤
-│ Ruch HTTP    │ → wbudowany     │ → custom URL    │ → proxy z pełnym │
-│              │   pipeline      │   (bezpośrednio)│   pipeline trace │
+│ HTTP traffic │ → built-in      │ → custom URL    │ → proxy with     │
+│              │   pipeline      │   (direct)      │   full trace     │
 ├──────────────┼─────────────────┼─────────────────┼──────────────────┤
-│ Ewaluacja    │ deterministic   │ deterministic + │ deterministic +  │
+│ Evaluation   │ deterministic   │ deterministic + │ deterministic +  │
 │              │ (full trace)    │ heuristic       │ full trace       │
 ├──────────────┼─────────────────┼─────────────────┼──────────────────┤
 │ Confidence   │ 🟢 High        │ 🟡 Medium       │ 🟢 High         │
 ├──────────────┼─────────────────┼─────────────────┼──────────────────┤
 │ CTA          │ Variant A:      │ Variant B:      │ Variant A:       │
-│ (po wynikach)│ "Apply policy"  │ "Set up Proxy"  │ "Tune policy"    │
-│              │ "Re-run"        │ "Open Wizard"   │ "Re-run"         │
+│ (after       │ "Apply policy"  │ "Set up Proxy"  │ "Tune policy"    │
+│  results)    │ "Re-run"        │ "Open Wizard"   │ "Re-run"         │
 ├──────────────┼─────────────────┼─────────────────┼──────────────────┤
-│ Faza budowy  │ Phase 1 (MVP)   │ Phase 2 (MVP)   │ Phase 3          │
+│ Build phase  │ Phase 1 (MVP)   │ Phase 2 (MVP)   │ Phase 3          │
 └──────────────┴─────────────────┴─────────────────┴──────────────────┘
 ```
 
 ---
 
-## 6. Moduły — dependency graph
+## 6. Modules — Dependency Graph
 
 ```mermaid
 graph TD
@@ -529,18 +529,18 @@ graph TD
 
 ---
 
-## 7. Retencja danych — lifecycle
+## 7. Data Retention — Lifecycle
 
 ```mermaid
 gantt
-    title Cykl życia danych po benchmarku
+    title Data Lifecycle After Benchmark
     dateFormat  YYYY-MM-DD
-    axisFormat  %d dni
+    axisFormat  %d days
 
     section Permanent
     Run metadata (score, status)       :done, 2026-01-01, 2026-12-31
     Scenario results (pass/fail)       :done, 2026-01-01, 2026-12-31
-    Attack prompts (z packa)           :done, 2026-01-01, 2026-12-31
+    Attack prompts (from pack)         :done, 2026-01-01, 2026-12-31
 
     section 30 days
     Raw target responses               :active, 2026-01-01, 2026-01-31
@@ -549,7 +549,6 @@ gantt
     section 24 hours
     Auth secrets (encrypted)           :crit, 2026-01-01, 2026-01-02
 ```
-
 ```
 After 24h:  auth secrets → DELETED (auto, never in logs)
             NOTE: test-connection secrets are in-memory only, never persisted
