@@ -15,7 +15,7 @@
         </h1>
       </div>
       <p class="text-body-2 text-medium-emphasis">
-        Target: Demo Agent &nbsp;│&nbsp; Pack: {{ runDetail?.pack ?? 'Loading...' }}
+        Target: {{ targetLabel }} &nbsp;│&nbsp; Pack: {{ humanPack(runDetail?.pack ?? '') }}
         &nbsp;│&nbsp; {{ runDetail?.total_applicable ?? '...' }} attacks
       </p>
     </div>
@@ -25,6 +25,7 @@
       v-if="disconnected"
       type="warning"
       variant="tonal"
+      density="compact"
       class="mb-4"
       data-testid="reconnect-banner"
     >
@@ -36,6 +37,7 @@
       v-if="consecutiveFailures >= 3 && !isTerminal"
       type="error"
       variant="tonal"
+      density="compact"
       class="mb-4"
       data-testid="target-failure-banner"
     >
@@ -70,6 +72,10 @@
         rounded
         data-testid="progress-bar"
       />
+      <!-- Currently running scenario -->
+      <p v-if="currentScenario" class="text-caption text-medium-emphasis mt-2 mb-0">
+        Running now: {{ currentScenario }}
+      </p>
     </v-card>
 
     <!-- Live feed -->
@@ -96,7 +102,8 @@
             <span class="feed-icon mr-2">{{ item.icon }}</span>
           </template>
           <v-list-item-title class="text-body-2">
-            {{ item.scenarioId }}
+            {{ item.title || item.scenarioId }}
+            <span v-if="item.title" class="text-caption text-medium-emphasis ml-1">{{ item.scenarioId }}</span>
           </v-list-item-title>
           <v-list-item-subtitle class="text-caption">
             {{ item.detail }}
@@ -125,7 +132,7 @@
       <v-card>
         <v-card-title>Cancel Benchmark?</v-card-title>
         <v-card-text>
-          Cancel this benchmark? Partial results will be saved.
+          Partial results will be saved. You can view them after cancelling.
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -141,6 +148,7 @@
 
 <script setup lang="ts">
 import { api } from '~/services/api'
+import { humanPack } from '~/utils/redTeamLabels'
 
 definePageMeta({ layout: 'default' })
 
@@ -156,6 +164,7 @@ interface RunDetail {
   id: string
   pack: string
   status: string
+  target_type: string
   total_in_pack: number
   total_applicable: number
   executed: number
@@ -168,6 +177,7 @@ interface RunDetail {
 interface FeedItem {
   key: string
   scenarioId: string
+  title: string
   icon: string
   detail: string
   status: 'running' | 'passed' | 'failed' | 'skipped'
@@ -184,6 +194,7 @@ const isCancelling = ref(false)
 const isTerminal = ref(false)
 const latencies = ref<number[]>([])
 const consecutiveFailures = ref(0)
+const currentScenario = ref<string | null>(null)
 
 // Timers
 let elapsedTimer: ReturnType<typeof setInterval> | null = null
@@ -202,6 +213,14 @@ const progressPercent = computed(() => {
 const headerTitle = computed(() => {
   if (isTerminal.value) return 'Benchmark Complete!'
   return 'Benchmark Running...'
+})
+
+const targetLabel = computed(() => {
+  const t = runDetail.value?.target_type
+  if (t === 'demo') return 'Demo Agent'
+  if (t === 'local_agent') return 'Local Agent'
+  if (t === 'hosted_endpoint') return 'Hosted Endpoint'
+  return t ?? 'Target'
 })
 
 const elapsedFormatted = computed(() => formatDuration(elapsedSeconds.value))
@@ -234,6 +253,7 @@ function connectSSE() {
   eventSource.addEventListener('scenario_start', (e: MessageEvent) => {
     const data = JSON.parse(e.data)
     total.value = data.total_applicable
+    currentScenario.value = data.title || data.scenario_id
 
     // Remove previous "running" item for same scenario
     const idx = feedItems.value.findIndex((f) => f.scenarioId === data.scenario_id && f.status === 'running')
@@ -241,6 +261,7 @@ function connectSSE() {
       feedItems.value.push({
         key: `start-${data.scenario_id}`,
         scenarioId: data.scenario_id,
+        title: data.title || '',
         icon: '🔄',
         detail: `Running (${data.index}/${data.total_applicable})`,
         status: 'running',
@@ -253,6 +274,7 @@ function connectSSE() {
     const data = JSON.parse(e.data)
     completed.value++
     latencies.value.push(data.latency_ms)
+    currentScenario.value = null
 
     // Track consecutive failures for mid-run error detection
     if (data.passed) {
@@ -266,8 +288,9 @@ function connectSSE() {
     const item: FeedItem = {
       key: `complete-${data.scenario_id}`,
       scenarioId: data.scenario_id,
+      title: data.title || '',
       icon: data.passed ? '✅' : '❌',
-      detail: `${data.passed ? 'Passed' : 'Failed'} · ${data.actual} · ${data.latency_ms}ms`,
+      detail: `${data.passed ? 'Blocked' : 'Got through'} · ${data.actual} · ${data.latency_ms}ms`,
       status: data.passed ? 'passed' : 'failed',
     }
     if (idx >= 0) {
@@ -281,14 +304,17 @@ function connectSSE() {
   eventSource.addEventListener('scenario_skipped', (e: MessageEvent) => {
     const data = JSON.parse(e.data)
     completed.value++
+    currentScenario.value = null
 
     // Replace running item if present
     const idx = feedItems.value.findIndex((f) => f.scenarioId === data.scenario_id && f.status === 'running')
+    const skipLabel = data.reason === 'timeout' ? 'Timeout' : data.reason === 'safe_mode' ? 'Safe mode' : data.reason === 'not_applicable' ? 'Not applicable' : data.reason
     const item: FeedItem = {
       key: `skipped-${data.scenario_id}`,
       scenarioId: data.scenario_id,
+      title: data.title || '',
       icon: data.reason === 'timeout' ? '⏱️' : '⚠️',
-      detail: data.reason === 'timeout' ? 'Timeout — skipped' : `Skipped: ${data.reason}`,
+      detail: `Skipped — ${skipLabel}`,
       status: 'skipped',
     }
     if (idx >= 0) {
@@ -322,6 +348,7 @@ function connectSSE() {
     feedItems.value.push({
       key: 'run-failed',
       scenarioId: 'ERROR',
+      title: '',
       icon: '💥',
       detail: data.error,
       status: 'failed',

@@ -95,6 +95,12 @@ class ScenarioResultResponse(BaseModel):
     pipeline_result: dict | None = None
     created_at: datetime | None = None
 
+    # Enriched from pack metadata (not stored in DB)
+    title: str | None = None
+    description: str | None = None
+    why_it_passes: str | None = None
+    fix_hints: list[str] = Field(default_factory=list)
+
     model_config = {"from_attributes": True}
 
 

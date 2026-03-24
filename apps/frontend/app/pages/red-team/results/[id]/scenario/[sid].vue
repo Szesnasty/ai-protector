@@ -19,40 +19,46 @@
           Back to Results
         </v-btn>
 
-        <div class="d-flex align-center mb-2">
-          <span class="text-h5 mr-3">{{ scenario.scenario_id }}</span>
+        <!-- Human title as H1 -->
+        <h1 class="text-h5 mb-1">{{ scenario.title || scenario.scenario_id }}</h1>
+        <p v-if="scenario.title" class="text-body-2 text-medium-emphasis mb-3">
+          {{ scenario.scenario_id }}
+        </p>
+
+        <!-- Status + metadata chips -->
+        <div class="d-flex flex-wrap ga-2 mb-3">
           <v-chip
             :color="scenario.passed ? 'success' : 'error'"
             variant="tonal"
             size="small"
-            :prepend-icon="scenario.passed ? 'mdi-check-circle' : 'mdi-close-circle'"
+            :prepend-icon="scenario.passed ? 'mdi-shield-check' : 'mdi-shield-alert'"
             data-testid="status-chip"
           >
-            {{ scenario.passed ? 'Passed' : 'Failed' }}
+            {{ scenario.passed ? 'Blocked' : 'Got through' }}
+          </v-chip>
+          <v-chip
+            :color="sevMeta.color"
+            variant="tonal"
+            size="small"
+            :prepend-icon="sevMeta.icon"
+          >
+            {{ sevMeta.label }}
+          </v-chip>
+          <v-chip variant="outlined" size="small" prepend-icon="mdi-tag">
+            {{ humanCategory(scenario.category) }}
+          </v-chip>
+          <v-chip v-if="scenario.latency_ms !== null" variant="outlined" size="small" prepend-icon="mdi-timer-outline">
+            {{ scenario.latency_ms }}ms
           </v-chip>
         </div>
 
-        <div class="d-flex flex-wrap ga-3 text-body-2 text-medium-emphasis">
-          <span>
-            <v-icon icon="mdi-tag" size="x-small" class="mr-1" />
-            {{ scenario.category }}
-          </span>
-          <span>
-            <v-icon icon="mdi-alert" size="x-small" class="mr-1" />
-            {{ scenario.severity }}
-          </span>
-          <span v-if="scenario.latency_ms !== null">
-            <v-icon icon="mdi-timer-outline" size="x-small" class="mr-1" />
-            {{ scenario.latency_ms }}ms
-          </span>
-          <span>
-            Expected: <strong>{{ scenario.expected }}</strong>
-            → Got: <strong>{{ scenario.actual ?? 'N/A' }}</strong>
-          </span>
-        </div>
+        <!-- Description from pack metadata -->
+        <p v-if="scenario.description" class="text-body-2 text-medium-emphasis">
+          {{ scenario.description }}
+        </p>
       </div>
 
-      <!-- Result summary — always visible -->
+      <!-- Result verdict -->
       <v-alert
         :type="scenario.passed ? 'success' : 'error'"
         variant="tonal"
@@ -60,9 +66,16 @@
         data-testid="result-summary"
       >
         <strong>{{ verdictText }}</strong>
+        <template v-if="!scenario.passed">
+          <br />
+          <span class="text-body-2">
+            Expected: <strong>{{ scenario.expected }}</strong>
+            &nbsp;→&nbsp; Got: <strong>{{ scenario.actual ?? 'ALLOW' }}</strong>
+          </span>
+        </template>
       </v-alert>
 
-      <!-- Attack prompt -->
+      <!-- Attack Prompt -->
       <h2 class="text-h6 mb-2">Attack Prompt</h2>
       <v-card variant="flat" class="mb-6">
         <v-card-text class="pa-0 position-relative">
@@ -72,13 +85,37 @@
             size="x-small"
             class="copy-btn"
             data-testid="copy-prompt-btn"
-            @click="copyPrompt"
-          />
+            @click="copyText(scenario.prompt)"
+          >
+            <v-icon icon="mdi-content-copy" />
+            <v-tooltip activator="parent" location="top">Copy prompt</v-tooltip>
+          </v-btn>
           <pre class="prompt-block pa-4" data-testid="attack-prompt">{{ scenario.prompt }}</pre>
         </v-card-text>
       </v-card>
 
-      <!-- Why it got through -->
+      <!-- Agent Response (if available) -->
+      <template v-if="scenario.actual">
+        <h2 class="text-h6 mb-2">Agent Response</h2>
+        <v-card variant="flat" class="mb-6">
+          <v-card-text class="pa-0 position-relative">
+            <v-btn
+              icon="mdi-content-copy"
+              variant="text"
+              size="x-small"
+              class="copy-btn"
+              data-testid="copy-response-btn"
+              @click="copyText(scenario.actual)"
+            >
+              <v-icon icon="mdi-content-copy" />
+              <v-tooltip activator="parent" location="top">Copy response</v-tooltip>
+            </v-btn>
+            <pre class="prompt-block pa-4" data-testid="agent-response">{{ scenario.actual }}</pre>
+          </v-card-text>
+        </v-card>
+      </template>
+
+      <!-- Why it got through — use enriched API field first -->
       <template v-if="whyItPasses">
         <h2 class="text-h6 mb-2">Why It Got Through</h2>
         <v-card variant="flat" class="mb-6 pa-4" data-testid="why-section">
@@ -86,11 +123,11 @@
         </v-card>
       </template>
 
-      <!-- How to fix it -->
+      <!-- How to fix it — use enriched API field first -->
       <template v-if="fixHints.length > 0">
         <h2 class="text-h6 mb-2">How to Fix It</h2>
         <v-card variant="flat" class="mb-6 pa-4" data-testid="fix-section">
-          <v-list density="compact">
+          <v-list density="compact" class="bg-transparent">
             <v-list-item
               v-for="(hint, i) in fixHints"
               :key="i"
@@ -114,7 +151,30 @@
         </v-card>
       </template>
 
-      <!-- Technical Details — collapsed by default -->
+      <!-- Prev / Next failure navigation -->
+      <div v-if="failures.length > 1" class="d-flex justify-space-between mb-6">
+        <v-btn
+          v-if="prevFailure"
+          variant="text"
+          size="small"
+          prepend-icon="mdi-chevron-left"
+          :to="`/red-team/results/${runId}/scenario/${prevFailure.scenario_id}`"
+        >
+          {{ prevFailure.title || prevFailure.scenario_id }}
+        </v-btn>
+        <span v-else />
+        <v-btn
+          v-if="nextFailure"
+          variant="text"
+          size="small"
+          append-icon="mdi-chevron-right"
+          :to="`/red-team/results/${runId}/scenario/${nextFailure.scenario_id}`"
+        >
+          {{ nextFailure.title || nextFailure.scenario_id }}
+        </v-btn>
+      </div>
+
+      <!-- Technical Details — collapsed -->
       <v-expansion-panels v-model="technicalPanel" class="mb-6" variant="accordion">
         <v-expansion-panel value="technical" data-testid="technical-details">
           <v-expansion-panel-title>
@@ -151,7 +211,9 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '~/services/api'
+import { benchmarkService } from '~/services/benchmarkService'
+import type { ScenarioResult } from '~/services/benchmarkService'
+import { humanCategory, severityMeta } from '~/utils/redTeamLabels'
 
 definePageMeta({ layout: 'default' })
 
@@ -163,23 +225,6 @@ const scenarioId = computed(() => route.params.sid as string)
 // Types
 // ---------------------------------------------------------------------------
 
-interface ScenarioDetail {
-  id: string
-  scenario_id: string
-  category: string
-  severity: string
-  prompt: string
-  expected: string
-  actual: string | null
-  passed: boolean | null
-  skipped: boolean
-  skipped_reason: string | null
-  detector_type: string | null
-  detector_detail: Record<string, unknown> | null
-  pipeline_result: Record<string, unknown> | null
-  latency_ms: number | null
-}
-
 interface FixHint {
   text: string
   link: string | null
@@ -190,30 +235,38 @@ interface FixHint {
 // ---------------------------------------------------------------------------
 
 const loading = ref(true)
-const scenario = ref<ScenarioDetail | null>(null)
+const scenario = ref<ScenarioResult | null>(null)
+const allScenarios = ref<ScenarioResult[]>([])
 const technicalPanel = ref<string | undefined>(undefined)
 
 // ---------------------------------------------------------------------------
 // Computed
 // ---------------------------------------------------------------------------
 
+const sevMeta = computed(() => severityMeta(scenario.value?.severity ?? 'medium'))
+
 const verdictText = computed(() => {
   if (!scenario.value) return ''
   if (scenario.value.passed) {
     return 'BLOCKED — your agent stopped this attack'
   }
-  return 'ALLOWED — this attack got through'
+  return 'GOT THROUGH — this attack bypassed your agent'
 })
 
-// Extract why_it_passes from detector_detail (scenario metadata)
+// Use enriched API field first, then fall back to detector_detail
 const whyItPasses = computed(() => {
+  if (scenario.value?.why_it_passes) return scenario.value.why_it_passes
   const detail = scenario.value?.detector_detail
   if (!detail) return null
   return (detail as Record<string, unknown>).why_it_passes as string | null ?? null
 })
 
-// Extract fix_hints from detector_detail
+// Use enriched API field first, then fall back to detector_detail
 const fixHints = computed<FixHint[]>(() => {
+  const enrichedHints = scenario.value?.fix_hints
+  if (enrichedHints && enrichedHints.length > 0) {
+    return enrichedHints.map((h) => ({ text: h, link: inferFixLink(h) }))
+  }
   const detail = scenario.value?.detector_detail
   if (!detail) return []
   const hints = (detail as Record<string, unknown>).fix_hints
@@ -227,6 +280,29 @@ const fixHints = computed<FixHint[]>(() => {
   })
 })
 
+// Failures for prev/next navigation
+const failures = computed(() => {
+  return allScenarios.value.filter((s) => s.passed === false)
+})
+
+const currentFailureIndex = computed(() => {
+  return failures.value.findIndex((s) => s.scenario_id === scenarioId.value)
+})
+
+const prevFailure = computed(() => {
+  const idx = currentFailureIndex.value
+  return idx > 0 ? failures.value[idx - 1] : null
+})
+
+const nextFailure = computed(() => {
+  const idx = currentFailureIndex.value
+  return idx >= 0 && idx < failures.value.length - 1 ? failures.value[idx + 1] : null
+})
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 function inferFixLink(text: string): string | null {
   const lower = text.toLowerCase()
   if (lower.includes('policy') || lower.includes('strict')) return '/policies'
@@ -234,9 +310,9 @@ function inferFixLink(text: string): string | null {
   return null
 }
 
-async function copyPrompt() {
-  if (scenario.value?.prompt) {
-    await navigator.clipboard.writeText(scenario.value.prompt)
+async function copyText(text: string | null | undefined) {
+  if (text) {
+    await navigator.clipboard.writeText(text)
   }
 }
 
@@ -247,16 +323,23 @@ async function copyPrompt() {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await api.get<ScenarioDetail>(
-      `/v1/benchmark/runs/${runId.value}/scenarios/${scenarioId.value}`,
-    )
-    scenario.value = res.data
+    const [scenarioData, scenariosAll] = await Promise.all([
+      benchmarkService.getScenario(runId.value, scenarioId.value),
+      benchmarkService.getScenarios(runId.value),
+    ])
+    scenario.value = scenarioData
+    allScenarios.value = scenariosAll
   } catch {
     scenario.value = null
   } finally {
     loading.value = false
   }
 }
+
+// Re-fetch when route params change (prev/next navigation)
+watch([runId, scenarioId], () => {
+  fetchData()
+})
 
 onMounted(() => {
   fetchData()

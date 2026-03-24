@@ -53,6 +53,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await seed_wizard()
 
+    # Cancel any benchmark runs orphaned by a previous crash / restart
+    from src.db.session import async_session
+    from src.red_team.persistence.repository import BenchmarkRunRepository
+
+    async with async_session() as session:
+        repo = BenchmarkRunRepository(session)
+        cancelled = await repo.cancel_stale_runs()
+        await session.commit()
+        if cancelled:
+            logger.info("stale_runs_cancelled", count=cancelled)
+
     # ── Preload ML models in background (eliminates ~50 s cold-start) ──
     import asyncio
 

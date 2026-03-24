@@ -63,6 +63,11 @@ export interface ScenarioResult {
   detector_detail: Record<string, unknown> | null
   pipeline_result: Record<string, unknown> | null
   latency_ms: number | null
+  // Enriched from pack metadata
+  title: string | null
+  description: string | null
+  why_it_passes: string | null
+  fix_hints: string[]
 }
 
 export interface CompareResult {
@@ -87,8 +92,14 @@ export const benchmarkService = {
   getRun: (id: string): Promise<RunDetail> =>
     api.get<RunDetail>(`/v1/benchmark/runs/${id}`).then((r) => r.data),
 
+  listRuns: (limit = 5): Promise<RunDetail[]> =>
+    api.get<RunDetail[]>(`/v1/benchmark/runs?limit=${limit}`).then((r) => r.data),
+
   getScenarios: (id: string, limit = 1000): Promise<ScenarioResult[]> =>
     api.get<ScenarioResult[]>(`/v1/benchmark/runs/${id}/scenarios?limit=${limit}`).then((r) => r.data),
+
+  getScenario: (runId: string, scenarioId: string): Promise<ScenarioResult> =>
+    api.get<ScenarioResult>(`/v1/benchmark/runs/${runId}/scenarios/${scenarioId}`).then((r) => r.data),
 
   compareRuns: (runAId: string, runBId: string): Promise<CompareResult> =>
     api.get<CompareResult>(`/v1/benchmark/compare?a=${runAId}&b=${runBId}`).then((r) => r.data),

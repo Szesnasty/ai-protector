@@ -5,7 +5,7 @@
     </h2>
     <p class="text-body-2 text-medium-emphasis mb-4">
       {{ isHosted
-        ? 'Enter the URL and credentials for your hosted AI endpoint.'
+        ? 'Use staging or internal environments when possible.'
         : 'Enter the URL of your locally-running agent.' }}
     </p>
 
@@ -14,7 +14,9 @@
       <v-text-field
         v-model="endpointUrl"
         label="Endpoint URL"
-        :placeholder="isHosted ? 'https://api.example.com/chat' : 'http://localhost:8080/chat'"
+        :placeholder="isHosted ? 'https://api.example.com/chat' : 'http://localhost:8000/chat'"
+        :hint="isHosted ? 'e.g. https://staging.myapp.com/api/chat' : 'e.g. http://localhost:8000/chat or http://127.0.0.1:3000/api/chat'"
+        persistent-hint
         :rules="[rules.required, rules.url]"
         variant="outlined"
         density="compact"
@@ -32,12 +34,12 @@
         class="mb-3"
       />
 
-      <!-- Auth header — shown by default for hosted, collapsed in advanced for local -->
+      <!-- Auth header — only for hosted (visible by default) -->
       <v-text-field
-        v-if="isHosted || showAdvanced"
+        v-if="isHosted"
         v-model="authHeader"
         label="Authorization Header"
-        placeholder="Bearer sk-..."
+        placeholder="Bearer sk-... or x-api-key: ..."
         variant="outlined"
         density="compact"
         class="mb-3"
@@ -47,19 +49,21 @@
         @click:append-inner="showAuth = !showAuth"
       />
 
-      <!-- Safety notice — always visible -->
+      <!-- Safety notice — compact -->
       <v-alert
         type="warning"
         variant="tonal"
+        density="compact"
         class="mb-4"
         data-testid="safety-notice"
       >
-        Benchmarks send realistic attack prompts. If your agent has real tools,
-        use Safe mode or a staging environment.
+        {{ isHosted
+          ? 'Benchmarks send realistic attack prompts. Use a staging environment and enable Safe Mode.'
+          : 'Benchmarks send realistic attack prompts. Enable Safe Mode if your agent has real tools.' }}
       </v-alert>
 
       <!-- Test Connection -->
-      <div class="mb-4">
+      <div class="d-flex align-center mb-4">
         <v-btn
           variant="outlined"
           prepend-icon="mdi-connection"
@@ -72,14 +76,21 @@
         </v-btn>
       </div>
 
-      <!-- Connection result banner -->
+      <!-- Connection result banner — inline status -->
       <v-alert
         v-if="connectionResult"
         :type="connectionResult.type"
         variant="tonal"
+        density="compact"
         class="mb-4"
         data-testid="connection-result"
       >
+        <template #prepend>
+          <v-icon
+            :icon="connectionResult.type === 'success' ? 'mdi-check-circle' : 'mdi-close-circle'"
+            size="small"
+          />
+        </template>
         {{ connectionResult.message }}
       </v-alert>
 
@@ -88,11 +99,12 @@
         v-if="nonJsonWarning"
         type="warning"
         variant="tonal"
+        density="compact"
         class="mb-4"
         data-testid="non-json-warning"
       >
         Endpoint returned {{ nonJsonContentType }} instead of JSON.
-        Benchmark may have limited accuracy. Continue anyway?
+        Some checks may be less accurate. You can still continue.
       </v-alert>
 
       <!-- Advanced section — collapsed by default -->
@@ -103,7 +115,7 @@
             Advanced Settings
           </v-expansion-panel-title>
           <v-expansion-panel-text>
-            <!-- Auth header for local (if not shown above) -->
+            <!-- Auth header for local (only here) -->
             <v-text-field
               v-if="!isHosted"
               v-model="authHeader"
@@ -140,14 +152,18 @@
             <div class="d-flex align-center mb-3">
               <v-switch
                 v-model="safeMode"
-                label="Safe Mode"
                 color="primary"
                 density="compact"
                 hide-details
                 class="mr-2"
                 data-testid="safe-mode-toggle"
-              />
-              <v-tooltip text="Skip scenarios that may trigger real actions (delete, transfer, etc.)">
+              >
+                <template #label>
+                  Safe Mode
+                  <v-chip v-if="isHosted" size="x-small" color="primary" variant="tonal" class="ml-2">Recommended</v-chip>
+                </template>
+              </v-switch>
+              <v-tooltip text="Skips prompts that could trigger write/delete/transfer actions on your system.">
                 <template #activator="{ props }">
                   <v-icon v-bind="props" icon="mdi-help-circle-outline" size="small" />
                 </template>
@@ -157,6 +173,7 @@
             <!-- Environment (Hosted only) -->
             <template v-if="isHosted">
               <p class="text-body-2 font-weight-medium mb-1">Environment</p>
+              <p class="text-caption text-medium-emphasis mb-2">Used for reporting only — does not affect the benchmark.</p>
               <v-radio-group v-model="environment" inline density="compact" class="mb-3">
                 <v-radio label="Staging" value="staging" />
                 <v-radio label="Internal" value="internal" />
@@ -177,7 +194,7 @@
         data-testid="continue-btn"
         @click="onContinue"
       >
-        Continue
+        {{ canContinue ? 'Continue to Benchmark Setup' : 'Test connection first' }}
       </v-btn>
     </v-form>
   </v-card>
@@ -220,7 +237,6 @@ const timeoutS = ref(30)
 const safeMode = ref(isHosted.value) // Hosted=On, Local=Off
 const environment = ref('staging')
 const advancedPanel = ref<string | undefined>(undefined)
-const showAdvanced = computed(() => advancedPanel.value === 'advanced')
 
 // Connection test state
 const isTesting = ref(false)
