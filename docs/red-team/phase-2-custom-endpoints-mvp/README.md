@@ -6,7 +6,7 @@
 
 | # | Spec | Layer | Status |
 |---|------|-------|--------|
-| 01 | [Target Configuration Form](01-target-configuration-form.spec.md) | Frontend | not started |
+| 01 | [Target Configuration Form](01-target-configuration-form.spec.md) | Frontend | ✅ done |
 | 02 | [Test Connection](02-test-connection.spec.md) | Full-stack | not started |
 | 03 | [Auth Secret Handling](03-auth-secret-handling.spec.md) | Backend | not started |
 | 04 | [Safe Mode Filtering](04-safe-mode-filtering.spec.md) | Backend | not started |
