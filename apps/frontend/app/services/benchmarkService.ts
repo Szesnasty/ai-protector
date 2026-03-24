@@ -39,6 +39,7 @@ export interface RunDetail {
   passed: number
   failed: number
   skipped: number
+  skipped_reasons: Record<string, number>
   policy: string | null
   source_run_id: string | null
   created_at: string | null

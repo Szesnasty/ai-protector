@@ -55,6 +55,26 @@
         </p>
       </v-card>
 
+      <!-- Safe mode info banner -->
+      <v-alert
+        v-if="skippedMutating > 0"
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mb-6"
+        data-testid="safe-mode-banner"
+      >
+        <template #text>
+          Safe mode was enabled. {{ skippedMutating }} mutating scenario{{ skippedMutating !== 1 ? 's were' : ' was' }} skipped.
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <a v-bind="props" class="text-primary" style="cursor: pointer;">What are mutating scenarios?</a>
+            </template>
+            <span>Mutating scenarios trigger real actions (delete, modify, transfer) that could affect your target system. Safe mode skips these to prevent unintended side effects.</span>
+          </v-tooltip>
+        </template>
+      </v-alert>
+
       <!-- Hero section — Score badge -->
       <v-card variant="flat" class="mb-6 pa-6 text-center" data-testid="score-section">
         <div class="d-flex flex-column align-center">
@@ -272,6 +292,10 @@ const criticalCount = computed(() => {
 
 const failedCount = computed(() => {
   return scenarios.value.filter((s) => s.passed === false).length
+})
+
+const skippedMutating = computed(() => {
+  return run.value?.skipped_reasons?.safe_mode ?? 0
 })
 
 const timeAgo = computed(() => {
