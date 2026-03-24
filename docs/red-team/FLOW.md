@@ -56,6 +56,12 @@ flowchart TB
         T3["Hosted Endpoint (remote)"]
     end
 
+    %% MVP scope boundary
+    style F6 stroke-dasharray: 5 5,stroke:#999
+    style A5 stroke-dasharray: 5 5,stroke:#999
+    style A6 stroke-dasharray: 5 5,stroke:#999
+    style T3 stroke-dasharray: 5 5,stroke:#999
+
     U1 --> F1
     U2 --> F1
     F1 -->|"POST target config"| A1
@@ -85,6 +91,8 @@ flowchart TB
     A5 -->|"diff of two runs"| F6
     U8 --> F6
 ```
+
+> **MVP scope (dashed = post-MVP):** Compare screen (F6/A5), Export endpoint (A6), and Hosted Endpoint target (T3) are shown for completeness but ship in Phase 2+. MVP Phase 1 delivers: Demo Agent → run → results → drill-down → re-run. Phase 2 adds Custom URL target + test-connection.
 
 ---
 
@@ -380,6 +388,8 @@ sequenceDiagram
 │  │  skipped: 8          │                                           │
 │  │  skipped_reasons:{}  │                                           │
 │  │  source_run_id: null │                                           │
+│  │  target_fingerprint  │                                           │
+│  │  idempotency_key     │                                           │
 │  ├──────────────────────┤        └──────────────────────┘           │
 │  │ BenchmarkScenario    │                                           │
 │  │ Result (×22):        │        📤 To export:                      │
@@ -448,6 +458,8 @@ stateDiagram-v2
 
 ## 5. Target Types — What Differs
 
+> **MVP Phase 1:** Demo Agent only. **Phase 2:** Local/Hosted. **Phase 3:** Registered Agent.
+
 ```
 ┌──────────────┬─────────────────┬─────────────────┬──────────────────┐
 │              │  Demo Agent     │  Local/Hosted   │  Registered      │
@@ -512,6 +524,9 @@ graph TD
     API --> SSE
     DB --> EXPORT
 
+    %% Phase tagging
+    style EXPORT stroke-dasharray: 5 5,stroke:#999
+
     style SCHEMA fill:#e1f5fe
     style PACKS fill:#e1f5fe
     style EVAL fill:#e1f5fe
@@ -525,7 +540,7 @@ graph TD
     style EXPORT fill:#f3e5f5
 ```
 
-**Legenda:** 🔵 pure logic (no I/O) · 🟠 orchestrator · 🔴 persistence · 🟣 external interface
+**Legend:** 🔵 pure logic (no I/O) · 🟠 orchestrator · 🔴 persistence · 🟣 external interface · ---- dashed = post-MVP
 
 ---
 
