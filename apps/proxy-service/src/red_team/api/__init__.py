@@ -123,6 +123,29 @@ class CompareResponse(BaseModel):
     new_failures: list[str] = Field(default_factory=list)
 
 
+# ---------------------------------------------------------------------------
+# Test-connection schemas
+# ---------------------------------------------------------------------------
+
+
+class TestConnectionRequest(BaseModel):
+    """POST /v1/benchmark/test-connection body."""
+
+    endpoint_url: str
+    auth_header: str | None = None
+    timeout_s: int = Field(default=10, ge=1, le=120)
+
+
+class TestConnectionResponse(BaseModel):
+    """Result of a target connectivity check."""
+
+    status: str  # "ok" | "error"
+    status_code: int | None = None
+    latency_ms: int | None = None
+    content_type: str | None = None
+    error: str | None = None
+
+
 class ErrorResponse(BaseModel):
     """Standard error response."""
 
