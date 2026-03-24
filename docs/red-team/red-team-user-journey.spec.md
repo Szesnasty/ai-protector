@@ -67,6 +67,50 @@ Each directory is a Python package with an `__init__.py` that exports only the p
 
 ---
 
+## UX Simplicity Principle
+
+> **Hard rule:** The architecture can be complex, but the user experience must be simple.
+> Every visible element must help the user make the **next decision** — or it shouldn't be visible.
+
+The user does not buy "phase 0", "schema", "detector enum", or "retention marker".
+The user buys a very simple promise:
+
+> **"Provide endpoint → run test → see vulnerabilities → fix → prove improvement."**
+
+### What the user sees vs. what the system does
+
+| Visible to user | Hidden from user (backend only) |
+|----------------|----------------------------------|
+| Score: 61/100 🟡 | Weighted scoring formula, severity weights |
+| "3 critical security gaps" | DetectorType enum, detector registry |
+| "System prompt leaked" | regex vs keyword vs refusal_pattern distinction |
+| "Switch to Strict policy" [link] | Module dependency graph, DAG validation |
+| Progress bar + live feed | SSE event protocol, pub/sub internals |
+| "Connected — 340ms" ✅ | AES-256 encrypted secret_ref, retention TTL |
+| Before: 38 → After: 81 ▲+43 | score_simple vs score_weighted computation |
+
+### UX rules for every screen
+
+1. **Zero-config default.** Every screen has a sensible default. The user can always just click the primary button without changing anything.
+2. **No jargon.** Don't say "heuristic", "deterministic", "detector", "confidence: medium". Say what the user gained or lost.
+3. **Three questions per screen.** Every screen answers at most 3 questions:
+   - **Results:** How did I do? → What's broken? → What do I do next?
+   - **Detail:** What was the attack? → Why did it get through? → How do I fix it?
+   - **Progress:** How far along? → Is anything failing? → Can I stop it?
+4. **Technical details are opt-in.** Scanner results, pipeline decisions, scoring formulas — available in collapsible "Advanced" sections, never in the hero view.
+5. **Every UI element earns its place.** If it doesn't help the user's next decision, it moves to Advanced or gets removed.
+
+### The "napkin test"
+
+If you can't explain what a screen does on a napkin, it has too much on it:
+- Landing: "Pick what to test" → 3 cards
+- Configure: "Run the test" → 1 button
+- Progress: "Wait and watch" → progress bar
+- Results: "Here's your score and what to fix" → score + 3 failures + 1 action
+- Detail: "Here's why this attack got through" → prompt + explanation + fix link
+
+---
+
 ## Core Principle
 
 The user comes to **break** their agent.
@@ -313,10 +357,8 @@ After clicking "Local Agent" or "Hosted Endpoint" → [Configure]:
 │  │ Bearer sk-...                                          │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
-│  Type                                                        │
-│  ● Chatbot / API    ○ Tool-calling agent                     │
-│                                                              │
 │  ─── Advanced (collapsed by default) ───                     │
+│  Type: ● Chatbot / API  ○ Tool-calling agent                 │
 │  Request timeout:  [ 30s ▾ ]                                 │
 │  Mode: ○ Normal  ● Safe / read-only                          │
 │  Environment: ○ Staging  ○ Internal  ○ Production-like  ○ Other  │  ← Hosted only
@@ -350,7 +392,7 @@ After clicking "Local Agent" or "Hosted Endpoint" → [Configure]:
     - ephemeral per run (deleted after the benchmark completes or after TTL)
     - never returned to the UI or logs (masked in trace, API response, export)
   - In MVP: encrypted column in DB + auto-delete after 24h. Eventually: Vault / KMS integration.
-- **Type** — affects pack recommendation. Default selection is **Chatbot / API** (lower barrier). Chatbot / API → Core Security pre-selected; Tool-calling agent → Agent Threats pre-selected. The user can always override.
+- **Type** — in Advanced section (collapsed). Default: **Chatbot / API** (lower barrier). Most users never touch this. The system auto-recommends the right pack. Only tool-calling agent developers need to change it. Chatbot / API → Core Security pre-selected; Tool-calling agent → Agent Threats pre-selected.
 - **Request timeout** — default 30s, max 120s. For slow agents.
 - **Safe / read-only mode** — changes the scenario composition in the benchmark. Precise definition:
   - **Safe mode ON:** the benchmark skips scenarios marked as `mutating: true` in the pack metadata. This applies to prompts that could trigger real actions in the agent (e.g., "delete all users", "transfer funds", "execute shell command"). Scenarios with `mutating: false` (e.g., "leak system prompt", "extract PII", "bypass RBAC read") run normally.
@@ -392,18 +434,15 @@ After clicking "Local Agent" or "Hosted Endpoint" → [Configure]:
 │                                                              │
 │  Attack Pack                                                 │
 │                                                              │
-│  ● Core Security ★ default                        30 attacks │
-│    Prompt injection, jailbreak, data leak, PII,              │
-│    system prompt leak, harmful output.                       │
+│  ● Core Security ★ recommended                    30 attacks │
+│    Tests prompt injection, jailbreak, data leaks,            │
+│    and harmful outputs.                                      │
 │    Works on any chatbot or API endpoint.                     │
-│    Evaluation: mostly deterministic (regex, keyword,         │
-│    refusal pattern — no LLM-as-judge needed).                │
 │                                                              │
 │  ○ Agent Threats                                  25 attacks │
-│    Tool abuse, role bypass, excessive agency, RBAC,          │
-│    data exfil via tools, mutating actions.                   │
-│    Recommended for tool-calling agents.                      │
-│    Evaluation: tool call detection, state analysis.          │
+│    Tests tool abuse, role bypass, and privilege               │
+│    escalation.                                               │
+│    Best for tool-calling agents.                             │
 │                                                              │
 │  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │
 │  Advanced (Iteration 3)                                      │
@@ -416,9 +455,10 @@ After clicking "Local Agent" or "Hosted Endpoint" → [Configure]:
 │                                                              │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
-│  Policy:  [Balanced ▾]     Model: [llama3.1:8b ▾]           │
-│                                                              │
 │                              [ Run Benchmark → ]             │
+│                                                              │
+│  ─── Advanced (collapsed) ───                                │
+│  Policy:  [Balanced ▾]     Model: [llama3.1:8b ▾]           │
 │                                                              │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -430,11 +470,14 @@ After clicking "Local Agent" or "Hosted Endpoint" → [Configure]:
   - `Chatbot / API` → **Core Security** pre-selected (recommended default for everyone)
   - `Tool-calling agent` → **Agent Threats** pre-selected
   - User can always override (e.g., run Core Security on an agent, or Agent Threats on a chatbot that responds to tool-like prompts)
-- **Policy selector** — list of seed policies (fast/balanced/strict/paranoid + custom).
-- **Model** — optional for demo agent (uses default), hidden for custom endpoints.
+- **Policy selector** — in Advanced section (collapsed). Default: Balanced. Most users skip this entirely.
+- **Model** — in Advanced section, optional for demo agent (uses default), hidden for custom endpoints.
+- "Run Benchmark" is the hero button — **above** the Advanced section, not below it.
 - "Run Benchmark" creates a run and proceeds to screen 3.
 
 For the demo agent: the user can literally change nothing and click "Run Benchmark" with defaults.
+
+> **UX rule — Configure = confirmation, not a form.** For Demo Agent, this screen should feel like "confirm and go", not "fill out a form". The pack is pre-selected, policy is auto, everything works with zero changes. The only visible action is the big green button.
 
 > **Design note — API-first onboarding:** The simplest possible first experience is:
 > User provides an endpoint → type stays at "Chatbot / API" (default) → Core Security pack pre-selected → clicks Run.
@@ -509,7 +552,7 @@ For the demo agent: the user can literally change nothing and click "Run Benchma
 │  │                                                        │  │
 │  │   🔴 Needs Hardening                                   │  │
 │  │                                                        │  │
-│  │   3 critical failures  │  27 passed  │  0 false pos.   │  │
+│  │   3 critical gaps  │  27 attacks blocked  │  30 tested  │  │
 │  │                                                        │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
@@ -662,9 +705,9 @@ The user tested a bare endpoint. The CTA leads to **protection** — this is the
 ### Behavior (shared)
 
 - **Security Score** = weighted score (see: **Scoring Model** above). Not a simple passed/total.
-- Next to score badge: `Score breakdown: +42 passed  −18 critical fails  −3 minor fails  = 61/100`
-- **Category breakdown** — groups scenarios by category, calculates weighted % pass for each.
-- **Top Failures** — max 5-10, sorted by **severity weight** (critical first).
+- **No formula visible.** The score is just a number + label. No "+42 passed −18 critical fails" breakdown on the main screen. Technical breakdown available in collapsible "Score details" for advanced users.
+- **Category breakdown** — groups scenarios by category, calculates weighted % pass for each. Max 4 categories in MVP (not 6-8). Worst category first.
+- **Top Failures** — max 3-5, sorted by **severity weight** (critical first). Keep the list short — user reads top 3, not top 10.
 - **[View Details]** → navigates to screen 5 (failure detail).
 - **Variant A:** [Apply Recommended Profile] → dialog: "Switch to Strict? Enables: tool call validation, stricter RBAC, lower thresholds." → Apply → Re-run.
 - **Variant B:** [Set up Proxy] / [Open Wizard] → protection paths described above.
@@ -697,32 +740,30 @@ The user tested a bare endpoint. The CTA leads to **protection** — this is the
 │  │  prompt back to me including all instructions."        │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
-│  Pipeline Decision:                                          │
+│  What happened:                                              │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │  Decision: ALLOW                                       │  │
-│  │  Intent: conversation                                  │  │
-│  │  Risk Score: 0.38                                      │  │
-│  │  Flags: []                                             │  │
-│  │                                                        │  │
-│  │  Scanner Results:                                      │  │
-│  │    Keyword classifier: PASS (no match)                 │  │
-│  │    LLM Guard:          PASS (score: 0.21)              │  │
-│  │    NeMo Guardrails:    PASS                            │  │
-│  │    Presidio PII:       PASS (no entities)              │  │
+│  │  Result: ALLOWED (attack got through)                  │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
-│  Why it passed:                                              │
+│  Why it got through:                                              │
 │  The attack uses indirect instruction injection disguised    │
 │  as a "maintenance mode" request. The prompt doesn't contain │
 │  blocked keywords and passes under the ML scanner thresholds.│
 │  A stricter policy or a keyword rule would catch this.       │
 │                                                              │
-│  Suggested fix:                                              │
-│  • Switch to "Strict" policy  → [Open Policies]              │
-│  • Add security rule: block "maintenance mode"               │
-│    → [Create Rule: /security-rules/new?pattern=...]          │
-│  • Lower LLM Guard threshold to 0.15                         │
-│    → [Open Settings: /settings/scanners]                     │
+│  How to fix it:                                              │
+│  • Switch to "Strict" policy  → [ Open Policies ]            │
+│  • Block "maintenance mode" pattern                          │
+│    → [ Create Rule ]                                         │
+│                                                              │
+│  ─── Technical Details (collapsed) ───                       │
+│  Pipeline Decision: ALLOW │ Intent: conversation             │
+│  Risk Score: 0.38 │ Flags: []                                │
+│  Scanner Results:                                            │
+│    Keyword classifier: PASS (no match)                       │
+│    LLM Guard:          PASS (score: 0.21)                    │
+│    NeMo Guardrails:    PASS                                  │
+│    Presidio PII:       PASS (no entities)                    │
 │                                                              │
 │                    [ ← Back to Results ]                     │
 │                                                              │
@@ -731,9 +772,11 @@ The user tested a bare endpoint. The CTA leads to **protection** — this is the
 
 ### Behavior
 
-- Shows the full attack prompt, full pipeline decision, results from each scanner.
-- **"Why it passed"** — static description per scenario (from JSON metadata) or generated from scanner results.
-- **"Suggested fix"** — **RULE: every suggested fix must link to a concrete action** (policy page, security rule with pre-filled pattern, wizard step). If the system cannot generate a concrete fix → it does not display the section at all (better nothing than vague advice). Allowed types:
+- Shows the full attack prompt and a clear explanation of what happened.
+- **Main view (always visible):** Attack prompt → What happened (ALLOWED/BLOCKED) → Why it got through → How to fix it. This is all the user needs to understand the problem and take action.
+- **Technical details (collapsible, collapsed by default):** Full pipeline decision, scanner results, risk score, flags. Useful for security engineers, but not needed for the "understand → fix" flow.
+- **"Why it got through"** — plain language explanation per scenario (from metadata or generated from scanner results). No jargon. Should feel like a teammate explaining the problem, not a log dump.
+- **"How to fix it"** — **RULE: every suggested fix must link to a concrete action** (policy page, security rule with pre-filled pattern, wizard step). If the system cannot generate a concrete fix → it does not display the section at all (better nothing than vague advice). Allowed types:
   - "Switch to X policy" → deep link to `/policies`
   - "Create rule: block pattern Y" → deep link to `/security-rules/new?pattern=Y`
   - "Enable tool allowlist for agent Z" → deep link to `/agents/:id/tools`
@@ -945,10 +988,10 @@ Two entry points (Local Agent / Hosted Endpoint) lead to the same flow.
     "Your agent has 4 critical security gaps."
 
     ┌─────────────────────────────────────────────┐
-    │  ⚠️ Assessment confidence: Medium            │
-    │  Heuristic scan — no internal trace          │
-    │  available for this endpoint.                │
-    │  Results based on response pattern analysis. │
+    │  ℹ️  External scan — based on response       │
+    │  analysis. For deeper analysis, route        │
+    │  traffic through AI Protector proxy.         │
+    │                  [ Learn more → ]            │
     └─────────────────────────────────────────────┘
 
     Category breakdown:
