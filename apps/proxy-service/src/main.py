@@ -145,6 +145,11 @@ app.include_router(rules_router, prefix="/v1")
 app.include_router(scan_router)
 app.include_router(scenarios_router, prefix="/v1")
 
+# Red Team Benchmark
+from src.red_team.api.routes import router as benchmark_router  # noqa: E402
+
+app.include_router(benchmark_router, prefix="/v1")
+
 
 # -- Exception handlers --
 @app.exception_handler(LLMError)
