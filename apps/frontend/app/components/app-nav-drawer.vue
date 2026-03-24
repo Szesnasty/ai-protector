@@ -15,6 +15,22 @@
     </v-chip>
 
     <v-list density="compact" nav color="primary">
+      <!-- Test -->
+      <v-list-subheader>Test</v-list-subheader>
+      <v-list-item
+        v-for="item in testItems"
+        :key="item.to"
+        :to="item.to"
+        :title="item.title"
+        active-class="nav-item--active"
+      >
+        <template #prepend>
+          <v-icon :icon="item.icon" size="20" />
+        </template>
+      </v-list-item>
+
+      <v-divider class="my-2" />
+
       <!-- Create -->
       <v-list-subheader>Create</v-list-subheader>
       <v-list-item
@@ -144,6 +160,10 @@ interface NavItem {
   to: string
   highlight?: boolean
 }
+
+const testItems: NavItem[] = [
+  { title: 'Red Team', icon: 'mdi-shield-search', to: '/red-team' },
+]
 
 const createItems: NavItem[] = [
   { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new', highlight: true },
