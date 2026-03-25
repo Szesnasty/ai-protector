@@ -329,7 +329,7 @@ const verdictText = computed(() => {
   if (!scenario.value) return ''
   if (scenario.value.passed) {
     return isBaseline.value
-      ? 'HANDLED SAFELY — the model resisted this attack on its own'
+      ? 'SAFE OUTCOME — the model resisted this attack on its own (no active protection)'
       : 'BLOCKED — your endpoint stopped this attack'
   }
   return isBaseline.value
