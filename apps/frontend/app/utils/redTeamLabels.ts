@@ -53,9 +53,15 @@ export function classifyRun(run: RunDetail): RunClassification {
 
 const CATEGORY_LABELS: Record<string, string> = {
   prompt_injection_jailbreak: 'Prompt Injection / Jailbreak',
+  prompt_injection: 'Prompt Injection',
   data_leakage_pii: 'Data Leakage / PII',
+  pii_disclosure: 'PII Disclosure',
+  secrets_detection: 'Secrets Detection',
+  improper_output: 'Improper Output',
+  obfuscation: 'Obfuscation & Encoding',
   tool_abuse: 'Tool Abuse',
   access_control: 'Access Control',
+  safe_allow: 'Safe / Allow (False Positive)',
 }
 
 export function humanCategory(slug: string): string {
@@ -71,6 +77,7 @@ const SEVERITY_META: Record<string, { label: string; color: string; icon: string
   high: { label: 'High', color: 'orange-darken-2', icon: 'mdi-alert' },
   medium: { label: 'Medium', color: 'warning', icon: 'mdi-alert-outline' },
   low: { label: 'Low', color: 'info', icon: 'mdi-information-outline' },
+  info: { label: 'Info', color: 'grey', icon: 'mdi-information-variant' },
 }
 
 export function severityMeta(sev: string) {

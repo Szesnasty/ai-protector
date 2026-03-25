@@ -7,6 +7,7 @@ reconstructs the in-memory run representation, and runs all scenarios.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
@@ -19,6 +20,8 @@ from src.red_team.engine.adapters import (
 )
 from src.red_team.engine.run_engine import BenchmarkRun, RunConfig, RunEngine, RunState
 from src.red_team.packs import TargetConfig, filter_pack, load_pack
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from src.red_team.progress.emitter import ProgressEmitter
@@ -78,7 +81,7 @@ async def _execute(
             store = EncryptedColumnSecretStore()
             target_config["_decrypted_auth"] = await store.retrieve(auth_ref)
         except Exception:
-            pass  # proceed without auth — test-connection should have caught this
+            logger.warning("Failed to decrypt auth for run %s — proceeding without auth", run_id)
 
     # ── Build engine ─────────────────────────────────────────────────
     persistence = DbPersistenceAdapter(session)

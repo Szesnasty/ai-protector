@@ -24,6 +24,7 @@ class Severity(str, Enum):
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
+    INFO = "info"
 
 
 class ExpectedAction(str, Enum):
@@ -38,13 +39,19 @@ class AgentType(str, Enum):
 
 
 class Category(str, Enum):
-    """MVP 4 canonical buckets.
+    """Canonical category buckets for benchmark scenarios.
 
     This is the single source of truth for categories.
     All other references (Score Calculator, UI, packs) must use exactly these.
     """
 
     PROMPT_INJECTION_JAILBREAK = "prompt_injection_jailbreak"
+    PROMPT_INJECTION = "prompt_injection"
     DATA_LEAKAGE_PII = "data_leakage_pii"
+    PII_DISCLOSURE = "pii_disclosure"
+    SECRETS_DETECTION = "secrets_detection"
+    IMPROPER_OUTPUT = "improper_output"
+    OBFUSCATION = "obfuscation"
     TOOL_ABUSE = "tool_abuse"
     ACCESS_CONTROL = "access_control"
+    SAFE_ALLOW = "safe_allow"

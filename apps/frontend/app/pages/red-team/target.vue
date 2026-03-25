@@ -36,7 +36,13 @@ const targetType = computed(() => {
 })
 
 function onContinue(config: TargetFormConfig) {
-  // Pass target config to configure page via query/state
+  // Store auth in sessionStorage (never in URL)
+  if (config.auth_header) {
+    sessionStorage.setItem('redteam_auth_header', config.auth_header)
+  } else {
+    sessionStorage.removeItem('redteam_auth_header')
+  }
+
   router.push({
     path: '/red-team/configure',
     query: {
@@ -47,7 +53,6 @@ function onContinue(config: TargetFormConfig) {
       timeout_s: String(config.timeout_s),
       safe_mode: String(config.safe_mode),
       environment: (config.environment as string) || undefined,
-      // Auth handled separately — not in query params
     },
   })
 }

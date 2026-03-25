@@ -67,7 +67,8 @@ class RealHttpClient:
                 "session_id": f"benchmark-{uuid.uuid4().hex[:8]}",
             }
         else:
-            payload = {"message": prompt}
+            # OpenAI-style messages array — the industry standard for chat APIs
+            payload = {"messages": [{"role": "user", "content": prompt}]}
 
         start = time.monotonic()
         try:
@@ -114,6 +115,7 @@ class SimpleNormalizer:
             if isinstance(parsed_json, dict):
                 body_text = (
                     parsed_json.get("response")
+                    or parsed_json.get("output_text")
                     or parsed_json.get("message")
                     or parsed_json.get("content")
                     or parsed_json.get("text")
