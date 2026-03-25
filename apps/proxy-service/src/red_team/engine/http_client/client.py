@@ -71,7 +71,8 @@ async def send_prompt(
     if target.auth_header:
         headers["Authorization"] = target.auth_header
 
-    payload = {"message": prompt}
+    # OpenAI-style messages array — the industry standard for chat APIs
+    payload = {"messages": [{"role": "user", "content": prompt}]}
 
     async def _do(c: httpx.AsyncClient) -> HttpResponse:
         start = time.monotonic()

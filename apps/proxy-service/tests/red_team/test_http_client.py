@@ -112,7 +112,7 @@ class TestAuthHeader:
 
 
 class TestRequestFormat:
-    async def test_sends_json_with_message_field(self) -> None:
+    async def test_sends_json_with_messages_field(self) -> None:
         captured_body: list[bytes] = []
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -123,7 +123,7 @@ class TestRequestFormat:
         await send_prompt("attack prompt", _target(), client=client)
 
         payload = json.loads(captured_body[0])
-        assert payload == {"message": "attack prompt"}
+        assert payload == {"messages": [{"role": "user", "content": "attack prompt"}]}
 
     async def test_content_type_header(self) -> None:
         captured_headers: dict[str, str] = {}

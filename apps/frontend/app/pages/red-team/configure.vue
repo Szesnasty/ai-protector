@@ -222,6 +222,14 @@ const router = useRouter()
 // Redirect if no target
 const target = computed(() => (route.query.target as string) || 'demo')
 
+// Read target_config from query params (set by target.vue)
+const endpointUrl = computed(() => (route.query.endpoint_url as string) || '')
+const targetName = computed(() => (route.query.target_name as string) || '')
+const agentType = computed(() => (route.query.agent_type as string) || 'chatbot_api')
+const timeoutS = computed(() => Number(route.query.timeout_s) || 30)
+const safeMode = computed(() => route.query.safe_mode === 'true')
+const environment = computed(() => (route.query.environment as string) || '')
+
 const targetLabel = computed(() => {
   if (target.value === 'demo') return 'Demo'
   if (target.value === 'local_agent') return 'Local Endpoint'
@@ -334,8 +342,27 @@ const { createRun, isCreating } = useBenchmarkCreateRun()
 async function onRunBenchmark() {
   runError.value = null
   try {
+    // Build target_config from query params + sessionStorage auth
+    const targetConfig: Record<string, unknown> = {}
+    if (target.value !== 'demo') {
+      targetConfig.endpoint_url = endpointUrl.value
+      targetConfig.agent_type = agentType.value
+      targetConfig.timeout_s = timeoutS.value
+      targetConfig.safe_mode = safeMode.value
+      if (targetName.value) targetConfig.target_name = targetName.value
+      if (environment.value) targetConfig.environment = environment.value
+
+      // Retrieve auth from sessionStorage (never in URL)
+      const storedAuth = sessionStorage.getItem('redteam_auth_header')
+      if (storedAuth) {
+        targetConfig.auth_header = storedAuth
+        sessionStorage.removeItem('redteam_auth_header')
+      }
+    }
+
     const result = await createRun({
       target_type: target.value,
+      target_config: targetConfig,
       pack: selectedPack.value,
       policy: selectedPolicy.value,
     })

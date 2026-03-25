@@ -42,6 +42,11 @@ function mapApiError(error: AxiosError<ApiError>): AppError {
 
 const baseURL = import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
 
+// Block insecure API base in production — auth tokens must not travel over plain HTTP.
+if (import.meta.env.PROD && !baseURL.startsWith('https://')) {
+  console.error('[api] NUXT_PUBLIC_API_BASE must use https:// in production')
+}
+
 const api: AxiosInstance = axios.create({
   baseURL,
   timeout: 30_000,
