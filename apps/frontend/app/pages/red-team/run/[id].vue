@@ -38,6 +38,10 @@
         <span class="header-sep">·</span>
         <span>{{ runDetail?.total_applicable ?? '...' }} scenarios</span>
       </div>
+      <div v-if="endpointUrl" class="mt-1 d-flex align-center text-body-2" style="font-family: monospace; color: #1565c0;">
+        <v-icon size="16" class="mr-1" color="blue-darken-2">mdi-link-variant</v-icon>
+        {{ endpointUrl }}
+      </div>
     </div>
 
     <!-- ═══════════════════ Banners ═══════════════════ -->
@@ -263,6 +267,7 @@ interface RunDetail {
   pack: string
   status: string
   target_type: string
+  target_config?: Record<string, string>
   total_in_pack: number
   total_applicable: number
   executed: number
@@ -328,6 +333,8 @@ const targetLabel = computed(() => {
   if (t === 'registered_agent') return 'Protected Agent'
   return t ?? 'Target'
 })
+
+const endpointUrl = computed(() => runDetail.value?.target_config?.endpoint_url ?? '')
 
 const runClassification = computed<RunClassification | null>(() => {
   if (!runDetail.value) return null

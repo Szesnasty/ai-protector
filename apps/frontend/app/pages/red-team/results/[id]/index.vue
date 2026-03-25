@@ -35,6 +35,10 @@
             {{ runClass.label }}
           </v-chip>
         </p>
+        <div v-if="targetEndpointUrl" class="mt-1 d-flex align-center text-body-2" style="font-family: monospace; color: #1565c0;">
+          <v-icon size="16" class="mr-1" color="blue-darken-2">mdi-link-variant</v-icon>
+          {{ targetEndpointUrl }}
+        </div>
       </div>
 
       <!-- Before / After comparison (high up per spec) -->
@@ -785,7 +789,7 @@ function failureMitigation(fail: ScenarioResult): string {
   return CATEGORY_MITIGATION[fail.category] ?? ''
 }
 
-const _targetEndpointUrl = computed(() => {
+const targetEndpointUrl = computed(() => {
   return run.value?.target_config?.endpoint_url ?? ''
 })
 
