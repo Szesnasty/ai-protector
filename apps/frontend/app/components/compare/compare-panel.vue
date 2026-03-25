@@ -144,7 +144,7 @@ const headerIcon = computed(() =>
 )
 
 const headerTitle = computed(() =>
-  props.variant === 'protected' ? 'With AI Protector' : 'Without AI Protector',
+  props.variant === 'protected' ? 'With AI Protector' : 'Without Protection',
 )
 
 const headerSubtitle = computed(() => {

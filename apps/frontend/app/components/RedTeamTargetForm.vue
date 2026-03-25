@@ -1,21 +1,19 @@
 <template>
   <v-card variant="flat" class="target-form pa-6">
-    <h2 class="text-h6 mb-1">
-      {{ isHosted ? 'Hosted Endpoint' : 'Local Agent' }}
-    </h2>
+    <h2 class="text-h6 mb-1">Your AI Endpoint</h2>
     <p class="text-body-2 text-medium-emphasis mb-4">
-      {{ isHosted
-        ? 'Use staging or internal environments when possible.'
-        : 'Enter the URL of your locally-running agent.' }}
+      Enter your endpoint URL, test the connection, then run a security benchmark.
     </p>
 
     <v-form ref="formRef" v-model="formValid" @submit.prevent>
+      <!-- ===== STEP 1: Connection ===== -->
+
       <!-- Endpoint URL (required) -->
       <v-text-field
         v-model="endpointUrl"
         label="Endpoint URL"
-        :placeholder="isHosted ? 'https://api.example.com/chat' : 'http://localhost:8000/chat'"
-        :hint="isHosted ? 'e.g. https://staging.myapp.com/api/chat' : 'e.g. http://localhost:8000/chat or http://127.0.0.1:3000/api/chat'"
+        :placeholder="'https://your-api.example.com/chat'"
+        hint="e.g. https://staging.myapp.com/api/chat or http://localhost:8000/chat"
         persistent-hint
         :rules="[rules.required, rules.url]"
         variant="outlined"
@@ -24,22 +22,13 @@
         data-testid="endpoint-url"
       />
 
-      <!-- Target name (optional) -->
+      <!-- Auth header — always visible for simplicity -->
       <v-text-field
-        v-model="targetName"
-        label="Target Name (optional)"
-        placeholder="My Agent"
-        variant="outlined"
-        density="compact"
-        class="mb-3"
-      />
-
-      <!-- Auth header — only for hosted (visible by default) -->
-      <v-text-field
-        v-if="isHosted"
         v-model="authHeader"
-        label="Authorization Header"
-        placeholder="Bearer sk-... or x-api-key: ..."
+        label="Authorization Header (optional)"
+        placeholder="Bearer sk-..."
+        hint="For example: Authorization: Bearer sk-... or x-api-key: ..."
+        persistent-hint
         variant="outlined"
         density="compact"
         class="mb-3"
@@ -49,17 +38,18 @@
         @click:append-inner="showAuth = !showAuth"
       />
 
-      <!-- Safety notice — compact -->
+      <!-- Localhost reachability hint -->
       <v-alert
-        type="warning"
+        v-if="isLocalhostUrl"
+        type="info"
         variant="tonal"
         density="compact"
         class="mb-4"
-        data-testid="safety-notice"
       >
-        {{ isHosted
-          ? 'Benchmarks send realistic attack prompts. Use a staging environment and enable Safe Mode.'
-          : 'Benchmarks send realistic attack prompts. Enable Safe Mode if your agent has real tools.' }}
+        <span class="text-caption">
+          Localhost works only if reachable from the benchmark runner.
+          Use a public URL or tunnel (e.g. ngrok) for remote environments.
+        </span>
       </v-alert>
 
       <!-- Test Connection -->
@@ -76,7 +66,7 @@
         </v-btn>
       </div>
 
-      <!-- Connection result banner — inline status -->
+      <!-- Connection result banner -->
       <v-alert
         v-if="connectionResult"
         :type="connectionResult.type"
@@ -91,7 +81,16 @@
             size="small"
           />
         </template>
-        {{ connectionResult.message }}
+        <strong>{{ connectionResult.headline }}</strong>
+        <template v-if="connectionResult.type === 'error'">
+          <p class="text-body-2 mb-1 mt-1">{{ connectionResult.message }}</p>
+          <p class="text-caption text-medium-emphasis mb-0">
+            Check the URL, auth header, and whether the endpoint is reachable from AI Protector.
+          </p>
+        </template>
+        <template v-else>
+          {{ connectionResult.message }}
+        </template>
       </v-alert>
 
       <!-- Non-JSON warning -->
@@ -107,94 +106,129 @@
         Some checks may be less accurate. You can still continue.
       </v-alert>
 
-      <!-- Advanced section — collapsed by default -->
-      <v-expansion-panels v-model="advancedPanel" class="mb-4" variant="accordion">
-        <v-expansion-panel value="advanced">
-          <v-expansion-panel-title>
-            <v-icon icon="mdi-tune" size="small" class="mr-2" />
-            Advanced Settings
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
-            <!-- Auth header for local (only here) -->
-            <v-text-field
-              v-if="!isHosted"
-              v-model="authHeader"
-              label="Authorization Header"
-              placeholder="Bearer sk-..."
-              variant="outlined"
-              density="compact"
-              class="mb-3"
-              :type="showAuth ? 'text' : 'password'"
-              :append-inner-icon="showAuth ? 'mdi-eye-off' : 'mdi-eye'"
-              @click:append-inner="showAuth = !showAuth"
-            />
+      <!-- ===== STEP 2: Benchmark Settings (only after successful connection) ===== -->
+      <template v-if="connectionPassed">
+        <v-divider class="my-4" />
 
-            <!-- Type -->
-            <p class="text-body-2 font-weight-medium mb-1">Endpoint Type</p>
-            <v-radio-group v-model="agentType" inline density="compact" class="mb-3" data-testid="agent-type">
-              <v-radio label="Chatbot / API" value="chatbot_api" />
-              <v-radio label="Tool-calling Agent" value="tool_calling" />
-            </v-radio-group>
+        <div class="text-center mb-4">
+          <v-icon icon="mdi-check-circle" color="success" size="32" class="mb-2" />
+          <p class="text-body-2 font-weight-medium text-success mb-1">Connection successful</p>
+          <p class="text-caption text-medium-emphasis mb-0">Your endpoint is reachable. Choose a benchmark to run.</p>
+        </div>
 
-            <!-- Request timeout -->
-            <v-select
-              v-model="timeoutS"
-              :items="timeoutOptions"
-              item-title="label"
-              item-value="value"
-              label="Request Timeout"
-              variant="outlined"
-              density="compact"
-              class="mb-3"
-            />
+        <!-- Safety notice — compact, less alarming -->
+        <v-alert
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+          data-testid="safety-notice"
+        >
+          These tests send realistic attack prompts. Use Safe Mode for endpoints connected to real tools or actions.
+        </v-alert>
 
-            <!-- Safe mode -->
-            <div class="d-flex align-center mb-3">
-              <v-switch
-                v-model="safeMode"
-                color="primary"
+        <!-- Continue button -->
+        <v-btn
+          color="primary"
+          size="large"
+          block
+          data-testid="continue-btn"
+          prepend-icon="mdi-arrow-right"
+          @click="onContinue"
+        >
+          Continue to Benchmark
+        </v-btn>
+
+        <!-- Advanced section — collapsed, below the CTA -->
+        <v-expansion-panels v-model="advancedPanel" class="mt-4 mb-4" variant="accordion">
+          <v-expansion-panel value="advanced">
+            <v-expansion-panel-title>
+              <v-icon icon="mdi-tune" size="small" class="mr-2" />
+              Advanced Settings
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <!-- Target name (optional) — hidden from initial view -->
+              <v-text-field
+                v-model="targetName"
+                label="Target Name (optional)"
+                placeholder="My Agent"
+                hint="Auto-generated from URL if left empty"
+                persistent-hint
+                variant="outlined"
                 density="compact"
-                hide-details
-                class="mr-2"
-                data-testid="safe-mode-toggle"
-              >
-                <template #label>
-                  Safe Mode
-                  <v-chip v-if="isHosted" size="x-small" color="primary" variant="tonal" class="ml-2">Recommended</v-chip>
-                </template>
-              </v-switch>
-              <v-tooltip text="Skips prompts that could trigger write/delete/transfer actions on your system.">
-                <template #activator="{ props }">
-                  <v-icon v-bind="props" icon="mdi-help-circle-outline" size="small" />
-                </template>
-              </v-tooltip>
-            </div>
+                class="mb-3"
+              />
 
-            <!-- Environment (Hosted only) -->
-            <template v-if="isHosted">
-              <p class="text-body-2 font-weight-medium mb-1">Environment</p>
-              <p class="text-caption text-medium-emphasis mb-2">Used for reporting only — does not affect the benchmark.</p>
-              <v-radio-group v-model="environment" inline density="compact" class="mb-3">
-                <v-radio label="Staging" value="staging" />
-                <v-radio label="Internal" value="internal" />
-                <v-radio label="Production-like" value="production_like" />
-                <v-radio label="Other" value="other" />
+              <!-- Type — hidden from initial view -->
+              <p class="text-body-2 font-weight-medium mb-1">What does this endpoint do?</p>
+              <v-radio-group v-model="agentType" inline density="compact" class="mb-3" data-testid="agent-type">
+                <v-radio label="Chatbot / API" value="chatbot_api" />
+                <v-radio label="Tool-calling Agent" value="tool_calling" />
               </v-radio-group>
-            </template>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
 
-      <!-- Continue button -->
+              <!-- Request timeout -->
+              <v-select
+                v-model="timeoutS"
+                :items="timeoutOptions"
+                item-title="label"
+                item-value="value"
+                label="Request Timeout"
+                variant="outlined"
+                density="compact"
+                class="mb-3"
+              />
+
+              <!-- Safe mode -->
+              <div class="d-flex align-center mb-3">
+                <v-switch
+                  v-model="safeMode"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  class="mr-2"
+                  data-testid="safe-mode-toggle"
+                >
+                  <template #label>
+                    Safe Mode
+                    <v-chip v-if="safeMode" size="x-small" color="primary" variant="tonal" class="ml-2">On</v-chip>
+                  </template>
+                </v-switch>
+                <v-tooltip text="Skips prompts that could trigger write/delete/transfer actions on your system.">
+                  <template #activator="{ props: tp }">
+                    <v-icon v-bind="tp" icon="mdi-help-circle-outline" size="small" />
+                  </template>
+                </v-tooltip>
+              </div>
+              <p class="text-caption text-medium-emphasis mb-3">
+                Use Safe Mode when your endpoint can trigger real tools or actions.
+              </p>
+
+              <!-- Environment (Hosted only) -->
+              <template v-if="isHosted">
+                <p class="text-body-2 font-weight-medium mb-1">Environment</p>
+                <p class="text-caption text-medium-emphasis mb-2">Used for reporting only — does not affect the benchmark.</p>
+                <v-radio-group v-model="environment" inline density="compact" class="mb-3">
+                  <v-radio label="Staging" value="staging" />
+                  <v-radio label="Internal" value="internal" />
+                  <v-radio label="Production-like" value="production_like" />
+                  <v-radio label="Other" value="other" />
+                </v-radio-group>
+              </template>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </template>
+
+      <!-- Before connection: disabled continue button hint -->
       <v-btn
+        v-if="!connectionPassed"
         color="primary"
         size="large"
         block
-        :disabled="!canContinue"
-        data-testid="continue-btn"
-        @click="onContinue"
+        disabled
+        class="mt-2"
       >
-        {{ canContinue ? 'Continue to Benchmark Setup' : 'Test connection first' }}
+        Test connection first
       </v-btn>
     </v-form>
   </v-card>
@@ -225,23 +259,33 @@ export interface TargetFormConfig {
 
 const isHosted = computed(() => props.targetType === 'hosted_endpoint')
 
+/** Detect localhost URLs to show reachability hint */
+const isLocalhostUrl = computed(() => {
+  try {
+    const u = new URL(endpointUrl.value)
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(u.hostname)
+  } catch {
+    return false
+  }
+})
+
 // Form state
 const formRef = ref()
 const formValid = ref(false)
-const endpointUrl = ref(isHosted.value ? 'https://' : 'http://localhost:')
+const endpointUrl = ref('')
 const targetName = ref('')
 const authHeader = ref('')
 const showAuth = ref(false)
 const agentType = ref('chatbot_api')
 const timeoutS = ref(30)
-const safeMode = ref(isHosted.value) // Hosted=On, Local=Off
+const safeMode = ref(true) // Default ON for safety
 const environment = ref('staging')
 const advancedPanel = ref<string | undefined>(undefined)
 
 // Connection test state
 const isTesting = ref(false)
 const connectionPassed = ref(false)
-const connectionResult = ref<{ type: 'success' | 'error'; message: string } | null>(null)
+const connectionResult = ref<{ type: 'success' | 'error'; headline: string; message: string } | null>(null)
 const nonJsonWarning = ref(false)
 const nonJsonContentType = ref('')
 
@@ -265,8 +309,21 @@ const rules = {
   },
 }
 
-// Can continue only after successful test (or non-JSON warning allows proceed)
-const canContinue = computed(() => connectionPassed.value)
+// Connection gating — benchmark settings only show after successful test
+
+function humanizeConnectionError(raw?: string | null, statusCode?: number): string {
+  const msg = (raw ?? '').toLowerCase()
+  if (msg.includes('timeout') || msg.includes('timed out')) return 'Request timed out — the endpoint did not respond in time'
+  if (msg.includes('401') || statusCode === 401) return 'Authorization failed — check your auth header'
+  if (msg.includes('403') || statusCode === 403) return 'Access denied (403) — verify credentials and permissions'
+  if (msg.includes('404') || statusCode === 404) return 'Endpoint not found (404) — check the URL path'
+  if (msg.includes('connection refused') || msg.includes('econnrefused')) return 'Connection refused — is the endpoint running?'
+  if (msg.includes('dns') || msg.includes('getaddrinfo') || msg.includes('not found')) return 'Could not resolve hostname — check the URL'
+  if (msg.includes('ssl') || msg.includes('certificate')) return 'SSL/TLS error — the endpoint has a certificate problem'
+  if (msg.includes('network') || msg.includes('fetch')) return 'Network error — could not reach the endpoint'
+  if (raw) return raw
+  return 'Couldn\u2019t reach the endpoint'
+}
 
 async function onTestConnection() {
   isTesting.value = true
@@ -292,7 +349,8 @@ async function onTestConnection() {
       connectionPassed.value = true
       connectionResult.value = {
         type: 'success',
-        message: `${data.status_code} OK | ${data.latency_ms}ms | AI Protector can reach your endpoint`,
+        headline: 'Connection successful',
+        message: `${data.status_code} OK in ${data.latency_ms}ms`,
       }
       // Check for non-JSON
       if (data.content_type && !data.content_type.includes('json')) {
@@ -302,13 +360,16 @@ async function onTestConnection() {
     } else {
       connectionResult.value = {
         type: 'error',
-        message: data.error ?? 'Connection failed',
+        headline: 'Couldn\u2019t reach the endpoint',
+        message: humanizeConnectionError(data.error, data.status_code),
       }
     }
   } catch (err: unknown) {
+    const raw = (err as { message?: string })?.message ?? ''
     connectionResult.value = {
       type: 'error',
-      message: (err as { message?: string })?.message ?? 'Connection test failed',
+      headline: 'Couldn\u2019t reach the endpoint',
+      message: humanizeConnectionError(raw),
     }
   } finally {
     isTesting.value = false

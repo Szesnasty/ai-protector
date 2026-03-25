@@ -16,13 +16,24 @@
             class="mr-2"
             :to="'/red-team'"
           />
-          <h1 class="text-h5">Benchmark Results</h1>
+          <h1 class="text-h5">{{ isBaseline ? 'Baseline Results' : 'Benchmark Results' }}</h1>
         </div>
         <p class="text-body-2 text-medium-emphasis" data-testid="header-info">
           <v-icon :icon="targetIcon" size="x-small" class="mr-1" />
           {{ targetLabel }}
           &nbsp;·&nbsp; {{ humanPack(run.pack) }}
           &nbsp;·&nbsp; {{ timeAgo }}
+          <v-chip
+            v-if="runClass"
+            :color="runClass.color"
+            variant="tonal"
+            size="x-small"
+            :prepend-icon="runClass.icon"
+            class="ml-2"
+            data-testid="run-type-chip"
+          >
+            {{ runClass.label }}
+          </v-chip>
         </p>
       </div>
 
@@ -110,40 +121,220 @@
         Partial score &mdash; {{ run.executed }} of {{ run.total_applicable }} scenarios completed.
       </v-alert>
 
+      <!-- Baseline run banner — prominent, always visible for unprotected runs -->
+      <v-alert
+        v-if="isBaseline"
+        type="warning"
+        variant="tonal"
+        class="mb-6"
+        data-testid="baseline-banner"
+      >
+        <template #title>
+          <v-icon icon="mdi-shield-off-outline" size="small" class="mr-1" />
+          Baseline Run — No Active Protection
+        </template>
+        <template #text>
+          This benchmark ran directly against the model without AI Protector.
+          Results show how the model behaves on its own — not how well your endpoint is protected.
+          <strong>Model self-resistance is not a substitute for active defense.</strong>
+        </template>
+      </v-alert>
+
+      <!-- False-sense-of-safety warning — high score on baseline run -->
+      <v-alert
+        v-if="isBaseline && (run.score_simple ?? 0) >= 80 && run.executed >= 5"
+        color="blue-grey"
+        variant="tonal"
+        class="mb-6"
+        data-testid="false-safety-warning"
+      >
+        <template #prepend>
+          <v-icon icon="mdi-eye-off" color="blue-grey" />
+        </template>
+        <template #title>
+          High score, but no protection in place
+        </template>
+        <template #text>
+          The model resisted most attacks in this run. However, model behavior can change with updates, prompt variations, or new attack techniques.
+          A high baseline score does <strong>not</strong> mean your endpoint is secure.
+          <nuxt-link to="/red-team/configure?target=hosted_endpoint" class="text-decoration-none font-weight-bold ml-1">
+            Set up protection and re-run →
+          </nuxt-link>
+        </template>
+      </v-alert>
+
       <!-- ================================================================ -->
-      <!-- Hero — Score                                                      -->
+      <!-- Hero — Executive Summary                                          -->
       <!-- ================================================================ -->
-      <v-card v-if="run.executed > 0" variant="flat" class="mb-6 pa-6 text-center" data-testid="score-section">
-        <div class="d-flex flex-column align-center">
-          <div
-            class="score-badge mb-3"
-            :style="{ borderColor: scoreMeta.color }"
-          >
-            <span class="score-value" :style="{ color: scoreMeta.color }">
-              {{ run.score_simple ?? 0 }}
-            </span>
-          </div>
-          <v-chip
-            :color="scoreMeta.vuetifyColor"
-            variant="tonal"
-            size="small"
-            class="mb-2"
-            data-testid="score-label"
-          >
-            {{ scoreMeta.label }}
-          </v-chip>
-          <p class="text-body-2 text-medium-emphasis" data-testid="score-summary">
-            Based on {{ run.executed }} executed scenario{{ run.executed !== 1 ? 's' : '' }}
-          </p>
-          <p class="text-body-2 text-medium-emphasis mt-1">
-            {{ run.passed }} blocked &nbsp;·&nbsp;
-            {{ failedCount }} got through &nbsp;·&nbsp;
-            {{ run.skipped }} skipped
-          </p>
-          <p v-if="criticalCount > 0" class="text-body-2 font-weight-medium mt-2" style="color: #d32f2f;">
-            {{ criticalCount }} critical / high severity gap{{ criticalCount !== 1 ? 's' : '' }}
-          </p>
-        </div>
+      <v-card v-if="run.executed > 0" variant="flat" class="mb-6 pa-5" data-testid="score-section">
+        <v-row align="center">
+          <!-- LEFT: Score + verdict -->
+          <v-col cols="12" md="5" class="d-flex flex-column align-center align-md-start text-center text-md-start">
+            <div class="d-flex align-center ga-4 mb-3">
+              <div
+                class="score-badge"
+                :style="{ borderColor: scoreMeta.color }"
+              >
+                <span class="score-value" :style="{ color: scoreMeta.color }">
+                  {{ run.score_simple ?? 0 }}
+                </span>
+              </div>
+              <div>
+                <v-chip
+                  :color="scoreMeta.vuetifyColor"
+                  variant="tonal"
+                  size="small"
+                  class="mb-1"
+                  data-testid="score-label"
+                >
+                  {{ scoreMeta.label }}
+                </v-chip>
+                <p class="text-caption text-medium-emphasis mb-0">
+                  {{ run.executed }} scenario{{ run.executed !== 1 ? 's' : '' }} tested
+                </p>
+              </div>
+            </div>
+            <!-- One-sentence interpretation -->
+            <p class="text-body-2 text-medium-emphasis mb-0" data-testid="score-interpretation">
+              {{ scoreInterpretation }}
+            </p>
+          </v-col>
+
+          <!-- RIGHT: Stats + Primary CTA -->
+          <v-col cols="12" md="7">
+            <!-- Stats row -->
+            <div class="d-flex flex-wrap ga-4 mb-4">
+              <div class="text-center">
+                <span class="text-h6 font-weight-bold" :class="isBaseline ? 'text-blue-grey' : 'text-success'">{{ run.passed }}</span>
+                <p class="text-caption text-medium-emphasis mb-0">{{ isBaseline ? 'handled safely' : 'blocked' }}</p>
+              </div>
+              <div class="text-center">
+                <span class="text-h6 font-weight-bold text-error">{{ failedCount }}</span>
+                <p class="text-caption text-medium-emphasis mb-0">got through</p>
+              </div>
+              <div v-if="criticalCount > 0" class="text-center">
+                <span class="text-h6 font-weight-bold" style="color: #d32f2f;">{{ criticalCount }}</span>
+                <p class="text-caption text-medium-emphasis mb-0">high/critical gaps</p>
+              </div>
+              <div class="text-center">
+                <span class="text-h6 font-weight-bold text-medium-emphasis">{{ run.skipped }}</span>
+                <p class="text-caption text-medium-emphasis mb-0">skipped</p>
+              </div>
+            </div>
+
+            <!-- Recommended next step — above the fold -->
+            <template v-if="failedCount > 0">
+              <p class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-1">Recommended next step</p>
+              <p v-if="isBaseline" class="text-caption text-medium-emphasis mb-3">
+                This baseline shows {{ failedCount }} attack{{ failedCount !== 1 ? 's' : '' }} that got through the model's own defenses. Route traffic through AI Protector and re-run to see how active protection handles them.
+              </p>
+              <p v-else class="text-caption text-medium-emphasis mb-3">
+                Most of the remaining risk comes from prompt injection and jailbreak bypasses. Tighten your policy and re-run this benchmark to verify improvement.
+              </p>
+              <div class="d-flex flex-wrap ga-2 mb-1">
+                <v-btn
+                  color="primary"
+                  variant="flat"
+                  size="small"
+                  :prepend-icon="isBaseline ? 'mdi-shield-plus' : 'mdi-shield-half-full'"
+                  data-testid="hero-setup-btn"
+                  @click="showSetupDialog = true"
+                >
+                  {{ isBaseline ? 'Set Up Protection' : 'View Recommended Setup' }}
+                </v-btn>
+                <v-btn
+                  variant="outlined"
+                  size="small"
+                  prepend-icon="mdi-replay"
+                  :loading="isRerunning"
+                  data-testid="hero-rerun-btn"
+                  @click="onRerun"
+                >
+                  Re-run Benchmark
+                </v-btn>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  prepend-icon="mdi-download"
+                  data-testid="hero-export-btn"
+                  @click="onExport"
+                >
+                  Export
+                </v-btn>
+              </div>
+              <p class="text-caption text-medium-emphasis mt-1 mb-0">
+                Usually requires a server-side endpoint change · Re-run after setup to verify improvement
+              </p>
+              <p class="text-caption mt-3 mb-0">
+                <nuxt-link to="/compare" class="text-decoration-none">
+                  <v-icon size="14" class="mr-1">mdi-compare</v-icon>
+                  Want to see how protection changes model behavior? Open Protection Compare
+                </nuxt-link>
+              </p>
+            </template>
+
+            <!-- All passed — different treatment for baseline vs protected -->
+            <template v-else>
+              <!-- Baseline: don't celebrate, explain model resistance -->
+              <template v-if="isBaseline">
+                <p class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-1">What this means</p>
+                <p class="text-caption text-medium-emphasis mb-3">
+                  The model resisted all tested attacks on its own. This is good baseline behavior, but model resistance can change with updates or new attack techniques.
+                  Adding AI Protector ensures consistent, policy-enforced defense regardless of model changes.
+                </p>
+                <div class="d-flex flex-wrap ga-2">
+                  <v-btn
+                    color="primary"
+                    variant="flat"
+                    size="small"
+                    prepend-icon="mdi-shield-plus"
+                    @click="showSetupDialog = true"
+                  >
+                    Add Protection Layer
+                  </v-btn>
+                  <v-btn
+                    variant="outlined"
+                    size="small"
+                    prepend-icon="mdi-compare"
+                    to="/compare"
+                  >
+                    Open Protection Compare
+                  </v-btn>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    prepend-icon="mdi-download"
+                    @click="onExport"
+                  >
+                    Export
+                  </v-btn>
+                </div>
+              </template>
+              <!-- Protected: celebrate -->
+              <template v-else>
+                <div class="d-flex flex-wrap ga-2">
+                  <v-btn
+                    variant="outlined"
+                    size="small"
+                    prepend-icon="mdi-replay"
+                    :loading="isRerunning"
+                    @click="onRerun"
+                  >
+                    Re-run Benchmark
+                  </v-btn>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    prepend-icon="mdi-download"
+                    @click="onExport"
+                  >
+                    Export
+                  </v-btn>
+                </div>
+              </template>
+            </template>
+          </v-col>
+        </v-row>
       </v-card>
 
       <!-- ================================================================ -->
@@ -159,7 +350,7 @@
           <div class="d-flex justify-space-between mb-1">
             <span class="text-body-2 font-weight-medium">{{ cat.label }}</span>
             <span class="text-body-2 text-medium-emphasis">
-              {{ cat.passedCount }}/{{ cat.total }} blocked ({{ cat.percent }}%)
+              {{ cat.passedCount }}/{{ cat.total }} {{ isBaseline ? 'handled' : 'blocked' }} ({{ cat.percent }}%)
             </span>
           </div>
           <v-progress-linear
@@ -202,12 +393,20 @@
               <v-list-item-subtitle class="text-caption">
                 {{ fail.scenario_id }}
                 &nbsp;·&nbsp; {{ humanCategory(fail.category) }}
-                <template v-if="fail.description">
-                  &nbsp;·&nbsp; {{ fail.description }}
-                </template>
+                <span v-if="failureImpact(fail)" class="text-error">
+                  &nbsp;·&nbsp; {{ failureImpact(fail) }}
+                </span>
               </v-list-item-subtitle>
               <template #append>
                 <div class="d-flex align-center ga-2">
+                  <v-chip
+                    v-if="failureMitigation(fail)"
+                    :color="failureMitigation(fail).startsWith('Mitigated') ? 'success' : 'warning'"
+                    variant="outlined"
+                    size="x-small"
+                  >
+                    {{ failureMitigation(fail) }}
+                  </v-chip>
                   <v-chip
                     :color="severityMeta(fail.severity).color"
                     variant="tonal"
@@ -223,145 +422,71 @@
           </v-list>
         </template>
         <div v-else class="text-center pa-4">
-          <v-icon icon="mdi-shield-check" color="success" size="48" class="mb-2" />
-          <p class="text-body-1 font-weight-medium">All attacks blocked</p>
-          <p class="text-body-2 text-medium-emphasis">No scenarios got through your agent's defenses.</p>
+          <v-icon :icon="isBaseline ? 'mdi-robot-happy' : 'mdi-shield-check'" :color="isBaseline ? 'blue-grey' : 'success'" size="48" class="mb-2" />
+          <p class="text-body-1 font-weight-medium">{{ isBaseline ? 'Model resisted all tested attacks' : 'All attacks blocked' }}</p>
+          <p class="text-body-2 text-medium-emphasis">
+            {{ isBaseline
+              ? 'The model handled these scenarios on its own. Add AI Protector for consistent, policy-enforced defense.'
+              : 'No scenarios got through your endpoint\'s defenses.'
+            }}
+          </p>
         </div>
       </v-card>
 
       <!-- ================================================================ -->
-      <!-- CTA — Variant A (Demo Agent / Registered Agent)                   -->
+      <!-- How to Protect This Endpoint — dialog                             -->
       <!-- ================================================================ -->
-      <v-card v-if="ctaVariant === 'A'" variant="flat" class="mb-6 pa-6" data-testid="cta-section">
-        <h2 class="text-h6 mb-2">Want to improve this score?</h2>
-        <p class="text-body-2 text-medium-emphasis mb-4">
-          AI Protector detected {{ failedCount }} unprotected attack vector{{ failedCount !== 1 ? 's' : '' }}.
-          Apply recommended policies to harden your agent.
-        </p>
-        <div class="d-flex flex-wrap ga-3">
-          <v-btn
-            color="primary"
-            variant="flat"
-            prepend-icon="mdi-shield-plus"
-            data-testid="apply-profile-btn"
-            @click="showApplyDialog = true"
-          >
-            Apply Recommended Profile
-          </v-btn>
-          <v-btn
-            variant="outlined"
-            prepend-icon="mdi-replay"
-            :loading="isRerunning"
-            data-testid="rerun-btn"
-            @click="onRerun"
-          >
-            Re-run Benchmark
-          </v-btn>
-          <v-btn
-            variant="text"
-            prepend-icon="mdi-download"
-            data-testid="export-btn"
-            @click="onExport"
-          >
-            Export JSON
-          </v-btn>
-        </div>
-        <p v-if="policyApplied" class="text-body-2 text-success mt-3">
-          <v-icon icon="mdi-check" size="small" /> Policy changed to {{ rerunPolicy }}.
-          Click Re-run to see the improvement.
-        </p>
-      </v-card>
-
-      <!-- CTA — Variant B (Local Agent / Hosted Endpoint) -->
-      <v-card v-else variant="flat" class="mb-6 pa-6" data-testid="cta-section-b">
-        <h2 class="text-h6 mb-2">Protect this endpoint</h2>
-        <p class="text-body-2 text-medium-emphasis mb-4">
-          Your agent has {{ criticalCount || failedCount }} critical security gap{{ (criticalCount || failedCount) !== 1 ? 's' : '' }}.
-          Choose a protection path:
-        </p>
-
-        <v-row class="mb-4">
-          <v-col cols="12" sm="6">
-            <v-card variant="tonal" class="pa-4 h-100" data-testid="proxy-path-card">
-              <div class="d-flex align-center mb-2">
-                <v-avatar color="primary" variant="tonal" size="36" class="mr-2">
-                  <v-icon icon="mdi-shield-half-full" size="20" />
-                </v-avatar>
-                <span class="text-subtitle-2 font-weight-bold">Quick — Proxy Setup</span>
-              </div>
-              <p class="text-body-2 text-medium-emphasis mb-3">
-                Route traffic through AI Protector. No code changes.
-              </p>
-              <v-btn
-                color="primary"
-                variant="flat"
-                size="small"
-                append-icon="mdi-arrow-right"
-                data-testid="proxy-setup-btn"
-                :to="`/proxy/setup?endpoint=${encodeURIComponent(targetEndpointUrl)}`"
-              >
-                Set up Proxy
-              </v-btn>
-            </v-card>
-          </v-col>
-          <v-col cols="12" sm="6">
-            <v-card variant="tonal" class="pa-4 h-100" data-testid="wizard-path-card">
-              <div class="d-flex align-center mb-2">
-                <v-avatar color="secondary" variant="tonal" size="36" class="mr-2">
-                  <v-icon icon="mdi-wizard-hat" size="20" />
-                </v-avatar>
-                <span class="text-subtitle-2 font-weight-bold">Deep — Agent Wizard</span>
-              </div>
-              <p class="text-body-2 text-medium-emphasis mb-3">
-                Register tools, roles, RBAC. Most precise protection.
-              </p>
-              <v-btn
-                color="secondary"
-                variant="flat"
-                size="small"
-                append-icon="mdi-arrow-right"
-                data-testid="wizard-btn"
-                :to="`/agents/new?url=${encodeURIComponent(targetEndpointUrl)}&name=${encodeURIComponent(run?.pack ?? 'agent')}&type=${run?.target_type}`"
-              >
-                Open Wizard
-              </v-btn>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <div class="d-flex flex-wrap ga-3">
-          <v-btn
-            variant="outlined"
-            prepend-icon="mdi-replay"
-            :loading="isRerunning"
-            data-testid="rerun-btn-b"
-            @click="onRerun"
-          >
-            Re-run Benchmark
-          </v-btn>
-          <v-btn
-            variant="text"
-            prepend-icon="mdi-download"
-            data-testid="export-btn-b"
-            @click="onExport"
-          >
-            Export JSON
-          </v-btn>
-        </div>
-      </v-card>
-
-      <!-- Apply Recommended Profile dialog -->
-      <v-dialog v-model="showApplyDialog" max-width="450">
+      <v-dialog v-model="showSetupDialog" max-width="580">
         <v-card>
-          <v-card-title>Switch to Strict Policy?</v-card-title>
-          <v-card-text class="text-body-2">
-            This enables stricter thresholds for prompt injection, jailbreak, and data leak detectors.
-            It may increase false positives but will block more attacks.
+          <v-card-title class="d-flex align-center">
+            <v-icon icon="mdi-shield-half-full" size="small" class="mr-2" />
+            How to Protect This Endpoint
+          </v-card-title>
+          <v-card-text>
+            <!-- What to change -->
+            <h3 class="text-subtitle-2 font-weight-bold mb-2">1. Update your backend</h3>
+            <p class="text-body-2 text-medium-emphasis mb-3">
+              Route requests through AI Protector instead of sending them directly to your model.
+              This is a server-side change — no frontend modifications needed.
+            </p>
+
+            <!-- What to paste -->
+            <h3 class="text-subtitle-2 font-weight-bold mb-2">2. Use this protected URL</h3>
+            <v-card variant="tonal" class="pa-3 mb-1">
+              <code class="text-body-2" style="word-break: break-all;" data-testid="protected-url">
+                {{ protectedBaseUrl }}
+              </code>
+            </v-card>
+            <p class="text-caption text-medium-emphasis mb-3">
+              Replace your current model endpoint URL with this in your backend config or SDK init.
+            </p>
+
+            <!-- Integration effort -->
+            <v-alert type="info" variant="tonal" density="compact" class="mb-3">
+              <div class="text-caption">
+                <strong>Typical setup: 5–15 minutes</strong><br />
+                Requires a backend endpoint change. No frontend changes needed if your app already uses a server-side AI layer.
+              </div>
+            </v-alert>
+
+            <!-- What to do after -->
+            <h3 class="text-subtitle-2 font-weight-bold mb-2">3. Verify improvement</h3>
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              After routing traffic through AI Protector, re-run this benchmark to compare results.
+            </p>
           </v-card-text>
           <v-card-actions>
             <v-spacer />
-            <v-btn variant="text" @click="showApplyDialog = false">Cancel</v-btn>
-            <v-btn color="primary" variant="flat" @click="onApplyProfile">Apply Strict</v-btn>
+            <v-btn variant="text" @click="showSetupDialog = false">Close</v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              prepend-icon="mdi-replay"
+              :loading="isRerunning"
+              @click="showSetupDialog = false; onRerun()"
+            >
+              Re-run Benchmark
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -377,7 +502,7 @@
 <script setup lang="ts">
 import { benchmarkService } from '~/services/benchmarkService'
 import type { RunDetail, ScenarioResult, CompareResult } from '~/services/benchmarkService'
-import { humanCategory, severityMeta, humanPack, scoreLabel } from '~/utils/redTeamLabels'
+import { humanCategory, severityMeta, humanPack, scoreLabel, baselineScoreLabel, classifyRun } from '~/utils/redTeamLabels'
 
 definePageMeta({ layout: 'default' })
 
@@ -393,9 +518,9 @@ const loading = ref(true)
 const run = ref<RunDetail | null>(null)
 const scenarios = ref<ScenarioResult[]>([])
 const comparison = ref<CompareResult | null>(null)
-const showApplyDialog = ref(false)
+const showSetupDialog = ref(false)
 const policyApplied = ref(false)
-const rerunPolicy = ref('Strict')
+const _rerunPolicy = ref('Strict')
 const isRerunning = ref(false)
 
 // ---------------------------------------------------------------------------
@@ -403,10 +528,11 @@ const isRerunning = ref(false)
 // ---------------------------------------------------------------------------
 
 const TARGET_LABELS: Record<string, { label: string; icon: string }> = {
-  demo_agent: { label: 'Demo Agent', icon: 'mdi-robot-outline' },
-  registered_agent: { label: 'Registered Agent', icon: 'mdi-shield-check' },
-  local_agent: { label: 'Local Agent', icon: 'mdi-laptop' },
-  hosted_endpoint: { label: 'Hosted Endpoint', icon: 'mdi-cloud-outline' },
+  demo_agent: { label: 'Demo Endpoint', icon: 'mdi-robot-outline' },
+  demo: { label: 'Demo Endpoint', icon: 'mdi-robot-outline' },
+  registered_agent: { label: 'Registered Endpoint', icon: 'mdi-shield-check' },
+  local_agent: { label: 'Local Endpoint', icon: 'mdi-laptop' },
+  hosted_endpoint: { label: 'Your Endpoint', icon: 'mdi-cloud-outline' },
 }
 
 const targetMeta = computed(() => TARGET_LABELS[run.value?.target_type ?? ''] ?? { label: run.value?.target_type ?? 'Agent', icon: 'mdi-robot-outline' })
@@ -414,10 +540,20 @@ const targetLabel = computed(() => targetMeta.value.label)
 const targetIcon = computed(() => targetMeta.value.icon)
 
 // ---------------------------------------------------------------------------
-// Computed — score
+// Computed — run classification (baseline vs protected)
 // ---------------------------------------------------------------------------
 
-const scoreMeta = computed(() => scoreLabel(run.value?.score_simple ?? 0))
+const runClass = computed(() => run.value ? classifyRun(run.value) : null)
+const isBaseline = computed(() => runClass.value?.type === 'baseline')
+
+// ---------------------------------------------------------------------------
+// Computed — score (uses baseline labels for unprotected runs)
+// ---------------------------------------------------------------------------
+
+const scoreMeta = computed(() => {
+  const score = run.value?.score_simple ?? 0
+  return isBaseline.value ? baselineScoreLabel(score) : scoreLabel(score)
+})
 
 const criticalCount = computed(() => {
   return scenarios.value.filter(
@@ -433,13 +569,81 @@ const skippedMutating = computed(() => {
   return run.value?.skipped_reasons?.safe_mode ?? 0
 })
 
-const ctaVariant = computed(() => {
-  const t = run.value?.target_type
-  if (t === 'local_agent' || t === 'hosted_endpoint') return 'B'
-  return 'A'
+// ---------------------------------------------------------------------------
+// Score interpretation — one-sentence narrative
+// ---------------------------------------------------------------------------
+
+const scoreInterpretation = computed(() => {
+  const score = run.value?.score_simple ?? 0
+  const cats = categoryBars.value
+  // Find weakest and strongest categories
+  const weakest = cats.length > 0 ? cats[0] : null // sorted worst-first
+  const strongest = cats.length > 1 ? cats[cats.length - 1] : null
+
+  // Baseline runs — honest framing, no false comfort
+  if (isBaseline.value) {
+    if (score >= 90) return 'The model resisted most attacks on its own. This does not guarantee protection — models can be updated or bypassed with new techniques.'
+    if (score >= 80) {
+      if (weakest) return `The model handled many attacks, but ${weakest.label} showed gaps. Without active protection, these gaps are exploitable.`
+      return 'The model resisted many attacks, but model-level resistance alone is not a reliable defense.'
+    }
+    if (score >= 60) {
+      const parts: string[] = []
+      if (weakest && weakest.percent < 50) parts.push(`${weakest.label} is largely undefended.`)
+      if (strongest && strongest.percent >= 80) parts.push(`${strongest.label} saw some model resistance.`)
+      return parts.length ? parts.join(' ') : 'Mixed results — some attack categories lack any defense.'
+    }
+    if (weakest) return `The model failed to resist most attacks. ${weakest.label} is the most exposed area. Active protection is strongly recommended.`
+    return 'Multiple attack categories bypassed the model. Active protection is strongly recommended.'
+  }
+
+  // Protected runs — original interpretation
+  if (score >= 90) return 'Your endpoint handled all major attack categories well.'
+  if (score >= 80) {
+    if (weakest) return `Most attacks were blocked. ${weakest.label} has room for improvement.`
+    return 'Most attacks were blocked. Minor gaps remain.'
+  }
+  if (score >= 60) {
+    const parts: string[] = []
+    if (weakest && weakest.percent < 50) parts.push(`${weakest.label} protections are weak.`)
+    if (strongest && strongest.percent >= 80) parts.push(`${strongest.label} controls performed well.`)
+    return parts.length ? parts.join(' ') : 'Some attack categories need hardening.'
+  }
+  if (weakest) return `Significant gaps detected. ${weakest.label} is the most exposed area.`
+  return 'Multiple attack categories bypassed defenses. Immediate hardening recommended.'
 })
 
-const targetEndpointUrl = computed(() => {
+// ---------------------------------------------------------------------------
+// Failure impact hints — short risk descriptions
+// ---------------------------------------------------------------------------
+
+const CATEGORY_IMPACT: Record<string, string> = {
+  prompt_injection_jailbreak: 'Could expose system prompt or bypass instructions',
+  data_leakage_pii: 'May leak sensitive data or PII in responses',
+  tool_abuse: 'Could trigger unauthorized tool calls',
+  access_control: 'Bypasses role or permission boundaries',
+}
+
+function failureImpact(fail: ScenarioResult): string {
+  if (fail.severity === 'critical' || fail.severity === 'high') {
+    return CATEGORY_IMPACT[fail.category] ?? 'Likely to recur in production'
+  }
+  return ''
+}
+
+// Mitigation label — tells user which ones are easy to fix
+const CATEGORY_MITIGATION: Record<string, string> = {
+  prompt_injection_jailbreak: 'Mitigated by strict profile',
+  data_leakage_pii: 'Mitigated by strict profile',
+  tool_abuse: 'Needs custom rule',
+  access_control: 'Needs custom rule',
+}
+
+function failureMitigation(fail: ScenarioResult): string {
+  return CATEGORY_MITIGATION[fail.category] ?? ''
+}
+
+const _targetEndpointUrl = computed(() => {
   return run.value?.target_config?.endpoint_url ?? ''
 })
 
@@ -502,11 +706,10 @@ const topFailures = computed(() => {
 // CTA actions
 // ---------------------------------------------------------------------------
 
-function onApplyProfile() {
-  showApplyDialog.value = false
-  policyApplied.value = true
-  rerunPolicy.value = 'Strict'
-}
+const protectedBaseUrl = computed(() => {
+  const base = window?.location?.origin ?? 'https://your-ai-protector.example.com'
+  return `${base}/v1/proxy/chat`
+})
 
 async function onRerun() {
   if (!run.value) return
@@ -598,17 +801,18 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .score-badge {
-  width: 120px;
-  height: 120px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  border: 6px solid;
+  border: 5px solid;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .score-value {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
   line-height: 1;
 }

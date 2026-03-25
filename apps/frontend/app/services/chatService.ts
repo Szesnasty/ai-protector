@@ -21,7 +21,7 @@ export const chatService = {
  * Base URLs for providers that support direct browser calls
  * (CORS-enabled, OpenAI-compatible streaming format).
  *
- * The Compare Playground's right panel calls these directly from the
+ * The Protection Compare's right panel calls these directly from the
  * browser — completely bypassing the AI Protector proxy — to prove
  * the raw model accepts prompts that AI Protector would block.
  */

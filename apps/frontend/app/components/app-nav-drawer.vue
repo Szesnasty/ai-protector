@@ -31,28 +31,10 @@
 
       <v-divider class="my-2" />
 
-      <!-- Create -->
-      <v-list-subheader>Create</v-list-subheader>
+      <!-- Protect -->
+      <v-list-subheader>Protect</v-list-subheader>
       <v-list-item
-        v-for="item in createItems"
-        :key="item.to"
-        :to="item.to"
-        :title="item.title"
-        active-class="nav-item--active"
-        :class="{ 'nav-item--highlight': item.highlight }"
-        exact
-      >
-        <template #prepend>
-          <v-icon :icon="item.icon" size="20" />
-        </template>
-      </v-list-item>
-
-      <v-divider class="my-2" />
-
-      <!-- Validate -->
-      <v-list-subheader>Validate</v-list-subheader>
-      <v-list-item
-        v-for="item in validateItems"
+        v-for="item in protectItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -83,10 +65,37 @@
 
       <v-divider class="my-2" />
 
-      <!-- Configure -->
-      <v-list-subheader>Configure</v-list-subheader>
+      <!-- Advanced — collapsed -->
+      <v-list-group value="advanced">
+        <template #activator="{ props: groupProps }">
+          <v-list-item v-bind="groupProps" title="Advanced" class="text-medium-emphasis">
+            <template #prepend>
+              <v-icon icon="mdi-dots-horizontal" size="20" />
+            </template>
+          </v-list-item>
+        </template>
+
+        <v-list-item
+          v-for="item in advancedItems"
+          :key="item.to"
+          :to="item.to"
+          :title="item.title"
+          active-class="nav-item--active"
+          :class="{ 'nav-item--highlight': item.highlight }"
+          exact
+        >
+          <template #prepend>
+            <v-icon :icon="item.icon" size="20" />
+          </template>
+        </v-list-item>
+      </v-list-group>
+
+      <v-divider class="my-2" />
+
+      <!-- System -->
+      <v-list-subheader>System</v-list-subheader>
       <v-list-item
-        v-for="item in configureItems"
+        v-for="item in systemItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -101,7 +110,7 @@
 
     <div class="wizard-cta mx-4 mt-6">
       <p class="text-caption text-medium-emphasis text-center mb-0" style="opacity: 0.7">
-        Ship agents with guardrails — not prayers.
+        Protect AI endpoints with testable guardrails
       </p>
     </div>
   </div>
@@ -161,32 +170,36 @@ interface NavItem {
   highlight?: boolean
 }
 
+// --- Test ---
 const testItems: NavItem[] = [
-  { title: 'Red Team', icon: 'mdi-shield-search', to: '/red-team' },
+  { title: 'Security Tests', icon: 'mdi-shield-search', to: '/red-team' },
+  { title: 'Protection Compare', icon: 'mdi-compare', to: '/compare' },
 ]
 
-const createItems: NavItem[] = [
-  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new', highlight: true },
-  { title: 'Agents', icon: 'mdi-robot-outline', to: '/agents' },
+// --- Protect ---
+const protectItems: NavItem[] = [
+  { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
+  { title: 'Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
 ]
 
-const validateItems: NavItem[] = [
-  { title: 'Playground', icon: 'mdi-chat-processing', to: '/playground' },
-  { title: 'Compare', icon: 'mdi-compare', to: '/compare' },
-  { title: 'Python Agent', icon: 'mdi-language-python', to: '/test-agents/python' },
-  { title: 'LangGraph Agent', icon: 'mdi-graph-outline', to: '/test-agents/graph' },
-  { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
-]
-
+// --- Observe ---
 const observeItems: NavItem[] = [
-  { title: 'Agent Traces', icon: 'mdi-chart-timeline-variant', to: '/agent-traces' },
-  { title: 'Request Log', icon: 'mdi-format-list-bulleted', to: '/requests' },
+  { title: 'Request Traces', icon: 'mdi-format-list-bulleted', to: '/requests' },
+  { title: 'Agent Traces', icon: 'mdi-robot-outline', to: '/agent-traces' },
   { title: 'Analytics', icon: 'mdi-chart-bar', to: '/analytics' },
 ]
 
-const configureItems: NavItem[] = [
-  { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
-  { title: 'Security Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
+// --- Advanced (collapsed) ---
+const advancedItems: NavItem[] = [
+  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new', highlight: true },
+  { title: 'Playground', icon: 'mdi-chat-processing', to: '/playground' },
+  { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
+  { title: 'LangGraph Demo', icon: 'mdi-graph-outline', to: '/test-agents/graph' },
+  { title: 'Agents', icon: 'mdi-robot-outline', to: '/agents' },
+]
+
+// --- System ---
+const systemItems: NavItem[] = [
   { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>

@@ -2,21 +2,20 @@
   <v-container fluid class="red-team-page">
     <!-- Header -->
     <div class="mb-6">
-      <h1 class="text-h5 mb-1">Red Team — Security Tests</h1>
+      <h1 class="text-h5 mb-1">Security Tests</h1>
       <p class="text-body-2 text-medium-emphasis">
-        Test your AI endpoint in minutes. No setup for demo. URL-only for your own endpoint.
+        Run a baseline benchmark to see how your model behaves without protection, then add AI Protector to measure the difference.
       </p>
     </div>
 
-    <!-- Target cards -->
+    <!-- Primary cards — simplified to 2 main paths -->
     <v-row>
       <v-col
-        v-for="card in targetCards"
+        v-for="card in visibleCards"
         :key="card.key"
         cols="12"
         sm="6"
         md="6"
-        lg="3"
       >
         <v-card
           variant="flat"
@@ -30,15 +29,15 @@
           @click="card.disabled ? null : onCardClick(card.key)"
         >
           <v-card-text class="d-flex flex-column align-center text-center pa-6">
-            <!-- Recommended badge -->
+            <!-- Best first step badge for demo -->
             <v-chip
-              v-if="card.recommended"
+              v-if="card.badge"
               size="x-small"
               color="primary"
               variant="tonal"
               class="mb-2"
             >
-              ★ Recommended
+              {{ card.badge }}
             </v-chip>
 
             <v-avatar :color="card.color" variant="tonal" size="56" class="mb-3">
@@ -57,62 +56,31 @@
               {{ card.microcopy }}
             </p>
 
-            <v-chip
-              v-if="card.disabled"
-              size="small"
-              variant="tonal"
-              color="grey"
-            >
-              Coming soon
-            </v-chip>
-            <p v-if="card.disabled && card.disabledNote" class="text-caption text-medium-emphasis mt-2 mb-0">
-              {{ card.disabledNote }}
-            </p>
             <v-btn
               v-if="!card.disabled"
               :color="card.recommended ? 'primary' : 'default'"
               :variant="card.recommended ? 'flat' : 'outlined'"
-              :size="card.recommended ? 'default' : 'small'"
-              :prepend-icon="card.key === 'demo' ? 'mdi-play' : 'mdi-cog'"
+              size="default"
+              :prepend-icon="card.ctaIcon"
             >
-              {{ card.key === 'demo' ? 'Start Now' : 'Configure' }}
+              {{ card.ctaLabel }}
             </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Recent Runs -->
-    <div class="mt-10">
-      <h2 class="text-h6 mb-3">Recent Runs</h2>
+    <!-- Hidden legacy cards preserved in data but not rendered above.
+         To restore: set card.hidden = false or use showAllCards = true -->
 
-      <!-- Loading -->
-      <v-card v-if="runsLoading" variant="flat" class="pa-6 text-center">
-        <v-progress-circular indeterminate color="primary" size="32" />
-      </v-card>
+    <!-- Recent Runs — compact (max 3) -->
+    <div v-if="recentRuns && recentRuns.length > 0" class="mt-8">
+      <h2 class="text-subtitle-1 font-weight-medium mb-2">Recent Runs</h2>
 
-      <!-- Empty state -->
-      <v-card v-else-if="!recentRuns || recentRuns.length === 0" variant="flat" class="pa-6 text-center">
-        <v-icon icon="mdi-test-tube-empty" size="48" color="grey" class="mb-3" />
-        <p class="text-body-2 text-medium-emphasis mb-2">
-          Run your first benchmark to see history and compare improvements.
-        </p>
-        <v-btn
-          color="primary"
-          variant="tonal"
-          size="small"
-          prepend-icon="mdi-play"
-          @click="onCardClick('demo')"
-        >
-          Start with Demo Agent
-        </v-btn>
-      </v-card>
-
-      <!-- Runs list -->
-      <v-card v-else variant="flat">
-        <v-list density="compact">
+      <v-card variant="flat">
+        <v-list density="compact" class="py-0">
           <v-list-item
-            v-for="run in recentRuns"
+            v-for="run in compactRuns"
             :key="run.id"
             :to="`/red-team/${run.status === 'running' ? 'run' : 'results'}/${run.id}`"
             class="px-4"
@@ -147,13 +115,41 @@
               </v-chip>
             </v-list-item-title>
             <v-list-item-subtitle class="text-caption">
-              {{ run.target_type === 'demo' ? 'Demo Agent' : run.target_type }}
+              {{ run.target_type === 'demo' ? 'Demo' : run.target_type }}
               &nbsp;·&nbsp; {{ timeAgo(run.completed_at ?? run.created_at) }}
-              &nbsp;·&nbsp; {{ run.passed }}/{{ run.executed }} blocked
+              &nbsp;·&nbsp; {{ run.passed }}/{{ run.executed }} {{ classifyRun(run).type === 'baseline' ? 'handled' : 'blocked' }}
+              <v-chip
+                :color="classifyRun(run).color"
+                variant="outlined"
+                size="x-small"
+                class="ml-1"
+              >
+                {{ classifyRun(run).label }}
+              </v-chip>
             </v-list-item-subtitle>
+            <template #append>
+              <v-btn variant="text" size="x-small" color="primary">View</v-btn>
+            </template>
           </v-list-item>
         </v-list>
+        <div v-if="recentRuns.length > 3" class="text-center py-2">
+          <v-btn variant="text" size="small" color="primary" to="/red-team/runs">
+            View all runs
+          </v-btn>
+        </div>
       </v-card>
+    </div>
+
+    <!-- Loading runs -->
+    <div v-else-if="runsLoading" class="mt-8 text-center">
+      <v-progress-circular indeterminate color="primary" size="24" />
+    </div>
+
+    <!-- Empty state — minimal -->
+    <div v-else class="mt-8 text-center">
+      <p class="text-body-2 text-medium-emphasis">
+        No runs yet. Start a demo benchmark to see your first score.
+      </p>
     </div>
   </v-container>
 </template>
@@ -161,7 +157,7 @@
 <script setup lang="ts">
 import { benchmarkService } from '~/services/benchmarkService'
 import type { RunDetail } from '~/services/benchmarkService'
-import { humanPack, scoreLabel } from '~/utils/redTeamLabels'
+import { humanPack, scoreLabel, classifyRun } from '~/utils/redTeamLabels'
 
 definePageMeta({ layout: 'default' })
 
@@ -175,19 +171,45 @@ interface TargetCard {
   disabled: boolean
   recommended: boolean
   disabledNote?: string
+  ctaLabel: string
+  ctaIcon: string
+  /** Small badge shown above the icon (e.g. "No setup") */
+  badge?: string
+  /** When true, card is kept in data but hidden from the main view */
+  hidden: boolean
 }
+
+// Toggle to show all legacy cards (set to true to restore old 4-card view)
+const _showAllCards = false
 
 const targetCards: TargetCard[] = [
   {
     key: 'demo',
-    title: 'Demo Agent',
-    description: 'Test a pre-configured demo agent — zero config required.',
-    microcopy: 'Get your first score in under 1 minute',
-    icon: 'mdi-robot',
+    title: 'Run Demo',
+    description: 'See a sample benchmark in under a minute. No setup required.',
+    microcopy: 'Get your first score instantly',
+    icon: 'mdi-play-circle-outline',
     color: 'primary',
     disabled: false,
     recommended: true,
+    ctaLabel: 'Start Demo',
+    ctaIcon: 'mdi-play',
+    badge: 'No setup needed',
+    hidden: false,
   },
+  {
+    key: 'hosted_endpoint',
+    title: 'Test Your Endpoint',
+    description: 'Run security tests on your own AI endpoint using a URL and optional auth.',
+    icon: 'mdi-web',
+    color: 'info',
+    disabled: false,
+    recommended: false,
+    ctaLabel: 'Configure Endpoint',
+    ctaIcon: 'mdi-cog',
+    hidden: false,
+  },
+  // --- Hidden cards (still in data, easy to re-enable) ---
   {
     key: 'local_agent',
     title: 'Local Agent',
@@ -196,15 +218,9 @@ const targetCards: TargetCard[] = [
     color: 'secondary',
     disabled: false,
     recommended: false,
-  },
-  {
-    key: 'hosted_endpoint',
-    title: 'Hosted Endpoint',
-    description: 'Test a real staging or internal endpoint.',
-    icon: 'mdi-web',
-    color: 'info',
-    disabled: false,
-    recommended: false,
+    ctaLabel: 'Configure',
+    ctaIcon: 'mdi-cog',
+    hidden: true, // hidden from main view — set to false to restore
   },
   {
     key: 'registered_agent',
@@ -215,8 +231,16 @@ const targetCards: TargetCard[] = [
     disabled: true,
     recommended: false,
     disabledNote: 'Available in next iteration',
+    ctaLabel: 'Coming soon',
+    ctaIcon: 'mdi-shield-check',
+    hidden: true, // hidden from main view — set to false to restore
   },
 ]
+
+/** Only non-hidden cards are rendered */
+const visibleCards = computed(() =>
+  _showAllCards ? targetCards : targetCards.filter((c) => !c.hidden),
+)
 
 const router = useRouter()
 
@@ -231,6 +255,9 @@ function onCardClick(key: string) {
 // Recent runs
 const recentRuns = ref<RunDetail[]>([])
 const runsLoading = ref(true)
+
+/** Only show 3 in the compact view */
+const compactRuns = computed(() => recentRuns.value.slice(0, 3))
 
 async function fetchRecentRuns() {
   runsLoading.value = true
