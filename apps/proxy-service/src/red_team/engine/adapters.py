@@ -68,7 +68,12 @@ class RealHttpClient:
             }
         else:
             # OpenAI-style messages array — the industry standard for chat APIs
-            payload = {"messages": [{"role": "user", "content": prompt}]}
+            messages: list[dict[str, str]] = []
+            system_prompt = target_config.get("_system_prompt")
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            payload = {"messages": messages}
 
         start = time.monotonic()
         try:
@@ -192,6 +197,9 @@ class DbPersistenceAdapter:
             skipped=result_data.get("outcome") == "skipped",
             skipped_reason=result_data.get("skip_reason"),
             latency_ms=int(result_data.get("latency_ms", 0)),
+            raw_response_body=result_data.get("raw_response_body"),
+            detector_type=result_data.get("detector_type"),
+            detector_detail=result_data.get("detector_detail"),
         )
         self._session.add(result)
 

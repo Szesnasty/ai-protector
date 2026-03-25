@@ -57,6 +57,7 @@ class FilteredPack:
     skipped_reasons: dict[str, int]
     scenarios: list[Scenario]
     skipped: list[SkippedScenario]
+    system_prompt: str | None = None  # Pack-level system prompt (supports ${CANARY})
 
     def __post_init__(self) -> None:
         # Enforce counting invariants
@@ -190,6 +191,7 @@ def filter_pack(
         skipped_reasons=reasons_count,
         scenarios=applicable,
         skipped=skipped,
+        system_prompt=pack.system_prompt,
     )
 
 
@@ -230,6 +232,9 @@ def _check_skip_reason(
 # Display name mapping
 _DISPLAY_NAMES: dict[str, str] = {
     "core_security": "Core Security",
+    "core_verified": "Core Verified",
+    "unsafe_output": "Unsafe Output",
+    "extended_advisory": "Extended Advisory",
     "agent_threats": "Agent Threats",
     "full_suite": "Full Suite",
     "jailbreakbench": "JailbreakBench",
