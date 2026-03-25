@@ -32,7 +32,7 @@
             class="ml-2"
             data-testid="run-type-chip"
           >
-            {{ runClass.label }}
+            {{ runClass.type === 'protected' ? 'Protected by AI Protector' : runClass.label }}
           </v-chip>
         </p>
         <div v-if="targetEndpointUrl" class="mt-1 d-flex align-center text-body-2" style="font-family: monospace; color: #1565c0;">
@@ -853,8 +853,8 @@ const topFailures = computed(() => {
 // ---------------------------------------------------------------------------
 
 const protectedBaseUrl = computed(() => {
-  const base = window?.location?.origin ?? 'https://your-ai-protector.example.com'
-  return `${base}/v1/proxy/chat`
+  const base = (import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000').replace(/\/+$/, '')
+  return `${base}/v1/chat/completions`
 })
 
 async function onRerun() {

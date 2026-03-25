@@ -17,7 +17,11 @@ import pytest
 
 from src.red_team.engine import RunConfig, RunEngine, RunState
 from src.red_team.engine.protocols import HttpResponse
-from src.red_team.engine.run_engine import _is_proxy_block_response, _substitute_canary_in_scenario
+from src.red_team.engine.run_engine import (
+    _has_proxy_fingerprint,
+    _is_proxy_block_response,
+    _substitute_canary_in_scenario,
+)
 from src.red_team.packs import filter_pack, load_pack
 from src.red_team.packs.loader import TargetConfig, clear_cache
 from src.red_team.schemas import Scenario
@@ -133,6 +137,29 @@ class TestIsProxyBlockResponse:
     def test_500_not_block(self) -> None:
         r = HttpResponse(status_code=500, body="Internal Server Error")
         assert _is_proxy_block_response(r) is False
+
+
+# ===========================================================================
+# _has_proxy_fingerprint
+# ===========================================================================
+
+
+class TestHasProxyFingerprint:
+    def test_x_decision_header(self) -> None:
+        r = HttpResponse(status_code=200, body="ok", headers={"x-decision": "ALLOW"})
+        assert _has_proxy_fingerprint(r) is True
+
+    def test_x_risk_score_header(self) -> None:
+        r = HttpResponse(status_code=403, body="blocked", headers={"x-risk-score": "0.95"})
+        assert _has_proxy_fingerprint(r) is True
+
+    def test_no_proxy_headers(self) -> None:
+        r = HttpResponse(status_code=200, body="Hello", headers={"content-type": "application/json"})
+        assert _has_proxy_fingerprint(r) is False
+
+    def test_empty_headers(self) -> None:
+        r = HttpResponse(status_code=200, body="Hello")
+        assert _has_proxy_fingerprint(r) is False
 
 
 # ===========================================================================

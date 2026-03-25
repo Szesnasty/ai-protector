@@ -46,6 +46,8 @@ export interface RunDetail {
   error: string | null
   created_at: string | null
   completed_at: string | null
+  protection_detected: boolean
+  proxy_blocked_count: number
 }
 
 export interface ScenarioResult {

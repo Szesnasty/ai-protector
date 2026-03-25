@@ -72,6 +72,10 @@ class BenchmarkRun(UUIDMixin, TimestampMixin, Base):
     )
     idempotency_key: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
 
+    # ── Protection detection ─────────────────────────────────────────
+    protection_detected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    proxy_blocked_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
     # ── Timestamps ───────────────────────────────────────────────────
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

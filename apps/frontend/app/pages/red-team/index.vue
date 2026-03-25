@@ -73,7 +73,7 @@
     <!-- Hidden legacy cards preserved in data but not rendered above.
          To restore: set card.hidden = false or use showAllCards = true -->
 
-    <!-- Recent Runs — compact (max 3) -->
+    <!-- Recent Runs — compact (max 8) -->
     <div v-if="recentRuns && recentRuns.length > 0" class="mt-8">
       <h2 class="text-subtitle-1 font-weight-medium mb-2">Recent Runs</h2>
 
@@ -124,7 +124,7 @@
                 size="x-small"
                 class="ml-1"
               >
-                {{ classifyRun(run).label }}
+                {{ classifyRun(run).type === 'protected' ? 'Protected by AI Protector' : classifyRun(run).label }}
               </v-chip>
             </v-list-item-subtitle>
             <template #append>
@@ -132,7 +132,7 @@
             </template>
           </v-list-item>
         </v-list>
-        <div v-if="recentRuns.length > 3" class="text-center py-2">
+        <div v-if="recentRuns.length > 8" class="text-center py-2">
           <v-btn variant="text" size="small" color="primary" to="/red-team/runs">
             View all runs
           </v-btn>
@@ -256,13 +256,13 @@ function onCardClick(key: string) {
 const recentRuns = ref<RunDetail[]>([])
 const runsLoading = ref(true)
 
-/** Only show 3 in the compact view */
-const compactRuns = computed(() => recentRuns.value.slice(0, 3))
+/** Only show 8 in the compact view */
+const compactRuns = computed(() => recentRuns.value.slice(0, 8))
 
 async function fetchRecentRuns() {
   runsLoading.value = true
   try {
-    recentRuns.value = await benchmarkService.listRuns(5)
+    recentRuns.value = await benchmarkService.listRuns(10)
   } catch {
     recentRuns.value = []
   } finally {
