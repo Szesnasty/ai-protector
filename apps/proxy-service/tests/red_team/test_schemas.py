@@ -140,6 +140,8 @@ class TestEnums:
             "tool_abuse",
             "access_control",
             "safe_allow",
+            "business_logic_override",
+            "unsafe_output_artifact",
         }
         assert {c.value for c in Category} == expected
 

@@ -144,7 +144,7 @@ class TestNewPacksLoad:
     def test_core_verified_loads(self) -> None:
         pack = load_pack("core_verified", packs_dir=_DATA_DIR)
         assert pack.name == "core_verified"
-        assert len(pack.scenarios) == 18
+        assert len(pack.scenarios) == 23
         assert pack.system_prompt is not None
         assert "${CANARY}" in pack.system_prompt
 
