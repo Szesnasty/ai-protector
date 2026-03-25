@@ -123,15 +123,26 @@ class TestIsProxyBlockResponse:
         assert _is_proxy_block_response(r) is True
 
     def test_200_with_block_marker(self) -> None:
+        """200 with 'blocked' in body is a model refusal, not a proxy block."""
         r = HttpResponse(status_code=200, body='{"error": "Request blocked by policy"}')
-        assert _is_proxy_block_response(r) is True
+        assert _is_proxy_block_response(r) is False
 
     def test_200_normal_response(self) -> None:
         r = HttpResponse(status_code=200, body="I cannot help with that request.")
         assert _is_proxy_block_response(r) is False
 
     def test_200_with_denied_marker(self) -> None:
+        """200 with 'denied' in body is a model refusal, not a proxy block."""
         r = HttpResponse(status_code=200, body="Access denied by security policy")
+        assert _is_proxy_block_response(r) is False
+
+    def test_400_with_block_marker(self) -> None:
+        """4xx with body markers IS a proxy block."""
+        r = HttpResponse(status_code=400, body='{"error": "Request blocked by policy"}')
+        assert _is_proxy_block_response(r) is True
+
+    def test_429_with_denied_marker(self) -> None:
+        r = HttpResponse(status_code=429, body="Access denied by security policy")
         assert _is_proxy_block_response(r) is True
 
     def test_500_not_block(self) -> None:

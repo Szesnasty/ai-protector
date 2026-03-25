@@ -863,6 +863,7 @@ async function onRerun() {
   try {
     const result = await benchmarkService.createRun({
       target_type: run.value.target_type,
+      target_config: run.value.target_config,
       pack: run.value.pack,
       policy: policyApplied.value ? 'strict' : (run.value.policy ?? 'balanced'),
       source_run_id: run.value.id,

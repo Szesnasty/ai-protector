@@ -317,6 +317,8 @@ function humanizeConnectionError(raw?: string | null, statusCode?: number): stri
   if (msg.includes('401') || statusCode === 401) return 'Authorization failed — check your auth header'
   if (msg.includes('403') || statusCode === 403) return 'Access denied (403) — verify credentials and permissions'
   if (msg.includes('404') || statusCode === 404) return 'Endpoint not found (404) — check the URL path'
+  if (statusCode && statusCode >= 500) return `Server error (HTTP ${statusCode}) — the endpoint returned an error`
+  if (statusCode && statusCode >= 400) return `Client error (HTTP ${statusCode}) — the endpoint rejected the request`
   if (msg.includes('connection refused') || msg.includes('econnrefused')) return 'Connection refused — is the endpoint running?'
   if (msg.includes('dns') || msg.includes('getaddrinfo') || msg.includes('not found')) return 'Could not resolve hostname — check the URL'
   if (msg.includes('ssl') || msg.includes('certificate')) return 'SSL/TLS error — the endpoint has a certificate problem'
@@ -350,7 +352,7 @@ async function onTestConnection() {
       connectionResult.value = {
         type: 'success',
         headline: 'Connection successful',
-        message: `${data.status_code} OK in ${data.latency_ms}ms`,
+        message: `HTTP ${data.status_code} in ${data.latency_ms}ms`,
       }
       // Check for non-JSON
       if (data.content_type && !data.content_type.includes('json')) {

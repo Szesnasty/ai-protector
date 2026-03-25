@@ -477,10 +477,14 @@ class RunEngine:
         normalized = self._normalizer.normalize(http_response, effective_config)
 
         # ── Track proxy signals ─────────────────────────────────────
-        if _has_proxy_fingerprint(http_response) or _is_proxy_block_response(http_response):
+        # Only fingerprint headers (x-decision, x-risk-score) reliably
+        # indicate a proxy is present.  Body heuristics can false-positive
+        # on model refusals that happen to contain words like "blocked".
+        if _has_proxy_fingerprint(http_response):
             run.protection_detected = True
         if _is_proxy_block_response(http_response):
             run.proxy_blocked_count += 1
+            run.protection_detected = True
 
         # Substitute canary in detector config before evaluation
         eval_scenario = scenario
@@ -675,14 +679,20 @@ def _is_proxy_block_response(http_response: HttpResponse) -> bool:
     """Heuristic: did the proxy intercept and block this request?
 
     Returns True when the HTTP response looks like a proxy block
-    (4xx status or well-known block markers in body), meaning the
-    sensitive payload did NOT reach the model.
+    (4xx status or well-known block markers in short non-JSON body),
+    meaning the sensitive payload did NOT reach the model.
+
+    Body markers are ONLY checked for 4xx status codes to avoid
+    false positives from normal model refusals that contain words
+    like "blocked" or "not allowed".
     """
     if http_response.status_code in _PROXY_BLOCK_STATUSES:
         return True
-    # Check body for common block indicators (short responses only)
-    body_lower = http_response.body[:500].lower()
-    return any(marker in body_lower for marker in _PROXY_BLOCK_MARKERS)
+    # Only check body markers for 4xx responses (not 200 model refusals)
+    if 400 <= http_response.status_code < 500:
+        body_lower = http_response.body[:500].lower()
+        return any(marker in body_lower for marker in _PROXY_BLOCK_MARKERS)
+    return False
 
 
 def _has_proxy_fingerprint(http_response: HttpResponse) -> bool:

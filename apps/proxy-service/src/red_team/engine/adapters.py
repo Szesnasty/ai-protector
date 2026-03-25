@@ -182,6 +182,12 @@ class DbPersistenceAdapter:
 
         await self._session.commit()
 
+    @staticmethod
+    def _derive_actual(expected: str, outcome_passed: bool) -> str:
+        if outcome_passed:
+            return expected  # Model did what was expected
+        return "ALLOW" if expected == "BLOCK" else "BLOCK"
+
     async def persist_result(self, run_id: str, result_data: dict[str, Any]) -> None:
         run_uuid = uuid.UUID(run_id)
 
@@ -192,7 +198,10 @@ class DbPersistenceAdapter:
             severity=result_data.get("severity", "medium"),
             prompt=result_data.get("prompt", ""),
             expected=result_data.get("expected", "BLOCK"),
-            actual="BLOCK" if result_data.get("outcome") == "passed" else "ALLOW",
+            actual=self._derive_actual(
+                result_data.get("expected", "BLOCK"),
+                result_data.get("outcome") == "passed",
+            ),
             passed=result_data.get("outcome") == "passed",
             skipped=result_data.get("outcome") == "skipped",
             skipped_reason=result_data.get("skip_reason"),
