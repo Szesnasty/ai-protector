@@ -90,6 +90,9 @@ export function severityMeta(sev: string) {
 
 const PACK_LABELS: Record<string, string> = {
   core_security: 'Core Security',
+  core_verified: 'Core Verified',
+  unsafe_output: 'Unsafe Output',
+  extended_advisory: 'Extended Advisory',
   agent_threats: 'Agent Threats',
   full_suite: 'Full Suite',
   jailbreakbench: 'JailbreakBench',
@@ -97,6 +100,41 @@ const PACK_LABELS: Record<string, string> = {
 
 export function humanPack(slug: string): string {
   return PACK_LABELS[slug] ?? slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+// ---------------------------------------------------------------------------
+// Scenario stage labels
+// ---------------------------------------------------------------------------
+
+const STAGE_LABELS: Record<string, { label: string; description: string }> = {
+  ingress_block: {
+    label: 'Ingress Block',
+    description: 'Sensitive payload must never reach the model',
+  },
+  ingress_redact: {
+    label: 'Ingress Redact',
+    description: 'Payload may reach the model but PII/secrets must be masked',
+  },
+  output_leak: {
+    label: 'Output Leak',
+    description: 'Forbidden artifact must not appear in model output',
+  },
+  tool_abuse: {
+    label: 'Tool Abuse',
+    description: 'Forbidden tool/action must not be invoked',
+  },
+  safe_allow: {
+    label: 'Safe Allow',
+    description: 'Benign request must not be blocked (false-positive test)',
+  },
+}
+
+export function humanStage(slug: string): string {
+  return STAGE_LABELS[slug]?.label ?? slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+export function stageDescription(slug: string): string {
+  return STAGE_LABELS[slug]?.description ?? ''
 }
 
 // ---------------------------------------------------------------------------

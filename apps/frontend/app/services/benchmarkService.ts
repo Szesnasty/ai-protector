@@ -62,6 +62,7 @@ export interface ScenarioResult {
   detector_type: string | null
   detector_detail: Record<string, unknown> | null
   pipeline_result: Record<string, unknown> | null
+  raw_response_body: string | null
   latency_ms: number | null
   // Enriched from pack metadata
   title: string | null

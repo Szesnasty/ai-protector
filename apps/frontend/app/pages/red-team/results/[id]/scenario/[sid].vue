@@ -112,8 +112,8 @@
         </v-card-text>
       </v-card>
 
-      <!-- Observed Response (if available) -->
-      <template v-if="scenario.actual">
+      <!-- Observed Response — full HTTP body with highlighted evidence -->
+      <template v-if="displayResponse">
         <h2 class="text-h6 mb-2">Observed Response</h2>
         <v-card variant="flat" class="mb-6">
           <v-card-text class="pa-0 position-relative">
@@ -123,13 +123,145 @@
               size="x-small"
               class="copy-btn"
               data-testid="copy-response-btn"
-              @click="copyText(scenario.actual)"
+              @click="copyText(displayResponse)"
             >
               <v-icon icon="mdi-content-copy" />
               <v-tooltip activator="parent" location="top">Copy response</v-tooltip>
             </v-btn>
-            <pre class="prompt-block pa-4" data-testid="observed-response">{{ scenario.actual }}</pre>
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <pre
+              v-if="highlightedResponse"
+              class="prompt-block pa-4"
+              data-testid="observed-response"
+              v-html="highlightedResponse"
+            />
+            <pre v-else class="prompt-block pa-4" data-testid="observed-response">{{ displayResponse }}</pre>
           </v-card-text>
+        </v-card>
+      </template>
+
+      <!-- Detection Evidence — proof of what triggered the fail -->
+      <template v-if="evidenceData && !scenario.passed">
+        <h2 class="text-h6 mb-2">Detection Evidence</h2>
+        <v-card variant="flat" class="mb-6 pa-4" data-testid="evidence-section">
+          <v-table density="compact" class="bg-transparent evidence-table">
+            <tbody>
+              <tr>
+                <td class="text-medium-emphasis font-weight-medium" style="width: 160px;">Detector</td>
+                <td>
+                  <v-chip size="x-small" variant="tonal" color="primary" class="mr-1">
+                    {{ scenario.detector_type }}
+                  </v-chip>
+                </td>
+              </tr>
+              <tr v-if="evidenceData.matched_value">
+                <td class="text-medium-emphasis font-weight-medium">Matched value</td>
+                <td>
+                  <code class="evidence-match">{{ evidenceData.matched_value }}</code>
+                </td>
+              </tr>
+              <tr v-if="evidenceData.detail">
+                <td class="text-medium-emphasis font-weight-medium">Rule triggered</td>
+                <td class="text-body-2">{{ evidenceData.detail }}</td>
+              </tr>
+              <tr>
+                <td class="text-medium-emphasis font-weight-medium">Match location</td>
+                <td class="text-body-2">Observed Response</td>
+              </tr>
+              <tr>
+                <td class="text-medium-emphasis font-weight-medium">Confidence</td>
+                <td>
+                  <v-chip
+                    size="x-small"
+                    variant="tonal"
+                    :color="evidenceData.confidence >= 1.0 ? 'success' : 'warning'"
+                  >
+                    {{ evidenceData.confidence >= 1.0 ? 'Deterministic' : `Heuristic (${evidenceData.confidence})` }}
+                  </v-chip>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+
+          <!-- Matched artifacts list for multi-value detectors -->
+          <template v-if="matchedArtifacts.length > 1">
+            <v-divider class="my-3" />
+            <p class="text-caption text-medium-emphasis mb-2 font-weight-medium">Matched sensitive values</p>
+            <div class="d-flex flex-wrap ga-2">
+              <v-chip
+                v-for="(artifact, i) in matchedArtifacts"
+                :key="i"
+                size="small"
+                variant="tonal"
+                color="error"
+                prepend-icon="mdi-alert-circle-outline"
+              >
+                {{ artifact }}
+              </v-chip>
+            </div>
+          </template>
+        </v-card>
+      </template>
+
+      <!-- Evaluation Logic — transparent reasoning -->
+      <template v-if="evaluationData && !scenario.skipped">
+        <h2 class="text-h6 mb-2">Evaluation Logic</h2>
+        <v-card variant="flat" class="mb-6 pa-4" data-testid="evaluation-section">
+          <v-list density="compact" class="bg-transparent">
+            <v-list-item class="px-0">
+              <template #prepend>
+                <v-icon icon="mdi-target" size="small" color="primary" class="mr-2" />
+              </template>
+              <v-list-item-title class="text-body-2">
+                This scenario expects: <strong>{{ evaluationData.expected }}</strong>
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item class="px-0">
+              <template #prepend>
+                <v-icon
+                  :icon="scenario.passed ? 'mdi-check-circle' : 'mdi-close-circle'"
+                  size="small"
+                  :color="scenario.passed ? 'success' : 'error'"
+                  class="mr-2"
+                />
+              </template>
+              <v-list-item-title class="text-body-2">
+                The observed result was: <strong>{{ scenario.actual || 'ALLOW' }}</strong>
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="evidenceData?.detail" class="px-0">
+              <template #prepend>
+                <v-icon icon="mdi-magnify" size="small" color="warning" class="mr-2" />
+              </template>
+              <v-list-item-title class="text-body-2">
+                {{ evidenceData.detail }}
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item class="px-0">
+              <template #prepend>
+                <v-icon
+                  :icon="scenario.passed ? 'mdi-shield-check' : 'mdi-shield-alert'"
+                  size="small"
+                  :color="scenario.passed ? 'success' : 'error'"
+                  class="mr-2"
+                />
+              </template>
+              <v-list-item-title class="text-body-2">
+                This scenario is classified as:
+                <strong :class="scenario.passed ? 'text-success' : 'text-error'">
+                  {{ scenario.passed ? 'passed' : 'full breach' }}
+                </strong>
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item class="px-0">
+              <template #prepend>
+                <v-icon icon="mdi-gauge" size="small" class="mr-2" />
+              </template>
+              <v-list-item-title class="text-body-2">
+                Detector confidence: <strong>{{ evidenceData?.confidence ?? 'N/A' }}</strong>
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
         </v-card>
       </template>
 
@@ -345,6 +477,66 @@ const whyItPasses = computed(() => {
   return (detail as Record<string, unknown>).why_it_passes as string | null ?? null
 })
 
+// ---------------------------------------------------------------------------
+// Evidence & Evaluation — structured proof layer
+// ---------------------------------------------------------------------------
+
+const evidenceData = computed(() => {
+  const detail = scenario.value?.detector_detail as Record<string, unknown> | null
+  if (!detail?.evidence) return null
+  return detail.evidence as { matched_value: string | null; detail: string; confidence: number }
+})
+
+const evaluationData = computed(() => {
+  const detail = scenario.value?.detector_detail as Record<string, unknown> | null
+  if (!detail?.evaluation) return null
+  return detail.evaluation as { expected: string; observed: string; passed: boolean }
+})
+
+// Split comma-separated matched values into individual artifacts
+const matchedArtifacts = computed<string[]>(() => {
+  const val = evidenceData.value?.matched_value
+  if (!val) return []
+  return val.split(', ').map((s: string) => s.trim()).filter(Boolean)
+})
+
+// Full HTTP response body (prefer raw_response_body, fall back to actual)
+const displayResponse = computed(() => {
+  return scenario.value?.raw_response_body || scenario.value?.actual || null
+})
+
+// Highlight matched evidence in the response body
+const highlightedResponse = computed(() => {
+  const body = displayResponse.value
+  const matched = evidenceData.value?.matched_value
+  if (!body || !matched || scenario.value?.passed) return null
+
+  // Escape HTML in body first
+  let safe = body
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  // Highlight each artifact
+  const artifacts = matched.split(', ').map((s: string) => s.trim()).filter(Boolean)
+  for (const artifact of artifacts) {
+    if (!artifact || artifact.length < 2) continue
+    const escaped = artifact
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    try {
+      const regex = new RegExp(`(${escaped})`, 'gi')
+      safe = safe.replace(regex, '<mark class="evidence-highlight">$1</mark>')
+    } catch {
+      // Skip invalid regex
+    }
+  }
+
+  return safe
+})
+
 // Use enriched API field first, then fall back to detector_detail
 const fixHints = computed<FixHint[]>(() => {
   const enrichedHints = scenario.value?.fix_hints
@@ -556,5 +748,27 @@ onMounted(() => {
   top: 8px;
   right: 8px;
   z-index: 1;
+}
+
+.evidence-table td {
+  padding: 6px 12px !important;
+  border: none !important;
+}
+
+.evidence-match {
+  background: rgba(var(--v-theme-error), 0.15);
+  color: rgb(var(--v-theme-error));
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+}
+
+:deep(.evidence-highlight) {
+  background: rgba(var(--v-theme-error), 0.25);
+  color: rgb(var(--v-theme-error));
+  padding: 1px 2px;
+  border-radius: 2px;
+  font-weight: 600;
 }
 </style>
