@@ -115,9 +115,111 @@ export function scoreLabel(score: number): ScoreLabel {
  * Uses muted colors and honest framing — avoids implying the endpoint is "secure".
  */
 export function baselineScoreLabel(score: number): ScoreLabel {
-  if (score >= 90) return { label: 'Model Resisted Most', color: '#546e7a', vuetifyColor: 'blue-grey' }
-  if (score >= 80) return { label: 'Model Resisted Many', color: '#546e7a', vuetifyColor: 'blue-grey' }
-  if (score >= 60) return { label: 'Mixed Results', color: '#fb8c00', vuetifyColor: 'warning' }
-  if (score >= 40) return { label: 'Weak Baseline', color: '#ff9800', vuetifyColor: 'orange' }
-  return { label: 'Highly Exposed', color: '#d32f2f', vuetifyColor: 'error' }
+  if (score >= 90) return { label: 'No Active Protection', color: '#546e7a', vuetifyColor: 'blue-grey' }
+  if (score >= 80) return { label: 'No Active Protection', color: '#546e7a', vuetifyColor: 'blue-grey' }
+  if (score >= 60) return { label: 'No Active Protection', color: '#fb8c00', vuetifyColor: 'warning' }
+  if (score >= 40) return { label: 'No Active Protection', color: '#ff9800', vuetifyColor: 'orange' }
+  return { label: 'Highly Exposed — No Protection', color: '#d32f2f', vuetifyColor: 'error' }
+}
+
+// ---------------------------------------------------------------------------
+// Live scenario result labels (used in run progress view)
+// ---------------------------------------------------------------------------
+
+export type LiveResultStatus = 'blocked' | 'got_through' | 'model_resisted' | 'no_breach' | 'skipped' | 'inconclusive' | 'running'
+
+export interface LiveResultMeta {
+  label: string
+  baselineLabel: string
+  icon: string
+  mdiIcon: string
+  color: string
+  vuetifyColor: string
+}
+
+const LIVE_RESULT_META: Record<LiveResultStatus, LiveResultMeta> = {
+  blocked: {
+    label: 'Blocked by AI Protector',
+    baselineLabel: 'No breach detected',
+    icon: '🛡️',
+    mdiIcon: 'mdi-shield-check',
+    color: '#2e7d32',
+    vuetifyColor: 'success',
+  },
+  got_through: {
+    label: 'Attack got through',
+    baselineLabel: 'Attack got through',
+    icon: '🔴',
+    mdiIcon: 'mdi-alert-circle',
+    color: '#d32f2f',
+    vuetifyColor: 'error',
+  },
+  model_resisted: {
+    label: 'Model resisted the attack',
+    baselineLabel: 'Model resisted the attack',
+    icon: '🔵',
+    mdiIcon: 'mdi-shield-half-full',
+    color: '#1565c0',
+    vuetifyColor: 'blue-darken-3',
+  },
+  no_breach: {
+    label: 'No breach detected',
+    baselineLabel: 'No breach detected',
+    icon: '🔹',
+    mdiIcon: 'mdi-check-circle-outline',
+    color: '#546e7a',
+    vuetifyColor: 'blue-grey',
+  },
+  skipped: {
+    label: 'Skipped',
+    baselineLabel: 'Skipped',
+    icon: '⚠️',
+    mdiIcon: 'mdi-skip-next-circle-outline',
+    color: '#9e9e9e',
+    vuetifyColor: 'grey',
+  },
+  inconclusive: {
+    label: 'Inconclusive',
+    baselineLabel: 'Inconclusive',
+    icon: '❔',
+    mdiIcon: 'mdi-help-circle-outline',
+    color: '#9e9e9e',
+    vuetifyColor: 'grey',
+  },
+  running: {
+    label: 'Running...',
+    baselineLabel: 'Running...',
+    icon: '⏳',
+    mdiIcon: 'mdi-loading',
+    color: '#1976d2',
+    vuetifyColor: 'primary',
+  },
+}
+
+/**
+ * Get human-readable label and visual meta for a live scenario result.
+ * When isBaseline is true, uses neutral language that does not imply active protection.
+ */
+export function liveResultMeta(status: LiveResultStatus): LiveResultMeta {
+  return LIVE_RESULT_META[status] ?? LIVE_RESULT_META.inconclusive
+}
+
+/**
+ * Map raw SSE passed/actual values to a LiveResultStatus.
+ */
+export function classifyScenarioResult(passed: boolean, _actual?: string | null): LiveResultStatus {
+  if (passed) return 'blocked'
+  return 'got_through'
+}
+
+/**
+ * Human-readable skip reason.
+ */
+export function humanSkipReason(reason: string): string {
+  const MAP: Record<string, string> = {
+    timeout: 'Timed out',
+    safe_mode: 'Skipped (safe mode)',
+    not_applicable: 'Not applicable',
+  }
+  return MAP[reason] ?? reason
 }
