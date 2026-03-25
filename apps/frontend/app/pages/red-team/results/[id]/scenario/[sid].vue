@@ -28,13 +28,13 @@
         <!-- Status + metadata chips -->
         <div class="d-flex flex-wrap ga-2 mb-3">
           <v-chip
-            :color="scenario.passed ? 'success' : 'error'"
+            :color="scenario.passed ? (isBaseline ? 'blue-grey' : 'success') : 'error'"
             variant="tonal"
             size="small"
-            :prepend-icon="scenario.passed ? 'mdi-shield-check' : 'mdi-shield-alert'"
+            :prepend-icon="scenario.passed ? (isBaseline ? 'mdi-robot-happy' : 'mdi-shield-check') : 'mdi-shield-alert'"
             data-testid="status-chip"
           >
-            {{ scenario.passed ? 'Blocked' : 'Got through' }}
+            {{ scenario.passed ? (isBaseline ? 'Model resisted' : 'Blocked') : 'Got through' }}
           </v-chip>
           <v-chip
             :color="sevMeta.color"
@@ -60,7 +60,7 @@
 
       <!-- Result verdict -->
       <v-alert
-        :type="scenario.passed ? 'success' : 'error'"
+        :type="scenario.passed ? (isBaseline ? 'info' : 'success') : 'error'"
         variant="tonal"
         class="mb-6"
         data-testid="result-summary"
@@ -73,6 +73,24 @@
             &nbsp;→&nbsp; Got: <strong>{{ scenario.actual ?? 'ALLOW' }}</strong>
           </span>
         </template>
+      </v-alert>
+
+      <!-- Baseline protection status -->
+      <v-alert
+        v-if="isBaseline && scenario.passed"
+        color="blue-grey"
+        variant="tonal"
+        density="compact"
+        class="mb-6"
+        data-testid="baseline-scenario-note"
+      >
+        <template #prepend>
+          <v-icon icon="mdi-shield-off-outline" size="small" />
+        </template>
+        <span class="text-body-2">
+          <strong>No active protection.</strong>
+          The model resisted this attack on its own. Model behavior may change with updates or new attack techniques.
+        </span>
       </v-alert>
 
       <!-- Attack Prompt -->
@@ -94,9 +112,9 @@
         </v-card-text>
       </v-card>
 
-      <!-- Agent Response (if available) -->
+      <!-- Observed Response (if available) -->
       <template v-if="scenario.actual">
-        <h2 class="text-h6 mb-2">Agent Response</h2>
+        <h2 class="text-h6 mb-2">Observed Response</h2>
         <v-card variant="flat" class="mb-6">
           <v-card-text class="pa-0 position-relative">
             <v-btn
@@ -110,7 +128,7 @@
               <v-icon icon="mdi-content-copy" />
               <v-tooltip activator="parent" location="top">Copy response</v-tooltip>
             </v-btn>
-            <pre class="prompt-block pa-4" data-testid="agent-response">{{ scenario.actual }}</pre>
+            <pre class="prompt-block pa-4" data-testid="observed-response">{{ scenario.actual }}</pre>
           </v-card-text>
         </v-card>
       </template>
@@ -123,56 +141,102 @@
         </v-card>
       </template>
 
-      <!-- How to fix it — use enriched API field first -->
-      <template v-if="fixHints.length > 0">
-        <h2 class="text-h6 mb-2">How to Fix It</h2>
-        <v-card variant="flat" class="mb-6 pa-4" data-testid="fix-section">
+      <!-- Impact — bridges technical fail to business risk -->
+      <template v-if="!scenario.passed">
+        <h2 class="text-h6 mb-2">Potential Impact</h2>
+        <v-card variant="flat" class="mb-6 pa-4" data-testid="impact-section">
           <v-list density="compact" class="bg-transparent">
             <v-list-item
-              v-for="(hint, i) in fixHints"
+              v-for="(impact, i) in impactItems"
               :key="i"
               class="px-0"
             >
               <template #prepend>
-                <v-icon icon="mdi-wrench" size="small" color="primary" class="mr-2" />
+                <v-icon icon="mdi-alert-outline" size="small" color="warning" class="mr-2" />
               </template>
-              <v-list-item-title class="text-body-2">
-                <nuxt-link
-                  v-if="hint.link"
-                  :to="hint.link"
-                  class="text-decoration-none text-primary"
-                >
-                  {{ hint.text }}
-                </nuxt-link>
-                <span v-else>{{ hint.text }}</span>
-              </v-list-item-title>
+              <v-list-item-title class="text-body-2">{{ impact }}</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
       </template>
 
-      <!-- Prev / Next failure navigation -->
-      <div v-if="failures.length > 1" class="d-flex justify-space-between mb-6">
-        <v-btn
-          v-if="prevFailure"
-          variant="text"
-          size="small"
-          prepend-icon="mdi-chevron-left"
-          :to="`/red-team/results/${runId}/scenario/${prevFailure.scenario_id}`"
-        >
-          {{ prevFailure.title || prevFailure.scenario_id }}
-        </v-btn>
-        <span v-else />
-        <v-btn
-          v-if="nextFailure"
-          variant="text"
-          size="small"
-          append-icon="mdi-chevron-right"
-          :to="`/red-team/results/${runId}/scenario/${nextFailure.scenario_id}`"
-        >
-          {{ nextFailure.title || nextFailure.scenario_id }}
-        </v-btn>
-      </div>
+      <!-- How to fix it — actionable buttons -->
+      <template v-if="fixActions.length > 0">
+        <h2 class="text-h6 mb-2">How to Fix It</h2>
+        <v-card variant="flat" class="mb-6 pa-4" data-testid="fix-section">
+          <div class="d-flex flex-column ga-3">
+            <div
+              v-for="(action, i) in fixActions"
+              :key="i"
+              class="d-flex align-center ga-3"
+            >
+              <div class="d-flex flex-column">
+                <div class="d-flex align-center ga-3">
+                  <v-btn
+                    v-if="action.link"
+                    :to="action.link"
+                    :color="i === 0 ? 'primary' : 'default'"
+                    :variant="i === 0 ? 'flat' : 'outlined'"
+                    size="small"
+                    :prepend-icon="action.icon"
+                    data-testid="fix-action-btn"
+                  >
+                    {{ action.label }}
+                  </v-btn>
+                  <v-btn
+                    v-else-if="action.action === 'rerun'"
+                    variant="text"
+                    size="small"
+                    :prepend-icon="action.icon"
+                    @click="onRerunScenario"
+                  >
+                    {{ action.label }}
+                  </v-btn>
+                </div>
+                <span v-if="action.description" class="text-caption text-medium-emphasis mt-1">
+                  {{ action.description }}
+                </span>
+                <span v-if="action.expectedEffect" class="text-caption text-primary mt-0">
+                  {{ action.expectedEffect }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </v-card>
+      </template>
+
+      <!-- Prev / Next failure navigation — prominent -->
+      <v-card v-if="failures.length > 1" variant="flat" class="mb-6 pa-3" data-testid="failure-nav">
+        <div class="d-flex justify-space-between align-center">
+          <v-btn
+            v-if="prevFailure"
+            variant="tonal"
+            size="small"
+            prepend-icon="mdi-chevron-left"
+            :to="`/red-team/results/${runId}/scenario/${prevFailure.scenario_id}`"
+          >
+            <span class="d-none d-sm-inline">{{ prevFailure.title || prevFailure.scenario_id }}</span>
+            <span class="d-inline d-sm-none">Previous</span>
+          </v-btn>
+          <span v-else />
+
+          <span class="text-caption text-medium-emphasis">
+            {{ currentFailureIndex + 1 }} of {{ failures.length }} failures
+          </span>
+
+          <v-btn
+            v-if="nextFailure"
+            variant="tonal"
+            size="small"
+            append-icon="mdi-chevron-right"
+            :to="`/red-team/results/${runId}/scenario/${nextFailure.scenario_id}`"
+          >
+            <span class="d-none d-sm-inline">{{ nextFailure.title || nextFailure.scenario_id }}</span>
+            <span class="d-inline d-sm-none">Next</span>
+          </v-btn>
+          <span v-else />
+        </div>
+      </v-card>
 
       <!-- Technical Details — collapsed -->
       <v-expansion-panels v-model="technicalPanel" class="mb-6" variant="accordion">
@@ -212,8 +276,8 @@
 
 <script setup lang="ts">
 import { benchmarkService } from '~/services/benchmarkService'
-import type { ScenarioResult } from '~/services/benchmarkService'
-import { humanCategory, severityMeta } from '~/utils/redTeamLabels'
+import type { ScenarioResult, RunDetail } from '~/services/benchmarkService'
+import { humanCategory, severityMeta, classifyRun } from '~/utils/redTeamLabels'
 
 definePageMeta({ layout: 'default' })
 
@@ -230,6 +294,15 @@ interface FixHint {
   link: string | null
 }
 
+interface FixAction {
+  label: string
+  icon: string
+  link?: string | null
+  action?: string
+  description?: string
+  expectedEffect?: string
+}
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -237,7 +310,14 @@ interface FixHint {
 const loading = ref(true)
 const scenario = ref<ScenarioResult | null>(null)
 const allScenarios = ref<ScenarioResult[]>([])
+const runDetail = ref<RunDetail | null>(null)
 const technicalPanel = ref<string | undefined>(undefined)
+
+// ---------------------------------------------------------------------------
+// Computed — run classification
+// ---------------------------------------------------------------------------
+
+const isBaseline = computed(() => runDetail.value ? classifyRun(runDetail.value).type === 'baseline' : false)
 
 // ---------------------------------------------------------------------------
 // Computed
@@ -248,9 +328,13 @@ const sevMeta = computed(() => severityMeta(scenario.value?.severity ?? 'medium'
 const verdictText = computed(() => {
   if (!scenario.value) return ''
   if (scenario.value.passed) {
-    return 'BLOCKED — your agent stopped this attack'
+    return isBaseline.value
+      ? 'HANDLED SAFELY — the model resisted this attack on its own'
+      : 'BLOCKED — your endpoint stopped this attack'
   }
-  return 'GOT THROUGH — this attack bypassed your agent'
+  return isBaseline.value
+    ? 'GOT THROUGH — the model did not resist this attack'
+    : 'GOT THROUGH — this attack bypassed your endpoint'
 })
 
 // Use enriched API field first, then fall back to detector_detail
@@ -289,6 +373,112 @@ const currentFailureIndex = computed(() => {
   return failures.value.findIndex((s) => s.scenario_id === scenarioId.value)
 })
 
+// ---------------------------------------------------------------------------
+// Impact items — category-based business risk
+// ---------------------------------------------------------------------------
+
+const CATEGORY_IMPACTS: Record<string, string[]> = {
+  prompt_injection_jailbreak: [
+    'Could expose hidden system instructions',
+    'May enable jailbreak chaining with more complex attacks',
+    'Likely to affect production chat flows',
+  ],
+  data_leakage_pii: [
+    'Could expose sensitive data or PII in responses',
+    'May violate data protection regulations',
+    'Risk of information disclosure to unauthorized users',
+  ],
+  tool_abuse: [
+    'Could trigger unauthorized tool calls or actions',
+    'May enable privilege escalation through tool chaining',
+    'Risk of unintended side effects in connected systems',
+  ],
+  access_control: [
+    'Bypasses role or permission boundaries',
+    'May allow access to restricted functionality',
+    'Could enable unauthorized data access',
+  ],
+}
+
+const impactItems = computed(() => {
+  const cat = scenario.value?.category ?? ''
+  const impacts = CATEGORY_IMPACTS[cat] ?? ['Likely to recur in production environments']
+  // Pick 2-3 most relevant based on severity
+  const sev = scenario.value?.severity ?? 'medium'
+  if (sev === 'critical' || sev === 'high') return impacts
+  return impacts.slice(0, 2)
+})
+
+// ---------------------------------------------------------------------------
+// Fix actions — actionable buttons instead of text hints
+// ---------------------------------------------------------------------------
+
+const fixActions = computed<FixAction[]>(() => {
+  const actions: FixAction[] = []
+  const hints = fixHints.value
+  const cat = scenario.value?.category ?? ''
+
+  // Convert text hints to action buttons
+  for (const hint of hints) {
+    if (hint.link) {
+      const label = hintToActionLabel(hint.text)
+      actions.push({
+        label,
+        icon: hint.link === '/policies' ? 'mdi-shield-lock' : 'mdi-plus-circle',
+        link: hint.link,
+        description: hint.text !== label ? hint.text : undefined,
+        expectedEffect: hint.link === '/policies'
+          ? 'Expected to block this category of attack'
+          : 'Adds a targeted rule for this scenario',
+      })
+    }
+  }
+
+  // Default actions if no hints provided
+  if (actions.length === 0) {
+    if (cat.includes('injection') || cat.includes('jailbreak')) {
+      actions.push({
+        label: 'View Strict Profile Setup',
+        icon: 'mdi-shield-lock',
+        link: '/policies',
+        description: 'Stricter thresholds for prompt injection detection',
+        expectedEffect: 'Expected to block this category of attack',
+      })
+    }
+    actions.push({
+      label: 'View Rule Setup',
+      icon: 'mdi-plus-circle',
+      link: '/security-rules',
+      description: 'Add a custom security rule to block this attack type',
+      expectedEffect: 'Adds a targeted rule for this scenario',
+    })
+  }
+
+  // Always add re-run at the end
+  actions.push({
+    label: 'Re-run This Scenario',
+    icon: 'mdi-replay',
+    action: 'rerun',
+    description: 'Verify improvement after setup changes',
+  })
+
+  return actions
+})
+
+function hintToActionLabel(text: string): string {
+  const lower = text.toLowerCase()
+  if (lower.includes('strict')) return 'View Strict Profile Setup'
+  if (lower.includes('rule') || lower.includes('block pattern') || lower.includes('keyword')) return 'View Rule Setup'
+  if (lower.includes('policy')) return 'Review Policies'
+  // Capitalize first word as a verb
+  return text.length > 40 ? text.slice(0, 37) + '...' : text
+}
+
+function onRerunScenario() {
+  // Navigate back to results — re-run triggered from results page
+  navigateTo(`/red-team/results/${runId.value}`)
+}
+
 const prevFailure = computed(() => {
   const idx = currentFailureIndex.value
   return idx > 0 ? failures.value[idx - 1] : null
@@ -323,12 +513,14 @@ async function copyText(text: string | null | undefined) {
 async function fetchData() {
   loading.value = true
   try {
-    const [scenarioData, scenariosAll] = await Promise.all([
+    const [scenarioData, scenariosAll, runData] = await Promise.all([
       benchmarkService.getScenario(runId.value, scenarioId.value),
       benchmarkService.getScenarios(runId.value),
+      benchmarkService.getRun(runId.value),
     ])
     scenario.value = scenarioData
     allScenarios.value = scenariosAll
+    runDetail.value = runData
   } catch {
     scenario.value = null
   } finally {

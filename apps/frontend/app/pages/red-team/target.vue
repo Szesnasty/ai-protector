@@ -1,18 +1,17 @@
 <template>
   <v-container fluid class="target-page">
-    <div class="mb-4">
-      <v-btn
-        icon="mdi-arrow-left"
-        variant="text"
-        size="small"
-        class="mr-2"
-        :to="'/red-team'"
-      />
-      <h1 class="text-h5 d-inline">Configure Target</h1>
-    </div>
-
     <v-row justify="center">
       <v-col cols="12" md="8" lg="6">
+        <div class="d-flex align-center mb-4">
+          <v-btn
+            icon="mdi-arrow-left"
+            variant="text"
+            size="small"
+            class="mr-2"
+            :to="'/red-team'"
+          />
+          <h1 class="text-h5">Test Your Endpoint</h1>
+        </div>
         <RedTeamTargetForm
           :target-type="targetType"
           @continue="onContinue"
@@ -23,6 +22,8 @@
 </template>
 
 <script setup lang="ts">
+import type { TargetFormConfig } from '~/components/RedTeamTargetForm.vue'
+
 definePageMeta({ layout: 'default' })
 
 const route = useRoute()
@@ -34,7 +35,7 @@ const targetType = computed(() => {
   return 'local_agent' as const
 })
 
-function onContinue(config: Record<string, unknown>) {
+function onContinue(config: TargetFormConfig) {
   // Pass target config to configure page via query/state
   router.push({
     path: '/red-team/configure',

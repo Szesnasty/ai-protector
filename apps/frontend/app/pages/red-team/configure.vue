@@ -29,24 +29,25 @@
     </div>
 
     <!-- Pack selection -->
-    <h2 class="text-h6 mb-3">Select Attack Pack</h2>
+    <h2 class="text-h6 mb-3">Choose a Benchmark Pack</h2>
 
+    <!-- Primary pack — always visible -->
     <v-radio-group v-model="selectedPack" class="mb-2">
       <v-card
-        v-for="pack in activePacks"
+        v-for="pack in primaryPacks"
         :key="pack.name"
         variant="flat"
         class="mb-3 pack-card"
         :class="{ 'pack-card--selected': selectedPack === pack.name }"
         @click="selectedPack = pack.name"
       >
-        <v-card-text class="d-flex align-start pa-4">
+        <v-card-text class="d-flex align-start justify-center pa-4">
           <v-radio
             :value="pack.name"
             class="mr-3 mt-0"
             hide-details
           />
-          <div class="flex-grow-1">
+          <div style="max-width: 600px;">
             <div class="d-flex align-center flex-wrap mb-1">
               <span class="text-subtitle-2 font-weight-bold">{{ pack.displayName }}</span>
               <v-chip
@@ -57,14 +58,6 @@
                 class="ml-2"
               >
                 ★ Recommended
-              </v-chip>
-              <v-chip
-                v-if="pack.badge"
-                size="x-small"
-                variant="outlined"
-                class="ml-2"
-              >
-                {{ pack.badge }}
               </v-chip>
               <v-chip
                 v-if="pack.scenarioCount > 0"
@@ -81,13 +74,46 @@
       </v-card>
     </v-radio-group>
 
-    <!-- Coming soon packs — collapsed -->
-    <v-expansion-panels v-if="futurePacks.length > 0" class="mb-4" variant="accordion">
+    <!-- More packs — collapsed (agent threats + future packs) -->
+    <v-expansion-panels v-if="secondaryPacks.length > 0 || futurePacks.length > 0" class="mb-4" variant="accordion">
       <v-expansion-panel>
         <v-expansion-panel-title class="text-body-2 text-medium-emphasis">
-          Show {{ futurePacks.length }} upcoming pack{{ futurePacks.length !== 1 ? 's' : '' }}
+          More packs
         </v-expansion-panel-title>
         <v-expansion-panel-text>
+          <!-- Active secondary packs (e.g. agent threats) -->
+          <v-card
+            v-for="pack in secondaryPacks"
+            :key="pack.name"
+            variant="flat"
+            class="mb-3 pack-card"
+            :class="{ 'pack-card--selected': selectedPack === pack.name }"
+            @click="selectedPack = pack.name"
+          >
+            <v-card-text class="d-flex align-start justify-center pa-4">
+              <v-radio
+                :value="pack.name"
+                class="mr-3 mt-0"
+                hide-details
+              />
+              <div style="max-width: 600px;">
+                <div class="d-flex align-center flex-wrap mb-1">
+                  <span class="text-subtitle-2 font-weight-bold">{{ pack.displayName }}</span>
+                  <v-chip
+                    v-if="pack.scenarioCount > 0"
+                    size="x-small"
+                    variant="outlined"
+                    class="ml-2"
+                  >
+                    {{ pack.scenarioCount }} scenarios · ~{{ pack.estimatedTime }}
+                  </v-chip>
+                </div>
+                <p class="text-body-2 text-medium-emphasis mb-0">{{ pack.description }}</p>
+              </div>
+            </v-card-text>
+          </v-card>
+
+          <!-- Future packs -->
           <v-card
             v-for="pack in futurePacks"
             :key="pack.name"
@@ -95,7 +121,7 @@
             class="mb-2 pack-card"
             disabled
           >
-            <v-card-text class="d-flex align-start pa-4" style="opacity: 0.5;">
+            <v-card-text class="d-flex align-start justify-center pa-4" style="opacity: 0.5;">
               <v-radio disabled class="mr-3 mt-0" hide-details />
               <div>
                 <div class="d-flex align-center mb-1">
@@ -112,29 +138,34 @@
 
     <!-- Run summary -->
     <v-alert
-      v-if="selectedPackInfo"
+      v-if="selectedPackInfo && selectedPackInfo.scenarioCount > 0"
       type="info"
       variant="tonal"
       density="compact"
       class="mb-4"
     >
-      {{ selectedPackInfo.scenarioCount }} scenarios selected · ~{{ selectedPackInfo.estimatedTime }} estimated
+      {{ selectedPackInfo.scenarioCount }} scenarios · ~{{ selectedPackInfo.estimatedTime }} estimated
     </v-alert>
 
     <!-- Hero Run button -->
-    <v-btn
-      color="primary"
-      size="large"
-      block
-      class="mb-6 run-button"
-      prepend-icon="mdi-play"
-      :loading="isCreating"
-      :disabled="!selectedPack || isCreating"
-      data-testid="run-benchmark-btn"
-      @click="onRunBenchmark"
-    >
-      {{ runButtonLabel }}
-    </v-btn>
+    <div class="d-flex flex-column align-center mb-2">
+      <v-btn
+        color="primary"
+        size="large"
+        class="run-button px-12"
+        prepend-icon="mdi-play"
+        :loading="isCreating"
+        :disabled="!selectedPack || isCreating"
+        data-testid="run-benchmark-btn"
+        @click="onRunBenchmark"
+      >
+        Start Benchmark
+      </v-btn>
+    </div>
+    <p v-if="selectedPackInfo" class="text-caption text-medium-emphasis text-center mt-1 mb-6" style="line-height: 1.2;">
+      {{ selectedPackInfo.displayName }}
+      <template v-if="selectedPackInfo.recommended"> · Recommended</template>
+    </p>
 
     <!-- Error alert -->
     <v-alert
@@ -192,9 +223,9 @@ const router = useRouter()
 const target = computed(() => (route.query.target as string) || 'demo')
 
 const targetLabel = computed(() => {
-  if (target.value === 'demo') return 'Demo Agent'
-  if (target.value === 'local_agent') return 'Local Agent'
-  if (target.value === 'hosted_endpoint') return 'Hosted Endpoint'
+  if (target.value === 'demo') return 'Demo'
+  if (target.value === 'local_agent') return 'Local Endpoint'
+  if (target.value === 'hosted_endpoint') return 'Your Endpoint'
   return target.value
 })
 
@@ -229,6 +260,8 @@ interface DisplayPack {
   disabled: boolean
   badge?: string
   estimatedTime: string
+  /** If true, pack is shown under collapsed "More packs" section */
+  secondary?: boolean
 }
 
 function estimateTime(count: number): string {
@@ -243,14 +276,16 @@ const displayPacks = computed<DisplayPack[]>(() => {
       description: 'Tests prompt injection, jailbreak, data leaks, and harmful outputs. Works on any chatbot or API endpoint.',
       recommended: true,
       disabled: false,
-      badge: 'Best for chatbots / APIs',
+      badge: 'Best starting point for most AI endpoints',
     },
     agent_threats: {
-      description: 'Tests tool abuse, role bypass, and privilege escalation. Best for tool-calling agents.',
+      description: 'Tests tool abuse, role bypass, and privilege escalation. Best for tool-calling endpoints.',
       recommended: false,
       disabled: false,
-      badge: 'Best for tool-calling agents',
-    },
+      badge: 'Advanced',
+      /** secondary = true → hidden under "More packs" */
+      secondary: true,
+    } as Record<string, unknown>,
     full_suite: {
       description: 'Comprehensive security test covering all attack categories.',
       recommended: false,
@@ -278,22 +313,20 @@ const displayPacks = computed<DisplayPack[]>(() => {
       disabled: meta.disabled,
       badge: meta.badge,
       estimatedTime: estimateTime(count),
+      secondary: (meta as Record<string, unknown>).secondary === true,
     })
   }
 
   return result
 })
 
-const activePacks = computed(() => displayPacks.value.filter((p) => !p.disabled))
+/** Primary packs shown at top level */
+const primaryPacks = computed(() => displayPacks.value.filter((p) => !p.disabled && !p.secondary))
+/** Secondary packs hidden under "More packs" */
+const secondaryPacks = computed(() => displayPacks.value.filter((p) => !p.disabled && p.secondary))
 const futurePacks = computed(() => displayPacks.value.filter((p) => p.disabled))
 
 const selectedPackInfo = computed(() => displayPacks.value.find((p) => p.name === selectedPack.value))
-
-const runButtonLabel = computed(() => {
-  const pack = selectedPackInfo.value
-  if (!pack) return 'Run Benchmark'
-  return `Run ${pack.displayName} Benchmark`
-})
 
 // Run benchmark
 const { createRun, isCreating } = useBenchmarkCreateRun()
