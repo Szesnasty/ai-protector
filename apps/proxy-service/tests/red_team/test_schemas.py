@@ -131,9 +131,15 @@ class TestEnums:
     def test_category_enum_covers_mvp_buckets(self):
         expected = {
             "prompt_injection_jailbreak",
+            "prompt_injection",
             "data_leakage_pii",
+            "pii_disclosure",
+            "secrets_detection",
+            "improper_output",
+            "obfuscation",
             "tool_abuse",
             "access_control",
+            "safe_allow",
         }
         assert {c.value for c in Category} == expected
 
@@ -142,7 +148,7 @@ class TestEnums:
         assert DetectorType.LLM_JUDGE.value == "llm_judge"
 
     def test_severity_enum(self):
-        assert set(Severity) == {Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW}
+        assert set(Severity) == {Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.INFO}
 
     def test_expected_action_enum(self):
         assert set(ExpectedAction) == {ExpectedAction.BLOCK, ExpectedAction.ALLOW, ExpectedAction.MODIFY}
