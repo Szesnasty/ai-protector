@@ -130,6 +130,7 @@ class BenchmarkScenarioResult(UUIDMixin, TimestampMixin, Base):
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # ── Raw response retention ───────────────────────────────────────
+    raw_response_body: Mapped[str | None] = mapped_column(Text, nullable=True)
     pipeline_result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     raw_response_retained_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),

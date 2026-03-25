@@ -45,6 +45,7 @@ class ScenarioResult:
     confidence: float = 1.0
     skip_reason: str | None = None  # Only set when outcome == SKIPPED
     latency_ms: float = 0.0  # Round-trip time
+    raw_response_body: str | None = None  # Full HTTP response body for audit
 
 
 @dataclass(frozen=True, slots=True)

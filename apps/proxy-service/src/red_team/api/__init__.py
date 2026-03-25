@@ -92,6 +92,7 @@ class ScenarioResultResponse(BaseModel):
     detector_type: str | None = None
     detector_detail: dict | None = None
     latency_ms: int | None = None
+    raw_response_body: str | None = None
     pipeline_result: dict | None = None
     created_at: datetime | None = None
 

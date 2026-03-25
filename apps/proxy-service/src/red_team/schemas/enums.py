@@ -38,6 +38,23 @@ class AgentType(str, Enum):
     TOOL_CALLING = "tool_calling"
 
 
+class ScenarioStage(str, Enum):
+    """Where in the pipeline the security boundary is evaluated.
+
+    ingress_block  — sensitive payload must never reach the model.
+    ingress_redact — payload may reach the model but PII/secrets must be masked.
+    output_leak    — forbidden artifact must not appear in output (default).
+    tool_abuse     — forbidden tool/action/arg must not be invoked.
+    safe_allow     — benign request must NOT be blocked (false-positive test).
+    """
+
+    INGRESS_BLOCK = "ingress_block"
+    INGRESS_REDACT = "ingress_redact"
+    OUTPUT_LEAK = "output_leak"
+    TOOL_ABUSE = "tool_abuse"
+    SAFE_ALLOW = "safe_allow"
+
+
 class Category(str, Enum):
     """Canonical category buckets for benchmark scenarios.
 
@@ -54,4 +71,6 @@ class Category(str, Enum):
     OBFUSCATION = "obfuscation"
     TOOL_ABUSE = "tool_abuse"
     ACCESS_CONTROL = "access_control"
+    BUSINESS_LOGIC_OVERRIDE = "business_logic_override"
+    UNSAFE_OUTPUT_ARTIFACT = "unsafe_output_artifact"
     SAFE_ALLOW = "safe_allow"

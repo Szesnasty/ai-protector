@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from src.red_team.schemas.enums import AgentType, Category, DetectorType, ExpectedAction, Severity
+from src.red_team.schemas.enums import AgentType, Category, DetectorType, ExpectedAction, ScenarioStage, Severity
 
 # ---------------------------------------------------------------------------
 # Per-detector config schemas
@@ -36,10 +36,24 @@ class RefusalPatternConfig(BaseModel):
     match_means: Literal["fail", "pass"] = "pass"
 
 
+class JsonAssertionFieldCheck(BaseModel):
+    """A single field-level assertion for multi-assertion json_assertion mode."""
+
+    field: str
+    operator: Literal["equals", "contains", "not_equals"] = "equals"
+    value: str
+
+
 class JsonAssertionConfig(BaseModel):
     type: Literal[DetectorType.JSON_ASSERTION] = DetectorType.JSON_ASSERTION
-    path: str  # JSONPath expression, e.g. "$.decision"
-    expected: str
+    # Legacy single-field mode
+    path: str | None = None  # JSONPath expression, e.g. "$.decision"
+    expected: str | None = None
+    # Multi-assertion mode
+    mode: Literal["fail_if_any", "pass_if_all"] | None = None
+    assertions: list[JsonAssertionFieldCheck] | None = None
+    # Text fallback: if structured output unavailable, check body_text for this
+    fallback_forbidden_string: str | None = None
 
 
 class ToolCallDetectConfig(BaseModel):
@@ -52,6 +66,7 @@ class ExactMatchConfig(BaseModel):
     type: Literal[DetectorType.EXACT_MATCH] = DetectorType.EXACT_MATCH
     forbidden_strings: list[str] = Field(min_length=1)
     match_means: Literal["fail", "pass"] = "fail"
+    case_sensitive: bool = True
 
 
 class HeuristicConfig(BaseModel):
@@ -99,6 +114,10 @@ class Scenario(BaseModel):
     prompt: str = Field(min_length=1)
     expected: ExpectedAction
 
+    # Stage classification — determines evaluation strategy
+    stage: ScenarioStage = ScenarioStage.OUTPUT_LEAK
+    sensitive_entities: list[str] = Field(default_factory=list)  # e.g. ["pesel", "email"]
+
     detector: DetectorConfig
 
     fix_hints: list[str] = Field(default_factory=list)
@@ -121,6 +140,7 @@ class Pack(BaseModel):
     description: str = ""
     scenario_count: int = Field(ge=0)
     applicable_to: list[AgentType] = Field(min_length=1)
+    system_prompt: str | None = None  # Injected into target as system message; supports ${CANARY}
     scenarios: list[Scenario]
 
     @model_validator(mode="after")
