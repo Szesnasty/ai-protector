@@ -23,13 +23,12 @@ export interface RunClassification {
 /**
  * Classify a run based on available signals.
  *
+ * - protection_detected → protected (proxy detected from response headers/blocks)
  * - registered_agent → protected (routed through AI Protector proxy)
  * - Everything else → baseline (direct to model, no proxy protection)
- *
- * This heuristic will improve as the backend adds explicit run_type fields.
  */
 export function classifyRun(run: RunDetail): RunClassification {
-  if (run.target_type === 'registered_agent') {
+  if (run.protection_detected || run.target_type === 'registered_agent') {
     return {
       type: 'protected',
       label: 'Protected',

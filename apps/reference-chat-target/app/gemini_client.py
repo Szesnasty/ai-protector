@@ -205,6 +205,23 @@ class ProtectedHTTPBackend(ModelBackend):
             ]
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             resp = await client.post(self._url, headers=self._headers(), json=payload)
+
+            # Handle proxy-level block (403 from AI Protector)
+            if resp.status_code == 403:
+                try:
+                    err_data = resp.json()
+                    reason = err_data.get("error", {}).get(
+                        "message", "Request blocked by policy"
+                    )
+                except Exception:
+                    reason = "Request blocked by policy"
+                return BackendResult(
+                    text=f"I cannot process this request — it was blocked by our security policy. {reason}",
+                    tool_calls=[],
+                    model=self._model,
+                    blocked=True,
+                )
+
             resp.raise_for_status()
             data = resp.json()
 
@@ -244,6 +261,19 @@ class ProtectedHTTPBackend(ModelBackend):
             async with client.stream(
                 "POST", self._url, headers=self._headers(), json=payload
             ) as resp:
+                # Handle proxy-level block (403 from AI Protector)
+                if resp.status_code == 403:
+                    body = await resp.aread()
+                    try:
+                        err_data = json.loads(body)
+                        reason = err_data.get("error", {}).get(
+                            "message", "Request blocked by policy"
+                        )
+                    except Exception:
+                        reason = "Request blocked by policy"
+                    yield f"I cannot process this request — it was blocked by our security policy. {reason}"
+                    return
+
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():
                     if not line.startswith("data: "):

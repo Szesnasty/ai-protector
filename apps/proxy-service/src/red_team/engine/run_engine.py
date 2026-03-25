@@ -77,6 +77,9 @@ class BenchmarkRun:
     score: ScoreResult | None = None
     error: str | None = None
     canary_token: str | None = None  # Generated per-run, replaces ${CANARY} in system_prompt & detectors
+    # Protection detection — set during execution based on response signals
+    protection_detected: bool = False
+    proxy_blocked_count: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -379,6 +382,8 @@ class RunEngine:
                     "score_simple": run.score.score_simple,
                     "score_weighted": run.score.score_weighted,
                     "completed_at": run.completed_at.isoformat(),
+                    "protection_detected": run.protection_detected,
+                    "proxy_blocked_count": run.proxy_blocked_count,
                 },
             )
 
@@ -470,6 +475,12 @@ class RunEngine:
 
         # Normalize
         normalized = self._normalizer.normalize(http_response, effective_config)
+
+        # ── Track proxy signals ─────────────────────────────────────
+        if _has_proxy_fingerprint(http_response) or _is_proxy_block_response(http_response):
+            run.protection_detected = True
+        if _is_proxy_block_response(http_response):
+            run.proxy_blocked_count += 1
 
         # Substitute canary in detector config before evaluation
         eval_scenario = scenario
@@ -656,6 +667,9 @@ def _substitute_canary_in_scenario(scenario: Scenario, canary: str) -> Scenario:
 _PROXY_BLOCK_STATUSES = frozenset({403, 451})
 _PROXY_BLOCK_MARKERS = ("blocked", "denied", "rejected", "not allowed", "policy violation")
 
+# Headers that indicate the response passed through a protection proxy
+_PROXY_FINGERPRINT_HEADERS = ("x-decision", "x-risk-score")
+
 
 def _is_proxy_block_response(http_response: HttpResponse) -> bool:
     """Heuristic: did the proxy intercept and block this request?
@@ -669,3 +683,12 @@ def _is_proxy_block_response(http_response: HttpResponse) -> bool:
     # Check body for common block indicators (short responses only)
     body_lower = http_response.body[:500].lower()
     return any(marker in body_lower for marker in _PROXY_BLOCK_MARKERS)
+
+
+def _has_proxy_fingerprint(http_response: HttpResponse) -> bool:
+    """Check if the response carries headers from a protection proxy.
+
+    This is a universal signal — works regardless of whether the proxy
+    blocked or allowed the request.
+    """
+    return any(h in http_response.headers for h in _PROXY_FINGERPRINT_HEADERS)

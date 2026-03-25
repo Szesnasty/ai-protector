@@ -125,3 +125,4 @@ class BackendResult(BaseModel):
     text: str = ""
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     model: str = ""
+    blocked: bool = False

@@ -110,7 +110,7 @@
 
     <div class="wizard-cta mx-4 mt-6">
       <p class="text-caption text-medium-emphasis text-center mb-0" style="opacity: 0.7">
-        Protect AI endpoints with testable guardrails
+        Ship AI agents with guardrails — not prayers.
       </p>
     </div>
   </div>
