@@ -280,6 +280,26 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 error_code="auth_invalid",
             )
 
+        if resp.status_code >= 500:
+            return TestConnectionResponse(
+                status="error",
+                status_code=resp.status_code,
+                latency_ms=latency_ms,
+                content_type=content_type,
+                error=f"Server error (HTTP {resp.status_code})",
+                error_code="server_error",
+            )
+
+        if resp.status_code >= 400 and resp.status_code != 422:
+            return TestConnectionResponse(
+                status="error",
+                status_code=resp.status_code,
+                latency_ms=latency_ms,
+                content_type=content_type,
+                error=f"Client error (HTTP {resp.status_code})",
+                error_code="client_error",
+            )
+
         return TestConnectionResponse(
             status="ok",
             status_code=resp.status_code,

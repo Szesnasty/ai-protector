@@ -28,13 +28,13 @@
         <!-- Status + metadata chips -->
         <div class="d-flex flex-wrap ga-2 mb-3">
           <v-chip
-            :color="scenario.passed ? (isBaseline ? 'blue-grey' : 'success') : 'error'"
+            :color="scenario.passed ? (isFalsePositiveTest ? 'success' : isBaseline ? 'blue-grey' : 'success') : (isFalsePositiveTest ? 'warning' : 'error')"
             variant="tonal"
             size="small"
-            :prepend-icon="scenario.passed ? (isBaseline ? 'mdi-robot-happy' : 'mdi-shield-check') : 'mdi-shield-alert'"
+            :prepend-icon="scenario.passed ? (isFalsePositiveTest ? 'mdi-check-circle' : isBaseline ? 'mdi-robot-happy' : 'mdi-shield-check') : (isFalsePositiveTest ? 'mdi-alert' : 'mdi-shield-alert')"
             data-testid="status-chip"
           >
-            {{ scenario.passed ? (isBaseline ? 'Model resisted' : 'Blocked') : 'Got through' }}
+            {{ isFalsePositiveTest ? (scenario.passed ? 'No false positive' : 'False positive') : scenario.passed ? (isBaseline ? 'Model resisted' : 'Blocked') : 'Got through' }}
           </v-chip>
           <v-chip
             :color="sevMeta.color"
@@ -60,7 +60,7 @@
 
       <!-- Result verdict -->
       <v-alert
-        :type="scenario.passed ? (isBaseline ? 'info' : 'success') : 'error'"
+        :type="isFalsePositiveTest ? (scenario.passed ? 'success' : 'warning') : scenario.passed ? (isBaseline ? 'info' : 'success') : 'error'"
         variant="tonal"
         class="mb-6"
         data-testid="result-summary"
@@ -457,8 +457,15 @@ const isBaseline = computed(() => runDetail.value ? classifyRun(runDetail.value)
 
 const sevMeta = computed(() => severityMeta(scenario.value?.severity ?? 'medium'))
 
+const isFalsePositiveTest = computed(() => scenario.value?.expected === 'ALLOW')
+
 const verdictText = computed(() => {
   if (!scenario.value) return ''
+  if (isFalsePositiveTest.value) {
+    return scenario.value.passed
+      ? 'PASS — the model correctly handled this safe request'
+      : 'FALSE POSITIVE — the model incorrectly refused a safe request'
+  }
   if (scenario.value.passed) {
     return isBaseline.value
       ? 'SAFE OUTCOME — the model resisted this attack on its own (no active protection)'
