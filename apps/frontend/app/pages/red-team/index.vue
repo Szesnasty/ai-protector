@@ -115,9 +115,7 @@
               </v-chip>
             </v-list-item-title>
             <v-list-item-subtitle class="text-caption">
-              {{ run.target_type === 'demo' ? 'Demo' : run.target_type }}
-              &nbsp;·&nbsp; {{ timeAgo(run.completed_at ?? run.created_at) }}
-              &nbsp;·&nbsp; {{ run.passed }}/{{ run.executed }} {{ classifyRun(run).type === 'baseline' ? 'handled' : 'blocked' }}
+              {{ runSubtitle(run) }}
               <v-chip
                 :color="classifyRun(run).color"
                 variant="outlined"
@@ -293,6 +291,34 @@ function timeAgo(ts: string | null | undefined): string {
   if (diff < 3600) return `${Math.round(diff / 60)} min ago`
   if (diff < 86400) return `${Math.round(diff / 3600)}h ago`
   return `${Math.round(diff / 86400)}d ago`
+}
+
+function truncateLabel(label: string, max = 40): string {
+  if (!label) return ''
+  try {
+    const u = new URL(label)
+    // Show host + truncated path
+    const short = u.host + (u.pathname.length > 1 ? u.pathname : '')
+    return short.length > max ? short.slice(0, max) + '…' : short
+  } catch {
+    return label.length > max ? label.slice(0, max) + '…' : label
+  }
+}
+
+function runSubtitle(run: RunDetail): string {
+  const parts: string[] = []
+  // Target type or label
+  if (run.target_type === 'demo') {
+    parts.push('Demo')
+  } else if (run.target_label) {
+    parts.push(truncateLabel(run.target_label))
+  } else {
+    parts.push(run.target_type)
+  }
+  parts.push(timeAgo(run.completed_at ?? run.created_at))
+  const stat = classifyRun(run).type === 'baseline' ? 'handled' : 'blocked'
+  parts.push(`${run.passed}/${run.executed} ${stat}`)
+  return parts.join(' · ')
 }
 
 onMounted(() => {

@@ -57,6 +57,7 @@ class RunSummary(BaseModel):
     skipped: int = 0
     protection_detected: bool = False
     proxy_blocked_count: int = 0
+    target_label: str = ""
     created_at: datetime | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
