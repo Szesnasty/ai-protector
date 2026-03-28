@@ -57,6 +57,27 @@
 
     <!-- ═══════════════════ Banners ═══════════════════ -->
     <v-alert
+      v-if="consecutiveConnectionErrors >= 3 && !isTerminal"
+      type="error"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+      data-testid="target-failure-banner"
+    >
+      Target stopped responding after {{ completed }} of {{ total }} scenarios. Partial results saved.
+      <template #append>
+        <v-btn
+          variant="text"
+          size="small"
+          color="error"
+          :to="`/red-team/results/${runId}`"
+        >
+          View Partial Results
+        </v-btn>
+      </template>
+    </v-alert>
+
+    <v-alert
       v-if="disconnected"
       type="warning"
       variant="tonal"
@@ -77,7 +98,7 @@
 
       <v-progress-linear
         :model-value="progressPercent"
-        color="primary"
+        :color="consecutiveConnectionErrors >= 3 ? 'error' : 'primary'"
         height="10"
         rounded
         class="mb-3"
@@ -288,6 +309,7 @@ const showCancelDialog = ref(false)
 const isCancelling = ref(false)
 const isTerminal = ref(false)
 const latencies = ref<number[]>([])
+const consecutiveConnectionErrors = ref(0)
 const currentScenario = ref<string | null>(null)
 const feedListEl = ref<HTMLElement | null>(null)
 
@@ -347,6 +369,7 @@ const etaFormatted = computed(() => {
 const runStateMessage = computed(() => {
   if (isTerminal.value) return `${humanPack(runDetail.value?.pack ?? '')} benchmark complete — all scenarios evaluated.`
   if (completed.value === 0) return `Running ${humanPack(runDetail.value?.pack ?? '')} benchmark — evaluating scenarios in real time.`
+  if (consecutiveConnectionErrors.value >= 3) return 'Target may be unreachable. Waiting for recovery…'
   return `Running ${humanPack(runDetail.value?.pack ?? '')} benchmark — analyzing each response.`
 })
 
@@ -411,16 +434,18 @@ function connectSSE() {
     completed.value++
     latencies.value.push(data.latency_ms)
     currentScenario.value = null
+    consecutiveConnectionErrors.value = 0
 
-    if (data.passed) {
+    const passed = data.outcome === 'passed'
+    if (passed) {
       blockedCount.value++
     } else {
       gotThroughCount.value++
     }
 
-    const status = classifyScenarioResult(data.passed, data.actual)
+    const status = classifyScenarioResult(passed, data.actual)
     const meta = liveResultMeta(status)
-    const label = buildResultLabel(data.passed, data.actual)
+    const label = buildResultLabel(passed, data.actual)
 
     const idx = feedItems.value.findIndex((f) => f.scenarioId === data.scenario_id && f.status === 'running')
     const item: FeedItem = {
@@ -430,7 +455,7 @@ function connectSSE() {
       resultMeta: meta,
       resultLabel: label,
       latencyMs: data.latency_ms,
-      status: data.passed ? 'passed' : 'failed',
+      status: passed ? 'passed' : 'failed',
     }
     if (idx >= 0) {
       feedItems.value.splice(idx, 1, item)
@@ -445,6 +470,11 @@ function connectSSE() {
     completed.value++
     currentScenario.value = null
     skippedCount.value++
+    if (data.reason === 'connection_error') {
+      consecutiveConnectionErrors.value++
+    } else {
+      consecutiveConnectionErrors.value = 0
+    }
 
     const meta = liveResultMeta('skipped')
     const skipLabel = humanSkipReason(data.reason ?? 'unknown')

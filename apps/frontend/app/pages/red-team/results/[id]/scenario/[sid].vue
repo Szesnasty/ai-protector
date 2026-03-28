@@ -6,6 +6,39 @@
     </div>
 
     <template v-else-if="scenario">
+      <!-- Prev / Next failure navigation — at the top for easy browsing -->
+      <v-card v-if="failures.length > 1" variant="flat" class="mb-4 pa-3" data-testid="failure-nav">
+        <div class="d-flex justify-space-between align-center">
+          <v-btn
+            v-if="prevFailure"
+            variant="tonal"
+            size="small"
+            prepend-icon="mdi-chevron-left"
+            :to="`/red-team/results/${runId}/scenario/${prevFailure.scenario_id}`"
+          >
+            <span class="d-none d-sm-inline">{{ prevFailure.title || prevFailure.scenario_id }}</span>
+            <span class="d-inline d-sm-none">Previous</span>
+          </v-btn>
+          <span v-else />
+
+          <span class="text-caption text-medium-emphasis">
+            {{ currentFailureIndex + 1 }} of {{ failures.length }} failures
+          </span>
+
+          <v-btn
+            v-if="nextFailure"
+            variant="tonal"
+            size="small"
+            append-icon="mdi-chevron-right"
+            :to="`/red-team/results/${runId}/scenario/${nextFailure.scenario_id}`"
+          >
+            <span class="d-none d-sm-inline">{{ nextFailure.title || nextFailure.scenario_id }}</span>
+            <span class="d-inline d-sm-none">Next</span>
+          </v-btn>
+          <span v-else />
+        </div>
+      </v-card>
+
       <!-- Header -->
       <div class="mb-6">
         <v-btn
@@ -336,39 +369,6 @@
           </div>
         </v-card>
       </template>
-
-      <!-- Prev / Next failure navigation — prominent -->
-      <v-card v-if="failures.length > 1" variant="flat" class="mb-6 pa-3" data-testid="failure-nav">
-        <div class="d-flex justify-space-between align-center">
-          <v-btn
-            v-if="prevFailure"
-            variant="tonal"
-            size="small"
-            prepend-icon="mdi-chevron-left"
-            :to="`/red-team/results/${runId}/scenario/${prevFailure.scenario_id}`"
-          >
-            <span class="d-none d-sm-inline">{{ prevFailure.title || prevFailure.scenario_id }}</span>
-            <span class="d-inline d-sm-none">Previous</span>
-          </v-btn>
-          <span v-else />
-
-          <span class="text-caption text-medium-emphasis">
-            {{ currentFailureIndex + 1 }} of {{ failures.length }} failures
-          </span>
-
-          <v-btn
-            v-if="nextFailure"
-            variant="tonal"
-            size="small"
-            append-icon="mdi-chevron-right"
-            :to="`/red-team/results/${runId}/scenario/${nextFailure.scenario_id}`"
-          >
-            <span class="d-none d-sm-inline">{{ nextFailure.title || nextFailure.scenario_id }}</span>
-            <span class="d-inline d-sm-none">Next</span>
-          </v-btn>
-          <span v-else />
-        </div>
-      </v-card>
 
       <!-- Technical Details — collapsed -->
       <v-expansion-panels v-model="technicalPanel" class="mb-6" variant="accordion">
