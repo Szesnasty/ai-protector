@@ -145,9 +145,24 @@ async def _execute(
     try:
         await engine.execute_run(in_memory_run)
     finally:
-        # Wipe decrypted secrets from memory immediately after use
+        # 1. Wipe decrypted secrets from memory immediately after use
         if "_decrypted_headers" in target_config:
             for k in target_config["_decrypted_headers"]:
                 target_config["_decrypted_headers"][k] = ""
             del target_config["_decrypted_headers"]
         target_config.pop("_decrypted_auth", None)
+
+        # 2. Delete auth_secret_ref from the DB record immediately — tokens are
+        #    single-use; the user must re-enter them for every new run.
+        #    The 24 h cleanup job is a safety-net only (e.g. crashes before this).
+        if auth_ref:
+            try:
+                fresh = await repo.get(run_id)
+                if fresh and fresh.target_config and "auth_secret_ref" in fresh.target_config:
+                    cfg = dict(fresh.target_config)
+                    del cfg["auth_secret_ref"]
+                    fresh.target_config = cfg
+                    await session.commit()
+                    logger.debug("auth_secret_ref deleted from run %s after execution", run_id)
+            except Exception:
+                logger.warning("Failed to delete auth_secret_ref for run %s", run_id)
