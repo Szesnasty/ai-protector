@@ -154,6 +154,7 @@ class TestConnectionResponse(BaseModel):
     content_type: str | None = None
     error: str | None = None
     error_code: str | None = None  # "connection_failed" | "auth_invalid" | "timeout" | "ssl_error"
+    resolved_url: str | None = None  # actual URL used (after localhost rewrite)
 
 
 class ErrorResponse(BaseModel):

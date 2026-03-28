@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 
 from src.red_team.engine.protocols import HttpResponse
+from src.red_team.net import rewrite_localhost_for_docker
 from src.red_team.progress.events import (
     RunCancelledEvent,
     RunCompleteEvent,
@@ -51,7 +52,9 @@ class RealHttpClient:
     """
 
     async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
-        endpoint_url = target_config.get("endpoint_url") or _DEMO_AGENT_URL
+        endpoint_url = rewrite_localhost_for_docker(
+            target_config.get("endpoint_url") or _DEMO_AGENT_URL
+        )
         auth_header: str | None = target_config.get("_decrypted_auth")
         timeout_s: int = target_config.get("timeout_s", 30)
 

@@ -12,6 +12,8 @@ import uuid
 from collections.abc import AsyncGenerator
 
 import httpx as _httpx
+
+from src.red_team.net import rewrite_localhost_for_docker
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -253,6 +255,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
 
     Auth header is used for this request only; it is NOT persisted.
     """
+    url = rewrite_localhost_for_docker(body.endpoint_url)
     headers: dict[str, str] = {"Content-Type": "application/json"}
     if body.auth_header:
         headers["Authorization"] = body.auth_header
@@ -261,14 +264,16 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
         start = time.monotonic()
         async with _httpx.AsyncClient() as client:
             resp = await client.post(
-                body.endpoint_url,
-                json={"message": "hello"},
+                url,
+                json={"messages": [{"role": "user", "content": "hello"}]},
                 headers=headers,
                 timeout=body.timeout_s,
             )
         latency_ms = int((time.monotonic() - start) * 1000)
 
         content_type = resp.headers.get("content-type", "")
+
+        rewritten = url != body.endpoint_url
 
         if resp.status_code == 401 or resp.status_code == 403:
             return TestConnectionResponse(
@@ -278,6 +283,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 content_type=content_type,
                 error=f"HTTP {resp.status_code}",
                 error_code="auth_invalid",
+                resolved_url=url if rewritten else None,
             )
 
         if resp.status_code >= 500:
@@ -288,6 +294,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 content_type=content_type,
                 error=f"Server error (HTTP {resp.status_code})",
                 error_code="server_error",
+                resolved_url=url if rewritten else None,
             )
 
         if resp.status_code >= 400 and resp.status_code != 422:
@@ -298,6 +305,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 content_type=content_type,
                 error=f"Client error (HTTP {resp.status_code})",
                 error_code="client_error",
+                resolved_url=url if rewritten else None,
             )
 
         return TestConnectionResponse(
@@ -305,11 +313,17 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
             status_code=resp.status_code,
             latency_ms=latency_ms,
             content_type=content_type,
+            resolved_url=url if rewritten else None,
         )
     except _httpx.TimeoutException:
         return TestConnectionResponse(status="error", error="Timeout", error_code="timeout")
     except _httpx.ConnectError:
-        return TestConnectionResponse(status="error", error="Connection refused", error_code="connection_failed")
+        return TestConnectionResponse(
+            status="error",
+            error="Connection refused",
+            error_code="connection_failed",
+            resolved_url=url if url != body.endpoint_url else None,
+        )
     except Exception as exc:
         error_msg = str(exc)
         if "ssl" in error_msg.lower() or "certificate" in error_msg.lower():
