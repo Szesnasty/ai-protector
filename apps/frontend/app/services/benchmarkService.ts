@@ -81,7 +81,7 @@ export interface CompareResult {
   warning: string | null
   run_a: RunDetail
   run_b: RunDetail
-  fixed: string[]
+  fixed_failures: string[]
   new_failures: string[]
 }
 

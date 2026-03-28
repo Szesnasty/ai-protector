@@ -14,6 +14,17 @@
           {{ headerTitle }}
         </h1>
         <v-chip
+          v-if="isDemo"
+          color="purple"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-robot"
+          class="ml-3"
+          label
+        >
+          Demo
+        </v-chip>
+        <v-chip
           v-if="runClassification"
           :color="runClassification.color"
           :prepend-icon="runClassification.icon"
@@ -342,6 +353,7 @@ const runClassification = computed<RunClassification | null>(() => {
 })
 
 const isBaseline = computed(() => runClassification.value?.type === 'baseline')
+const isDemo = computed(() => runDetail.value?.target_type === 'demo')
 
 const elapsedFormatted = computed(() => formatDuration(elapsedSeconds.value))
 

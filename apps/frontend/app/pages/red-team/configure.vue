@@ -11,6 +11,17 @@
           :to="'/red-team'"
         />
         <h1 class="text-h5">Configure Benchmark</h1>
+        <v-chip
+          v-if="target === 'demo'"
+          color="purple"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-robot"
+          class="ml-3"
+          label
+        >
+          Demo
+        </v-chip>
       </div>
       <div class="d-flex align-center mt-2">
         <span class="text-body-2 text-medium-emphasis mr-2">Target:</span>
@@ -41,13 +52,13 @@
         :class="{ 'pack-card--selected': selectedPack === pack.name }"
         @click="selectedPack = pack.name"
       >
-        <v-card-text class="d-flex align-start justify-center pa-4">
+        <v-card-text class="d-flex align-start pa-4">
           <v-radio
             :value="pack.name"
             class="mr-3 mt-0"
             hide-details
           />
-          <div style="max-width: 600px;">
+          <div>
             <div class="d-flex align-center flex-wrap mb-1">
               <span class="text-subtitle-2 font-weight-bold">{{ pack.displayName }}</span>
               <v-chip
@@ -90,13 +101,13 @@
             :class="{ 'pack-card--selected': selectedPack === pack.name }"
             @click="selectedPack = pack.name"
           >
-            <v-card-text class="d-flex align-start justify-center pa-4">
+            <v-card-text class="d-flex align-start pa-4">
               <v-radio
                 :value="pack.name"
                 class="mr-3 mt-0"
                 hide-details
               />
-              <div style="max-width: 600px;">
+              <div>
                 <div class="d-flex align-center flex-wrap mb-1">
                   <span class="text-subtitle-2 font-weight-bold">{{ pack.displayName }}</span>
                   <v-chip
@@ -121,7 +132,7 @@
             class="mb-2 pack-card"
             disabled
           >
-            <v-card-text class="d-flex align-start justify-center pa-4" style="opacity: 0.5;">
+            <v-card-text class="d-flex align-start pa-4" style="opacity: 0.5;">
               <v-radio disabled class="mr-3 mt-0" hide-details />
               <div>
                 <div class="d-flex align-center mb-1">

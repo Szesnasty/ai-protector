@@ -17,6 +17,17 @@
             :to="'/red-team'"
           />
           <h1 class="text-h5">{{ isBaseline ? 'Baseline Results' : 'Benchmark Results' }}</h1>
+          <v-chip
+            v-if="isDemoTarget"
+            color="purple"
+            variant="tonal"
+            size="small"
+            prepend-icon="mdi-robot"
+            class="ml-3"
+            label
+          >
+            Demo
+          </v-chip>
         </div>
         <p class="text-body-2 text-medium-emphasis" data-testid="header-info">
           <v-icon :icon="targetIcon" size="x-small" class="mr-1" />
@@ -65,7 +76,7 @@
           </v-chip>
         </div>
         <p class="text-caption text-medium-emphasis mt-2">
-          {{ comparison.fixed.length }} fixed
+          {{ comparison.fixed_failures.length }} fixed
           &nbsp;·&nbsp; {{ comparison.new_failures.length }} new failure{{ comparison.new_failures.length !== 1 ? 's' : '' }}
         </p>
       </v-card>
@@ -937,33 +948,72 @@ async function onRerunProtected() {
 
 function onExport() {
   if (!run.value) return
+  const r = run.value
   const report = {
+    exported_at: new Date().toISOString(),
     run: {
-      id: run.value.id,
-      target_type: run.value.target_type,
-      pack: run.value.pack,
-      status: run.value.status,
-      score_simple: run.value.score_simple,
-      score_weighted: run.value.score_weighted,
-      total_applicable: run.value.total_applicable,
-      passed: run.value.passed,
-      failed: run.value.failed,
-      skipped: run.value.skipped,
-      policy: run.value.policy,
-      created_at: run.value.created_at,
-      completed_at: run.value.completed_at,
+      id: r.id,
+      target_type: r.target_type,
+      pack: r.pack,
+      status: r.status,
+      score_simple: r.score_simple,
+      score_weighted: r.score_weighted,
+      total_in_pack: r.total_in_pack,
+      total_applicable: r.total_applicable,
+      executed: r.executed,
+      passed: r.passed,
+      failed: r.failed,
+      skipped: r.skipped,
+      skipped_reasons: r.skipped_reasons,
+      protection_detected: r.protection_detected,
+      proxy_blocked_count: r.proxy_blocked_count,
+      policy: r.policy,
+      source_run_id: r.source_run_id,
+      created_at: r.created_at,
+      completed_at: r.completed_at,
+    },
+    summary: {
+      duration_s: r.created_at && r.completed_at
+        ? Math.round((new Date(r.completed_at).getTime() - new Date(r.created_at).getTime()) / 1000)
+        : null,
+      avg_latency_ms: (() => {
+        const lats = scenarios.value.filter((s) => s.latency_ms != null).map((s) => s.latency_ms!)
+        return lats.length ? Math.round(lats.reduce((a, b) => a + b, 0) / lats.length) : null
+      })(),
+      critical_failures: scenarios.value.filter((s) => !s.passed && s.severity === 'critical').length,
+      high_failures: scenarios.value.filter((s) => !s.passed && s.severity === 'high').length,
     },
     categories: categoryBars.value,
-    scenarios: scenarios.value.map((s) => ({
-      scenario_id: s.scenario_id,
-      title: s.title,
-      category: s.category,
-      severity: s.severity,
-      passed: s.passed,
-      expected: s.expected,
-      actual: s.actual,
-      latency_ms: s.latency_ms,
-    })),
+    scenarios: scenarios.value.map((s) => {
+      const entry: Record<string, unknown> = {
+        scenario_id: s.scenario_id,
+        title: s.title,
+        category: s.category,
+        severity: s.severity,
+        passed: s.passed,
+        expected: s.expected,
+        actual: s.actual,
+        latency_ms: s.latency_ms,
+        prompt: s.prompt,
+      }
+      if (s.description) entry.description = s.description
+      if (s.detector_type) entry.detector_type = s.detector_type
+      if (s.skipped) {
+        entry.skipped = true
+        if (s.skipped_reason) entry.skipped_reason = s.skipped_reason
+      }
+      if (!s.passed && s.fix_hints?.length) entry.fix_hints = s.fix_hints
+      if (!s.passed && s.why_it_passes) entry.why_it_passes = s.why_it_passes
+      if (s.detector_detail && Object.keys(s.detector_detail).length) entry.detector_detail = s.detector_detail
+      return entry
+    }),
+    ...(comparison.value ? { comparison: {
+      source_run_id: comparison.value.run_a_id,
+      score_delta: comparison.value.score_delta,
+      weighted_delta: comparison.value.weighted_delta,
+      fixed_failures: comparison.value.fixed_failures,
+      new_failures: comparison.value.new_failures,
+    } } : {}),
   }
   const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
