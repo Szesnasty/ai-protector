@@ -630,53 +630,128 @@
       </div>
 
       <!-- ================================================================ -->
-      <!-- How to Protect — dialog                                           -->
+      <!-- Protect this endpoint — dialog                                    -->
       <!-- ================================================================ -->
-      <v-dialog v-model="showSetupDialog" max-width="580">
+      <v-dialog v-model="showSetupDialog" max-width="600" scrollable>
         <v-card>
-          <v-card-title class="d-flex align-center">
-            <v-icon icon="mdi-shield-half-full" size="small" class="mr-2" />
-            How to protect this endpoint
+          <!-- Title + value reminder -->
+          <v-card-title class="d-flex align-center pt-5 pb-1 px-6">
+            <v-icon icon="mdi-shield-half-full" color="primary" size="small" class="mr-2" />
+            Protect this endpoint
           </v-card-title>
-          <v-card-text>
-            <h3 class="text-subtitle-2 font-weight-bold mb-2">1. Update your backend</h3>
-            <p class="text-body-2 text-medium-emphasis mb-3">
-              Route requests through AI Protector instead of sending them directly to your model.
-            </p>
+          <p class="text-body-2 text-medium-emphasis px-6 pb-3 mb-0">
+            Re-run the same attacks to confirm which ones are now blocked — with before vs after proof.
+          </p>
 
-            <h3 class="text-subtitle-2 font-weight-bold mb-2">2. Use this protected URL</h3>
-            <v-card variant="tonal" class="pa-3 mb-1">
-              <code class="text-body-2" style="word-break: break-all;" data-testid="protected-url">
-                {{ protectedBaseUrl }}
-              </code>
-            </v-card>
-            <p class="text-caption text-medium-emphasis mb-3">
-              Replace your current model endpoint URL with this in your backend config or SDK init.
-            </p>
+          <v-divider />
 
+          <v-card-text class="pa-6">
+
+            <!-- Step 1: Copy protected URL -->
+            <div class="setup-step mb-5">
+              <div class="d-flex align-center mb-2">
+                <div class="step-number mr-3">1</div>
+                <span class="text-subtitle-2 font-weight-bold">Copy your protected URL</span>
+              </div>
+
+              <!-- Before / After URL diff -->
+              <v-card variant="outlined" class="url-diff-card pa-3 mb-2">
+                <!-- Before row -->
+                <div class="d-flex align-center mb-2">
+                  <span class="url-diff-label text-caption text-medium-emphasis mr-3">Before</span>
+                  <code class="text-caption text-medium-emphasis url-before" style="word-break: break-all;">
+                    {{ targetEndpointUrl || 'https://your-llm-api.com/v1/chat/completions' }}
+                  </code>
+                </div>
+                <v-divider class="mb-2" />
+                <!-- After row -->
+                <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+                  <div class="d-flex align-center">
+                    <span class="url-diff-label text-caption font-weight-bold text-success mr-3">After</span>
+                    <code class="text-caption" style="word-break: break-all;" data-testid="protected-url">
+                      <span class="url-proxy-highlight">{{ protectedHost }}</span><span class="text-medium-emphasis">/v1/chat/completions</span>
+                    </code>
+                  </div>
+                  <v-btn
+                    :color="urlCopied ? 'success' : 'primary'"
+                    :variant="urlCopied ? 'tonal' : 'flat'"
+                    size="x-small"
+                    :prepend-icon="urlCopied ? 'mdi-check' : 'mdi-content-copy'"
+                    @click="copyProtectedUrl"
+                  >
+                    {{ urlCopied ? 'Copied' : 'Copy URL' }}
+                  </v-btn>
+                </div>
+              </v-card>
+              <p v-if="urlCopied" class="text-caption text-success mb-0">
+                Copied — paste this into your backend config.
+              </p>
+            </div>
+
+            <!-- Step 2: Replace endpoint -->
+            <div class="setup-step mb-5">
+              <div class="d-flex align-center mb-1">
+                <div class="step-number mr-3">2</div>
+                <span class="text-subtitle-2 font-weight-bold">Replace the endpoint in your backend</span>
+              </div>
+              <p class="text-body-2 text-medium-emphasis mb-0 pl-9">
+                Replace the URL your service sends LLM requests to. This is usually in your config file, <code>.env</code>, or SDK init — not the frontend.
+              </p>
+            </div>
+
+            <!-- Step 3: Restart backend — warning styled -->
+            <div class="setup-step setup-step--warning mb-5">
+              <div class="d-flex align-center mb-1">
+                <div class="step-number step-number--warning mr-3">3</div>
+                <span class="text-subtitle-2 font-weight-bold">Restart or reload your backend</span>
+                <v-chip color="warning" variant="tonal" size="x-small" class="ml-2">Important</v-chip>
+              </div>
+              <p class="text-body-2 text-medium-emphasis mb-0 pl-9">
+                Restart your backend after changing the endpoint. If you skip this, the old endpoint may still be active and the scan will look unprotected.
+              </p>
+            </div>
+
+            <!-- Step 4: Re-run -->
+            <div class="setup-step mb-5">
+              <div class="d-flex align-center mb-1">
+                <div class="step-number mr-3">4</div>
+                <span class="text-subtitle-2 font-weight-bold">Re-run the same scan</span>
+              </div>
+              <p class="text-body-2 text-medium-emphasis mb-0 pl-9">
+                Once the backend is live on the new endpoint, re-run the exact same attack pack to compare results.
+              </p>
+            </div>
+
+            <!-- Info box -->
             <v-alert type="info" variant="tonal" density="compact" class="mb-3">
               <div class="text-caption">
-                <strong>Typical setup: 5–15 minutes</strong><br />
-                Requires a backend endpoint change. No frontend changes needed.
+                <strong>Typical setup: 5–15 minutes</strong>
+                &nbsp;·&nbsp; Backend change only &nbsp;·&nbsp; No frontend changes needed
               </div>
             </v-alert>
 
-            <h3 class="text-subtitle-2 font-weight-bold mb-2">3. Re-run this scan</h3>
-            <p class="text-body-2 text-medium-emphasis mb-0">
-              After routing traffic through AI Protector, re-run to get a before-vs-after comparison.
+            <!-- Troubleshooting note -->
+            <p class="text-caption text-medium-emphasis mb-0">
+              <v-icon icon="mdi-information-outline" size="12" class="mr-1" />
+              If the next scan still shows no protection, your backend may not have restarted with the new endpoint yet.
             </p>
+
           </v-card-text>
-          <v-card-actions>
+
+          <v-divider />
+
+          <v-card-actions class="pa-4">
+            <a class="text-caption text-medium-emphasis" style="cursor: pointer;" @click="showSetupDialog = false">Close</a>
             <v-spacer />
-            <v-btn variant="text" @click="showSetupDialog = false">Close</v-btn>
             <v-btn
               color="primary"
               variant="flat"
               prepend-icon="mdi-replay"
               :loading="isRerunning"
+              data-testid="setup-dialog-rerun-btn"
               @click="showSetupDialog = false; onRerun()"
             >
-              Re-run scan
+              I've updated the backend — re-run scan
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -714,6 +789,8 @@ const policyApplied = ref(false)
 const _rerunPolicy = ref('Strict')
 const isRerunning = ref(false)
 const showAllFailures = ref(false)
+const urlCopied = ref(false)
+let _urlCopiedTimer: ReturnType<typeof setTimeout> | null = null
 
 // ---------------------------------------------------------------------------
 // Computed — target label
@@ -925,6 +1002,26 @@ const protectedBaseUrl = computed(() => {
   return `${base}/v1/chat/completions`
 })
 
+const protectedHost = computed(() => {
+  try {
+    const u = new URL(protectedBaseUrl.value)
+    return u.host
+  } catch {
+    return protectedBaseUrl.value
+  }
+})
+
+async function copyProtectedUrl() {
+  try {
+    await navigator.clipboard.writeText(protectedBaseUrl.value)
+  } catch {
+    // Fallback: select the text
+  }
+  urlCopied.value = true
+  if (_urlCopiedTimer) clearTimeout(_urlCopiedTimer)
+  _urlCopiedTimer = setTimeout(() => { urlCopied.value = false }, 2500)
+}
+
 async function onRerun() {
   if (!run.value) return
   // If the run had auth headers (now deleted), redirect to the form to re-enter them
@@ -1099,6 +1196,10 @@ onMounted(() => {
   line-height: 1;
 }
 
+// ── Setup dialog styles ──────────────────────────────────────────────────
+
+// (in <style> block below)
+
 .sticky-cta {
   position: sticky;
   bottom: 16px;
@@ -1127,5 +1228,59 @@ onMounted(() => {
 
 .cta-pulse {
   animation: cta-glow-pulse 2s ease-in-out infinite;
+}
+
+// ── Setup dialog ────────────────────────────────────────────────────────
+
+.setup-step {
+  position: relative;
+}
+
+.setup-step--warning {
+  border-left: 3px solid rgb(var(--v-theme-warning));
+  padding-left: 12px;
+  margin-left: -12px;
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(var(--v-theme-primary), 0.15);
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-number--warning {
+  background: rgba(var(--v-theme-warning), 0.15);
+  color: rgb(var(--v-theme-warning));
+}
+
+.url-diff-card {
+  border-color: rgba(var(--v-theme-outline), 0.3);
+}
+
+.url-diff-label {
+  min-width: 44px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.url-before {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.url-proxy-highlight {
+  background: rgba(var(--v-theme-primary), 0.15);
+  color: rgb(var(--v-theme-primary));
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-weight: 600;
 }
 </style>
