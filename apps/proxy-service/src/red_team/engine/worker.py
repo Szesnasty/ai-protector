@@ -154,6 +154,7 @@ async def _execute(
 
         # 2. Delete auth_secret_ref from the DB record immediately — tokens are
         #    single-use; the user must re-enter them for every new run.
+        #    Set _had_auth=True so the UI knows to prompt for re-entry on re-run.
         #    The 24 h cleanup job is a safety-net only (e.g. crashes before this).
         if auth_ref:
             try:
@@ -161,6 +162,7 @@ async def _execute(
                 if fresh and fresh.target_config and "auth_secret_ref" in fresh.target_config:
                     cfg = dict(fresh.target_config)
                     del cfg["auth_secret_ref"]
+                    cfg["_had_auth"] = True  # UI uses this to redirect to re-enter headers
                     fresh.target_config = cfg
                     await session.commit()
                     logger.debug("auth_secret_ref deleted from run %s after execution", run_id)

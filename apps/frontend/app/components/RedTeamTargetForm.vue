@@ -291,6 +291,7 @@ import { api } from '~/services/api'
 
 interface Props {
   targetType: 'local_agent' | 'hosted_endpoint'
+  initialEndpointUrl?: string
 }
 
 const props = defineProps<Props>()
@@ -324,7 +325,7 @@ const isLocalhostUrl = computed(() => {
 // Form state
 const formRef = ref()
 const formValid = ref(false)
-const endpointUrl = ref('')
+const endpointUrl = ref(props.initialEndpointUrl ?? '')
 const targetName = ref('')
 const customHeaders = ref<Array<{ name: string; value: string; visible: boolean }>>([{ name: 'Authorization', value: '', visible: false }])
 const agentType = ref('chatbot_api')
