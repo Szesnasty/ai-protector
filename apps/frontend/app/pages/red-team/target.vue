@@ -36,11 +36,12 @@ const targetType = computed(() => {
 })
 
 function onContinue(config: TargetFormConfig) {
-  // Store auth in sessionStorage (never in URL)
-  if (config.auth_header) {
-    sessionStorage.setItem('redteam_auth_header', config.auth_header)
+  // Store headers in sessionStorage (never in URL)
+  const hdrs = config.custom_headers
+  if (hdrs && Object.keys(hdrs).length > 0) {
+    sessionStorage.setItem('redteam_custom_headers', JSON.stringify(hdrs))
   } else {
-    sessionStorage.removeItem('redteam_auth_header')
+    sessionStorage.removeItem('redteam_custom_headers')
   }
 
   router.push({

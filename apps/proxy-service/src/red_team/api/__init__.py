@@ -141,7 +141,8 @@ class TestConnectionRequest(BaseModel):
     """POST /v1/benchmark/test-connection body."""
 
     endpoint_url: str
-    auth_header: str | None = None
+    auth_header: str | None = None  # deprecated — kept for backward compat
+    custom_headers: dict[str, str] | None = None
     timeout_s: int = Field(default=10, ge=1, le=120)
 
 

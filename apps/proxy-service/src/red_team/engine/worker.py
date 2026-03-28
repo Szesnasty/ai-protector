@@ -76,10 +76,21 @@ async def _execute(
     auth_ref = target_config.get("auth_secret_ref")
     if auth_ref:
         try:
+            import json as _json
+
             from src.red_team.secrets.store import EncryptedColumnSecretStore
 
             store = EncryptedColumnSecretStore()
-            target_config["_decrypted_auth"] = await store.retrieve(auth_ref)
+            raw = await store.retrieve(auth_ref)
+            # New format: JSON dict of headers. Old format: plain string (Authorization value).
+            try:
+                parsed = _json.loads(raw)
+                if isinstance(parsed, dict):
+                    target_config["_decrypted_headers"] = parsed
+                else:
+                    target_config["_decrypted_headers"] = {"Authorization": raw}
+            except (_json.JSONDecodeError, TypeError):
+                target_config["_decrypted_headers"] = {"Authorization": raw}
         except Exception:
             logger.warning("Failed to decrypt auth for run %s — proceeding without auth", run_id)
 
