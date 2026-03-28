@@ -4,7 +4,7 @@
     <div class="mb-2 text-center text-md-start">
       <h1 class="text-h4 font-weight-bold mb-2">Find agent vulnerabilities. Then prove the fix.</h1>
       <p class="text-body-1 text-medium-emphasis" style="max-width: 640px;">
-        Run a baseline scan to see what gets through, enable AI Protector, and re-run to prove the difference.
+        Run a baseline scan to see what gets through, enable AI Protector, and re-run the same attacks to verify protection.
       </p>
     </div>
 
@@ -23,14 +23,14 @@
             <v-icon icon="mdi-shield-check" size="22" />
           </v-avatar>
           <span class="text-subtitle-2 font-weight-bold">2. Protect</span>
-          <span class="text-caption text-medium-emphasis">Enable AI Protector in one click</span>
+          <span class="text-caption text-medium-emphasis">Enable protection for the same endpoint</span>
         </v-col>
         <v-col cols="12" sm="4" class="d-flex flex-column align-center">
           <v-avatar color="warning" variant="tonal" size="44" class="mb-2">
             <v-icon icon="mdi-compare" size="22" />
           </v-avatar>
           <span class="text-subtitle-2 font-weight-bold">3. Prove</span>
-          <span class="text-caption text-medium-emphasis">Re-run and see the before vs after</span>
+          <span class="text-caption text-medium-emphasis">Re-run the same attacks and compare the result</span>
         </v-col>
       </v-row>
     </v-card>
@@ -91,6 +91,10 @@
             >
               {{ card.ctaLabel }}
             </v-btn>
+
+            <p v-if="card.helperText" class="text-caption text-medium-emphasis mt-2 mb-0" style="max-width: 280px;">
+              {{ card.helperText }}
+            </p>
           </v-card-text>
         </v-card>
       </v-col>
@@ -101,101 +105,125 @@
       <v-expansion-panel>
         <v-expansion-panel-title class="text-body-2 text-medium-emphasis">
           <v-icon icon="mdi-help-circle-outline" size="small" class="mr-2" />
-          How does the security scan work?
+          How the scan works
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <div class="text-body-2 text-medium-emphasis">
-            <p class="mb-2">AI Protector sends a curated set of adversarial prompts — prompt injections, jailbreak attempts, data leakage probes, and tool abuse scenarios — to your endpoint or our demo target.</p>
-            <p class="mb-2">Each response is analysed by an AI judge that determines whether the attack succeeded or was safely handled. The result is a per-category breakdown of what got through.</p>
-            <p class="mb-0">When you enable protection and re-run, the same attacks go through the AI Protector firewall first. The before-vs-after comparison proves exactly which vulnerabilities were fixed.</p>
+            <p class="mb-2">AI Protector runs a curated set of attack scenarios against your endpoint or the demo target.</p>
+            <p class="mb-2">The first run shows what gets through without enforced protection.</p>
+            <p class="mb-0">Then you enable protection and re-run the same scenarios to verify what AI Protector blocks.</p>
           </div>
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
 
-    <!-- Security improvements — grouped by endpoint -->
-    <div v-if="recentRuns && recentRuns.length > 0" class="mt-6">
+    <!-- Recent proof — proof summary cards grouped by endpoint -->
+    <div v-if="proofSummaries.length > 0" class="mt-6">
       <h2 class="text-subtitle-1 font-weight-medium mb-3">Your recent proof</h2>
 
-      <!-- Grouped endpoint pairs -->
-      <template v-for="group in endpointGroups" :key="group.key">
-        <v-card variant="flat" class="mb-4">
+      <!-- Filter chips -->
+      <div class="d-flex ga-2 mb-3">
+        <v-chip
+          v-for="f in proofFilters"
+          :key="f.value"
+          :color="activeProofFilter === f.value ? 'primary' : undefined"
+          :variant="activeProofFilter === f.value ? 'flat' : 'outlined'"
+          size="small"
+          @click="activeProofFilter = f.value"
+        >
+          {{ f.label }}
+          <template v-if="f.count > 0">&nbsp;({{ f.count }})</template>
+        </v-chip>
+      </div>
+
+      <!-- Proof summary cards -->
+      <template v-for="proof in filteredProofSummaries" :key="proof.key">
+        <v-card variant="flat" class="mb-3">
           <v-card-text class="pa-4">
-            <!-- Endpoint group header -->
-            <div class="d-flex align-center mb-3">
-              <v-icon :icon="group.icon" size="small" class="mr-2" color="primary" />
-              <span class="text-subtitle-2 font-weight-bold">{{ group.label }}</span>
-              <v-chip
-                v-if="group.uplift !== null"
-                :color="group.uplift > 0 ? 'success' : 'grey'"
-                variant="tonal"
-                size="x-small"
-                class="ml-2"
-              >
-                {{ group.uplift > 0 ? '+' : '' }}{{ group.uplift }} pts
-              </v-chip>
+            <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+              <!-- Left: endpoint + pack + scores -->
+              <div class="d-flex align-center ga-3 flex-grow-1">
+                <v-icon :icon="proof.icon" size="small" color="primary" />
+                <div>
+                  <div class="d-flex align-center ga-2 flex-wrap">
+                    <span class="text-subtitle-2 font-weight-bold">{{ proof.label }}</span>
+                    <v-chip size="x-small" variant="outlined" class="text-caption">{{ proof.pack }}</v-chip>
+                  </div>
+                  <div class="text-caption text-medium-emphasis mt-1">
+                    <template v-if="proof.protectedScore !== null">
+                      Baseline {{ proof.baselineScore }} → Protected {{ proof.protectedScore }}
+                      <v-chip
+                        v-if="proof.uplift !== null"
+                        :color="proof.uplift > 0 ? 'success' : 'grey'"
+                        variant="tonal"
+                        size="x-small"
+                        class="ml-1"
+                      >
+                        {{ proof.uplift > 0 ? '+' : '' }}{{ proof.uplift }} pts
+                      </v-chip>
+                    </template>
+                    <template v-else>
+                      Baseline {{ proof.baselineScore }}
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: status + CTA -->
+              <div class="d-flex align-center ga-2">
+                <v-chip
+                  :color="proof.statusColor"
+                  variant="tonal"
+                  size="small"
+                >
+                  {{ proof.statusLabel }}
+                </v-chip>
+                <v-btn
+                  :color="proof.status === 'needs_protection' ? 'primary' : 'default'"
+                  :variant="proof.status === 'needs_protection' ? 'flat' : 'outlined'"
+                  size="small"
+                  :to="proof.ctaRoute"
+                >
+                  {{ proof.ctaLabel }}
+                </v-btn>
+              </div>
             </div>
 
-            <!-- Runs in this group -->
-            <v-list density="compact" class="py-0 bg-transparent">
-              <v-list-item
-                v-for="run in group.runs"
-                :key="run.id"
-                :to="`/red-team/${run.status === 'running' ? 'run' : 'results'}/${run.id}`"
-                class="px-0"
-              >
-                <template #prepend>
-                  <v-icon
-                    :icon="classifyRun(run).icon"
-                    :color="classifyRun(run).color"
-                    size="small"
-                    class="mr-3"
-                  />
-                </template>
-                <v-list-item-title class="text-body-2 font-weight-medium">
-                  {{ humanPack(run.pack) }}
-                  <v-chip
-                    v-if="run.score_simple !== null && run.score_simple !== undefined"
-                    :color="classifyRun(run).type === 'protected' ? scoreLabel(run.score_simple).vuetifyColor : 'blue-grey'"
-                    variant="tonal"
-                    size="x-small"
-                    class="ml-2"
-                  >
-                    {{ run.score_simple }}/100
-                  </v-chip>
-                  <v-chip
-                    v-else-if="run.status === 'running'"
-                    color="primary"
-                    variant="tonal"
-                    size="x-small"
-                    class="ml-2"
-                  >
-                    Running...
-                  </v-chip>
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption">
-                  {{ timeAgo(run.completed_at ?? run.created_at) }}
-                  <v-chip
-                    :color="classifyRun(run).color"
-                    variant="outlined"
-                    size="x-small"
-                    class="ml-1"
-                  >
-                    {{ classifyRun(run).type === 'protected' ? 'Protected' : 'Baseline' }}
-                  </v-chip>
-                  <span class="ml-1">
-                    {{ run.passed }}/{{ run.executed }}
-                    {{ classifyRun(run).type === 'protected' ? 'blocked' : 'handled' }}
-                  </span>
-                </v-list-item-subtitle>
-                <template #append>
-                  <v-btn variant="text" size="x-small" color="primary">View</v-btn>
-                </template>
-              </v-list-item>
-            </v-list>
+            <!-- Expandable history -->
+            <div v-if="proof.olderRunCount > 0" class="mt-2">
+              <v-btn variant="text" size="x-small" color="primary" @click="proof.showHistory = !proof.showHistory">
+                {{ proof.showHistory ? 'Hide history' : `View history (${proof.olderRunCount})` }}
+              </v-btn>
+              <v-list v-if="proof.showHistory" density="compact" class="py-0 bg-transparent mt-1">
+                <v-list-item
+                  v-for="r in proof.olderRuns"
+                  :key="r.id"
+                  :to="`/red-team/${r.status === 'running' ? 'run' : 'results'}/${r.id}`"
+                  class="px-0"
+                >
+                  <v-list-item-title class="text-caption">
+                    {{ classifyRun(r).type === 'protected' ? 'Protected' : 'Baseline' }}
+                    {{ r.score_simple !== null ? `${r.score_simple}/100` : '' }}
+                    · {{ timeAgo(r.completed_at ?? r.created_at) }}
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </div>
           </v-card-text>
         </v-card>
       </template>
+
+      <!-- Empty state for filter -->
+      <div v-if="filteredProofSummaries.length === 0" class="text-center pa-4">
+        <p class="text-body-2 text-medium-emphasis">
+          <template v-if="activeProofFilter === 'needs_protection'">
+            These endpoints have baseline vulnerabilities but no protected re-run yet.
+          </template>
+          <template v-else>
+            No matching results.
+          </template>
+        </p>
+      </div>
     </div>
 
     <!-- Loading runs -->
@@ -225,6 +253,7 @@ interface TargetCard {
   title: string
   description: string
   microcopy?: string
+  helperText?: string
   icon: string
   color: string
   disabled: boolean
@@ -240,27 +269,31 @@ const targetCards: TargetCard[] = [
   {
     key: 'demo',
     title: 'Try the demo scan',
-    description: 'Attack our sample endpoint and see what gets through. No setup, under a minute.',
-    microcopy: 'Best first step — see results instantly',
+    description: 'Run a short attack pack against a vulnerable demo agent, then re-run the exact same scenarios with protection enabled.',
+    microcopy: 'No setup · under 1 minute',
+    helperText: 'You\'ll see baseline results in about 30 seconds, then one click to re-run with protection.',
     icon: 'mdi-play-circle-outline',
     color: 'primary',
     disabled: false,
     recommended: true,
     ctaLabel: 'Run demo scan',
     ctaIcon: 'mdi-play',
-    badge: 'No setup needed',
+    badge: 'Fastest way to see the flow',
     hidden: false,
   },
   {
     key: 'hosted_endpoint',
     title: 'Scan your endpoint',
-    description: 'Point AI Protector at your own AI endpoint to find real vulnerabilities.',
+    description: 'Paste your endpoint URL and optional auth headers to run the same baseline test against your own system.',
+    microcopy: 'No proxy required for the first scan',
+    helperText: 'Baseline scans send requests directly to your endpoint — no setup or SDK needed.',
     icon: 'mdi-web',
     color: 'info',
     disabled: false,
     recommended: false,
     ctaLabel: 'Configure endpoint',
     ctaIcon: 'mdi-cog',
+    badge: 'Test your own endpoint',
     hidden: false,
   },
   {
@@ -318,18 +351,37 @@ async function fetchRecentRuns() {
 }
 
 // ---------------------------------------------------------------------------
-// Group runs by endpoint + pack for "Your recent proof" section
+// Proof summaries — one card per endpoint::pack group, sorted by status
 // ---------------------------------------------------------------------------
 
-interface EndpointGroup {
+type ProofStatus = 'needs_protection' | 'protected_verified' | 'rerun_needed'
+
+interface ProofSummary {
   key: string
   label: string
+  pack: string
   icon: string
-  runs: RunDetail[]
-  uplift: number | null // score delta between best baseline and best protected
+  status: ProofStatus
+  statusLabel: string
+  statusColor: string
+  baselineScore: string
+  protectedScore: string | null
+  uplift: number | null
+  ctaLabel: string
+  ctaRoute: string
+  latestRun: RunDetail
+  olderRuns: RunDetail[]
+  olderRunCount: number
+  showHistory: boolean
 }
 
-const endpointGroups = computed<EndpointGroup[]>(() => {
+const STATUS_PRIORITY: Record<ProofStatus, number> = {
+  needs_protection: 0,
+  rerun_needed: 1,
+  protected_verified: 2,
+}
+
+const proofSummaries = computed<ProofSummary[]>(() => {
   const groups = new Map<string, RunDetail[]>()
 
   for (const run of recentRuns.value) {
@@ -342,9 +394,11 @@ const endpointGroups = computed<EndpointGroup[]>(() => {
     groups.set(key, list)
   }
 
-  const result: EndpointGroup[] = []
+  const summaries: ProofSummary[] = []
+
   for (const [key, runs] of groups.entries()) {
     const endpoint = key.split('::')[0] ?? ''
+    const packName = key.split('::')[1] ?? ''
     const isDemo = endpoint === 'demo'
 
     // Sort newest first
@@ -354,26 +408,85 @@ const endpointGroups = computed<EndpointGroup[]>(() => {
       return ta - tb
     })
 
-    // Calculate uplift
     const baselines = runs.filter((r) => classifyRun(r).type === 'baseline' && r.score_simple != null)
     const protectedRuns = runs.filter((r) => classifyRun(r).type === 'protected' && r.score_simple != null)
-    let uplift: number | null = null
-    if (baselines.length > 0 && protectedRuns.length > 0) {
-      const bestBaseline = Math.max(...baselines.map((r) => r.score_simple!))
-      const bestProtected = Math.max(...protectedRuns.map((r) => r.score_simple!))
-      uplift = bestProtected - bestBaseline
+
+    let status: ProofStatus = 'needs_protection'
+    let statusLabel = 'Needs protection'
+    let statusColor = 'warning'
+
+    if (protectedRuns.length > 0 && baselines.length > 0) {
+      status = 'protected_verified'
+      statusLabel = 'Protected · verified'
+      statusColor = 'success'
+    } else if (protectedRuns.length > 0) {
+      status = 'rerun_needed'
+      statusLabel = 'Re-run needed'
+      statusColor = 'info'
     }
 
-    result.push({
+    // Calculate scores
+    const bestBaseline = baselines.length > 0 ? Math.max(...baselines.map((r) => r.score_simple!)) : null
+    const bestProtected = protectedRuns.length > 0 ? Math.max(...protectedRuns.map((r) => r.score_simple!)) : null
+    const uplift = bestBaseline != null && bestProtected != null ? bestProtected - bestBaseline : null
+
+    const latestRun = runs[0]!
+    const latestRoute = `/red-team/${latestRun.status === 'running' ? 'run' : 'results'}/${latestRun.id}`
+
+    let ctaLabel = 'Enable protection & re-run'
+    let ctaRoute = latestRoute
+    if (status === 'protected_verified') {
+      ctaLabel = 'View proof'
+      ctaRoute = latestRoute
+    } else if (status === 'rerun_needed') {
+      ctaLabel = 'Re-run baseline'
+      ctaRoute = '/red-team/configure?target=demo'
+    }
+
+    summaries.push({
       key,
       label: isDemo ? 'Demo Endpoint' : truncateLabel(endpoint, 50),
+      pack: humanPack(packName),
       icon: isDemo ? 'mdi-robot-outline' : 'mdi-web',
-      runs: runs.slice(0, 6), // max 6 per group
+      status,
+      statusLabel,
+      statusColor,
+      baselineScore: bestBaseline != null ? `${bestBaseline}/100` : '—',
+      protectedScore: bestProtected != null ? `${bestProtected}/100` : null,
       uplift,
+      ctaLabel,
+      ctaRoute,
+      latestRun,
+      olderRuns: runs.slice(1, 7),
+      olderRunCount: Math.max(0, runs.length - 1),
+      showHistory: false,
     })
   }
 
-  return result
+  // Sort: needs_protection first, then rerun_needed, then protected_verified
+  summaries.sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status])
+  return summaries
+})
+
+// ---------------------------------------------------------------------------
+// Proof filter chips
+// ---------------------------------------------------------------------------
+const activeProofFilter = ref<'all' | ProofStatus>('all')
+
+const proofFilters = computed(() => {
+  const counts = { needs_protection: 0, protected_verified: 0, rerun_needed: 0 }
+  for (const p of proofSummaries.value) counts[p.status]++
+  return [
+    { label: 'All', value: 'all' as const, count: proofSummaries.value.length },
+    { label: 'Needs protection', value: 'needs_protection' as const, count: counts.needs_protection },
+    { label: 'Protected', value: 'protected_verified' as const, count: counts.protected_verified },
+    { label: 'Re-run needed', value: 'rerun_needed' as const, count: counts.rerun_needed },
+  ]
+})
+
+const filteredProofSummaries = computed(() => {
+  if (activeProofFilter.value === 'all') return proofSummaries.value
+  return proofSummaries.value.filter((p) => p.status === activeProofFilter.value)
 })
 
 function timeAgo(ts: string | null | undefined): string {
