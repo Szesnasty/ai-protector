@@ -436,7 +436,7 @@ function connectSSE() {
     currentScenario.value = null
     consecutiveConnectionErrors.value = 0
 
-    const passed = data.outcome === 'passed'
+    const passed = data.passed === true || data.outcome === 'passed'
     if (passed) {
       blockedCount.value++
     } else {

@@ -287,7 +287,7 @@
                 <v-tooltip location="top">
                   <template #activator="{ props }">
                     <div v-bind="props" class="text-center" style="cursor: help;">
-                      <span class="text-h6 font-weight-bold text-blue-grey">{{ run.passed }}</span>
+                      <span class="text-h6 font-weight-bold text-success">{{ run.passed }}</span>
                       <p class="text-caption text-medium-emphasis mb-0">not exploited in this run</p>
                     </div>
                   </template>
@@ -524,12 +524,12 @@
             </div>
             <v-progress-linear
               :model-value="cat.percent"
-              :color="isBaseline ? (cat.percent >= 80 ? 'blue-grey' : cat.percent >= 60 ? 'warning' : 'error') : (cat.percent >= 80 ? 'success' : cat.percent >= 60 ? 'warning' : 'error')"
+              :color="cat.percent >= 80 ? 'success' : cat.percent >= 60 ? 'warning' : 'error'"
               height="10"
               rounded
             />
             <div v-if="isBaseline" class="d-flex ga-3 mt-1">
-              <span class="text-caption text-blue-grey">{{ cat.passedCount }} not exploited</span>
+              <span class="text-caption text-success">{{ cat.passedCount }} not exploited</span>
               <span class="text-caption text-medium-emphasis">·</span>
               <span class="text-caption text-error">{{ cat.total - cat.passedCount }} got through</span>
             </div>
@@ -664,27 +664,30 @@
 
           <v-card-text class="pa-6">
 
-            <!-- Step 1: Copy protected URL -->
+            <!-- Step 1: Copy replacement URL -->
             <div class="setup-step mb-5">
               <div class="d-flex align-center mb-2">
                 <div class="step-number mr-3">1</div>
-                <span class="text-subtitle-2 font-weight-bold">Copy the protected URL</span>
+                <span class="text-subtitle-2 font-weight-bold">Copy the replacement URL</span>
               </div>
+              <p class="text-body-2 text-medium-emphasis mb-2">
+                Use this localhost AI Protector URL instead of your current AI chat endpoint.
+              </p>
 
-              <!-- Current / Protected URL diff -->
+              <!-- Current / Replacement URL diff -->
               <v-card variant="outlined" class="url-diff-card pa-3 mb-2">
                 <!-- Current URL row -->
                 <div class="d-flex align-center mb-2">
-                  <span class="url-diff-label text-caption text-medium-emphasis mr-3" style="min-width: 88px;">Current URL</span>
+                  <span class="url-diff-label text-caption text-medium-emphasis mr-3" style="min-width: 120px;">Current URL</span>
                   <code class="text-caption text-medium-emphasis url-before" style="word-break: break-all;">
                     {{ targetEndpointUrl || 'https://your-llm-api.com/v1/chat/completions' }}
                   </code>
                 </div>
                 <v-divider class="mb-2" />
-                <!-- Protected URL row -->
+                <!-- Replacement URL row -->
                 <div class="d-flex align-center justify-space-between flex-wrap ga-2">
                   <div class="d-flex align-center flex-grow-1 mr-2">
-                    <span class="url-diff-label text-caption font-weight-bold text-success mr-3" style="min-width: 88px;">Protected URL</span>
+                    <span class="url-diff-label text-caption font-weight-bold text-success mr-3" style="min-width: 120px;">Replace with this URL</span>
                     <code class="text-caption" style="word-break: break-all;" data-testid="protected-url">
                       <span class="url-proxy-highlight">{{ protectedHost }}</span><span class="text-medium-emphasis">/v1/chat/completions</span>
                     </code>
@@ -700,8 +703,8 @@
                   </v-btn>
                 </div>
               </v-card>
-              <p v-if="urlCopied" class="text-caption text-success mb-0">
-                Paste this into your backend — it replaces where your service sends LLM requests.
+              <p class="text-caption text-medium-emphasis mb-0">
+                Keep the same path. Only the routing layer changes.
               </p>
             </div>
 
