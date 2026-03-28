@@ -28,7 +28,7 @@
         <div
           v-for="(header, idx) in customHeaders"
           :key="idx"
-          class="d-flex align-center ga-2 mb-2"
+          class="d-flex align-center ga-2 mb-4"
         >
           <v-text-field
             v-model="header.name"
@@ -46,8 +46,14 @@
             variant="outlined"
             density="compact"
             hide-details
-            :type="showAuth ? 'text' : 'password'"
+            :type="header.visible ? 'text' : 'password'"
             class="flex-grow-1"
+          />
+          <v-btn
+            :icon="header.visible ? 'mdi-eye-off' : 'mdi-eye'"
+            size="small"
+            variant="text"
+            @click="header.visible = !header.visible"
           />
           <v-btn
             icon="mdi-close"
@@ -60,18 +66,10 @@
           variant="tonal"
           size="small"
           prepend-icon="mdi-plus"
-          @click="customHeaders.push({ name: '', value: '' })"
+          @click="customHeaders.push({ name: '', value: '', visible: false })"
         >
           Add Header
         </v-btn>
-        <v-btn
-          v-if="customHeaders.length > 0"
-          variant="text"
-          size="small"
-          :icon="showAuth ? 'mdi-eye-off' : 'mdi-eye'"
-          class="ml-2"
-          @click="showAuth = !showAuth"
-        />
       </div>
 
       <!-- Localhost reachability hint -->
@@ -310,8 +308,7 @@ const formRef = ref()
 const formValid = ref(false)
 const endpointUrl = ref('')
 const targetName = ref('')
-const customHeaders = ref<Array<{ name: string; value: string }>>([{ name: 'Authorization', value: '' }])
-const showAuth = ref(false)
+const customHeaders = ref<Array<{ name: string; value: string; visible: boolean }>>([{ name: 'Authorization', value: '', visible: false }])
 const agentType = ref('chatbot_api')
 const timeoutS = ref(30)
 const safeMode = ref(true) // Default ON for safety

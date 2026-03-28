@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 from src.red_team.engine.adapters import (
     DbPersistenceAdapter,
     ProgressBridge,
+    ProtectedHttpClient,
     RealHttpClient,
     SimpleNormalizer,
 )
@@ -97,7 +98,15 @@ async def _execute(
     # ── Build engine ─────────────────────────────────────────────────
     persistence = DbPersistenceAdapter(session)
     progress = ProgressBridge(emitter)
-    http_client = RealHttpClient()
+    raw_client = RealHttpClient()
+
+    # When through_proxy is set, wrap with the firewall pipeline
+    if target_config.get("through_proxy"):
+        policy = run_orm.policy or "balanced"
+        http_client = ProtectedHttpClient(raw_client, policy=policy)
+    else:
+        http_client = raw_client
+
     normalizer = SimpleNormalizer()
 
     engine = RunEngine(
