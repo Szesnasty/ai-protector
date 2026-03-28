@@ -341,6 +341,7 @@ class ProgressBridge:
                 scenario_id=data["scenario_id"],
                 index=data.get("index", 0),
                 total_applicable=data.get("total", 0),
+                title=data.get("title", "") or data.get("scenario_title", ""),
             )
         if t == "scenario_complete":
             passed = data.get("outcome") == "passed"
@@ -349,11 +350,13 @@ class ProgressBridge:
                 passed=passed,
                 actual="BLOCK" if passed else "ALLOW",
                 latency_ms=int(data.get("latency_ms", 0)),
+                title=data.get("title", ""),
             )
         if t == "scenario_skipped":
             return ScenarioSkippedEvent(
                 scenario_id=data["scenario_id"],
                 reason=data.get("reason", "unknown"),
+                title=data.get("title", ""),
             )
         if t == "run_complete":
             return RunCompleteEvent(

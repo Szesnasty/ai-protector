@@ -61,10 +61,10 @@
         <!-- Status + metadata chips -->
         <div class="d-flex flex-wrap ga-2 mb-3">
           <v-chip
-            :color="scenario.passed ? (isFalsePositiveTest ? 'success' : isBaseline ? 'blue-grey' : 'success') : (isFalsePositiveTest ? 'warning' : 'error')"
+            :color="scenario.passed ? 'success' : (isFalsePositiveTest ? 'warning' : 'error')"
             variant="tonal"
             size="small"
-            :prepend-icon="scenario.passed ? (isFalsePositiveTest ? 'mdi-check-circle' : isBaseline ? 'mdi-robot-happy' : 'mdi-shield-check') : (isFalsePositiveTest ? 'mdi-alert' : 'mdi-shield-alert')"
+            :prepend-icon="scenario.passed ? (isFalsePositiveTest ? 'mdi-check-circle' : 'mdi-shield-check') : (isFalsePositiveTest ? 'mdi-alert' : 'mdi-shield-alert')"
             data-testid="status-chip"
           >
             {{ isFalsePositiveTest ? (scenario.passed ? 'No false positive' : 'False positive') : scenario.passed ? (isBaseline ? 'Model resisted' : 'Blocked') : 'Got through' }}
@@ -93,7 +93,7 @@
 
       <!-- Result verdict -->
       <v-alert
-        :type="isFalsePositiveTest ? (scenario.passed ? 'success' : 'warning') : scenario.passed ? (isBaseline ? 'info' : 'success') : 'error'"
+        :type="isFalsePositiveTest ? (scenario.passed ? 'success' : 'warning') : scenario.passed ? 'success' : 'error'"
         variant="tonal"
         class="mb-6"
         data-testid="result-summary"
@@ -111,7 +111,7 @@
       <!-- Baseline protection status -->
       <v-alert
         v-if="isBaseline && scenario.passed"
-        color="blue-grey"
+        color="success"
         variant="tonal"
         density="compact"
         class="mb-6"
