@@ -105,9 +105,57 @@ class RealHttpClient:
         )
 
 
-# ---------------------------------------------------------------------------
-# Normalizer
-# ---------------------------------------------------------------------------
+class ProtectedHttpClient:
+    """Wrap :class:`RealHttpClient` with the AI Protector firewall pipeline.
+
+    Before forwarding each prompt to the target, runs it through the
+    pre-LLM pipeline (intent → rules → scanners → decision).
+    If the pipeline returns BLOCK the prompt never reaches the target.
+    """
+
+    def __init__(self, inner: RealHttpClient, policy: str = "balanced") -> None:
+        self._inner = inner
+        self._policy = policy
+
+    async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
+        from src.pipeline.runner import run_pre_llm_pipeline
+
+        request_id = f"bench-{uuid.uuid4().hex[:12]}"
+        messages = [{"role": "user", "content": prompt}]
+
+        start = time.monotonic()
+        result = await run_pre_llm_pipeline(
+            request_id=request_id,
+            client_id="benchmark",
+            policy_name=self._policy,
+            model="benchmark-target",
+            messages=messages,
+            temperature=0.0,
+            max_tokens=1024,
+            stream=False,
+            api_key=None,
+        )
+        pipeline_ms = (time.monotonic() - start) * 1000
+
+        if result.get("decision") == "BLOCK":
+            body = json.dumps({
+                "error": "blocked",
+                "reason": result.get("blocked_reason", ""),
+            })
+            return HttpResponse(
+                status_code=403,
+                body=body,
+                headers={
+                    "content-type": "application/json",
+                    "x-decision": "BLOCK",
+                    "x-risk-score": str(result.get("risk_score", 0)),
+                    "x-intent": result.get("intent", ""),
+                },
+                latency_ms=pipeline_ms,
+            )
+
+        # ALLOW / MODIFY — forward to the real target
+        return await self._inner.send_prompt(prompt, target_config)
 
 
 class SimpleNormalizer:

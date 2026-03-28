@@ -161,7 +161,12 @@
         <template #text>
           Most safe outcomes in this run came from model behavior or unattributed safe responses, not verified protection controls.
           A high baseline score does <strong>not</strong> mean your endpoint has enforced runtime protection.
-          <nuxt-link to="/red-team/configure?target=hosted_endpoint" class="text-decoration-none font-weight-bold ml-1">
+          <template v-if="isDemoTarget">
+            <a class="text-decoration-none font-weight-bold ml-1" style="cursor:pointer" @click.prevent="onRerunProtected">
+              Enable protection and re-run →
+            </a>
+          </template>
+          <nuxt-link v-else to="/red-team/configure?target=hosted_endpoint" class="text-decoration-none font-weight-bold ml-1">
             Set up protection and re-run →
           </nuxt-link>
         </template>
@@ -251,8 +256,22 @@
                 Most of the remaining risk comes from prompt injection and jailbreak bypasses. Tighten your policy and re-run this benchmark to verify improvement.
               </p>
               <div class="d-flex flex-wrap ga-2 mb-1">
+                <!-- Demo baseline: one-click protected re-run -->
                 <v-btn
-                  v-if="isBaseline"
+                  v-if="isBaseline && isDemoTarget"
+                  color="primary"
+                  variant="flat"
+                  size="small"
+                  prepend-icon="mdi-shield-check"
+                  :loading="isRerunning"
+                  data-testid="hero-protect-rerun-btn"
+                  @click="onRerunProtected"
+                >
+                  Enable Protection &amp; Re-run
+                </v-btn>
+                <!-- Non-demo baseline: manual setup dialog -->
+                <v-btn
+                  v-if="isBaseline && !isDemoTarget"
                   color="primary"
                   variant="flat"
                   size="small"
@@ -325,7 +344,10 @@
                   </v-btn>
                 </template>
               </div>
-              <p v-if="isBaseline" class="text-caption text-medium-emphasis mt-2 mb-0">
+              <p v-if="isBaseline && isDemoTarget" class="text-caption text-medium-emphasis mt-2 mb-0">
+                One click — AI Protector will filter every attack through its firewall and re-run the benchmark.
+              </p>
+              <p v-else-if="isBaseline" class="text-caption text-medium-emphasis mt-2 mb-0">
                 Set up AI Protector and re-run this benchmark to verify enforced protection instead of model-only resistance.
               </p>
               <p v-else class="text-caption text-medium-emphasis mt-1 mb-0">
@@ -349,7 +371,21 @@
                   Model resistance can change with updates or new attack techniques. This is not proof your endpoint is protected.
                 </p>
                 <div class="d-flex flex-wrap ga-2 mb-1">
+                  <!-- Demo: one-click protected re-run -->
                   <v-btn
+                    v-if="isDemoTarget"
+                    color="primary"
+                    variant="flat"
+                    size="small"
+                    prepend-icon="mdi-shield-check"
+                    :loading="isRerunning"
+                    @click="onRerunProtected"
+                  >
+                    Enable Protection &amp; Re-run
+                  </v-btn>
+                  <!-- Non-demo: manual setup -->
+                  <v-btn
+                    v-else
                     color="primary"
                     variant="flat"
                     size="small"
@@ -384,7 +420,10 @@
                     Re-run Benchmark
                   </v-btn>
                 </div>
-                <p class="text-caption text-medium-emphasis mt-2 mb-0">
+                <p v-if="isDemoTarget" class="text-caption text-medium-emphasis mt-2 mb-0">
+                  One click — AI Protector will filter every attack through its firewall and re-run the benchmark.
+                </p>
+                <p v-else class="text-caption text-medium-emphasis mt-2 mb-0">
                   Set up AI Protector and re-run this benchmark to verify enforced protection instead of model-only resistance.
                 </p>
               </template>
@@ -674,6 +713,10 @@ const targetIcon = computed(() => targetMeta.value.icon)
 
 const runClass = computed(() => run.value ? classifyRun(run.value) : null)
 const isBaseline = computed(() => runClass.value?.type === 'baseline')
+const isDemoTarget = computed(() => {
+  const t = run.value?.target_type ?? ''
+  return t === 'demo' || t === 'demo_agent'
+})
 
 // ---------------------------------------------------------------------------
 // Computed — score (uses baseline labels for unprotected runs)
@@ -866,6 +909,24 @@ async function onRerun() {
       target_config: run.value.target_config,
       pack: run.value.pack,
       policy: policyApplied.value ? 'strict' : (run.value.policy ?? 'balanced'),
+      source_run_id: run.value.id,
+    })
+    router.push(`/red-team/run/${result.id}`)
+  } catch {
+    isRerunning.value = false
+  }
+}
+
+async function onRerunProtected() {
+  if (!run.value) return
+  isRerunning.value = true
+  try {
+    const config = { ...(run.value.target_config ?? {}), through_proxy: true }
+    const result = await benchmarkService.createRun({
+      target_type: run.value.target_type,
+      target_config: config,
+      pack: run.value.pack,
+      policy: 'balanced',
       source_run_id: run.value.id,
     })
     router.push(`/red-team/run/${result.id}`)
