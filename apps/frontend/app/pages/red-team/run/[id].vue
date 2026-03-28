@@ -67,26 +67,6 @@
       Connection lost. Attempting to reconnect...
     </v-alert>
 
-    <v-alert
-      v-if="consecutiveFailures >= 3 && !isTerminal"
-      type="error"
-      variant="tonal"
-      density="compact"
-      class="mb-4"
-      data-testid="target-failure-banner"
-    >
-      Target stopped responding after {{ completed }} of {{ total }} scenarios. Partial results saved.
-      <template #append>
-        <v-btn
-          variant="text"
-          size="small"
-          color="error"
-          :to="`/red-team/results/${runId}`"
-        >
-          View Partial Results
-        </v-btn>
-      </template>
-    </v-alert>
 
     <!-- ═══════════════════ Progress area ═══════════════════ -->
     <v-card variant="flat" class="mb-4 pa-4 progress-card">
@@ -97,7 +77,7 @@
 
       <v-progress-linear
         :model-value="progressPercent"
-        :color="consecutiveFailures >= 3 ? 'error' : 'primary'"
+        color="primary"
         height="10"
         rounded
         class="mb-3"
@@ -308,7 +288,6 @@ const showCancelDialog = ref(false)
 const isCancelling = ref(false)
 const isTerminal = ref(false)
 const latencies = ref<number[]>([])
-const consecutiveFailures = ref(0)
 const currentScenario = ref<string | null>(null)
 const feedListEl = ref<HTMLElement | null>(null)
 
@@ -368,7 +347,6 @@ const etaFormatted = computed(() => {
 const runStateMessage = computed(() => {
   if (isTerminal.value) return `${humanPack(runDetail.value?.pack ?? '')} benchmark complete — all scenarios evaluated.`
   if (completed.value === 0) return `Running ${humanPack(runDetail.value?.pack ?? '')} benchmark — evaluating scenarios in real time.`
-  if (consecutiveFailures.value >= 3) return 'Target may be unreachable. Waiting for recovery…'
   return `Running ${humanPack(runDetail.value?.pack ?? '')} benchmark — analyzing each response.`
 })
 
@@ -434,12 +412,9 @@ function connectSSE() {
     latencies.value.push(data.latency_ms)
     currentScenario.value = null
 
-    // Track consecutive failures
     if (data.passed) {
-      consecutiveFailures.value = 0
       blockedCount.value++
     } else {
-      consecutiveFailures.value++
       gotThroughCount.value++
     }
 
