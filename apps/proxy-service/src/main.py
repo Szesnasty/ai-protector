@@ -64,7 +64,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         if cancelled:
             logger.info("stale_runs_cancelled", count=cancelled)
 
-    # ── Cleanup expired auth secrets (24 h TTL) on startup ────────────
+    # ── Cleanup expired auth secrets — safety net for runs that never
+    #    completed normally (crashes, container restarts, etc.).
+    #    Tokens are also deleted immediately after each run in worker.py.
     from src.red_team.api.service import cleanup_expired_secrets
 
     async with async_session() as session:
