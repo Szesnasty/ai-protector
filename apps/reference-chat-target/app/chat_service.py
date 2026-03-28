@@ -175,6 +175,8 @@ class ChatService:
                 tool_calls=[tc.model_dump() for tc in result.tool_calls],
                 citations=citations,
                 system_canary_enabled=self._settings.enable_canary,
+                blocked=result.blocked,
+                proxy_block_headers=result.proxy_block_headers,
                 trace=TraceRef(
                     request_id=request_id,
                     streamed=False,

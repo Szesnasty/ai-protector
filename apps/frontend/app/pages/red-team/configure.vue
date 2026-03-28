@@ -370,9 +370,6 @@ async function onRunBenchmark() {
       }
     }
 
-    // Always route through the AI Protector proxy pipeline
-    targetConfig.through_proxy = true
-
     const result = await createRun({
       target_type: target.value,
       target_config: targetConfig,

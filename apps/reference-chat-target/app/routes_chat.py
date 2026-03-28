@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.models import ChatRequest, ChatResponse
 
@@ -44,7 +44,19 @@ async def chat(req: ChatRequest, request: Request):
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
-    return await svc.handle_chat(req)
+    response = await svc.handle_chat(req)
+    if response.blocked:
+        headers = {
+            key: value
+            for key, value in response.proxy_block_headers.items()
+            if value
+        }
+        return JSONResponse(
+            status_code=200,
+            content=response.model_dump(),
+            headers=headers,
+        )
+    return response
 
 
 @router.post("/chat/stream")
