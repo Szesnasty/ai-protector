@@ -1,14 +1,41 @@
 <template>
   <v-container fluid class="red-team-page">
-    <!-- Header -->
-    <div class="mb-6">
-      <h1 class="text-h5 mb-1">Security Tests</h1>
-      <p class="text-body-2 text-medium-emphasis">
-        Run a baseline benchmark to see how your model behaves without protection, then add AI Protector to measure the difference.
+    <!-- Hero header -->
+    <div class="mb-2 text-center text-md-start">
+      <h1 class="text-h4 font-weight-bold mb-2">Find agent vulnerabilities. Then prove the fix.</h1>
+      <p class="text-body-1 text-medium-emphasis" style="max-width: 640px;">
+        Run a baseline scan to see what gets through, enable AI Protector, and re-run to prove the difference.
       </p>
     </div>
 
-    <!-- Primary cards — simplified to 2 main paths -->
+    <!-- 3-step process strip -->
+    <v-card variant="flat" class="mb-8 pa-4">
+      <v-row align="center" justify="center" class="text-center">
+        <v-col cols="12" sm="4" class="d-flex flex-column align-center">
+          <v-avatar color="primary" variant="tonal" size="44" class="mb-2">
+            <v-icon icon="mdi-magnify-scan" size="22" />
+          </v-avatar>
+          <span class="text-subtitle-2 font-weight-bold">1. Scan</span>
+          <span class="text-caption text-medium-emphasis">Run attacks against your endpoint</span>
+        </v-col>
+        <v-col cols="12" sm="4" class="d-flex flex-column align-center">
+          <v-avatar color="success" variant="tonal" size="44" class="mb-2">
+            <v-icon icon="mdi-shield-check" size="22" />
+          </v-avatar>
+          <span class="text-subtitle-2 font-weight-bold">2. Protect</span>
+          <span class="text-caption text-medium-emphasis">Enable AI Protector in one click</span>
+        </v-col>
+        <v-col cols="12" sm="4" class="d-flex flex-column align-center">
+          <v-avatar color="warning" variant="tonal" size="44" class="mb-2">
+            <v-icon icon="mdi-compare" size="22" />
+          </v-avatar>
+          <span class="text-subtitle-2 font-weight-bold">3. Prove</span>
+          <span class="text-caption text-medium-emphasis">Re-run and see the before vs after</span>
+        </v-col>
+      </v-row>
+    </v-card>
+
+    <!-- Target cards -->
     <v-row>
       <v-col
         v-for="card in visibleCards"
@@ -29,7 +56,6 @@
           @click="card.disabled ? null : onCardClick(card.key)"
         >
           <v-card-text class="d-flex flex-column align-center text-center pa-6">
-            <!-- Best first step badge for demo -->
             <v-chip
               v-if="card.badge"
               size="x-small"
@@ -70,72 +96,106 @@
       </v-col>
     </v-row>
 
-    <!-- Hidden legacy cards preserved in data but not rendered above.
-         To restore: set card.hidden = false or use showAllCards = true -->
+    <!-- How it works — expandable -->
+    <v-expansion-panels class="mt-6 mb-4" variant="accordion">
+      <v-expansion-panel>
+        <v-expansion-panel-title class="text-body-2 text-medium-emphasis">
+          <v-icon icon="mdi-help-circle-outline" size="small" class="mr-2" />
+          How does the security scan work?
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <div class="text-body-2 text-medium-emphasis">
+            <p class="mb-2">AI Protector sends a curated set of adversarial prompts — prompt injections, jailbreak attempts, data leakage probes, and tool abuse scenarios — to your endpoint or our demo target.</p>
+            <p class="mb-2">Each response is analysed by an AI judge that determines whether the attack succeeded or was safely handled. The result is a per-category breakdown of what got through.</p>
+            <p class="mb-0">When you enable protection and re-run, the same attacks go through the AI Protector firewall first. The before-vs-after comparison proves exactly which vulnerabilities were fixed.</p>
+          </div>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
-    <!-- Recent Runs — compact (max 8) -->
-    <div v-if="recentRuns && recentRuns.length > 0" class="mt-8">
-      <h2 class="text-subtitle-1 font-weight-medium mb-2">Recent Runs</h2>
+    <!-- Security improvements — grouped by endpoint -->
+    <div v-if="recentRuns && recentRuns.length > 0" class="mt-6">
+      <h2 class="text-subtitle-1 font-weight-medium mb-3">Your recent proof</h2>
 
-      <v-card variant="flat">
-        <v-list density="compact" class="py-0">
-          <v-list-item
-            v-for="run in compactRuns"
-            :key="run.id"
-            :to="`/red-team/${run.status === 'running' ? 'run' : 'results'}/${run.id}`"
-            class="px-4"
-          >
-            <template #prepend>
-              <v-icon
-                :icon="runStatusIcon(run.status)"
-                :color="runStatusColor(run.status)"
-                size="small"
-                class="mr-3"
-              />
-            </template>
-            <v-list-item-title class="text-body-2 font-weight-medium">
-              {{ humanPack(run.pack) }}
+      <!-- Grouped endpoint pairs -->
+      <template v-for="group in endpointGroups" :key="group.key">
+        <v-card variant="flat" class="mb-4">
+          <v-card-text class="pa-4">
+            <!-- Endpoint group header -->
+            <div class="d-flex align-center mb-3">
+              <v-icon :icon="group.icon" size="small" class="mr-2" color="primary" />
+              <span class="text-subtitle-2 font-weight-bold">{{ group.label }}</span>
               <v-chip
-                v-if="run.score_simple !== null && run.score_simple !== undefined"
-                :color="scoreLabel(run.score_simple).vuetifyColor"
+                v-if="group.uplift !== null"
+                :color="group.uplift > 0 ? 'success' : 'grey'"
                 variant="tonal"
                 size="x-small"
                 class="ml-2"
               >
-                {{ run.score_simple }}/100
+                {{ group.uplift > 0 ? '+' : '' }}{{ group.uplift }} pts
               </v-chip>
-              <v-chip
-                v-else-if="run.status === 'running'"
-                color="primary"
-                variant="tonal"
-                size="x-small"
-                class="ml-2"
+            </div>
+
+            <!-- Runs in this group -->
+            <v-list density="compact" class="py-0 bg-transparent">
+              <v-list-item
+                v-for="run in group.runs"
+                :key="run.id"
+                :to="`/red-team/${run.status === 'running' ? 'run' : 'results'}/${run.id}`"
+                class="px-0"
               >
-                Running...
-              </v-chip>
-            </v-list-item-title>
-            <v-list-item-subtitle class="text-caption">
-              {{ runSubtitle(run) }}
-              <v-chip
-                :color="classifyRun(run).color"
-                variant="outlined"
-                size="x-small"
-                class="ml-1"
-              >
-                {{ classifyRun(run).type === 'protected' ? 'Protected by AI Protector' : classifyRun(run).label }}
-              </v-chip>
-            </v-list-item-subtitle>
-            <template #append>
-              <v-btn variant="text" size="x-small" color="primary">View</v-btn>
-            </template>
-          </v-list-item>
-        </v-list>
-        <div v-if="recentRuns.length > 8" class="text-center py-2">
-          <v-btn variant="text" size="small" color="primary" to="/red-team/runs">
-            View all runs
-          </v-btn>
-        </div>
-      </v-card>
+                <template #prepend>
+                  <v-icon
+                    :icon="classifyRun(run).icon"
+                    :color="classifyRun(run).color"
+                    size="small"
+                    class="mr-3"
+                  />
+                </template>
+                <v-list-item-title class="text-body-2 font-weight-medium">
+                  {{ humanPack(run.pack) }}
+                  <v-chip
+                    v-if="run.score_simple !== null && run.score_simple !== undefined"
+                    :color="classifyRun(run).type === 'protected' ? scoreLabel(run.score_simple).vuetifyColor : 'blue-grey'"
+                    variant="tonal"
+                    size="x-small"
+                    class="ml-2"
+                  >
+                    {{ run.score_simple }}/100
+                  </v-chip>
+                  <v-chip
+                    v-else-if="run.status === 'running'"
+                    color="primary"
+                    variant="tonal"
+                    size="x-small"
+                    class="ml-2"
+                  >
+                    Running...
+                  </v-chip>
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
+                  {{ timeAgo(run.completed_at ?? run.created_at) }}
+                  <v-chip
+                    :color="classifyRun(run).color"
+                    variant="outlined"
+                    size="x-small"
+                    class="ml-1"
+                  >
+                    {{ classifyRun(run).type === 'protected' ? 'Protected' : 'Baseline' }}
+                  </v-chip>
+                  <span class="ml-1">
+                    {{ run.passed }}/{{ run.executed }}
+                    {{ classifyRun(run).type === 'protected' ? 'blocked' : 'handled' }}
+                  </span>
+                </v-list-item-subtitle>
+                <template #append>
+                  <v-btn variant="text" size="x-small" color="primary">View</v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </v-card>
+      </template>
     </div>
 
     <!-- Loading runs -->
@@ -143,10 +203,11 @@
       <v-progress-circular indeterminate color="primary" size="24" />
     </div>
 
-    <!-- Empty state — minimal -->
+    <!-- Empty state -->
     <div v-else class="mt-8 text-center">
+      <v-icon icon="mdi-shield-search" size="48" color="primary" class="mb-3" style="opacity: 0.4;" />
       <p class="text-body-2 text-medium-emphasis">
-        No runs yet. Start a demo benchmark to see your first score.
+        No scans yet. Run a demo scan to see your first results in under a minute.
       </p>
     </div>
   </v-container>
@@ -171,43 +232,37 @@ interface TargetCard {
   disabledNote?: string
   ctaLabel: string
   ctaIcon: string
-  /** Small badge shown above the icon (e.g. "No setup") */
   badge?: string
-  /** When true, card is kept in data but hidden from the main view */
   hidden: boolean
 }
-
-// Toggle to show all legacy cards (set to true to restore old 4-card view)
-const _showAllCards = false
 
 const targetCards: TargetCard[] = [
   {
     key: 'demo',
-    title: 'Run Demo',
-    description: 'See a sample benchmark in under a minute. No setup required.',
-    microcopy: 'Get your first score instantly',
+    title: 'Try the demo scan',
+    description: 'Attack our sample endpoint and see what gets through. No setup, under a minute.',
+    microcopy: 'Best first step — see results instantly',
     icon: 'mdi-play-circle-outline',
     color: 'primary',
     disabled: false,
     recommended: true,
-    ctaLabel: 'Start Demo',
+    ctaLabel: 'Run demo scan',
     ctaIcon: 'mdi-play',
     badge: 'No setup needed',
     hidden: false,
   },
   {
     key: 'hosted_endpoint',
-    title: 'Test Your Endpoint',
-    description: 'Run security tests on your own AI endpoint using a URL and optional auth.',
+    title: 'Scan your endpoint',
+    description: 'Point AI Protector at your own AI endpoint to find real vulnerabilities.',
     icon: 'mdi-web',
     color: 'info',
     disabled: false,
     recommended: false,
-    ctaLabel: 'Configure Endpoint',
+    ctaLabel: 'Configure endpoint',
     ctaIcon: 'mdi-cog',
     hidden: false,
   },
-  // --- Hidden cards (still in data, easy to re-enable) ---
   {
     key: 'local_agent',
     title: 'Local Agent',
@@ -218,7 +273,7 @@ const targetCards: TargetCard[] = [
     recommended: false,
     ctaLabel: 'Configure',
     ctaIcon: 'mdi-cog',
-    hidden: true, // hidden from main view — set to false to restore
+    hidden: true,
   },
   {
     key: 'registered_agent',
@@ -231,14 +286,11 @@ const targetCards: TargetCard[] = [
     disabledNote: 'Available in next iteration',
     ctaLabel: 'Coming soon',
     ctaIcon: 'mdi-shield-check',
-    hidden: true, // hidden from main view — set to false to restore
+    hidden: true,
   },
 ]
 
-/** Only non-hidden cards are rendered */
-const visibleCards = computed(() =>
-  _showAllCards ? targetCards : targetCards.filter((c) => !c.hidden),
-)
+const visibleCards = computed(() => targetCards.filter((c) => !c.hidden))
 
 const router = useRouter()
 
@@ -254,13 +306,10 @@ function onCardClick(key: string) {
 const recentRuns = ref<RunDetail[]>([])
 const runsLoading = ref(true)
 
-/** Only show 8 in the compact view */
-const compactRuns = computed(() => recentRuns.value.slice(0, 8))
-
 async function fetchRecentRuns() {
   runsLoading.value = true
   try {
-    recentRuns.value = await benchmarkService.listRuns(10)
+    recentRuns.value = await benchmarkService.listRuns(20)
   } catch {
     recentRuns.value = []
   } finally {
@@ -268,21 +317,64 @@ async function fetchRecentRuns() {
   }
 }
 
-function runStatusIcon(status: string): string {
-  if (status === 'completed') return 'mdi-check-circle'
-  if (status === 'running') return 'mdi-loading mdi-spin'
-  if (status === 'failed') return 'mdi-close-circle'
-  if (status === 'cancelled') return 'mdi-cancel'
-  return 'mdi-clock-outline'
+// ---------------------------------------------------------------------------
+// Group runs by endpoint + pack for "Your recent proof" section
+// ---------------------------------------------------------------------------
+
+interface EndpointGroup {
+  key: string
+  label: string
+  icon: string
+  runs: RunDetail[]
+  uplift: number | null // score delta between best baseline and best protected
 }
 
-function runStatusColor(status: string): string {
-  if (status === 'completed') return 'success'
-  if (status === 'running') return 'primary'
-  if (status === 'failed') return 'error'
-  if (status === 'cancelled') return 'grey'
-  return 'grey'
-}
+const endpointGroups = computed<EndpointGroup[]>(() => {
+  const groups = new Map<string, RunDetail[]>()
+
+  for (const run of recentRuns.value) {
+    const endpoint = run.target_type === 'demo' || run.target_type === 'demo_agent'
+      ? 'demo'
+      : (run.target_label || run.target_type)
+    const key = `${endpoint}::${run.pack}`
+    const list = groups.get(key) ?? []
+    list.push(run)
+    groups.set(key, list)
+  }
+
+  const result: EndpointGroup[] = []
+  for (const [key, runs] of groups.entries()) {
+    const endpoint = key.split('::')[0] ?? ''
+    const isDemo = endpoint === 'demo'
+
+    // Sort newest first
+    runs.sort((a, b) => {
+      const ta = new Date(b.completed_at ?? b.created_at ?? 0).getTime()
+      const tb = new Date(a.completed_at ?? a.created_at ?? 0).getTime()
+      return ta - tb
+    })
+
+    // Calculate uplift
+    const baselines = runs.filter((r) => classifyRun(r).type === 'baseline' && r.score_simple != null)
+    const protectedRuns = runs.filter((r) => classifyRun(r).type === 'protected' && r.score_simple != null)
+    let uplift: number | null = null
+    if (baselines.length > 0 && protectedRuns.length > 0) {
+      const bestBaseline = Math.max(...baselines.map((r) => r.score_simple!))
+      const bestProtected = Math.max(...protectedRuns.map((r) => r.score_simple!))
+      uplift = bestProtected - bestBaseline
+    }
+
+    result.push({
+      key,
+      label: isDemo ? 'Demo Endpoint' : truncateLabel(endpoint, 50),
+      icon: isDemo ? 'mdi-robot-outline' : 'mdi-web',
+      runs: runs.slice(0, 6), // max 6 per group
+      uplift,
+    })
+  }
+
+  return result
+})
 
 function timeAgo(ts: string | null | undefined): string {
   if (!ts) return ''
@@ -297,28 +389,11 @@ function truncateLabel(label: string, max = 40): string {
   if (!label) return ''
   try {
     const u = new URL(label)
-    // Show host + truncated path
     const short = u.host + (u.pathname.length > 1 ? u.pathname : '')
     return short.length > max ? short.slice(0, max) + '…' : short
   } catch {
     return label.length > max ? label.slice(0, max) + '…' : label
   }
-}
-
-function runSubtitle(run: RunDetail): string {
-  const parts: string[] = []
-  // Target type or label
-  if (run.target_type === 'demo') {
-    parts.push('Demo')
-  } else if (run.target_label) {
-    parts.push(truncateLabel(run.target_label))
-  } else {
-    parts.push(run.target_type)
-  }
-  parts.push(timeAgo(run.completed_at ?? run.created_at))
-  const stat = classifyRun(run).type === 'baseline' ? 'handled' : 'blocked'
-  parts.push(`${run.passed}/${run.executed} ${stat}`)
-  return parts.join(' · ')
 }
 
 onMounted(() => {

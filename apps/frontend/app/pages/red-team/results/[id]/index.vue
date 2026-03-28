@@ -16,7 +16,7 @@
             class="mr-2"
             :to="'/red-team'"
           />
-          <h1 class="text-h5">{{ isBaseline ? 'Baseline Results' : 'Benchmark Results' }}</h1>
+          <h1 class="text-h5">{{ isBaseline ? 'Baseline Results' : 'Protected Results' }}</h1>
           <v-chip
             v-if="isDemoTarget"
             color="purple"
@@ -43,7 +43,7 @@
             class="ml-2"
             data-testid="run-type-chip"
           >
-            {{ runClass.type === 'protected' ? 'Protected by AI Protector' : runClass.label }}
+            {{ runClass.type === 'protected' ? 'Protected' : 'Baseline' }}
           </v-chip>
         </p>
         <div v-if="targetEndpointUrl" class="mt-1 d-flex align-center text-body-2" style="font-family: monospace; color: #1565c0;">
@@ -52,52 +52,17 @@
         </div>
       </div>
 
-      <!-- Before / After comparison (high up per spec) -->
-      <v-card
-        v-if="comparison"
-        variant="flat"
-        class="mb-6 pa-4"
-        data-testid="before-after"
-      >
-        <div class="d-flex align-center flex-wrap ga-3">
-          <span class="text-body-2">
-            Before: <strong>{{ comparison.run_a.score_simple ?? 0 }}/100</strong>
-          </span>
-          <v-icon icon="mdi-arrow-right" size="small" />
-          <span class="text-body-2">
-            After: <strong>{{ comparison.run_b.score_simple ?? 0 }}/100</strong>
-          </span>
-          <v-chip
-            :color="comparison.score_delta >= 0 ? 'success' : 'error'"
-            variant="tonal"
-            size="small"
-          >
-            {{ comparison.score_delta >= 0 ? '+' : '' }}{{ comparison.score_delta }}
-          </v-chip>
-        </div>
-        <p class="text-caption text-medium-emphasis mt-2">
-          {{ comparison.fixed_failures.length }} fixed
-          &nbsp;·&nbsp; {{ comparison.new_failures.length }} new failure{{ comparison.new_failures.length !== 1 ? 's' : '' }}
-        </p>
-      </v-card>
-
       <!-- Safe mode banner -->
       <v-alert
         v-if="skippedMutating > 0"
         type="info"
         variant="tonal"
         density="compact"
-        class="mb-6"
+        class="mb-4"
         data-testid="safe-mode-banner"
       >
         <template #text>
           Safe mode was enabled — {{ skippedMutating }} mutating scenario{{ skippedMutating !== 1 ? 's were' : ' was' }} skipped.
-          <v-tooltip location="bottom">
-            <template #activator="{ props: tp }">
-              <a v-bind="tp" class="text-primary" style="cursor: pointer;">What are mutating scenarios?</a>
-            </template>
-            <span>Mutating scenarios trigger real actions (delete, modify, transfer) that could affect your target. Safe mode skips them.</span>
-          </v-tooltip>
         </template>
       </v-alert>
 
@@ -106,7 +71,7 @@
         v-if="run.executed === 0 && run.total_applicable === 0"
         type="warning"
         variant="tonal"
-        class="mb-6"
+        class="mb-4"
         data-testid="all-skipped-banner"
       >
         No scenarios were applicable. Try disabling Safe mode or selecting a different pack.
@@ -118,7 +83,7 @@
         type="warning"
         variant="tonal"
         density="compact"
-        class="mb-6"
+        class="mb-4"
         data-testid="few-executed-warning"
       >
         Score based on only {{ run.executed }} scenario{{ run.executed !== 1 ? 's' : '' }}. May not be fully representative.
@@ -130,190 +95,241 @@
         type="info"
         variant="tonal"
         density="compact"
-        class="mb-6"
+        class="mb-4"
         data-testid="partial-results-banner"
       >
-        Partial score &mdash; {{ run.executed }} of {{ run.total_applicable }} scenarios completed.
-      </v-alert>
-
-      <!-- Baseline run banner — prominent, always visible for unprotected runs -->
-      <v-alert
-        v-if="isBaseline"
-        type="warning"
-        variant="tonal"
-        class="mb-6"
-        data-testid="baseline-banner"
-      >
-        <template #title>
-          <v-icon icon="mdi-shield-off-outline" size="small" class="mr-1" />
-          Baseline Run — No Active Protection
-        </template>
-        <template #text>
-          This benchmark ran directly against the model without AI Protector.
-          Results show baseline behavior, not verified runtime protection.
-          Safe outcomes may come from model self-defense or unattributed behavior — <strong>not enforced controls.</strong>
-        </template>
-      </v-alert>
-
-      <!-- False-sense-of-safety warning — high score on baseline run -->
-      <v-alert
-        v-if="isBaseline && (run.score_simple ?? 0) >= 80 && run.executed >= 5"
-        color="blue-grey"
-        variant="tonal"
-        class="mb-6"
-        data-testid="false-safety-warning"
-      >
-        <template #prepend>
-          <v-icon icon="mdi-eye-off" color="blue-grey" />
-        </template>
-        <template #title>
-          High score, but no protection in place
-        </template>
-        <template #text>
-          Most safe outcomes in this run came from model behavior or unattributed safe responses, not verified protection controls.
-          A high baseline score does <strong>not</strong> mean your endpoint has enforced runtime protection.
-          <template v-if="isDemoTarget">
-            <a class="text-decoration-none font-weight-bold ml-1" style="cursor:pointer" @click.prevent="onRerunProtected">
-              Enable protection and re-run →
-            </a>
-          </template>
-          <nuxt-link v-else to="/red-team/configure?target=hosted_endpoint" class="text-decoration-none font-weight-bold ml-1">
-            Set up protection and re-run →
-          </nuxt-link>
-        </template>
+        Partial results &mdash; {{ run.executed }} of {{ run.total_applicable }} scenarios completed.
       </v-alert>
 
       <!-- ================================================================ -->
-      <!-- Hero — Executive Summary                                          -->
+      <!-- PROTECTED RUN: Before → After hero                                -->
       <!-- ================================================================ -->
-      <v-card v-if="run.executed > 0" variant="flat" class="mb-6 pa-5" data-testid="score-section">
-        <v-row align="center">
-          <!-- LEFT: Score + verdict -->
-          <v-col cols="12" md="5" class="d-flex flex-column align-center align-md-start text-center text-md-start">
-            <div class="d-flex align-center ga-4 mb-3">
-              <div
-                class="score-badge"
-                :style="{ borderColor: scoreMeta.color }"
+      <template v-if="!isBaseline && run.executed > 0">
+        <!-- Before / After comparison hero -->
+        <v-card
+          v-if="comparison"
+          variant="flat"
+          class="mb-6 pa-5"
+          data-testid="before-after-hero"
+        >
+          <div class="text-center mb-4">
+            <h2 class="text-h6 font-weight-bold mb-1">Before → After</h2>
+            <p class="text-body-2 text-medium-emphasis">Same attacks, with AI Protector enabled</p>
+          </div>
+
+          <v-row align="center" justify="center" class="text-center">
+            <!-- Before -->
+            <v-col cols="5">
+              <div class="text-caption text-medium-emphasis text-uppercase mb-1">Before</div>
+              <div class="text-h4 font-weight-bold" style="color: #78909c;">
+                {{ comparison.run_a.score_simple ?? 0 }}<span class="text-h6 text-medium-emphasis">/100</span>
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                {{ baselineFailedCount }} attack{{ baselineFailedCount !== 1 ? 's' : '' }} got through
+              </div>
+            </v-col>
+
+            <!-- Arrow + delta -->
+            <v-col cols="2" class="d-flex flex-column align-center">
+              <v-icon icon="mdi-arrow-right" size="large" color="primary" />
+              <v-chip
+                :color="comparison.score_delta >= 0 ? 'success' : 'error'"
+                variant="tonal"
+                size="small"
+                class="mt-1"
               >
-                <span class="score-value" :style="{ color: scoreMeta.color }">
-                  {{ run.score_simple ?? 0 }}
-                </span>
-              </div>
-              <div>
-                <v-chip
-                  :color="scoreMeta.vuetifyColor"
-                  variant="tonal"
-                  size="small"
-                  class="mb-1"
-                  data-testid="score-label"
-                >
-                  {{ scoreMeta.label }}
-                </v-chip>
-                <p class="text-caption text-medium-emphasis mb-0">
-                  {{ run.executed }} scenario{{ run.executed !== 1 ? 's' : '' }} tested
-                </p>
-              </div>
-            </div>
-            <!-- One-sentence interpretation -->
-            <p class="text-body-2 text-medium-emphasis mb-0" data-testid="score-interpretation">
-              {{ scoreInterpretation }}
-            </p>
-          </v-col>
+                {{ comparison.score_delta >= 0 ? '+' : '' }}{{ comparison.score_delta }}
+              </v-chip>
+            </v-col>
 
-          <!-- RIGHT: Stats + Primary CTA -->
-          <v-col cols="12" md="7">
-            <!-- Stats row -->
-            <div class="d-flex flex-wrap ga-4 mb-4">
-              <div class="text-center">
-                <span class="text-h6 font-weight-bold" :class="isBaseline ? 'text-blue-grey' : 'text-success'">{{ run.passed }}</span>
-                <p class="text-caption text-medium-emphasis mb-0">{{ isBaseline ? 'safe outcomes' : 'blocked' }}</p>
+            <!-- After -->
+            <v-col cols="5">
+              <div class="text-caption text-medium-emphasis text-uppercase mb-1">After</div>
+              <div class="text-h4 font-weight-bold" :style="{ color: scoreMeta.color }">
+                {{ comparison.run_b.score_simple ?? 0 }}<span class="text-h6 text-medium-emphasis">/100</span>
               </div>
-              <div class="text-center">
-                <span class="text-h6 font-weight-bold text-error">{{ failedCount }}</span>
-                <p class="text-caption text-medium-emphasis mb-0">got through</p>
+              <div class="text-caption text-medium-emphasis">
+                {{ failedCount }} attack{{ failedCount !== 1 ? 's' : '' }} got through
               </div>
-              <div v-if="criticalCount > 0" class="text-center">
-                <span class="text-h6 font-weight-bold" style="color: #d32f2f;">{{ criticalCount }}</span>
-                <p class="text-caption text-medium-emphasis mb-0">high/critical gaps</p>
-              </div>
-              <div class="text-center">
-                <span class="text-h6 font-weight-bold text-medium-emphasis">{{ run.skipped }}</span>
-                <p class="text-caption text-medium-emphasis mb-0">skipped</p>
-              </div>
-            </div>
+            </v-col>
+          </v-row>
 
-            <!-- Protection status block — baseline only -->
-            <div v-if="isBaseline" class="mb-4 pa-3 rounded-lg" style="background: rgba(0,0,0,0.03);" data-testid="protection-status-block">
-              <div class="d-flex flex-column ga-1">
-                <span class="text-caption text-medium-emphasis">
-                  <v-icon icon="mdi-shield-off-outline" size="x-small" class="mr-1" />Runtime protection: <strong>Not enabled</strong>
-                </span>
-                <span class="text-caption text-medium-emphasis">
-                  <v-icon icon="mdi-gauge-empty" size="x-small" class="mr-1" />Protection efficacy: <strong>N/A</strong>
-                </span>
-                <span class="text-caption text-medium-emphasis">
-                  <v-icon icon="mdi-clipboard-check-outline" size="x-small" class="mr-1" />Verified protection controls: <strong>Not measured in this run</strong>
-                </span>
-              </div>
-            </div>
+          <div class="text-center mt-4">
+            <v-chip color="success" variant="tonal" size="small" class="mr-2">
+              {{ comparison.fixed_failures.length }} vulnerabilities fixed
+            </v-chip>
+            <v-chip v-if="comparison.new_failures.length > 0" color="warning" variant="tonal" size="small">
+              {{ comparison.new_failures.length }} new
+            </v-chip>
+          </div>
+        </v-card>
 
-            <!-- Recommended next step — above the fold -->
-            <template v-if="failedCount > 0">
-              <p class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-1">Recommended next step</p>
-              <p v-if="isBaseline" class="text-caption text-medium-emphasis mb-3">
-                This baseline shows {{ failedCount }} attack{{ failedCount !== 1 ? 's' : '' }} that got through without any enforced protection. Safe outcomes in this run came from model behavior alone — not verified runtime controls. Set up AI Protector and re-run to measure real protection.
+        <!-- Protected score hero (no comparison available) -->
+        <v-card v-else variant="flat" class="mb-6 pa-5" data-testid="score-section">
+          <v-row align="center">
+            <v-col cols="12" md="5" class="d-flex flex-column align-center align-md-start text-center text-md-start">
+              <div class="d-flex align-center ga-4 mb-3">
+                <div class="score-badge" :style="{ borderColor: scoreMeta.color }">
+                  <span class="score-value" :style="{ color: scoreMeta.color }">{{ run.score_simple ?? 0 }}</span>
+                </div>
+                <div>
+                  <v-chip :color="scoreMeta.vuetifyColor" variant="tonal" size="small" class="mb-1" data-testid="score-label">
+                    {{ scoreMeta.label }}
+                  </v-chip>
+                  <p class="text-caption text-medium-emphasis mb-0">{{ run.executed }} attacks tested</p>
+                </div>
+              </div>
+            </v-col>
+            <v-col cols="12" md="7">
+              <div class="d-flex flex-wrap ga-4 mb-4">
+                <div class="text-center">
+                  <span class="text-h6 font-weight-bold text-success">{{ run.passed }}</span>
+                  <p class="text-caption text-medium-emphasis mb-0">blocked</p>
+                </div>
+                <div class="text-center">
+                  <span class="text-h6 font-weight-bold text-error">{{ failedCount }}</span>
+                  <p class="text-caption text-medium-emphasis mb-0">got through</p>
+                </div>
+                <div v-if="criticalCount > 0" class="text-center">
+                  <span class="text-h6 font-weight-bold" style="color: #d32f2f;">{{ criticalCount }}</span>
+                  <p class="text-caption text-medium-emphasis mb-0">high/critical</p>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap ga-2">
+                <v-btn variant="outlined" size="small" prepend-icon="mdi-replay" :loading="isRerunning" @click="onRerun">
+                  Re-run
+                </v-btn>
+                <v-btn variant="text" size="small" prepend-icon="mdi-download" @click="onExport">
+                  Export
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+        </v-card>
+
+        <!-- Adoption bridge — what's next after protected run -->
+        <v-card v-if="failedCount === 0" variant="flat" class="mb-6 pa-4" style="border-left: 4px solid rgb(var(--v-theme-success));">
+          <div class="d-flex align-center mb-2">
+            <v-icon icon="mdi-shield-check" color="success" class="mr-2" />
+            <span class="text-subtitle-2 font-weight-bold">All attacks blocked</span>
+          </div>
+          <p class="text-body-2 text-medium-emphasis mb-3">
+            AI Protector stopped every attack in this scan. Deploy it in front of your production endpoint to get the same protection at runtime.
+          </p>
+          <div class="d-flex flex-wrap ga-2">
+            <v-btn variant="outlined" size="small" prepend-icon="mdi-download" @click="onExport">
+              Export proof report
+            </v-btn>
+            <v-btn variant="text" size="small" prepend-icon="mdi-replay" :loading="isRerunning" @click="onRerun">
+              Re-run scan
+            </v-btn>
+          </div>
+        </v-card>
+      </template>
+
+      <!-- ================================================================ -->
+      <!-- BASELINE RUN: Issue-led hero                                      -->
+      <!-- ================================================================ -->
+      <template v-if="isBaseline && run.executed > 0">
+        <!-- Issue-led hero — failed attacks as the big number -->
+        <v-card variant="flat" class="mb-6 pa-5" data-testid="score-section">
+          <v-row align="center">
+            <!-- LEFT: Failed count as hero -->
+            <v-col cols="12" md="5" class="d-flex flex-column align-center align-md-start text-center text-md-start">
+              <div class="d-flex align-center ga-4 mb-3">
+                <div class="score-badge" style="border-color: #d32f2f;">
+                  <span class="score-value" style="color: #d32f2f;">{{ failedCount }}</span>
+                </div>
+                <div>
+                  <span class="text-subtitle-1 font-weight-bold">
+                    {{ failedCount === 0 ? 'No attacks got through' : `attack${failedCount !== 1 ? 's' : ''} got through` }}
+                  </span>
+                  <p class="text-caption text-medium-emphasis mb-0">
+                    out of {{ run.executed }} tested · no protection active
+                  </p>
+                </div>
+              </div>
+              <p v-if="failedCount > 0" class="text-body-2 text-medium-emphasis mb-0" data-testid="score-interpretation">
+                These attacks bypassed the model without any firewall in place. Enable AI Protector and re-run to see how many get blocked.
               </p>
-              <p v-else class="text-caption text-medium-emphasis mb-3">
-                Most of the remaining risk comes from prompt injection and jailbreak bypasses. Tighten your policy and re-run this benchmark to verify improvement.
+              <p v-else class="text-body-2 text-medium-emphasis mb-0" data-testid="score-interpretation">
+                The model resisted all attacks on its own — but model behavior changes over time. Enable AI Protector for enforced protection.
               </p>
+            </v-col>
+
+            <!-- RIGHT: Stats + CTA -->
+            <v-col cols="12" md="7">
+              <div class="d-flex flex-wrap ga-4 mb-4">
+                <div class="text-center">
+                  <span class="text-h6 font-weight-bold text-error">{{ failedCount }}</span>
+                  <p class="text-caption text-medium-emphasis mb-0">got through</p>
+                </div>
+                <div class="text-center">
+                  <span class="text-h6 font-weight-bold text-blue-grey">{{ run.passed }}</span>
+                  <p class="text-caption text-medium-emphasis mb-0">handled by model</p>
+                </div>
+                <div v-if="criticalCount > 0" class="text-center">
+                  <span class="text-h6 font-weight-bold" style="color: #d32f2f;">{{ criticalCount }}</span>
+                  <p class="text-caption text-medium-emphasis mb-0">high/critical</p>
+                </div>
+                <div v-if="run.skipped > 0" class="text-center">
+                  <span class="text-h6 font-weight-bold text-medium-emphasis">{{ run.skipped }}</span>
+                  <p class="text-caption text-medium-emphasis mb-0">skipped</p>
+                </div>
+              </div>
+
+              <!-- Protection not active banner — inline -->
+              <v-alert
+                color="warning"
+                variant="tonal"
+                density="compact"
+                class="mb-4"
+                data-testid="baseline-banner"
+              >
+                <template #prepend>
+                  <v-icon icon="mdi-shield-off-outline" />
+                </template>
+                <template #text>
+                  <strong>Protection is not active.</strong> Safe outcomes came from model behavior — not enforced controls.
+                </template>
+              </v-alert>
+
+              <!-- Primary CTA — enable protection -->
               <div class="d-flex flex-wrap ga-2 mb-1">
-                <!-- Demo baseline: one-click protected re-run -->
                 <v-btn
-                  v-if="isBaseline && isDemoTarget"
+                  v-if="isDemoTarget"
                   color="primary"
                   variant="flat"
-                  size="small"
+                  size="default"
                   prepend-icon="mdi-shield-check"
                   :loading="isRerunning"
                   data-testid="hero-protect-rerun-btn"
                   @click="onRerunProtected"
                 >
-                  Enable Protection &amp; Re-run
+                  Enable protection &amp; re-run
                 </v-btn>
-                <!-- Non-demo baseline: manual setup dialog -->
                 <v-btn
-                  v-if="isBaseline && !isDemoTarget"
+                  v-else
                   color="primary"
                   variant="flat"
-                  size="small"
+                  size="default"
                   prepend-icon="mdi-shield-plus"
                   data-testid="hero-setup-btn"
                   @click="showSetupDialog = true"
                 >
-                  Set Up Protection
+                  Set up protection
                 </v-btn>
                 <v-btn
-                  v-if="isBaseline"
-                  variant="outlined"
-                  size="small"
-                  prepend-icon="mdi-compare"
-                  to="/compare"
-                  data-testid="hero-compare-btn"
-                >
-                  Open Protection Compare
-                </v-btn>
-                <v-btn
-                  v-if="isBaseline"
                   variant="outlined"
                   size="small"
                   prepend-icon="mdi-download"
                   data-testid="hero-export-btn"
                   @click="onExport"
                 >
-                  Export Baseline Report
+                  Export report
                 </v-btn>
                 <v-btn
-                  v-if="isBaseline"
                   variant="text"
                   size="small"
                   prepend-icon="mdi-replay"
@@ -321,234 +337,21 @@
                   data-testid="hero-rerun-btn"
                   @click="onRerun"
                 >
-                  Re-run Benchmark
+                  Re-run baseline
                 </v-btn>
-                <template v-if="!isBaseline">
-                  <v-btn
-                    color="primary"
-                    variant="flat"
-                    size="small"
-                    prepend-icon="mdi-shield-half-full"
-                    data-testid="hero-setup-btn"
-                    @click="showSetupDialog = true"
-                  >
-                    View Recommended Setup
-                  </v-btn>
-                  <v-btn
-                    variant="outlined"
-                    size="small"
-                    prepend-icon="mdi-replay"
-                    :loading="isRerunning"
-                    data-testid="hero-rerun-btn"
-                    @click="onRerun"
-                  >
-                    Re-run Benchmark
-                  </v-btn>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    prepend-icon="mdi-download"
-                    data-testid="hero-export-btn"
-                    @click="onExport"
-                  >
-                    Export
-                  </v-btn>
-                </template>
               </div>
-              <p v-if="isBaseline && isDemoTarget" class="text-caption text-medium-emphasis mt-2 mb-0">
-                One click — AI Protector will filter every attack through its firewall and re-run the benchmark.
+              <p v-if="isDemoTarget" class="text-caption text-medium-emphasis mt-2 mb-0">
+                One click — AI Protector will filter every attack and re-run the same scan.
               </p>
-              <p v-else-if="isBaseline" class="text-caption text-medium-emphasis mt-2 mb-0">
-                Set up AI Protector and re-run this benchmark to verify enforced protection instead of model-only resistance.
-              </p>
-              <p v-else class="text-caption text-medium-emphasis mt-1 mb-0">
-                Usually requires a server-side endpoint change · Re-run after setup to verify improvement
-              </p>
-              <p v-if="!isBaseline" class="text-caption mt-3 mb-0">
-                <nuxt-link to="/compare" class="text-decoration-none">
-                  <v-icon size="14" class="mr-1">mdi-compare</v-icon>
-                  Want to see how protection changes model behavior? Open Protection Compare
-                </nuxt-link>
-              </p>
-            </template>
-
-            <!-- All passed — different treatment for baseline vs protected -->
-            <template v-else>
-              <!-- Baseline: don't celebrate, explain model resistance -->
-              <template v-if="isBaseline">
-                <p class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-1">What this means</p>
-                <p class="text-caption text-medium-emphasis mb-3">
-                  All tested scenarios had safe outcomes, but these reflect model behavior — not enforced runtime protection.
-                  Model resistance can change with updates or new attack techniques. This is not proof your endpoint is protected.
-                </p>
-                <div class="d-flex flex-wrap ga-2 mb-1">
-                  <!-- Demo: one-click protected re-run -->
-                  <v-btn
-                    v-if="isDemoTarget"
-                    color="primary"
-                    variant="flat"
-                    size="small"
-                    prepend-icon="mdi-shield-check"
-                    :loading="isRerunning"
-                    @click="onRerunProtected"
-                  >
-                    Enable Protection &amp; Re-run
-                  </v-btn>
-                  <!-- Non-demo: manual setup -->
-                  <v-btn
-                    v-else
-                    color="primary"
-                    variant="flat"
-                    size="small"
-                    prepend-icon="mdi-shield-plus"
-                    @click="showSetupDialog = true"
-                  >
-                    Set Up Protection
-                  </v-btn>
-                  <v-btn
-                    variant="outlined"
-                    size="small"
-                    prepend-icon="mdi-compare"
-                    to="/compare"
-                  >
-                    Open Protection Compare
-                  </v-btn>
-                  <v-btn
-                    variant="outlined"
-                    size="small"
-                    prepend-icon="mdi-download"
-                    @click="onExport"
-                  >
-                    Export Baseline Report
-                  </v-btn>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    prepend-icon="mdi-replay"
-                    :loading="isRerunning"
-                    @click="onRerun"
-                  >
-                    Re-run Benchmark
-                  </v-btn>
-                </div>
-                <p v-if="isDemoTarget" class="text-caption text-medium-emphasis mt-2 mb-0">
-                  One click — AI Protector will filter every attack through its firewall and re-run the benchmark.
-                </p>
-                <p v-else class="text-caption text-medium-emphasis mt-2 mb-0">
-                  Set up AI Protector and re-run this benchmark to verify enforced protection instead of model-only resistance.
-                </p>
-              </template>
-              <!-- Protected: celebrate -->
-              <template v-else>
-                <div class="d-flex flex-wrap ga-2">
-                  <v-btn
-                    variant="outlined"
-                    size="small"
-                    prepend-icon="mdi-replay"
-                    :loading="isRerunning"
-                    @click="onRerun"
-                  >
-                    Re-run Benchmark
-                  </v-btn>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    prepend-icon="mdi-download"
-                    @click="onExport"
-                  >
-                    Export
-                  </v-btn>
-                </div>
-              </template>
-            </template>
-          </v-col>
-        </v-row>
-      </v-card>
-
-      <!-- ================================================================ -->
-      <!-- Why this baseline looks safer (breakdown) — baseline only          -->
-      <!-- ================================================================ -->
-      <template v-if="isBaseline && run.executed > 0">
-        <h2 class="text-h6 mb-3">Why this baseline looks safer than it is</h2>
-        <v-card variant="flat" class="mb-6 pa-4" data-testid="baseline-breakdown">
-          <div class="d-flex flex-wrap ga-6 mb-4">
-            <div class="text-center">
-              <span class="text-h6 font-weight-bold text-blue-grey">{{ run.passed }}</span>
-              <p class="text-caption text-medium-emphasis mb-0">Safe outcomes</p>
-              <p class="text-caption text-disabled mb-0" style="font-size: 0.7rem;">model resisted or no breach</p>
-            </div>
-            <div class="text-center">
-              <span class="text-h6 font-weight-bold" style="color: #78909c;">0</span>
-              <p class="text-caption text-medium-emphasis mb-0">Blocked by AI Protector</p>
-            </div>
-            <div class="text-center">
-              <span class="text-h6 font-weight-bold text-error">{{ failedCount }}</span>
-              <p class="text-caption text-medium-emphasis mb-0">Attacks succeeded</p>
-            </div>
-            <div v-if="run.skipped > 0" class="text-center">
-              <span class="text-h6 font-weight-bold text-medium-emphasis">{{ run.skipped }}</span>
-              <p class="text-caption text-medium-emphasis mb-0">Skipped</p>
-            </div>
-          </div>
-          <v-alert
-            color="blue-grey-darken-1"
-            variant="tonal"
-            density="compact"
-            class="baseline-guardrail-note"
-            data-testid="baseline-guardrail-note"
-          >
-            <template #prepend>
-              <v-icon icon="mdi-information-outline" size="small" />
-            </template>
-            <template #text>
-              <span class="text-body-2">
-                Most safe outcomes in this run came from model behavior or unattributed safe responses — not verified protection controls.
-                <strong>"Safe outcome" does not mean "actively protected."</strong>
-              </span>
-            </template>
-          </v-alert>
+            </v-col>
+          </v-row>
         </v-card>
-      </template>
 
-      <!-- ================================================================ -->
-      <!-- Category Breakdown                                                -->
-      <!-- ================================================================ -->
-      <h2 class="text-h6 mb-3">Category Breakdown</h2>
-      <v-card variant="flat" class="mb-6 pa-4" data-testid="category-breakdown">
-        <div
-          v-for="cat in categoryBars"
-          :key="cat.slug"
-          class="mb-4"
-        >
-          <div class="d-flex justify-space-between mb-1">
-            <span class="text-body-2 font-weight-medium">{{ cat.label }}</span>
-            <span class="text-body-2 text-medium-emphasis">
-              {{ cat.passedCount }}/{{ cat.total }} {{ isBaseline ? 'safe outcomes observed' : 'blocked' }} ({{ cat.percent }}%)
-            </span>
-          </div>
-          <v-progress-linear
-            :model-value="cat.percent"
-            :color="isBaseline ? (cat.percent >= 80 ? 'blue-grey' : cat.percent >= 60 ? 'warning' : 'error') : (cat.percent >= 80 ? 'success' : cat.percent >= 60 ? 'warning' : 'error')"
-            height="10"
-            rounded
-          />
-          <div v-if="isBaseline" class="d-flex ga-3 mt-1">
-            <span class="text-caption text-blue-grey">{{ cat.passedCount }} safe outcome{{ cat.passedCount !== 1 ? 's' : '' }}</span>
-            <span class="text-caption text-medium-emphasis">·</span>
-            <span class="text-caption text-error">{{ cat.total - cat.passedCount }} got through</span>
-          </div>
-        </div>
-        <p v-if="categoryBars.length === 0" class="text-body-2 text-medium-emphasis">
-          No category data available.
-        </p>
-      </v-card>
-
-      <!-- ================================================================ -->
-      <!-- Top Failures                                                      -->
-      <!-- ================================================================ -->
-      <h2 class="text-h6 mb-3">Top Failures</h2>
-      <v-card variant="flat" class="mb-6 pa-4" data-testid="top-failures">
-        <template v-if="topFailures.length > 0">
+        <!-- ============================================================== -->
+        <!-- What got through — scenario failure cards (ABOVE categories)    -->
+        <!-- ============================================================== -->
+        <h2 v-if="topFailures.length > 0" class="text-h6 mb-3">What got through</h2>
+        <v-card v-if="topFailures.length > 0" variant="flat" class="mb-6 pa-4" data-testid="what-got-through">
           <v-list density="compact" class="bg-transparent">
             <v-list-item
               v-for="fail in topFailures"
@@ -566,8 +369,6 @@
                 />
               </template>
               <v-list-item-title class="text-body-2">
-                <span class="failure-id text-medium-emphasis">{{ fail.scenario_id }}</span>
-                <span v-if="fail.title" class="text-medium-emphasis"> · </span>
                 <span class="font-weight-medium">{{ fail.title || fail.scenario_id }}</span>
               </v-list-item-title>
               <v-list-item-subtitle class="text-caption mt-1">
@@ -580,7 +381,7 @@
                 <div class="d-flex align-center ga-2">
                   <v-chip
                     v-if="failureMitigation(fail)"
-                    :color="failureMitigation(fail).startsWith('Can be') ? 'warning' : 'warning'"
+                    color="warning"
                     variant="outlined"
                     size="x-small"
                   >
@@ -599,37 +400,180 @@
               </template>
             </v-list-item>
           </v-list>
-        </template>
-        <div v-else class="text-center pa-4">
-          <v-icon :icon="isBaseline ? 'mdi-robot-happy' : 'mdi-shield-check'" :color="isBaseline ? 'blue-grey' : 'success'" size="48" class="mb-2" />
-          <p class="text-body-1 font-weight-medium">{{ isBaseline ? 'No breaches detected — but no active protection either' : 'All attacks blocked' }}</p>
-          <p class="text-body-2 text-medium-emphasis">
-            {{ isBaseline
-              ? 'All scenarios had safe outcomes, but these reflect model behavior — not enforced protection. Set up AI Protector for verified runtime controls.'
-              : 'No scenarios got through your endpoint\'s defenses.'
-            }}
-          </p>
-        </div>
-      </v-card>
+          <div v-if="allFailures.length > 5" class="text-center mt-2">
+            <v-btn variant="text" size="small" color="primary" @click="showAllFailures = !showAllFailures">
+              {{ showAllFailures ? 'Show less' : `Show all ${allFailures.length} failures` }}
+            </v-btn>
+          </div>
+        </v-card>
+
+        <!-- No failures baseline -->
+        <v-card v-else variant="flat" class="mb-6 pa-4" data-testid="what-got-through">
+          <div class="text-center pa-4">
+            <v-icon icon="mdi-robot-happy" color="blue-grey" size="48" class="mb-2" />
+            <p class="text-body-1 font-weight-medium">No attacks got through</p>
+            <p class="text-body-2 text-medium-emphasis mb-3">
+              The model resisted all attacks on its own. But model behavior changes — enable AI Protector for enforced runtime protection.
+            </p>
+            <v-btn
+              v-if="isDemoTarget"
+              color="primary"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-shield-check"
+              :loading="isRerunning"
+              @click="onRerunProtected"
+            >
+              Enable protection &amp; re-run
+            </v-btn>
+            <v-btn
+              v-else
+              color="primary"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-shield-plus"
+              @click="showSetupDialog = true"
+            >
+              Set up protection
+            </v-btn>
+          </div>
+        </v-card>
+      </template>
 
       <!-- ================================================================ -->
-      <!-- How to Protect This Endpoint — dialog                             -->
+      <!-- Category breakdown — shared by baseline and protected              -->
+      <!-- ================================================================ -->
+      <template v-if="run && run.executed > 0">
+        <h2 class="text-h6 mb-3">Category breakdown</h2>
+        <v-card variant="flat" class="mb-6 pa-4" data-testid="category-breakdown">
+          <div
+            v-for="cat in categoryBars"
+            :key="cat.slug"
+            class="mb-4"
+          >
+            <div class="d-flex justify-space-between mb-1">
+              <span class="text-body-2 font-weight-medium">{{ cat.label }}</span>
+              <span class="text-body-2 text-medium-emphasis">
+                {{ cat.passedCount }}/{{ cat.total }} {{ isBaseline ? 'handled' : 'blocked' }} ({{ cat.percent }}%)
+              </span>
+            </div>
+            <v-progress-linear
+              :model-value="cat.percent"
+              :color="isBaseline ? (cat.percent >= 80 ? 'blue-grey' : cat.percent >= 60 ? 'warning' : 'error') : (cat.percent >= 80 ? 'success' : cat.percent >= 60 ? 'warning' : 'error')"
+              height="10"
+              rounded
+            />
+            <div v-if="isBaseline" class="d-flex ga-3 mt-1">
+              <span class="text-caption text-blue-grey">{{ cat.passedCount }} model resistance</span>
+              <span class="text-caption text-medium-emphasis">·</span>
+              <span class="text-caption text-error">{{ cat.total - cat.passedCount }} got through</span>
+            </div>
+          </div>
+          <p v-if="categoryBars.length === 0" class="text-body-2 text-medium-emphasis">
+            No category data available.
+          </p>
+        </v-card>
+
+        <!-- Top failures for protected runs -->
+        <template v-if="!isBaseline && topFailures.length > 0">
+          <h2 class="text-h6 mb-3">Remaining vulnerabilities</h2>
+          <v-card variant="flat" class="mb-6 pa-4" data-testid="top-failures">
+            <v-list density="compact" class="bg-transparent">
+              <v-list-item
+                v-for="fail in topFailures"
+                :key="fail.scenario_id"
+                class="px-0 mb-2"
+                @click="router.push(`/red-team/results/${runId}/scenario/${fail.scenario_id}`)"
+                style="cursor: pointer;"
+              >
+                <template #prepend>
+                  <v-icon
+                    :icon="severityMeta(fail.severity).icon"
+                    :color="severityMeta(fail.severity).color"
+                    size="small"
+                    class="mr-3"
+                  />
+                </template>
+                <v-list-item-title class="text-body-2">
+                  <span class="font-weight-medium">{{ fail.title || fail.scenario_id }}</span>
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption mt-1">
+                  {{ humanCategory(fail.category) }}
+                  <span v-if="failureImpact(fail)" class="text-error">
+                    &nbsp;·&nbsp; {{ failureImpact(fail) }}
+                  </span>
+                </v-list-item-subtitle>
+                <template #append>
+                  <v-chip
+                    :color="severityMeta(fail.severity).color"
+                    variant="tonal"
+                    size="x-small"
+                    :prepend-icon="severityMeta(fail.severity).icon"
+                  >
+                    {{ severityMeta(fail.severity).label }}
+                  </v-chip>
+                  <v-icon icon="mdi-chevron-right" size="small" class="ml-2" />
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </template>
+      </template>
+
+      <!-- ================================================================ -->
+      <!-- Sticky CTA — baseline runs with failures                          -->
+      <!-- ================================================================ -->
+      <div
+        v-if="isBaseline && failedCount > 0 && run && run.executed > 0"
+        class="sticky-cta"
+      >
+        <v-card variant="flat" class="pa-3" elevation="8">
+          <div class="d-flex align-center justify-center ga-3">
+            <span class="text-body-2 font-weight-medium">
+              {{ failedCount }} attack{{ failedCount !== 1 ? 's' : '' }} got through without protection
+            </span>
+            <v-btn
+              v-if="isDemoTarget"
+              color="primary"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-shield-check"
+              class="cta-pulse"
+              :loading="isRerunning"
+              @click="onRerunProtected"
+            >
+              Enable protection &amp; re-run
+            </v-btn>
+            <v-btn
+              v-else
+              color="primary"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-shield-plus"
+              class="cta-pulse"
+              @click="showSetupDialog = true"
+            >
+              Set up protection
+            </v-btn>
+          </div>
+        </v-card>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- How to Protect — dialog                                           -->
       <!-- ================================================================ -->
       <v-dialog v-model="showSetupDialog" max-width="580">
         <v-card>
           <v-card-title class="d-flex align-center">
             <v-icon icon="mdi-shield-half-full" size="small" class="mr-2" />
-            How to Protect This Endpoint
+            How to protect this endpoint
           </v-card-title>
           <v-card-text>
-            <!-- What to change -->
             <h3 class="text-subtitle-2 font-weight-bold mb-2">1. Update your backend</h3>
             <p class="text-body-2 text-medium-emphasis mb-3">
               Route requests through AI Protector instead of sending them directly to your model.
-              This is a server-side change — no frontend modifications needed.
             </p>
 
-            <!-- What to paste -->
             <h3 class="text-subtitle-2 font-weight-bold mb-2">2. Use this protected URL</h3>
             <v-card variant="tonal" class="pa-3 mb-1">
               <code class="text-body-2" style="word-break: break-all;" data-testid="protected-url">
@@ -640,18 +584,16 @@
               Replace your current model endpoint URL with this in your backend config or SDK init.
             </p>
 
-            <!-- Integration effort -->
             <v-alert type="info" variant="tonal" density="compact" class="mb-3">
               <div class="text-caption">
                 <strong>Typical setup: 5–15 minutes</strong><br />
-                Requires a backend endpoint change. No frontend changes needed if your app already uses a server-side AI layer.
+                Requires a backend endpoint change. No frontend changes needed.
               </div>
             </v-alert>
 
-            <!-- What to do after -->
-            <h3 class="text-subtitle-2 font-weight-bold mb-2">3. Verify improvement</h3>
+            <h3 class="text-subtitle-2 font-weight-bold mb-2">3. Re-run this scan</h3>
             <p class="text-body-2 text-medium-emphasis mb-0">
-              After routing traffic through AI Protector, re-run this benchmark to compare results.
+              After routing traffic through AI Protector, re-run to get a before-vs-after comparison.
             </p>
           </v-card-text>
           <v-card-actions>
@@ -664,7 +606,7 @@
               :loading="isRerunning"
               @click="showSetupDialog = false; onRerun()"
             >
-              Re-run Benchmark
+              Re-run scan
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -701,6 +643,7 @@ const showSetupDialog = ref(false)
 const policyApplied = ref(false)
 const _rerunPolicy = ref('Strict')
 const isRerunning = ref(false)
+const showAllFailures = ref(false)
 
 // ---------------------------------------------------------------------------
 // Computed — target label
@@ -757,50 +700,6 @@ const _safeOutcomeCount = computed(() => {
 
 const skippedMutating = computed(() => {
   return run.value?.skipped_reasons?.safe_mode ?? 0
-})
-
-// ---------------------------------------------------------------------------
-// Score interpretation — one-sentence narrative
-// ---------------------------------------------------------------------------
-
-const scoreInterpretation = computed(() => {
-  const score = run.value?.score_simple ?? 0
-  const cats = categoryBars.value
-  // Find weakest and strongest categories
-  const weakest = cats.length > 0 ? cats[0] : null // sorted worst-first
-  const strongest = cats.length > 1 ? cats[cats.length - 1] : null
-
-  // Baseline runs — honest framing, no false comfort
-  if (isBaseline.value) {
-    if (score >= 90) return 'The model produced safe outcomes for most scenarios, but these reflect baseline model behavior — not enforced runtime protection. Set up AI Protector and re-run to verify active controls.'
-    if (score >= 80) {
-      if (weakest) return `${weakest.label} remains weak in this baseline. Some scenarios avoided breach, but these outcomes reflect model behavior — not active protection.`
-      return 'Most scenarios had safe outcomes, but model resistance alone is not verified runtime protection. Set up protection and re-run.'
-    }
-    if (score >= 60) {
-      const parts: string[] = []
-      if (weakest && weakest.percent < 50) parts.push(`${weakest.label} is largely undefended in this baseline.`)
-      if (strongest && strongest.percent >= 80) parts.push(`${strongest.label} saw some model resistance, but not enforced protection.`)
-      return parts.length ? parts.join(' ') + ' No active protection was measured.' : 'Mixed baseline results — no active protection was measured in this run.'
-    }
-    if (weakest) return `The model failed to resist most attacks. ${weakest.label} is the most exposed area. Set up AI Protector and re-run.`
-    return 'Multiple attack categories bypassed the model. Set up AI Protector and re-run.'
-  }
-
-  // Protected runs — original interpretation
-  if (score >= 90) return 'Your endpoint handled all major attack categories well.'
-  if (score >= 80) {
-    if (weakest) return `Most attacks were blocked. ${weakest.label} has room for improvement.`
-    return 'Most attacks were blocked. Minor gaps remain.'
-  }
-  if (score >= 60) {
-    const parts: string[] = []
-    if (weakest && weakest.percent < 50) parts.push(`${weakest.label} protections are weak.`)
-    if (strongest && strongest.percent >= 80) parts.push(`${strongest.label} controls performed well.`)
-    return parts.length ? parts.join(' ') : 'Some attack categories need hardening.'
-  }
-  if (weakest) return `Significant gaps detected. ${weakest.label} is the most exposed area.`
-  return 'Multiple attack categories bypassed defenses. Immediate hardening recommended.'
 })
 
 // ---------------------------------------------------------------------------
@@ -913,10 +812,21 @@ const severityWeight: Record<string, number> = {
 }
 
 const topFailures = computed(() => {
-  return scenarios.value
+  const sorted = scenarios.value
     .filter((s) => s.passed === false)
     .sort((a, b) => (severityWeight[a.severity] ?? 9) - (severityWeight[b.severity] ?? 9))
-    .slice(0, 5)
+  return showAllFailures.value ? sorted : sorted.slice(0, 5)
+})
+
+const allFailures = computed(() => {
+  return scenarios.value.filter((s) => s.passed === false)
+})
+
+/** Number of failures in the baseline run (from comparison data) */
+const baselineFailedCount = computed(() => {
+  if (!comparison.value) return 0
+  const baseScore = comparison.value.run_a
+  return (baseScore.executed ?? 0) - (baseScore.passed ?? 0)
 })
 
 // ---------------------------------------------------------------------------
@@ -1102,16 +1012,33 @@ onMounted(() => {
   line-height: 1;
 }
 
-.failure-id {
-  font-family: monospace;
-  font-size: 0.85em;
-  letter-spacing: -0.02em;
+.sticky-cta {
+  position: sticky;
+  bottom: 16px;
+  z-index: 10;
+  margin-top: 16px;
+
+  .v-card {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.7),
+      0 0 24px rgba(var(--v-theme-primary), 0.35),
+      0 0 8px rgba(var(--v-theme-primary), 0.2) !important;
+    border: 1px solid rgba(var(--v-theme-primary), 0.4) !important;
+  }
 }
 
-.baseline-guardrail-note {
-  // Ensure readable contrast on the explanation note
-  :deep(.v-alert__content) {
-    opacity: 1;
+@keyframes cta-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(var(--v-theme-primary), 0.55);
+    transform: scale(1);
   }
+  50% {
+    box-shadow: 0 0 0 8px rgba(var(--v-theme-primary), 0);
+    transform: scale(1.03);
+  }
+}
+
+.cta-pulse {
+  animation: cta-glow-pulse 2s ease-in-out infinite;
 }
 </style>

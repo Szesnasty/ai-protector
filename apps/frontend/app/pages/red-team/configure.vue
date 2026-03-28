@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="configure-page">
-    <!-- Header with target info -->
+    <!-- Header -->
     <div class="mb-6">
       <div class="d-flex align-center mb-1">
         <v-btn
@@ -10,7 +10,7 @@
           class="mr-2"
           :to="'/red-team'"
         />
-        <h1 class="text-h5">Configure Benchmark</h1>
+        <h1 class="text-h5">Run baseline scan</h1>
         <v-chip
           v-if="target === 'demo'"
           color="purple"
@@ -23,6 +23,9 @@
           Demo
         </v-chip>
       </div>
+      <p class="text-body-2 text-medium-emphasis mt-2" style="max-width: 540px;">
+        First, we scan without protection to find what gets through. Then you enable AI Protector and re-run to prove the fix.
+      </p>
       <div class="d-flex align-center mt-2">
         <span class="text-body-2 text-medium-emphasis mr-2">Target:</span>
         <v-chip color="primary" variant="tonal" size="small" :prepend-icon="targetIcon">
@@ -39,10 +42,9 @@
       </div>
     </div>
 
-    <!-- Pack selection -->
-    <h2 class="text-h6 mb-3">Choose a Benchmark Pack</h2>
+    <!-- Pack selection — simplified -->
+    <h2 class="text-h6 mb-3">Attack pack</h2>
 
-    <!-- Primary pack — always visible -->
     <v-radio-group v-model="selectedPack" class="mb-2">
       <v-card
         v-for="pack in primaryPacks"
@@ -76,7 +78,7 @@
                 variant="outlined"
                 class="ml-2"
               >
-                {{ pack.scenarioCount }} scenarios · ~{{ pack.estimatedTime }}
+                {{ pack.scenarioCount }} attacks · ~{{ pack.estimatedTime }}
               </v-chip>
             </div>
             <p class="text-body-2 text-medium-emphasis mb-0">{{ pack.description }}</p>
@@ -85,14 +87,13 @@
       </v-card>
     </v-radio-group>
 
-    <!-- More packs — collapsed (agent threats + future packs) -->
+    <!-- More packs — collapsed -->
     <v-expansion-panels v-if="secondaryPacks.length > 0 || futurePacks.length > 0" class="mb-4" variant="accordion">
       <v-expansion-panel>
         <v-expansion-panel-title class="text-body-2 text-medium-emphasis">
-          More packs
+          More attack packs
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <!-- Active secondary packs (e.g. agent threats) -->
           <v-card
             v-for="pack in secondaryPacks"
             :key="pack.name"
@@ -116,7 +117,7 @@
                     variant="outlined"
                     class="ml-2"
                   >
-                    {{ pack.scenarioCount }} scenarios · ~{{ pack.estimatedTime }}
+                    {{ pack.scenarioCount }} attacks · ~{{ pack.estimatedTime }}
                   </v-chip>
                 </div>
                 <p class="text-body-2 text-medium-emphasis mb-0">{{ pack.description }}</p>
@@ -124,7 +125,6 @@
             </v-card-text>
           </v-card>
 
-          <!-- Future packs -->
           <v-card
             v-for="pack in futurePacks"
             :key="pack.name"
@@ -147,18 +147,21 @@
       </v-expansion-panel>
     </v-expansion-panels>
 
-    <!-- Run summary -->
+    <!-- Summary bar -->
     <v-alert
       v-if="selectedPackInfo && selectedPackInfo.scenarioCount > 0"
-      type="info"
+      color="primary"
       variant="tonal"
       density="compact"
       class="mb-4"
     >
-      {{ selectedPackInfo.scenarioCount }} scenarios · ~{{ selectedPackInfo.estimatedTime }} estimated
+      <template #prepend>
+        <v-icon icon="mdi-information-outline" />
+      </template>
+      {{ selectedPackInfo.scenarioCount }} adversarial attacks · ~{{ selectedPackInfo.estimatedTime }} · no protection active (baseline)
     </v-alert>
 
-    <!-- Protection mode toggle -->
+    <!-- Protection toggle — defaults OFF for baseline-first flow -->
     <v-card variant="flat" class="mb-4 pa-4">
       <div class="d-flex align-center">
         <v-switch
@@ -178,13 +181,13 @@
               class="mr-2"
             />
             <span class="text-subtitle-2 font-weight-bold">
-              {{ protectionEnabled ? 'Protected by AI Protector' : 'Baseline (no protection)' }}
+              {{ protectionEnabled ? 'Protection enabled' : 'No protection (baseline)' }}
             </span>
           </div>
           <p class="text-body-2 text-medium-emphasis mb-0 mt-1">
             {{ protectionEnabled
-              ? 'Requests go through AI Protector firewall before reaching the target.'
-              : 'Requests go directly to the target — measures raw model behavior.'
+              ? 'Attacks go through AI Protector firewall first.'
+              : 'Attacks go directly to the target. You\'ll enable protection later to measure the difference.'
             }}
           </p>
         </div>
@@ -197,19 +200,44 @@
         color="primary"
         size="large"
         class="run-button px-12"
-        prepend-icon="mdi-play"
+        prepend-icon="mdi-magnify-scan"
         :loading="isCreating"
         :disabled="!selectedPack || isCreating"
         data-testid="run-benchmark-btn"
         @click="onRunBenchmark"
       >
-        Start Benchmark
+        {{ protectionEnabled ? 'Run protected scan' : 'Run baseline scan' }}
       </v-btn>
     </div>
-    <p v-if="selectedPackInfo" class="text-caption text-medium-emphasis text-center mt-1 mb-6" style="line-height: 1.2;">
+    <p v-if="selectedPackInfo" class="text-caption text-medium-emphasis text-center mt-1 mb-4" style="line-height: 1.2;">
       {{ selectedPackInfo.displayName }}
-      <template v-if="selectedPackInfo.recommended"> · Recommended</template>
+      <template v-if="selectedPackInfo.scenarioCount > 0"> · {{ selectedPackInfo.scenarioCount }} attacks</template>
     </p>
+
+    <!-- What happens next — only for baseline flow -->
+    <v-card v-if="!protectionEnabled" variant="flat" class="mb-6 pa-4">
+      <h3 class="text-subtitle-2 font-weight-bold mb-3">What happens next</h3>
+      <div class="d-flex flex-column ga-2">
+        <div class="d-flex align-start">
+          <v-avatar color="primary" variant="tonal" size="24" class="mr-3 mt-0 flex-shrink-0">
+            <span class="text-caption font-weight-bold">1</span>
+          </v-avatar>
+          <span class="text-body-2 text-medium-emphasis">We send adversarial attacks to your endpoint and measure what gets through.</span>
+        </div>
+        <div class="d-flex align-start">
+          <v-avatar color="success" variant="tonal" size="24" class="mr-3 mt-0 flex-shrink-0">
+            <span class="text-caption font-weight-bold">2</span>
+          </v-avatar>
+          <span class="text-body-2 text-medium-emphasis">You see exact vulnerabilities — then enable AI Protector with one click.</span>
+        </div>
+        <div class="d-flex align-start">
+          <v-avatar color="warning" variant="tonal" size="24" class="mr-3 mt-0 flex-shrink-0">
+            <span class="text-caption font-weight-bold">3</span>
+          </v-avatar>
+          <span class="text-body-2 text-medium-emphasis">Re-run the same scan and get a before-vs-after comparison proving which vulnerabilities were fixed.</span>
+        </div>
+      </div>
+    </v-card>
 
     <!-- Error alert -->
     <v-alert
@@ -223,12 +251,12 @@
       {{ runError }}
     </v-alert>
 
-    <!-- Advanced section — collapsed by default, BELOW Run button -->
+    <!-- Advanced section -->
     <v-expansion-panels v-model="advancedPanel" class="mb-6" variant="accordion">
       <v-expansion-panel value="advanced">
-        <v-expansion-panel-title>
+        <v-expansion-panel-title class="text-body-2 text-medium-emphasis">
           <v-icon icon="mdi-tune" size="small" class="mr-2" />
-          Advanced Settings
+          Advanced settings
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <v-select
@@ -244,7 +272,6 @@
             persistent-hint
           />
 
-          <!-- Policy note for external endpoints -->
           <p v-if="target !== 'demo'" class="text-caption text-medium-emphasis mt-2">
             Policy is applied only when traffic runs through AI Protector.
           </p>
@@ -293,7 +320,7 @@ const { packs, isLoading: _packsLoading } = useBenchmarkPacks()
 
 const selectedPack = ref((route.query.pack as string) || 'core_security')
 const selectedPolicy = ref((route.query.policy as string) || 'balanced')
-const protectionEnabled = ref(target.value === 'demo')
+const protectionEnabled = ref(false)
 const advancedPanel = ref<string | undefined>(undefined)
 const runError = ref<string | null>(null)
 
@@ -326,13 +353,13 @@ function estimateTime(count: number): string {
 const displayPacks = computed<DisplayPack[]>(() => {
   const packMeta: Record<string, { description: string; recommended: boolean; disabled: boolean; badge?: string; secondary?: boolean }> = {
     core_security: {
-      description: 'Tests prompt injection, jailbreak, data leaks, and harmful outputs. Works on any chatbot or API endpoint.',
+      description: 'Prompt injection, jailbreak, data leaks, and harmful output attacks. Works on any chatbot or API.',
       recommended: true,
       disabled: false,
-      badge: 'Best starting point for most AI endpoints',
+      badge: 'Best starting point',
     },
     agent_threats: {
-      description: 'Tests tool abuse, role bypass, and privilege escalation. Best for tool-calling endpoints.',
+      description: 'Tool abuse, role bypass, and privilege escalation attacks. Best for tool-calling agents.',
       recommended: false,
       disabled: false,
       badge: 'Advanced',
