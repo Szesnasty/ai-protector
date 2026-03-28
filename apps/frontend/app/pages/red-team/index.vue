@@ -4,7 +4,7 @@
     <div class="mb-2 text-center text-md-start">
       <h1 class="text-h4 font-weight-bold mb-2">Find agent vulnerabilities. Then prove the fix.</h1>
       <p class="text-body-1 text-medium-emphasis" style="max-width: 640px;">
-        Run a baseline scan to see what gets through, enable AI Protector, and re-run the same attacks to verify protection.
+        Run a baseline scan, enable protection, re-run the same attacks — get before-vs-after proof in minutes.
       </p>
     </div>
 
@@ -23,7 +23,7 @@
             <v-icon icon="mdi-shield-check" size="22" />
           </v-avatar>
           <span class="text-subtitle-2 font-weight-bold">2. Protect</span>
-          <span class="text-caption text-medium-emphasis">Enable protection for the same endpoint</span>
+          <span class="text-caption text-medium-emphasis">Route your endpoint through AI Protector</span>
         </v-col>
         <v-col cols="12" sm="4" class="d-flex flex-column align-center">
           <v-avatar color="warning" variant="tonal" size="44" class="mb-2">
@@ -179,13 +179,20 @@
                   {{ proof.statusLabel }}
                 </v-chip>
                 <v-btn
-                  :color="proof.status === 'needs_protection' ? 'primary' : 'default'"
-                  :variant="proof.status === 'needs_protection' ? 'flat' : 'outlined'"
+                  variant="outlined"
                   size="small"
                   :to="proof.ctaRoute"
                 >
                   {{ proof.ctaLabel }}
                 </v-btn>
+                <a
+                  v-if="proof.secondaryLabel"
+                  class="text-caption text-primary ml-2"
+                  style="cursor: pointer;"
+                  @click.prevent="proof.secondaryRoute ? $router.push(proof.secondaryRoute) : (proof.showHistory = !proof.showHistory)"
+                >
+                  {{ proof.secondaryLabel }}
+                </a>
               </div>
             </div>
 
@@ -271,7 +278,7 @@ const targetCards: TargetCard[] = [
     title: 'Try the demo scan',
     description: 'Run a short attack pack against a vulnerable demo agent, then re-run the exact same scenarios with protection enabled.',
     microcopy: 'No setup · under 1 minute',
-    helperText: 'You\'ll see baseline results in about 30 seconds, then one click to re-run with protection.',
+    helperText: 'Baseline results in ~30 seconds. One click to re-run with protection.',
     icon: 'mdi-play-circle-outline',
     color: 'primary',
     disabled: false,
@@ -296,31 +303,7 @@ const targetCards: TargetCard[] = [
     badge: 'Test your own endpoint',
     hidden: false,
   },
-  {
-    key: 'local_agent',
-    title: 'Local Agent',
-    description: 'Test before you deploy. Agent running on localhost.',
-    icon: 'mdi-laptop',
-    color: 'secondary',
-    disabled: false,
-    recommended: false,
-    ctaLabel: 'Configure',
-    ctaIcon: 'mdi-cog',
-    hidden: true,
-  },
-  {
-    key: 'registered_agent',
-    title: 'Registered Agent',
-    description: 'Deeper protection and tracing.',
-    icon: 'mdi-shield-check',
-    color: 'success',
-    disabled: true,
-    recommended: false,
-    disabledNote: 'Available in next iteration',
-    ctaLabel: 'Coming soon',
-    ctaIcon: 'mdi-shield-check',
-    hidden: true,
-  },
+
 ]
 
 const visibleCards = computed(() => targetCards.filter((c) => !c.hidden))
@@ -369,6 +352,8 @@ interface ProofSummary {
   uplift: number | null
   ctaLabel: string
   ctaRoute: string
+  secondaryLabel: string | null
+  secondaryRoute: string | null
   latestRun: RunDetail
   olderRuns: RunDetail[]
   olderRunCount: number
@@ -433,14 +418,24 @@ const proofSummaries = computed<ProofSummary[]>(() => {
     const latestRun = runs[0]!
     const latestRoute = `/red-team/${latestRun.status === 'running' ? 'run' : 'results'}/${latestRun.id}`
 
-    let ctaLabel = 'Enable protection & re-run'
+    let ctaLabel = 'View baseline'
     let ctaRoute = latestRoute
     if (status === 'protected_verified') {
       ctaLabel = 'View proof'
-      ctaRoute = latestRoute
     } else if (status === 'rerun_needed') {
-      ctaLabel = 'Re-run baseline'
-      ctaRoute = '/red-team/configure?target=demo'
+      ctaLabel = 'View latest'
+    }
+
+    let secondaryLabel: string | null = null
+    let secondaryRoute: string | null = null
+    if (status === 'needs_protection') {
+      secondaryLabel = 'Enable protection'
+      secondaryRoute = latestRoute
+    } else if (status === 'rerun_needed') {
+      secondaryLabel = 'Re-run protected scan'
+      secondaryRoute = isDemo
+        ? '/red-team/configure?target=demo'
+        : `/red-team/target?type=${latestRun.target_type}`
     }
 
     summaries.push({
@@ -456,6 +451,8 @@ const proofSummaries = computed<ProofSummary[]>(() => {
       uplift,
       ctaLabel,
       ctaRoute,
+      secondaryLabel,
+      secondaryRoute,
       latestRun,
       olderRuns: runs.slice(1, 7),
       olderRunCount: Math.max(0, runs.length - 1),
@@ -479,7 +476,7 @@ const proofFilters = computed(() => {
   return [
     { label: 'All', value: 'all' as const, count: proofSummaries.value.length },
     { label: 'Needs protection', value: 'needs_protection' as const, count: counts.needs_protection },
-    { label: 'Protected', value: 'protected_verified' as const, count: counts.protected_verified },
+    { label: 'Verified', value: 'protected_verified' as const, count: counts.protected_verified },
     { label: 'Re-run needed', value: 'rerun_needed' as const, count: counts.rerun_needed },
   ]
 })
