@@ -24,7 +24,7 @@
         </v-chip>
       </div>
       <p class="text-body-2 text-medium-emphasis mt-2" style="max-width: 540px;">
-        First, we scan without protection to find what gets through. Then you enable AI Protector and re-run to prove the fix.
+        Attacks go directly to your endpoint — no protection active. You’ll enable protection and re-run after seeing results.
       </p>
       <div class="d-flex align-center mt-2">
         <span class="text-body-2 text-medium-emphasis mr-2">Target:</span>
@@ -158,7 +158,7 @@
       <template #prepend>
         <v-icon icon="mdi-information-outline" />
       </template>
-      {{ selectedPackInfo.scenarioCount }} adversarial attacks · ~{{ selectedPackInfo.estimatedTime }} · no protection active (baseline)
+      {{ selectedPackInfo.scenarioCount }} attacks · ~{{ selectedPackInfo.estimatedTime }} · no enforced protection
     </v-alert>
 
 
@@ -197,7 +197,7 @@
           <v-avatar color="success" variant="tonal" size="24" class="mr-3 mt-0 flex-shrink-0">
             <span class="text-caption font-weight-bold">2</span>
           </v-avatar>
-          <span class="text-body-2 text-medium-emphasis">You see exact vulnerabilities — then enable AI Protector with one click.</span>
+          <span class="text-body-2 text-medium-emphasis">You see which attacks got through — then route your endpoint through AI Protector.</span>
         </div>
         <div class="d-flex align-start">
           <v-avatar color="warning" variant="tonal" size="24" class="mr-3 mt-0 flex-shrink-0">

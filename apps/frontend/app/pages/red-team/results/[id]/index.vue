@@ -215,7 +215,7 @@
             <span class="text-subtitle-2 font-weight-bold">All tested attacks were blocked in this run</span>
           </div>
           <p class="text-body-2 text-medium-emphasis mb-3">
-            AI Protector stopped every attack in this scan. Deploy it in front of your production endpoint to get the same protection at runtime.
+            Deploy AI Protector in front of your production endpoint to get the same protection at runtime.
           </p>
           <div class="d-flex flex-wrap ga-2">
             <v-btn variant="outlined" size="small" prepend-icon="mdi-download" @click="onExport">
@@ -270,7 +270,7 @@
                 </div>
               </div>
               <p v-if="failedCount > 0" class="text-body-2 text-medium-emphasis mb-0" data-testid="score-interpretation">
-                These attacks bypassed the model without any firewall in place. Enable AI Protector and re-run to see how many get blocked.
+                These attacks got through without any firewall in place. Enable AI Protector and re-run to see how many get blocked.
               </p>
               <p v-else class="text-body-2 text-medium-emphasis mb-0" data-testid="score-interpretation">
                 The model resisted all attacks on its own — but model behavior changes over time. Enable AI Protector for enforced protection.
@@ -485,27 +485,22 @@
             </v-col>
           </v-row>
           <div class="text-center mt-4">
-            <v-btn
+            <a
               v-if="isDemoTarget"
-              color="primary"
-              variant="flat"
-              size="small"
-              prepend-icon="mdi-shield-check"
-              :loading="isRerunning"
+              class="text-caption text-primary"
+              style="cursor: pointer;"
               @click="onRerunProtected"
             >
-              Enable protection &amp; re-run
-            </v-btn>
-            <v-btn
+              Enable protection &amp; re-run →
+            </a>
+            <a
               v-else
-              color="primary"
-              variant="flat"
-              size="small"
-              prepend-icon="mdi-shield-plus"
+              class="text-caption text-primary"
+              style="cursor: pointer;"
               @click="showSetupDialog = true"
             >
-              Set up protection
-            </v-btn>
+              Set up protection →
+            </a>
           </div>
         </v-card>
       </template>
@@ -600,7 +595,7 @@
         <v-card variant="flat" class="pa-3" elevation="8">
           <div class="d-flex align-center justify-center ga-3">
             <span class="text-body-2 font-weight-medium">
-              {{ failedCount }} attack{{ failedCount !== 1 ? 's' : '' }} bypassed the model — enable protection to block them
+              {{ failedCount }} attack{{ failedCount !== 1 ? 's' : '' }} got through — enable protection and re-run to verify
             </span>
             <v-btn
               v-if="isDemoTarget"
