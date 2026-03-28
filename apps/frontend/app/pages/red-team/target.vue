@@ -56,12 +56,11 @@ const rerunPolicy = computed(() => (route.query.policy as string) || '')
 const rerunProtected = computed(() => route.query.protected === 'true')
 
 function onContinue(config: TargetFormConfig) {
-  // Store headers in sessionStorage (never in URL)
+  // Store headers in memory only (never sessionStorage/localStorage)
+  const { stash } = useEphemeralHeaders()
   const hdrs = config.custom_headers
   if (hdrs && Object.keys(hdrs).length > 0) {
-    sessionStorage.setItem('redteam_custom_headers', JSON.stringify(hdrs))
-  } else {
-    sessionStorage.removeItem('redteam_custom_headers')
+    stash(hdrs as Record<string, string>)
   }
 
   router.push({

@@ -291,7 +291,7 @@ function estimateTime(count: number): string {
 }
 
 const displayPacks = computed<DisplayPack[]>(() => {
-  const packMeta: Record<string, { description: string; recommended: boolean; disabled: boolean; badge?: string }> = {
+  const packMeta: Record<string, { description: string; recommended: boolean; disabled: boolean; badge?: string; secondary?: boolean }> = {
     core_security: {
       description: 'Tests prompt injection, jailbreak, data leaks, and harmful outputs. Works on any chatbot or API endpoint.',
       recommended: true,
@@ -303,9 +303,8 @@ const displayPacks = computed<DisplayPack[]>(() => {
       recommended: false,
       disabled: false,
       badge: 'Advanced',
-      /** secondary = true → hidden under "More packs" */
       secondary: true,
-    } as Record<string, unknown>,
+    },
     full_suite: {
       description: 'Comprehensive security test covering all attack categories.',
       recommended: false,
@@ -333,7 +332,7 @@ const displayPacks = computed<DisplayPack[]>(() => {
       disabled: meta.disabled,
       badge: meta.badge,
       estimatedTime: estimateTime(count),
-      secondary: (meta as Record<string, unknown>).secondary === true,
+      secondary: meta.secondary === true,
     })
   }
 
@@ -364,13 +363,11 @@ async function onRunBenchmark() {
       if (targetName.value) targetConfig.target_name = targetName.value
       if (environment.value) targetConfig.environment = environment.value
 
-      // Retrieve custom headers from sessionStorage (never in URL)
-      const storedHeaders = sessionStorage.getItem('redteam_custom_headers')
-      if (storedHeaders) {
-        try {
-          targetConfig.custom_headers = JSON.parse(storedHeaders)
-        } catch { /* ignore malformed */ }
-        sessionStorage.removeItem('redteam_custom_headers')
+      // Retrieve custom headers from in-memory store (never touches disk)
+      const { take } = useEphemeralHeaders()
+      const ephemeralHeaders = take()
+      if (ephemeralHeaders) {
+        targetConfig.custom_headers = ephemeralHeaders
       }
 
       // Re-run with protection: add through_proxy flag
