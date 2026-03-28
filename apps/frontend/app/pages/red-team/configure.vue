@@ -260,7 +260,6 @@ const { packs, isLoading: _packsLoading } = useBenchmarkPacks()
 
 const selectedPack = ref((route.query.pack as string) || 'core_security')
 const selectedPolicy = ref((route.query.policy as string) || 'balanced')
-const rerunProtected = computed(() => route.query.protected === 'true')
 const advancedPanel = ref<string | undefined>(undefined)
 const runError = ref<string | null>(null)
 
@@ -369,12 +368,10 @@ async function onRunBenchmark() {
       if (ephemeralHeaders) {
         targetConfig.custom_headers = ephemeralHeaders
       }
-
-      // Re-run with protection: add through_proxy flag
-      if (rerunProtected.value) {
-        targetConfig.through_proxy = true
-      }
     }
+
+    // Always route through the AI Protector proxy pipeline
+    targetConfig.through_proxy = true
 
     const result = await createRun({
       target_type: target.value,
