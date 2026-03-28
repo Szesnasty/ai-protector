@@ -257,7 +257,10 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
     """
     url = rewrite_localhost_for_docker(body.endpoint_url)
     headers: dict[str, str] = {"Content-Type": "application/json"}
-    if body.auth_header:
+    # Support both legacy auth_header and new custom_headers
+    if body.custom_headers:
+        headers.update(body.custom_headers)
+    elif body.auth_header:
         headers["Authorization"] = body.auth_header
 
     try:

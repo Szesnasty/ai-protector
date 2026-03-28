@@ -352,11 +352,13 @@ async function onRunBenchmark() {
       if (targetName.value) targetConfig.target_name = targetName.value
       if (environment.value) targetConfig.environment = environment.value
 
-      // Retrieve auth from sessionStorage (never in URL)
-      const storedAuth = sessionStorage.getItem('redteam_auth_header')
-      if (storedAuth) {
-        targetConfig.auth_header = storedAuth
-        sessionStorage.removeItem('redteam_auth_header')
+      // Retrieve custom headers from sessionStorage (never in URL)
+      const storedHeaders = sessionStorage.getItem('redteam_custom_headers')
+      if (storedHeaders) {
+        try {
+          targetConfig.custom_headers = JSON.parse(storedHeaders)
+        } catch { /* ignore malformed */ }
+        sessionStorage.removeItem('redteam_custom_headers')
       }
     }
 

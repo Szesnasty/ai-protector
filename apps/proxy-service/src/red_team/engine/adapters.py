@@ -55,11 +55,14 @@ class RealHttpClient:
         endpoint_url = rewrite_localhost_for_docker(
             target_config.get("endpoint_url") or _DEMO_AGENT_URL
         )
-        auth_header: str | None = target_config.get("_decrypted_auth")
         timeout_s: int = target_config.get("timeout_s", 30)
 
         headers: dict[str, str] = {"Content-Type": "application/json"}
-        if auth_header:
+        # Apply custom headers (new format) or legacy single auth
+        decrypted_headers: dict[str, str] | None = target_config.get("_decrypted_headers")
+        if decrypted_headers:
+            headers.update(decrypted_headers)
+        elif auth_header := target_config.get("_decrypted_auth"):
             headers["Authorization"] = auth_header
 
         # Payload shape depends on target

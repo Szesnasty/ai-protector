@@ -22,21 +22,57 @@
         data-testid="endpoint-url"
       />
 
-      <!-- Auth header — always visible for simplicity -->
-      <v-text-field
-        v-model="authHeader"
-        label="Authorization Header (optional)"
-        placeholder="Bearer sk-..."
-        hint="For example: Authorization: Bearer sk-... or x-api-key: ..."
-        persistent-hint
-        variant="outlined"
-        density="compact"
-        class="mb-3"
-        :type="showAuth ? 'text' : 'password'"
-        :append-inner-icon="showAuth ? 'mdi-eye-off' : 'mdi-eye'"
-        data-testid="auth-header"
-        @click:append-inner="showAuth = !showAuth"
-      />
+      <!-- Custom Headers — dynamic key:value list -->
+      <div class="mb-3">
+        <p class="text-body-2 font-weight-medium mb-2">Request Headers (optional)</p>
+        <div
+          v-for="(header, idx) in customHeaders"
+          :key="idx"
+          class="d-flex align-center ga-2 mb-2"
+        >
+          <v-text-field
+            v-model="header.name"
+            label="Header name"
+            placeholder="Authorization"
+            variant="outlined"
+            density="compact"
+            hide-details
+            style="max-width: 200px"
+          />
+          <v-text-field
+            v-model="header.value"
+            label="Value"
+            :placeholder="header.name?.toLowerCase() === 'authorization' ? 'Bearer sk-...' : ''"
+            variant="outlined"
+            density="compact"
+            hide-details
+            :type="showAuth ? 'text' : 'password'"
+            class="flex-grow-1"
+          />
+          <v-btn
+            icon="mdi-close"
+            size="small"
+            variant="text"
+            @click="customHeaders.splice(idx, 1)"
+          />
+        </div>
+        <v-btn
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-plus"
+          @click="customHeaders.push({ name: '', value: '' })"
+        >
+          Add Header
+        </v-btn>
+        <v-btn
+          v-if="customHeaders.length > 0"
+          variant="text"
+          size="small"
+          :icon="showAuth ? 'mdi-eye-off' : 'mdi-eye'"
+          class="ml-2"
+          @click="showAuth = !showAuth"
+        />
+      </div>
 
       <!-- Localhost reachability hint -->
       <v-alert
@@ -250,7 +286,7 @@ export interface TargetFormConfig {
   target_type: string
   endpoint_url: string
   target_name: string
-  auth_header: string
+  custom_headers: Record<string, string>
   agent_type: string
   timeout_s: number
   safe_mode: boolean
@@ -274,7 +310,7 @@ const formRef = ref()
 const formValid = ref(false)
 const endpointUrl = ref('')
 const targetName = ref('')
-const authHeader = ref('')
+const customHeaders = ref<Array<{ name: string; value: string }>>([{ name: 'Authorization', value: '' }])
 const showAuth = ref(false)
 const agentType = ref('chatbot_api')
 const timeoutS = ref(30)
@@ -343,7 +379,7 @@ async function onTestConnection() {
       resolved_url?: string
     }>('/v1/benchmark/test-connection', {
       endpoint_url: endpointUrl.value,
-      auth_header: authHeader.value || undefined,
+      custom_headers: buildHeadersDict(),
       timeout_s: timeoutS.value,
     })
 
@@ -382,12 +418,22 @@ async function onTestConnection() {
   }
 }
 
+function buildHeadersDict(): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const h of customHeaders.value) {
+    if (h.name.trim() && h.value.trim()) {
+      out[h.name.trim()] = h.value.trim()
+    }
+  }
+  return out
+}
+
 function onContinue() {
   emit('continue', {
     target_type: props.targetType,
     endpoint_url: endpointUrl.value,
     target_name: targetName.value,
-    auth_header: authHeader.value,
+    custom_headers: buildHeadersDict(),
     agent_type: agentType.value,
     timeout_s: timeoutS.value,
     safe_mode: safeMode.value,

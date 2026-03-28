@@ -71,11 +71,24 @@ class BenchmarkService:
         """
         # Encrypt auth header before storing
         config = dict(target_config)  # shallow copy
-        if auth_header := config.pop("auth_header", None):
+        # Encrypt sensitive headers before persisting
+        custom_headers = config.pop("custom_headers", None)
+        auth_header = config.pop("auth_header", None)
+        headers_to_encrypt: dict[str, str] = {}
+        if custom_headers and isinstance(custom_headers, dict):
+            headers_to_encrypt.update(custom_headers)
+        elif auth_header:
+            # Legacy single auth_header — convert to custom_headers format
+            headers_to_encrypt["Authorization"] = auth_header
+        if headers_to_encrypt:
+            import json as _json
+
             from src.red_team.secrets.store import EncryptedColumnSecretStore
 
             store = EncryptedColumnSecretStore()
-            config["auth_secret_ref"] = await store.store("auth", auth_header, ttl_hours=24)
+            config["auth_secret_ref"] = await store.store(
+                "auth", _json.dumps(headers_to_encrypt), ttl_hours=24
+            )
 
         fingerprint = compute_target_fingerprint(target_type, config)
 
