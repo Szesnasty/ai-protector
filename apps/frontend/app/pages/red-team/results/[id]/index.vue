@@ -847,6 +847,23 @@ const targetEndpointUrl = computed(() => {
   return run.value?.target_config?.endpoint_url ?? ''
 })
 
+// True if this run originally had auth headers (now deleted from DB)
+const hadAuth = computed(() => !!run.value?.target_config?._had_auth)
+
+// Build redirect query for re-run when the token needs to be re-entered
+function rerunQuery(opts: { protected?: boolean } = {}) {
+  const r = run.value!
+  const q: Record<string, string> = {
+    type: r.target_type,
+    url: targetEndpointUrl.value,
+    pack: r.pack,
+    policy: opts.protected ? 'balanced' : (r.policy ?? 'balanced'),
+    reauth: 'true',
+  }
+  if (opts.protected) q.protected = 'true'
+  return q
+}
+
 const timeAgo = computed(() => {
   if (!run.value?.completed_at && !run.value?.created_at) return ''
   const ts = run.value.completed_at ?? run.value.created_at
@@ -913,6 +930,11 @@ const protectedBaseUrl = computed(() => {
 
 async function onRerun() {
   if (!run.value) return
+  // If the run had auth headers (now deleted), redirect to the form to re-enter them
+  if (hadAuth.value) {
+    router.push({ path: '/red-team/target', query: rerunQuery() })
+    return
+  }
   isRerunning.value = true
   try {
     const result = await benchmarkService.createRun({
@@ -930,6 +952,11 @@ async function onRerun() {
 
 async function onRerunProtected() {
   if (!run.value) return
+  // If the run had auth headers (now deleted), redirect to the form to re-enter them
+  if (hadAuth.value) {
+    router.push({ path: '/red-team/target', query: rerunQuery({ protected: true }) })
+    return
+  }
   isRerunning.value = true
   try {
     const config = { ...(run.value.target_config ?? {}), through_proxy: true }

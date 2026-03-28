@@ -12,8 +12,19 @@
           />
           <h1 class="text-h5">Test Your Endpoint</h1>
         </div>
+        <v-alert
+          v-if="showReauthBanner"
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+        >
+          <strong>Re-enter your auth headers to run again.</strong>
+          Your endpoint URL is pre-filled. Headers are deleted after each run for security.
+        </v-alert>
         <RedTeamTargetForm
           :target-type="targetType"
+          :initial-endpoint-url="initialEndpointUrl"
           @continue="onContinue"
         />
       </v-col>
@@ -30,10 +41,19 @@ const route = useRoute()
 const router = useRouter()
 
 const targetType = computed(() => {
-  const t = route.query.type as string
+  const t = (route.query.type as string) || (route.query.target as string)
   if (t === 'hosted_endpoint') return 'hosted_endpoint' as const
   return 'local_agent' as const
 })
+
+// Pre-fill URL when coming back from results page re-run
+const initialEndpointUrl = computed(() => (route.query.url as string) || '')
+// Show re-auth banner when token expired and user needs to re-enter headers
+const showReauthBanner = computed(() => route.query.reauth === 'true')
+// Carry pack/policy/protected intent through to configure
+const rerunPack = computed(() => (route.query.pack as string) || '')
+const rerunPolicy = computed(() => (route.query.policy as string) || '')
+const rerunProtected = computed(() => route.query.protected === 'true')
 
 function onContinue(config: TargetFormConfig) {
   // Store headers in sessionStorage (never in URL)
@@ -54,6 +74,10 @@ function onContinue(config: TargetFormConfig) {
       timeout_s: String(config.timeout_s),
       safe_mode: String(config.safe_mode),
       environment: (config.environment as string) || undefined,
+      // Carry re-run intent
+      ...(rerunPack.value ? { pack: rerunPack.value } : {}),
+      ...(rerunPolicy.value ? { policy: rerunPolicy.value } : {}),
+      ...(rerunProtected.value ? { protected: 'true' } : {}),
     },
   })
 }

@@ -258,8 +258,9 @@ const targetIcon = computed(() => {
 // Pack data
 const { packs, isLoading: _packsLoading } = useBenchmarkPacks()
 
-const selectedPack = ref('core_security')
-const selectedPolicy = ref('balanced')
+const selectedPack = ref((route.query.pack as string) || 'core_security')
+const selectedPolicy = ref((route.query.policy as string) || 'balanced')
+const rerunProtected = computed(() => route.query.protected === 'true')
 const advancedPanel = ref<string | undefined>(undefined)
 const runError = ref<string | null>(null)
 
@@ -370,6 +371,11 @@ async function onRunBenchmark() {
           targetConfig.custom_headers = JSON.parse(storedHeaders)
         } catch { /* ignore malformed */ }
         sessionStorage.removeItem('redteam_custom_headers')
+      }
+
+      // Re-run with protection: add through_proxy flag
+      if (rerunProtected.value) {
+        targetConfig.through_proxy = true
       }
     }
 
