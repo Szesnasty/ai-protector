@@ -98,16 +98,31 @@ class BenchmarkRunRepository:
         """Mark all 'created' / 'running' runs as 'cancelled'.
 
         Called at startup to clean up runs orphaned by a previous crash
-        or container restart.  Returns the number of affected rows.
+        or container restart.  Also strips ``auth_secret_ref`` from
+        ``target_config`` so encrypted credentials don't linger in the DB.
+        Returns the number of affected rows.
         """
         now = datetime.now(UTC)
         stmt = (
-            update(BenchmarkRun)
+            select(BenchmarkRun)
             .where(BenchmarkRun.status.in_(["created", "running"]))
-            .values(status="cancelled", completed_at=now, error="Cancelled: stale after restart")
         )
         result = await self._session.execute(stmt)
-        return result.rowcount  # type: ignore[return-value]
+        runs = list(result.scalars().all())
+
+        for run in runs:
+            run.status = "cancelled"
+            run.completed_at = now
+            run.error = "Cancelled: stale after restart"
+            cfg = run.target_config or {}
+            if "auth_secret_ref" in cfg:
+                cfg = dict(cfg)
+                del cfg["auth_secret_ref"]
+                cfg["_had_auth"] = True
+                run.target_config = cfg
+
+        await self._session.flush()
+        return len(runs)
 
     async def delete(self, run_id: uuid.UUID) -> None:
         run = await self.get(run_id)
