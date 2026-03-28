@@ -705,6 +705,8 @@ def _is_proxy_block_response(http_response: HttpResponse) -> bool:
     false positives from normal model refusals that contain words
     like "blocked" or "not allowed".
     """
+    if http_response.headers.get("x-decision", "").upper() == "BLOCK":
+        return True
     if http_response.status_code in _PROXY_BLOCK_STATUSES:
         return True
     # Only check body markers for 4xx responses (not 200 model refusals)

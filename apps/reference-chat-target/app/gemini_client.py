@@ -220,6 +220,11 @@ class ProtectedHTTPBackend(ModelBackend):
                     tool_calls=[],
                     model=self._model,
                     blocked=True,
+                    proxy_block_headers={
+                        "x-decision": resp.headers.get("x-decision", "BLOCK"),
+                        "x-risk-score": resp.headers.get("x-risk-score", ""),
+                        "x-intent": resp.headers.get("x-intent", ""),
+                    },
                 )
 
             resp.raise_for_status()

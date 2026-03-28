@@ -52,6 +52,8 @@ class ChatResponse(BaseModel):
     citations: list[dict[str, Any]] = Field(default_factory=list)
     system_canary_enabled: bool
     trace: TraceRef
+    blocked: bool = Field(default=False, exclude=True)
+    proxy_block_headers: dict[str, str] = Field(default_factory=dict, exclude=True)
 
 
 class HealthResponse(BaseModel):
@@ -126,3 +128,4 @@ class BackendResult(BaseModel):
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     model: str = ""
     blocked: bool = False
+    proxy_block_headers: dict[str, str] = Field(default_factory=dict)
