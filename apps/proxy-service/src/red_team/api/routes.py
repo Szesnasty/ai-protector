@@ -122,7 +122,13 @@ async def list_runs(
 ) -> list[RunSummary]:
     """List benchmark runs, newest first."""
     runs = await svc.list_runs(limit=limit, offset=offset, target_type=target_type)
-    return [RunSummary.model_validate(r) for r in runs]
+    result: list[RunSummary] = []
+    for r in runs:
+        summary = RunSummary.model_validate(r)
+        cfg = r.target_config or {}
+        summary.target_label = cfg.get("target_name") or cfg.get("endpoint_url") or ""
+        result.append(summary)
+    return result
 
 
 # ---------------------------------------------------------------------------
