@@ -29,12 +29,15 @@ from src.red_team.persistence.repository import (
 
 
 def strip_auth_from_config(config: dict[str, Any]) -> dict[str, Any]:
-    """Return a copy of *config* with auth_secret_ref masked."""
+    """Return a copy of *config* with all sensitive fields removed/masked."""
     if not config:
         return config
     out = dict(config)
     if "auth_secret_ref" in out:
         out["auth_secret_ref"] = "***"
+    # Defence-in-depth: ensure decrypted secrets never leak via API
+    out.pop("_decrypted_headers", None)
+    out.pop("_decrypted_auth", None)
     return out
 
 

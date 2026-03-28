@@ -24,7 +24,25 @@
 
       <!-- Custom Headers — dynamic key:value list -->
       <div class="mb-3">
-        <p class="text-body-2 font-weight-medium mb-2">Request Headers (optional)</p>
+        <div class="d-flex align-center ga-2 mb-1">
+          <p class="text-body-2 font-weight-medium mb-0">Request Headers (optional)</p>
+          <v-tooltip location="top" max-width="340">
+            <template #activator="{ props }">
+              <v-icon v-bind="props" icon="mdi-help-circle-outline" size="16" color="medium-emphasis" />
+            </template>
+            <div class="text-caption">
+              Your credentials are stored temporarily only to run the test.
+              They are encrypted before storage, used only during benchmark
+              execution, never shown in logs or the UI, and automatically
+              deleted 24 hours after the run completes.
+            </div>
+          </v-tooltip>
+        </div>
+        <p class="text-caption text-medium-emphasis mb-2">
+          Add auth headers only if your endpoint requires them. We use them
+          only for this benchmark, keep them encrypted, and delete them
+          automatically after 24 hours.
+        </p>
         <div
           v-for="(header, idx) in customHeaders"
           :key="idx"
@@ -81,8 +99,8 @@
         class="mb-4"
       >
         <span class="text-caption">
-          Localhost URLs are automatically routed to your host machine.
-          For remote environments use a public URL or tunnel (e.g. ngrok).
+          Requests to localhost are sent from your local AI Protector instance
+          running on this machine.
         </span>
       </v-alert>
 
@@ -389,7 +407,7 @@ async function onTestConnection() {
       connectionResult.value = {
         type: 'success',
         headline: 'Connection successful',
-        message: `HTTP ${data.status_code} in ${data.latency_ms}ms${resolvedNote}`,
+        message: `Your endpoint is reachable and ready for benchmarking. HTTP ${data.status_code} in ${data.latency_ms}ms${resolvedNote}`,
       }
       // Check for non-JSON
       if (data.content_type && !data.content_type.includes('json')) {
