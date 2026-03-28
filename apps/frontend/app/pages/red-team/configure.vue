@@ -161,38 +161,7 @@
       {{ selectedPackInfo.scenarioCount }} adversarial attacks · ~{{ selectedPackInfo.estimatedTime }} · no protection active (baseline)
     </v-alert>
 
-    <!-- Protection toggle — defaults OFF for baseline-first flow -->
-    <v-card variant="flat" class="mb-4 pa-4">
-      <div class="d-flex align-center">
-        <v-switch
-          v-model="protectionEnabled"
-          color="success"
-          hide-details
-          density="compact"
-          class="mr-3 mt-0"
-          data-testid="protection-toggle"
-        />
-        <div>
-          <div class="d-flex align-center">
-            <v-icon
-              :icon="protectionEnabled ? 'mdi-shield-check' : 'mdi-shield-off-outline'"
-              :color="protectionEnabled ? 'success' : 'grey'"
-              size="small"
-              class="mr-2"
-            />
-            <span class="text-subtitle-2 font-weight-bold">
-              {{ protectionEnabled ? 'Protection enabled' : 'No protection (baseline)' }}
-            </span>
-          </div>
-          <p class="text-body-2 text-medium-emphasis mb-0 mt-1">
-            {{ protectionEnabled
-              ? 'Attacks go through AI Protector firewall first.'
-              : 'Attacks go directly to the target. You\'ll enable protection later to measure the difference.'
-            }}
-          </p>
-        </div>
-      </div>
-    </v-card>
+
 
     <!-- Hero Run button -->
     <div class="d-flex flex-column align-center mb-2">
@@ -206,7 +175,7 @@
         data-testid="run-benchmark-btn"
         @click="onRunBenchmark"
       >
-        {{ protectionEnabled ? 'Run protected scan' : 'Run baseline scan' }}
+        Run baseline scan
       </v-btn>
     </div>
     <p v-if="selectedPackInfo" class="text-caption text-medium-emphasis text-center mt-1 mb-4" style="line-height: 1.2;">
@@ -215,7 +184,7 @@
     </p>
 
     <!-- What happens next — only for baseline flow -->
-    <v-card v-if="!protectionEnabled" variant="flat" class="mb-6 pa-4">
+    <v-card variant="flat" class="mb-6 pa-4">
       <h3 class="text-subtitle-2 font-weight-bold mb-3">What happens next</h3>
       <div class="d-flex flex-column ga-2">
         <div class="d-flex align-start">
@@ -320,7 +289,7 @@ const { packs, isLoading: _packsLoading } = useBenchmarkPacks()
 
 const selectedPack = ref((route.query.pack as string) || 'core_security')
 const selectedPolicy = ref((route.query.policy as string) || 'balanced')
-const protectionEnabled = ref(false)
+
 const advancedPanel = ref<string | undefined>(undefined)
 const runError = ref<string | null>(null)
 
@@ -429,10 +398,6 @@ async function onRunBenchmark() {
       if (ephemeralHeaders) {
         targetConfig.custom_headers = ephemeralHeaders
       }
-    }
-
-    if (protectionEnabled.value) {
-      targetConfig.through_proxy = true
     }
 
     const result = await createRun({
