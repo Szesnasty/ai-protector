@@ -959,7 +959,7 @@ async function onRerunProtected() {
   }
   isRerunning.value = true
   try {
-    const config = { ...(run.value.target_config ?? {}) }
+    const config = { ...(run.value.target_config ?? {}), through_proxy: true }
     const result = await benchmarkService.createRun({
       target_type: run.value.target_type,
       target_config: config,
