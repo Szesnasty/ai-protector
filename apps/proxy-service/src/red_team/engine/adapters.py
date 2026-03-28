@@ -282,11 +282,16 @@ class DbPersistenceAdapter:
         run = await self._run_repo.get(uuid.UUID(run_id))
         if not run:
             return None
+        # Strip sensitive fields even for internal engine reads (defence-in-depth)
+        cfg = dict(run.target_config or {})
+        cfg.pop("auth_secret_ref", None)
+        cfg.pop("_decrypted_headers", None)
+        cfg.pop("_decrypted_auth", None)
         return {
             "id": str(run.id),
             "config": {
                 "target_type": run.target_type,
-                "target_config": run.target_config or {},
+                "target_config": cfg,
                 "pack": run.pack,
                 "policy": run.policy,
             },

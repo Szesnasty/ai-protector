@@ -142,4 +142,12 @@ async def _execute(
     )
 
     # ── Execute ──────────────────────────────────────────────────────
-    await engine.execute_run(in_memory_run)
+    try:
+        await engine.execute_run(in_memory_run)
+    finally:
+        # Wipe decrypted secrets from memory immediately after use
+        if "_decrypted_headers" in target_config:
+            for k in target_config["_decrypted_headers"]:
+                target_config["_decrypted_headers"][k] = ""
+            del target_config["_decrypted_headers"]
+        target_config.pop("_decrypted_auth", None)
