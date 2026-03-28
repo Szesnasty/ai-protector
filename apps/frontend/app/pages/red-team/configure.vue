@@ -158,6 +158,39 @@
       {{ selectedPackInfo.scenarioCount }} scenarios · ~{{ selectedPackInfo.estimatedTime }} estimated
     </v-alert>
 
+    <!-- Protection mode toggle -->
+    <v-card variant="flat" class="mb-4 pa-4">
+      <div class="d-flex align-center">
+        <v-switch
+          v-model="protectionEnabled"
+          color="success"
+          hide-details
+          density="compact"
+          class="mr-3 mt-0"
+          data-testid="protection-toggle"
+        />
+        <div>
+          <div class="d-flex align-center">
+            <v-icon
+              :icon="protectionEnabled ? 'mdi-shield-check' : 'mdi-shield-off-outline'"
+              :color="protectionEnabled ? 'success' : 'grey'"
+              size="small"
+              class="mr-2"
+            />
+            <span class="text-subtitle-2 font-weight-bold">
+              {{ protectionEnabled ? 'Protected by AI Protector' : 'Baseline (no protection)' }}
+            </span>
+          </div>
+          <p class="text-body-2 text-medium-emphasis mb-0 mt-1">
+            {{ protectionEnabled
+              ? 'Requests go through AI Protector firewall before reaching the target.'
+              : 'Requests go directly to the target — measures raw model behavior.'
+            }}
+          </p>
+        </div>
+      </div>
+    </v-card>
+
     <!-- Hero Run button -->
     <div class="d-flex flex-column align-center mb-2">
       <v-btn
@@ -260,6 +293,7 @@ const { packs, isLoading: _packsLoading } = useBenchmarkPacks()
 
 const selectedPack = ref((route.query.pack as string) || 'core_security')
 const selectedPolicy = ref((route.query.policy as string) || 'balanced')
+const protectionEnabled = ref(target.value === 'demo')
 const advancedPanel = ref<string | undefined>(undefined)
 const runError = ref<string | null>(null)
 
@@ -368,6 +402,10 @@ async function onRunBenchmark() {
       if (ephemeralHeaders) {
         targetConfig.custom_headers = ephemeralHeaders
       }
+    }
+
+    if (protectionEnabled.value) {
+      targetConfig.through_proxy = true
     }
 
     const result = await createRun({
