@@ -47,8 +47,8 @@
         class="mb-4"
       >
         <span class="text-caption">
-          Localhost works only if reachable from the benchmark runner.
-          Use a public URL or tunnel (e.g. ngrok) for remote environments.
+          Localhost URLs are automatically routed to your host machine.
+          For remote environments use a public URL or tunnel (e.g. ngrok).
         </span>
       </v-alert>
 
@@ -340,6 +340,7 @@ async function onTestConnection() {
       latency_ms?: number
       content_type?: string
       error?: string
+      resolved_url?: string
     }>('/v1/benchmark/test-connection', {
       endpoint_url: endpointUrl.value,
       auth_header: authHeader.value || undefined,
@@ -349,10 +350,13 @@ async function onTestConnection() {
     const data = res.data
     if (data.status === 'ok') {
       connectionPassed.value = true
+      const resolvedNote = data.resolved_url
+        ? ` (routed via ${data.resolved_url})`
+        : ''
       connectionResult.value = {
         type: 'success',
         headline: 'Connection successful',
-        message: `HTTP ${data.status_code} in ${data.latency_ms}ms`,
+        message: `HTTP ${data.status_code} in ${data.latency_ms}ms${resolvedNote}`,
       }
       // Check for non-JSON
       if (data.content_type && !data.content_type.includes('json')) {
