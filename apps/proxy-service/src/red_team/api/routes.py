@@ -12,7 +12,6 @@ import uuid
 from collections.abc import AsyncGenerator
 
 import httpx as _httpx
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
