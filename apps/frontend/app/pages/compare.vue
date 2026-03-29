@@ -230,6 +230,12 @@
             Run a benchmark to measure overall security score and review failures
           </nuxt-link>
         </p>
+        <p class="text-caption mt-1">
+          <nuxt-link to="/playground" class="text-decoration-none">
+            <v-icon size="14" class="mr-1">mdi-chat-processing</v-icon>
+            Open Playground for full debug panel and config controls
+          </nuxt-link>
+        </p>
       </div>
     </div>
 

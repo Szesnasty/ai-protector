@@ -6,6 +6,7 @@
         <h1 class="text-h5 mb-1">{{ title }}</h1>
         <p class="text-body-2 text-medium-emphasis">
           Test wizard-generated security configs against a live {{ framework }} agent
+          · <nuxt-link to="/playground" class="text-decoration-none text-primary">Open Playground</nuxt-link>
         </p>
       </div>
       <div class="d-flex align-center ga-2">

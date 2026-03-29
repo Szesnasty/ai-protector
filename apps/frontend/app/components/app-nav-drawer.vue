@@ -15,10 +15,9 @@
     </v-chip>
 
     <v-list density="compact" nav color="primary">
-      <!-- Test -->
-      <v-list-subheader>Test</v-list-subheader>
+      <!-- Entry tools — no section header -->
       <v-list-item
-        v-for="item in testItems"
+        v-for="item in entryItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -31,27 +30,10 @@
 
       <v-divider class="my-2" />
 
-      <!-- Protect -->
-      <v-list-subheader>Protect</v-list-subheader>
+      <!-- Protection -->
+      <v-list-subheader>Protection</v-list-subheader>
       <v-list-item
-        v-for="item in protectItems"
-        :key="item.to"
-        :to="item.to"
-        :title="item.title"
-        active-class="nav-item--active"
-        exact
-      >
-        <template #prepend>
-          <v-icon :icon="item.icon" size="20" />
-        </template>
-      </v-list-item>
-
-      <v-divider class="my-2" />
-
-      <!-- Observe -->
-      <v-list-subheader>Observe</v-list-subheader>
-      <v-list-item
-        v-for="item in observeItems"
+        v-for="item in protectionItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -65,35 +47,24 @@
 
       <v-divider class="my-2" />
 
-      <!-- Advanced — collapsed -->
-      <v-list-group value="advanced">
-        <template #activator="{ props: groupProps }">
-          <v-list-item v-bind="groupProps" title="Advanced" class="text-medium-emphasis">
-            <template #prepend>
-              <v-icon icon="mdi-dots-horizontal" size="20" />
-            </template>
-          </v-list-item>
+      <!-- Agents -->
+      <v-list-subheader>Agents</v-list-subheader>
+      <v-list-item
+        v-for="item in agentItems"
+        :key="item.to"
+        :to="item.to"
+        :title="item.title"
+        active-class="nav-item--active"
+        exact
+      >
+        <template #prepend>
+          <v-icon :icon="item.icon" size="20" />
         </template>
-
-        <v-list-item
-          v-for="item in advancedItems"
-          :key="item.to"
-          :to="item.to"
-          :title="item.title"
-          active-class="nav-item--active"
-          :class="{ 'nav-item--highlight': item.highlight }"
-          exact
-        >
-          <template #prepend>
-            <v-icon :icon="item.icon" size="20" />
-          </template>
-        </v-list-item>
-      </v-list-group>
+      </v-list-item>
 
       <v-divider class="my-2" />
 
-      <!-- System -->
-      <v-list-subheader>System</v-list-subheader>
+      <!-- Settings — no section header -->
       <v-list-item
         v-for="item in systemItems"
         :key="item.to"
@@ -170,32 +141,26 @@ interface NavItem {
   highlight?: boolean
 }
 
-// --- Test ---
-const testItems: NavItem[] = [
-  { title: 'Security Tests', icon: 'mdi-shield-search', to: '/red-team' },
+// --- Entry tools (no section header) ---
+const entryItems: NavItem[] = [
+  { title: 'Security Scan', icon: 'mdi-shield-search', to: '/red-team' },
   { title: 'Protection Compare', icon: 'mdi-compare', to: '/compare' },
 ]
 
-// --- Protect ---
-const protectItems: NavItem[] = [
+// --- Protection (proxy layer) ---
+const protectionItems: NavItem[] = [
   { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
-  { title: 'Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
-]
-
-// --- Observe ---
-const observeItems: NavItem[] = [
-  { title: 'Request Traces', icon: 'mdi-format-list-bulleted', to: '/requests' },
-  { title: 'Agent Traces', icon: 'mdi-robot-outline', to: '/agent-traces' },
+  { title: 'Rules', icon: 'mdi-playlist-check', to: '/rules' },
+  { title: 'Request Traces', icon: 'mdi-text-box-search-outline', to: '/requests' },
   { title: 'Analytics', icon: 'mdi-chart-bar', to: '/analytics' },
 ]
 
-// --- Advanced (collapsed) ---
-const advancedItems: NavItem[] = [
-  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new', highlight: true },
-  { title: 'Playground', icon: 'mdi-chat-processing', to: '/playground' },
-  { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
-  { title: 'LangGraph Demo', icon: 'mdi-graph-outline', to: '/test-agents/graph' },
-  { title: 'Agents', icon: 'mdi-robot-outline', to: '/agents' },
+// --- Agents (agent workspace) ---
+const agentItems: NavItem[] = [
+  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new' },
+  { title: 'My Agents', icon: 'mdi-robot-outline', to: '/agents' },
+  { title: 'Agent Sandbox', icon: 'mdi-flask-outline', to: '/test-agents' },
+  { title: 'Agent Traces', icon: 'mdi-timeline-clock-outline', to: '/agent-traces' },
 ]
 
 // --- System ---
