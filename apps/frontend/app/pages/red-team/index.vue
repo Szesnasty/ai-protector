@@ -257,7 +257,7 @@
 <script setup lang="ts">
 import { benchmarkService } from '~/services/benchmarkService'
 import type { RunDetail } from '~/services/benchmarkService'
-import { humanPack, scoreLabel, classifyRun } from '~/utils/redTeamLabels'
+import { humanPack, classifyRun } from '~/utils/redTeamLabels'
 
 definePageMeta({ layout: 'default' })
 
@@ -425,7 +425,7 @@ const proofSummaries = computed<ProofSummary[]>(() => {
     const latestRoute = `/red-team/${latestRun.status === 'running' ? 'run' : 'results'}/${latestRun.id}`
 
     let ctaLabel = 'View baseline'
-    let ctaRoute = latestRoute
+    const ctaRoute = latestRoute
     if (status === 'protected_verified') {
       ctaLabel = 'View proof'
     } else if (status === 'rerun_needed') {

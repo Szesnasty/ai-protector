@@ -13,7 +13,6 @@ from collections.abc import AsyncGenerator
 
 import httpx as _httpx
 
-from src.red_team.net import rewrite_localhost_for_docker
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,6 +32,7 @@ from src.red_team.api import (
 )
 from src.red_team.api.service import BenchmarkService
 from src.red_team.engine.worker import run_benchmark_background
+from src.red_team.net import rewrite_localhost_for_docker
 from src.red_team.packs import load_pack
 from src.red_team.progress.emitter import ProgressEmitter
 
