@@ -32,7 +32,7 @@ from src.red_team.api import (
 )
 from src.red_team.api.service import BenchmarkService
 from src.red_team.engine.worker import run_benchmark_background
-from src.red_team.net import rewrite_localhost_for_docker
+from src.red_team.net import is_safe_url, rewrite_localhost_for_docker
 from src.red_team.packs import load_pack
 from src.red_team.progress.emitter import ProgressEmitter
 
@@ -262,6 +262,12 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
     Auth header is used for this request only; it is NOT persisted.
     """
     url = rewrite_localhost_for_docker(body.endpoint_url)
+    if not is_safe_url(url):
+        return TestConnectionResponse(
+            status="error",
+            error="Endpoint URL is not allowed (invalid scheme or internal address)",
+            error_code="invalid_endpoint_url",
+        )
     headers: dict[str, str] = {"Content-Type": "application/json"}
     # Support both legacy auth_header and new custom_headers
     if body.custom_headers:
