@@ -108,11 +108,10 @@
           How the scan works
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <div class="text-body-2 text-medium-emphasis">
-            <p class="mb-2">AI Protector runs a curated set of attack scenarios against your endpoint or the demo target.</p>
-            <p class="mb-2">The first run shows what gets through without enforced protection.</p>
-            <p class="mb-0">Then you enable protection and re-run the same scenarios to verify what AI Protector blocks.</p>
-          </div>
+          <p class="text-body-2 text-medium-emphasis mb-0">
+            Attack scenarios hit your endpoint directly. The baseline run shows what gets through.
+            Enable protection and re-run the same attacks to see what AI Protector blocks.
+          </p>
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
@@ -142,16 +141,20 @@
           <v-card-text class="pa-4">
             <div class="d-flex align-center justify-space-between flex-wrap ga-2">
               <!-- Left: endpoint + pack + scores -->
-              <div class="d-flex align-center ga-3 flex-grow-1">
-                <v-icon :icon="proof.icon" size="small" color="primary" />
-                <div>
+              <div class="d-flex align-center ga-3 flex-grow-1" style="min-width: 0;">
+                <v-icon :icon="proof.icon" size="20" color="primary" class="flex-shrink-0" />
+                <div style="min-width: 0;">
                   <div class="d-flex align-center ga-2 flex-wrap">
-                    <span class="text-subtitle-2 font-weight-bold">{{ proof.label }}</span>
-                    <v-chip size="x-small" variant="outlined" class="text-caption">{{ proof.pack }}</v-chip>
+                    <span class="text-body-1 font-weight-bold">{{ proof.label }}</span>
+                    <v-chip size="x-small" variant="outlined">{{ proof.pack }}</v-chip>
                   </div>
-                  <div class="text-caption text-medium-emphasis mt-1">
+                  <div class="d-flex align-center ga-1 mt-1 flex-wrap">
                     <template v-if="proof.protectedScore !== null">
-                      Baseline {{ proof.baselineScore }} → Protected {{ proof.protectedScore }}
+                      <span class="text-caption text-medium-emphasis">Baseline</span>
+                      <span class="text-caption font-weight-medium">{{ proof.baselineScore }}</span>
+                      <v-icon size="12" class="text-medium-emphasis mx-1">mdi-arrow-right</v-icon>
+                      <span class="text-caption text-medium-emphasis">Protected</span>
+                      <span class="text-caption font-weight-medium">{{ proof.protectedScore }}</span>
                       <v-chip
                         v-if="proof.uplift !== null"
                         :color="proof.uplift > 0 ? 'success' : 'grey'"
@@ -163,36 +166,39 @@
                       </v-chip>
                     </template>
                     <template v-else>
-                      Baseline {{ proof.baselineScore }}
+                      <span class="text-caption text-medium-emphasis">Baseline</span>
+                      <span class="text-caption font-weight-medium">{{ proof.baselineScore }}</span>
                     </template>
                   </div>
                 </div>
               </div>
 
               <!-- Right: status + CTA -->
-              <div class="d-flex align-center ga-2">
+              <div class="d-flex align-center ga-2 flex-shrink-0">
                 <v-chip
                   :color="proof.statusColor"
                   variant="tonal"
-                  size="small"
+                  size="default"
+                  label
                 >
                   {{ proof.statusLabel }}
                 </v-chip>
                 <v-btn
-                  variant="outlined"
+                  color="primary"
+                  variant="flat"
                   size="small"
                   :to="proof.ctaRoute"
                 >
                   {{ proof.ctaLabel }}
                 </v-btn>
-                <a
+                <v-btn
                   v-if="proof.secondaryLabel"
-                  class="text-caption text-primary ml-2"
-                  style="cursor: pointer;"
+                  variant="outlined"
+                  size="small"
                   @click.prevent="proof.secondaryRoute ? $router.push(proof.secondaryRoute) : (proof.showHistory = !proof.showHistory)"
                 >
                   {{ proof.secondaryLabel }}
-                </a>
+                </v-btn>
               </div>
             </div>
 
@@ -282,7 +288,7 @@ const targetCards: TargetCard[] = [
     icon: 'mdi-play-circle-outline',
     color: 'primary',
     disabled: false,
-    recommended: true,
+    recommended: false,
     ctaLabel: 'Run demo scan',
     ctaIcon: 'mdi-play',
     badge: 'Fastest way to see the flow',
@@ -295,12 +301,12 @@ const targetCards: TargetCard[] = [
     microcopy: 'No proxy required for the first scan',
     helperText: 'Baseline scans send requests directly to your endpoint — no setup or SDK needed.',
     icon: 'mdi-web',
-    color: 'info',
+    color: 'primary',
     disabled: false,
-    recommended: false,
+    recommended: true,
     ctaLabel: 'Configure endpoint',
     ctaIcon: 'mdi-cog',
-    badge: 'Test your own endpoint',
+    badge: 'Test your real system',
     hidden: false,
   },
 
