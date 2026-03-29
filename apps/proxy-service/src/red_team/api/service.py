@@ -89,9 +89,7 @@ class BenchmarkService:
             from src.red_team.secrets.store import EncryptedColumnSecretStore
 
             store = EncryptedColumnSecretStore()
-            config["auth_secret_ref"] = await store.store(
-                "auth", _json.dumps(headers_to_encrypt), ttl_hours=24
-            )
+            config["auth_secret_ref"] = await store.store("auth", _json.dumps(headers_to_encrypt), ttl_hours=24)
 
         fingerprint = compute_target_fingerprint(target_type, config)
 

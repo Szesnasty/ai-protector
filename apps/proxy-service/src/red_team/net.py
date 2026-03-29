@@ -34,9 +34,7 @@ def rewrite_localhost_for_docker(url: str) -> str:
     except Exception:
         return url
     if parsed.hostname in _LOCALHOST_NAMES:
-        replaced = parsed._replace(
-            netloc=parsed.netloc.replace(parsed.hostname, "host.docker.internal", 1)
-        )
+        replaced = parsed._replace(netloc=parsed.netloc.replace(parsed.hostname, "host.docker.internal", 1))
         return urlunparse(replaced)
     return url
 

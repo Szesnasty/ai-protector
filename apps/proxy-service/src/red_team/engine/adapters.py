@@ -52,9 +52,7 @@ class RealHttpClient:
     """
 
     async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
-        endpoint_url = rewrite_localhost_for_docker(
-            target_config.get("endpoint_url") or _DEMO_AGENT_URL
-        )
+        endpoint_url = rewrite_localhost_for_docker(target_config.get("endpoint_url") or _DEMO_AGENT_URL)
         timeout_s: int = target_config.get("timeout_s", 30)
 
         headers: dict[str, str] = {"Content-Type": "application/json"}
@@ -138,10 +136,12 @@ class ProtectedHttpClient:
         pipeline_ms = (time.monotonic() - start) * 1000
 
         if result.get("decision") == "BLOCK":
-            body = json.dumps({
-                "error": "blocked",
-                "reason": result.get("blocked_reason", ""),
-            })
+            body = json.dumps(
+                {
+                    "error": "blocked",
+                    "reason": result.get("blocked_reason", ""),
+                }
+            )
             return HttpResponse(
                 status_code=403,
                 body=body,
