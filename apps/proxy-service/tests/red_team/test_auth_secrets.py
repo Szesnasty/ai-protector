@@ -132,10 +132,13 @@ async def test_encrypted_stored_in_db():
     ref = run.target_config["auth_secret_ref"]
     assert ref.startswith("encrypted:")
 
-    # Verify we can decrypt it
+    # Verify we can decrypt it — service wraps legacy auth_header
+    # into {"Authorization": value} JSON before encrypting
+    import json as _json
+
     store = EncryptedColumnSecretStore()
     plaintext = await store.retrieve(ref)
-    assert plaintext == "Bearer sk-secret-123"
+    assert _json.loads(plaintext) == {"Authorization": "Bearer sk-secret-123"}
 
 
 # ---------------------------------------------------------------------------
