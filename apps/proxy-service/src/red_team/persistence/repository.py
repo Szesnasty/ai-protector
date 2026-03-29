@@ -103,10 +103,7 @@ class BenchmarkRunRepository:
         Returns the number of affected rows.
         """
         now = datetime.now(UTC)
-        stmt = (
-            select(BenchmarkRun)
-            .where(BenchmarkRun.status.in_(["created", "running"]))
-        )
+        stmt = select(BenchmarkRun).where(BenchmarkRun.status.in_(["created", "running"]))
         result = await self._session.execute(stmt)
         runs = list(result.scalars().all())
 
