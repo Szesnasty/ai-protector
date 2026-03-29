@@ -31,7 +31,7 @@ from src.red_team.api import (
 )
 from src.red_team.api.service import BenchmarkService
 from src.red_team.engine.worker import run_benchmark_background
-from src.red_team.net import is_safe_url, rewrite_localhost_for_docker
+from src.red_team.net import rewrite_localhost_for_docker, validate_url
 from src.red_team.packs import load_pack
 from src.red_team.progress.emitter import ProgressEmitter
 
@@ -260,8 +260,9 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
 
     Auth header is used for this request only; it is NOT persisted.
     """
-    url = rewrite_localhost_for_docker(body.endpoint_url)
-    if not is_safe_url(url):
+    raw_url = rewrite_localhost_for_docker(body.endpoint_url)
+    safe_url = validate_url(raw_url)
+    if safe_url is None:
         return TestConnectionResponse(
             status="error",
             error="Endpoint URL is not allowed (invalid scheme or internal address)",
@@ -278,7 +279,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
         start = time.monotonic()
         async with _httpx.AsyncClient() as client:
             resp = await client.post(
-                url,
+                safe_url,
                 json={"messages": [{"role": "user", "content": "hello"}]},
                 headers=headers,
                 timeout=body.timeout_s,
@@ -287,7 +288,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
 
         content_type = resp.headers.get("content-type", "")
 
-        rewritten = url != body.endpoint_url
+        rewritten = raw_url != body.endpoint_url
 
         if resp.status_code == 401 or resp.status_code == 403:
             return TestConnectionResponse(
@@ -297,7 +298,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 content_type=content_type,
                 error=f"HTTP {resp.status_code}",
                 error_code="auth_invalid",
-                resolved_url=url if rewritten else None,
+                resolved_url=safe_url if rewritten else None,
             )
 
         if resp.status_code >= 500:
@@ -308,7 +309,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 content_type=content_type,
                 error=f"Server error (HTTP {resp.status_code})",
                 error_code="server_error",
-                resolved_url=url if rewritten else None,
+                resolved_url=safe_url if rewritten else None,
             )
 
         if resp.status_code >= 400 and resp.status_code != 422:
@@ -319,7 +320,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 content_type=content_type,
                 error=f"Client error (HTTP {resp.status_code})",
                 error_code="client_error",
-                resolved_url=url if rewritten else None,
+                resolved_url=safe_url if rewritten else None,
             )
 
         return TestConnectionResponse(
@@ -327,7 +328,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
             status_code=resp.status_code,
             latency_ms=latency_ms,
             content_type=content_type,
-            resolved_url=url if rewritten else None,
+            resolved_url=safe_url if rewritten else None,
         )
     except _httpx.TimeoutException:
         return TestConnectionResponse(status="error", error="Timeout", error_code="timeout")
@@ -336,7 +337,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
             status="error",
             error="Connection refused",
             error_code="connection_failed",
-            resolved_url=url if url != body.endpoint_url else None,
+            resolved_url=safe_url if raw_url != body.endpoint_url else None,
         )
     except Exception as exc:
         error_msg = str(exc)
