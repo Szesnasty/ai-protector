@@ -34,6 +34,7 @@ dev = [
     "pytest-cov==7.0.0",
     "ruff==0.15.5",
     "mypy==1.19.1",
+    "aiosqlite>=0.20.0",
 ]
 
 [build-system]
