@@ -15,16 +15,13 @@
     </v-chip>
 
     <v-list density="compact" nav color="primary">
-      <!-- Create -->
-      <v-list-subheader>Create</v-list-subheader>
+      <!-- Entry tools — no section header -->
       <v-list-item
-        v-for="item in createItems"
+        v-for="item in entryItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
         active-class="nav-item--active"
-        :class="{ 'nav-item--highlight': item.highlight }"
-        exact
       >
         <template #prepend>
           <v-icon :icon="item.icon" size="20" />
@@ -33,27 +30,10 @@
 
       <v-divider class="my-2" />
 
-      <!-- Validate -->
-      <v-list-subheader>Validate</v-list-subheader>
+      <!-- Protection -->
+      <v-list-subheader>Protection</v-list-subheader>
       <v-list-item
-        v-for="item in validateItems"
-        :key="item.to"
-        :to="item.to"
-        :title="item.title"
-        active-class="nav-item--active"
-        exact
-      >
-        <template #prepend>
-          <v-icon :icon="item.icon" size="20" />
-        </template>
-      </v-list-item>
-
-      <v-divider class="my-2" />
-
-      <!-- Observe -->
-      <v-list-subheader>Observe</v-list-subheader>
-      <v-list-item
-        v-for="item in observeItems"
+        v-for="item in protectionItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -67,10 +47,26 @@
 
       <v-divider class="my-2" />
 
-      <!-- Configure -->
-      <v-list-subheader>Configure</v-list-subheader>
+      <!-- Agents -->
+      <v-list-subheader>Agents</v-list-subheader>
       <v-list-item
-        v-for="item in configureItems"
+        v-for="item in agentItems"
+        :key="item.to"
+        :to="item.to"
+        :title="item.title"
+        active-class="nav-item--active"
+        exact
+      >
+        <template #prepend>
+          <v-icon :icon="item.icon" size="20" />
+        </template>
+      </v-list-item>
+
+      <v-divider class="my-2" />
+
+      <!-- Settings — no section header -->
+      <v-list-item
+        v-for="item in systemItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -85,7 +81,7 @@
 
     <div class="wizard-cta mx-4 mt-6">
       <p class="text-caption text-medium-emphasis text-center mb-0" style="opacity: 0.7">
-        Ship agents with guardrails — not prayers.
+        Ship AI agents with guardrails — not prayers.
       </p>
     </div>
   </div>
@@ -145,28 +141,30 @@ interface NavItem {
   highlight?: boolean
 }
 
-const createItems: NavItem[] = [
-  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new', highlight: true },
-  { title: 'Agents', icon: 'mdi-robot-outline', to: '/agents' },
+// --- Entry tools (no section header) ---
+const entryItems: NavItem[] = [
+  { title: 'Security Scan', icon: 'mdi-shield-search', to: '/red-team' },
+  { title: 'Protection Compare', icon: 'mdi-compare', to: '/compare' },
 ]
 
-const validateItems: NavItem[] = [
-  { title: 'Playground', icon: 'mdi-chat-processing', to: '/playground' },
-  { title: 'Compare', icon: 'mdi-compare', to: '/compare' },
-  { title: 'Python Agent', icon: 'mdi-language-python', to: '/test-agents/python' },
-  { title: 'LangGraph Agent', icon: 'mdi-graph-outline', to: '/test-agents/graph' },
-  { title: 'Agent Demo', icon: 'mdi-robot', to: '/agent' },
-]
-
-const observeItems: NavItem[] = [
-  { title: 'Agent Traces', icon: 'mdi-chart-timeline-variant', to: '/agent-traces' },
-  { title: 'Request Log', icon: 'mdi-format-list-bulleted', to: '/requests' },
+// --- Protection (proxy layer) ---
+const protectionItems: NavItem[] = [
+  { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
+  { title: 'Rules', icon: 'mdi-playlist-check', to: '/rules' },
+  { title: 'Request Traces', icon: 'mdi-text-box-search-outline', to: '/requests' },
   { title: 'Analytics', icon: 'mdi-chart-bar', to: '/analytics' },
 ]
 
-const configureItems: NavItem[] = [
-  { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
-  { title: 'Security Rules', icon: 'mdi-shield-lock-outline', to: '/rules' },
+// --- Agents (agent workspace) ---
+const agentItems: NavItem[] = [
+  { title: 'Agent Wizard', icon: 'mdi-magic-staff', to: '/agents/new' },
+  { title: 'My Agents', icon: 'mdi-robot-outline', to: '/agents' },
+  { title: 'Agent Sandbox', icon: 'mdi-flask-outline', to: '/test-agents' },
+  { title: 'Agent Traces', icon: 'mdi-timeline-clock-outline', to: '/agent-traces' },
+]
+
+// --- System ---
+const systemItems: NavItem[] = [
   { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>

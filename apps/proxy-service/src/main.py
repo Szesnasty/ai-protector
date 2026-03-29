@@ -53,6 +53,27 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await seed_wizard()
 
+    # Cancel any benchmark runs orphaned by a previous crash / restart
+    from src.db.session import async_session
+    from src.red_team.persistence.repository import BenchmarkRunRepository
+
+    async with async_session() as session:
+        repo = BenchmarkRunRepository(session)
+        cancelled = await repo.cancel_stale_runs()
+        await session.commit()
+        if cancelled:
+            logger.info("stale_runs_cancelled", count=cancelled)
+
+    # ── Cleanup expired auth secrets — safety net for runs that never
+    #    completed normally (crashes, container restarts, etc.).
+    #    Tokens are also deleted immediately after each run in worker.py.
+    from src.red_team.api.service import cleanup_expired_secrets
+
+    async with async_session() as session:
+        cleaned = await cleanup_expired_secrets(session)
+        if cleaned:
+            logger.info("expired_secrets_cleaned", count=cleaned)
+
     # ── Preload ML models in background (eliminates ~50 s cold-start) ──
     import asyncio
 
@@ -85,9 +106,28 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     asyncio.create_task(_preload_scanners())
 
+    # ── Periodic cleanup of expired auth secrets (every 60 min) ────────
+    async def _periodic_secret_cleanup() -> None:
+        import asyncio as _aio
+
+        while True:
+            await _aio.sleep(3600)  # 60 minutes
+            try:
+                async with async_session() as sess:
+                    cleaned = await cleanup_expired_secrets(sess)
+                    if cleaned:
+                        logger.info("periodic_secrets_cleaned", count=cleaned)
+            except Exception:
+                logger.warning("periodic_secret_cleanup_failed", exc_info=True)
+
+    _cleanup_task = asyncio.create_task(_periodic_secret_cleanup())
+
     logger.info("proxy_ready")
 
     yield
+
+    # Cancel periodic cleanup on shutdown
+    _cleanup_task.cancel()
 
     # Shutdown
     await close_db()
@@ -144,6 +184,11 @@ app.include_router(requests_router, prefix="/v1")
 app.include_router(rules_router, prefix="/v1")
 app.include_router(scan_router)
 app.include_router(scenarios_router, prefix="/v1")
+
+# Red Team Benchmark
+from src.red_team.api.routes import router as benchmark_router  # noqa: E402
+
+app.include_router(benchmark_router, prefix="/v1")
 
 
 # -- Exception handlers --

@@ -89,6 +89,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/ai_protector}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       DEFAULT_POLICY: ${DEFAULT_POLICY:-balanced}
+      BENCHMARK_SECRET_KEY: ${BENCHMARK_SECRET_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -129,6 +130,7 @@ services:
       NUXT_PUBLIC_AGENT_API_BASE: http://localhost:8002
       NUXT_PUBLIC_TEST_AGENT_PYTHON_URL: http://localhost:8003
       NUXT_PUBLIC_TEST_AGENT_GRAPH_URL: http://localhost:8004
+      NUXT_PUBLIC_REFERENCE_CHAT_TARGET_URL: http://localhost:8010
     depends_on:
       - proxy-service
       - agent-demo
@@ -180,6 +182,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    networks:
+      - ai-protector
+
+  # ── Reference Chat Target ─────────────────────────────
+  reference-chat-target:
+    build:
+      context: ../apps/reference-chat-target
+    profiles: ["demo", "full"]
+    ports:
+      - "8010:8010"
+    env_file:
+      - path: ../apps/reference-chat-target/.env
+        required: false
+    environment:
+      AI_PROTECTOR_BASE_URL: http://proxy-service:8000
+      PORT: "8010"
+    depends_on:
+      - proxy-service
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8010/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       - ai-protector
 

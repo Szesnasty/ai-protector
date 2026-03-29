@@ -5,22 +5,34 @@
 # Full stack (Ollama + real LLM):  make up
 # Contributor (infra only):        make dev
 
+# Generate BENCHMARK_SECRET_KEY if empty in infra/.env
+define ensure-benchmark-key
+	@if grep -q '^BENCHMARK_SECRET_KEY=$$' infra/.env 2>/dev/null; then \
+		KEY=$$(openssl rand -hex 32) && \
+		sed -i '' "s/^BENCHMARK_SECRET_KEY=$$/BENCHMARK_SECRET_KEY=$$KEY/" infra/.env && \
+		echo "🔑  Generated BENCHMARK_SECRET_KEY"; \
+	fi
+endef
+
 demo:
 	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
+	$(ensure-benchmark-key)
 	cd infra && MODE=demo docker compose --profile demo --profile test-agents up --build -d
 	@echo ""
 	@echo "🚀  AI Protector Demo is starting..."
-	@echo "    Frontend:       http://localhost:3000"
-	@echo "    Proxy API:      http://localhost:8000"
-	@echo "    Agent Demo:     http://localhost:8002"
-	@echo "    Python Agent:   http://localhost:8003"
-	@echo "    LangGraph Agent:http://localhost:8004"
+	@echo "    Frontend:          http://localhost:3000"
+	@echo "    Proxy API:         http://localhost:8000"
+	@echo "    Agent Demo:        http://localhost:8002"
+	@echo "    Python Agent:      http://localhost:8003"
+	@echo "    LangGraph Agent:   http://localhost:8004"
+	@echo "    Chat Target:       http://localhost:8010/v1/chat"
 	@echo ""
 	@echo "    Mode: DEMO (mock LLM, real security pipeline)"
 	@echo "    Paste an API key in Settings to use a real model."
 
 up:
 	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
+	$(ensure-benchmark-key)
 	cd infra && MODE=real docker compose --profile full --profile test-agents up --build -d
 	@echo ""
 	@echo "🚀  AI Protector is starting (full stack)..."

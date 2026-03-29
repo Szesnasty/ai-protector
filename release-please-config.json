@@ -6,6 +6,7 @@
   "include-component-in-tag": false,
   "packages": {
     ".": {
+      "release-as": "0.2.0",
       "component": "ai-protector",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [

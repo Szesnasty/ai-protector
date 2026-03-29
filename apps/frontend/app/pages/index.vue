@@ -1,5 +1,5 @@
 <script setup lang="ts">
-navigateTo('/playground')
+navigateTo('/red-team')
 </script>
 
 <template>

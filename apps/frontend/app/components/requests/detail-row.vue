@@ -77,6 +77,16 @@
           <!-- Metadata -->
           <div class="detail-section metadata-row">
             <div class="d-flex flex-wrap ga-2 align-center">
+              <v-chip
+                size="x-small"
+                variant="outlined"
+                label
+                prepend-icon="mdi-chat-processing"
+                :to="'/playground'"
+                class="text-decoration-none"
+              >
+                Open in Playground
+              </v-chip>
               <v-chip v-if="detail.model_used" size="x-small" variant="outlined" label prepend-icon="mdi-brain">
                 {{ detail.model_used }}
               </v-chip>

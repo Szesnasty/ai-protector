@@ -1,0 +1,32 @@
+[
+  {
+    "id": "KB-001",
+    "title": "Refund Policy",
+    "body": "Acme Corp offers a 30-day money-back guarantee on all products. To request a refund, contact support with your order number. Refunds are processed within 5-7 business days after approval. Digital products are eligible for refund only if the product has not been activated or used. Shipping costs are non-refundable unless the return is due to a product defect.",
+    "tags": ["refund", "return", "money-back", "policy"]
+  },
+  {
+    "id": "KB-002",
+    "title": "Billing Support",
+    "body": "For billing inquiries, visit your account dashboard at acme.com/billing. You can update payment methods, view invoices, and manage subscriptions. If you see an unauthorized charge, report it within 60 days. Corporate accounts can request consolidated invoicing through their account manager. Late payment fees of 1.5% per month apply to overdue invoices.",
+    "tags": ["billing", "invoice", "payment", "subscription"]
+  },
+  {
+    "id": "KB-003",
+    "title": "Account Recovery",
+    "body": "If you cannot access your account, use the 'Forgot Password' link on the login page. A reset link will be sent to your registered email. If you no longer have access to that email, contact support with your account ID and government-issued ID for manual verification. Two-factor authentication recovery codes can be used if your authenticator app is unavailable. Account recovery requests are processed within 24 hours.",
+    "tags": ["account", "recovery", "password", "login", "2fa"]
+  },
+  {
+    "id": "KB-004",
+    "title": "Shipping & Delivery FAQ",
+    "body": "Standard shipping takes 5-7 business days within the continental US. Express shipping (2-3 business days) is available for an additional fee. International orders typically arrive within 10-15 business days. All orders over $50 qualify for free standard shipping. Tracking numbers are emailed within 24 hours of shipment. For delivery issues, contact support with your tracking number.",
+    "tags": ["shipping", "delivery", "tracking", "order"]
+  },
+  {
+    "id": "KB-005",
+    "title": "Product Warranty",
+    "body": "All Acme Corp hardware products come with a 2-year limited warranty covering manufacturing defects. Software products are covered by a 1-year support license. Warranty claims require proof of purchase and a description of the defect. Accidental damage, misuse, and unauthorized modifications void the warranty. Extended warranty plans are available at checkout.",
+    "tags": ["warranty", "defect", "hardware", "support"]
+  }
+]

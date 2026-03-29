@@ -4,7 +4,8 @@
     <div class="compare-page__config">
       <div class="d-flex align-center flex-wrap ga-3 px-4 py-2">
         <v-icon size="20" color="primary">mdi-compare</v-icon>
-        <span class="text-subtitle-2 font-weight-bold">Compare Playground</span>
+        <span class="text-subtitle-2 font-weight-bold">Protection Compare</span>
+        <span class="text-caption text-medium-emphasis ml-1 d-none d-md-inline">See how the same scenario behaves with AI Protector enabled and without protection.</span>
 
         <v-divider vertical class="mx-1" />
 
@@ -222,6 +223,18 @@
         </div>
         <p class="text-caption text-medium-emphasis mt-4">
           Choose a scenario or enter a prompt below to compare both paths side by side.
+        </p>
+        <p class="text-caption mt-3">
+          <nuxt-link to="/red-team" class="text-decoration-none">
+            <v-icon size="14" class="mr-1">mdi-shield-search</v-icon>
+            Run a benchmark to measure overall security score and review failures
+          </nuxt-link>
+        </p>
+        <p class="text-caption mt-1">
+          <nuxt-link to="/playground" class="text-decoration-none">
+            <v-icon size="14" class="mr-1">mdi-chat-processing</v-icon>
+            Open Playground for full debug panel and config controls
+          </nuxt-link>
         </p>
       </div>
     </div>
