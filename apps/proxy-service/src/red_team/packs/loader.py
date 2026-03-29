@@ -128,26 +128,28 @@ def load_pack(pack_name: str, packs_dir: Path | None = None) -> Pack:
 # Only allow safe pack names: alphanumeric, underscore, hyphen, dot
 _SAFE_PACK_NAME = re.compile(r"\A[A-Za-z0-9_.-]+\Z")
 
+_PACK_EXTENSIONS = frozenset({".yaml", ".yml", ".json"})
+
 
 def _find_pack_file(pack_name: str, packs_dir: Path) -> Path | None:
-    """Find a pack file by name (tries .yaml, .yml, .json).
+    """Find a pack file by name via directory listing.
 
-    Validates that *pack_name* is a simple identifier (no path separators or
-    traversal segments) and that the resolved candidate stays within *packs_dir*.
+    Enumerates files in *packs_dir* and matches by stem instead of
+    constructing a path from user input — this prevents any path-traversal
+    regardless of *pack_name* content.
     """
     if not pack_name or not _SAFE_PACK_NAME.match(pack_name):
         return None
 
     base_dir = packs_dir.resolve()
-    for ext in (".yaml", ".yml", ".json"):
-        candidate = (packs_dir / f"{pack_name}{ext}").resolve()
-        # Ensure resolved path is still under the packs directory
-        try:
-            candidate.relative_to(base_dir)
-        except ValueError:
-            continue
-        if candidate.exists():
-            return candidate
+    if not base_dir.is_dir():
+        return None
+
+    # Iterate actual files — pack_name is only used in string comparison,
+    # never in path construction, so no taint reaches the filesystem.
+    for child in sorted(base_dir.iterdir()):
+        if child.is_file() and child.suffix in _PACK_EXTENSIONS and child.stem == pack_name:
+            return child
     return None
 
 
