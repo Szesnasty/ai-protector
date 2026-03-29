@@ -6,6 +6,7 @@ filters by target config & detector availability.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -124,10 +125,27 @@ def load_pack(pack_name: str, packs_dir: Path | None = None) -> Pack:
     return pack
 
 
+# Only allow safe pack names: alphanumeric, underscore, hyphen, dot
+_SAFE_PACK_NAME = re.compile(r"\A[A-Za-z0-9_.-]+\Z")
+
+
 def _find_pack_file(pack_name: str, packs_dir: Path) -> Path | None:
-    """Find a pack file by name (tries .yaml, .yml, .json)."""
+    """Find a pack file by name (tries .yaml, .yml, .json).
+
+    Validates that *pack_name* is a simple identifier (no path separators or
+    traversal segments) and that the resolved candidate stays within *packs_dir*.
+    """
+    if not pack_name or not _SAFE_PACK_NAME.match(pack_name):
+        return None
+
+    base_dir = packs_dir.resolve()
     for ext in (".yaml", ".yml", ".json"):
-        candidate = packs_dir / f"{pack_name}{ext}"
+        candidate = (packs_dir / f"{pack_name}{ext}").resolve()
+        # Ensure resolved path is still under the packs directory
+        try:
+            candidate.relative_to(base_dir)
+        except ValueError:
+            continue
         if candidate.exists():
             return candidate
     return None
