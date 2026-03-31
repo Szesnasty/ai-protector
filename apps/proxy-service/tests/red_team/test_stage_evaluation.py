@@ -114,13 +114,69 @@ class TestScenarioStageField:
 
 
 class TestIsProxyBlockResponse:
-    def test_403_is_block(self) -> None:
-        r = HttpResponse(status_code=403, body="Forbidden")
+    # -- Tier 1: x-decision header ----------------------------------------
+
+    def test_x_decision_block_header(self) -> None:
+        """x-decision: BLOCK is definitive proxy signal regardless of status."""
+        r = HttpResponse(status_code=403, body="Forbidden", headers={"x-decision": "BLOCK"})
         assert _is_proxy_block_response(r) is True
 
-    def test_451_is_block(self) -> None:
-        r = HttpResponse(status_code=451, body="Unavailable For Legal Reasons")
+    def test_x_decision_block_on_200(self) -> None:
+        """Even a 200 with x-decision: BLOCK is a proxy block."""
+        r = HttpResponse(status_code=200, body="ok", headers={"x-decision": "BLOCK"})
         assert _is_proxy_block_response(r) is True
+
+    # -- Tier 2: 403/451 with fingerprint ---------------------------------
+
+    def test_403_with_fingerprint_is_block(self) -> None:
+        r = HttpResponse(status_code=403, body="Forbidden", headers={"x-risk-score": "0.9"})
+        assert _is_proxy_block_response(r) is True
+
+    def test_451_with_fingerprint_is_block(self) -> None:
+        r = HttpResponse(status_code=451, body="Unavailable", headers={"x-decision": "DENY"})
+        assert _is_proxy_block_response(r) is True
+
+    # -- Tier 2 negative: bare 403/451 without fingerprint ----------------
+
+    def test_bare_403_is_not_block(self) -> None:
+        """A bare 403 from the target (no proxy headers) is NOT a proxy block."""
+        r = HttpResponse(status_code=403, body="Forbidden")
+        assert _is_proxy_block_response(r) is False
+
+    def test_bare_451_is_not_block(self) -> None:
+        r = HttpResponse(status_code=451, body="Unavailable For Legal Reasons")
+        assert _is_proxy_block_response(r) is False
+
+    # -- Tier 3: 4xx + fingerprint + body markers -------------------------
+
+    def test_400_with_fingerprint_and_marker(self) -> None:
+        r = HttpResponse(
+            status_code=400,
+            body='{"error": "Request blocked by policy"}',
+            headers={"x-risk-score": "0.85"},
+        )
+        assert _is_proxy_block_response(r) is True
+
+    def test_429_with_fingerprint_and_marker(self) -> None:
+        r = HttpResponse(
+            status_code=429,
+            body="Access denied by security policy",
+            headers={"x-decision": "THROTTLE"},
+        )
+        assert _is_proxy_block_response(r) is True
+
+    # -- Tier 3 negative: 4xx + markers but NO fingerprint ----------------
+
+    def test_400_with_marker_but_no_fingerprint(self) -> None:
+        """4xx with body markers but no proxy headers is a target error, not proxy."""
+        r = HttpResponse(status_code=400, body='{"error": "Request blocked by policy"}')
+        assert _is_proxy_block_response(r) is False
+
+    def test_429_with_marker_but_no_fingerprint(self) -> None:
+        r = HttpResponse(status_code=429, body="Access denied by security policy")
+        assert _is_proxy_block_response(r) is False
+
+    # -- Always false cases -----------------------------------------------
 
     def test_200_with_block_marker(self) -> None:
         """200 with 'blocked' in body is a model refusal, not a proxy block."""
@@ -135,15 +191,6 @@ class TestIsProxyBlockResponse:
         """200 with 'denied' in body is a model refusal, not a proxy block."""
         r = HttpResponse(status_code=200, body="Access denied by security policy")
         assert _is_proxy_block_response(r) is False
-
-    def test_400_with_block_marker(self) -> None:
-        """4xx with body markers IS a proxy block."""
-        r = HttpResponse(status_code=400, body='{"error": "Request blocked by policy"}')
-        assert _is_proxy_block_response(r) is True
-
-    def test_429_with_denied_marker(self) -> None:
-        r = HttpResponse(status_code=429, body="Access denied by security policy")
-        assert _is_proxy_block_response(r) is True
 
     def test_500_not_block(self) -> None:
         r = HttpResponse(status_code=500, body="Internal Server Error")
@@ -317,12 +364,23 @@ class TestFilteredPackSystemPrompt:
 
 
 class MockHttpClient:
-    def __init__(self, status_code: int = 200, body: str = "I cannot help with that.") -> None:
+    def __init__(
+        self,
+        status_code: int = 200,
+        body: str = "I cannot help with that.",
+        headers: dict[str, str] | None = None,
+    ) -> None:
         self.status_code = status_code
         self.body = body
+        self.headers = headers or {}
 
     async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
-        return HttpResponse(status_code=self.status_code, body=self.body, latency_ms=50.0)
+        return HttpResponse(
+            status_code=self.status_code,
+            body=self.body,
+            headers=self.headers,
+            latency_ms=50.0,
+        )
 
 
 class MockNormalizer:
@@ -404,8 +462,12 @@ class TestIngressBlockInEngine:
         assert sec001.outcome.value == "failed", "ingress_block + 200 response should fail"
 
     async def test_ingress_block_passes_on_403(self) -> None:
-        """A 403 from proxy means payload was blocked → pass."""
-        http = MockHttpClient(status_code=403, body="Blocked by security policy")
+        """A 403 from proxy (with fingerprint headers) means payload was blocked → pass."""
+        http = MockHttpClient(
+            status_code=403,
+            body="Blocked by security policy",
+            headers={"x-decision": "BLOCK", "x-risk-score": "0.95"},
+        )
         engine = RunEngine(http, MockNormalizer(), MockPersistence(), MockProgress())
         run = await engine.create_run(
             RunConfig(
@@ -504,7 +566,7 @@ class TestIngressRedactInEngine:
             created_at=datetime.now(UTC),
         )
 
-        result, eval_result = await engine._execute_scenario(run, s)
+        result, eval_result, _ = await engine._execute_scenario(run, s)
         assert not eval_result.passed, "Redact should fail when raw email appears in output"
         assert "email" in eval_result.detail.lower()
 
@@ -553,5 +615,125 @@ class TestIngressRedactInEngine:
             created_at=datetime.now(UTC),
         )
 
-        result, eval_result = await engine._execute_scenario(run, s)
+        result, eval_result, _ = await engine._execute_scenario(run, s)
         assert eval_result.passed, "Redact should pass when email not found in output"
+
+
+# ===========================================================================
+# Auth-expiry circuit breaker
+# ===========================================================================
+
+
+class SequentialMockHttpClient:
+    """Returns different responses for successive calls."""
+
+    def __init__(self, responses: list[tuple[int, str, dict[str, str]]]) -> None:
+        self._responses = responses
+        self._index = 0
+
+    async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
+        if self._index < len(self._responses):
+            status, body, headers = self._responses[self._index]
+            self._index += 1
+        else:
+            status, body, headers = self._responses[-1]
+        return HttpResponse(status_code=status, body=body, headers=headers, latency_ms=50.0)
+
+
+class TestAuthExpiryCircuitBreaker:
+    """Run aborts after _MAX_CONSECUTIVE_AUTH_FAILURES consecutive 401/403 without proxy fingerprint."""
+
+    async def test_five_consecutive_401_aborts(self) -> None:
+        """5 consecutive 401 responses → run fails with auth error."""
+        http = MockHttpClient(status_code=401, body="Unauthorized")
+        engine = RunEngine(http, MockNormalizer(), MockPersistence(), MockProgress())
+        run = await engine.create_run(
+            RunConfig(
+                target_type="hosted_endpoint",
+                target_config={"endpoint_url": "http://test", "agent_type": "chatbot_api", "timeout_s": 5},
+                pack="core_verified",
+            )
+        )
+        run = await engine.execute_run(run)
+
+        assert run.state == RunState.FAILED
+        assert "auth" in run.error.lower()
+        # Should have stopped after 5 results (not all scenarios)
+        assert len(run.results) <= 6  # 5 + possible in-flight
+
+    async def test_403_from_proxy_does_not_count_as_auth_failure(self) -> None:
+        """403 + proxy fingerprint means proxy block, not auth failure → no circuit break."""
+        http = MockHttpClient(
+            status_code=403,
+            body="Blocked by policy",
+            headers={"x-decision": "BLOCK"},
+        )
+        engine = RunEngine(http, MockNormalizer(), MockPersistence(), MockProgress())
+        run = await engine.create_run(
+            RunConfig(
+                target_type="hosted_endpoint",
+                target_config={"endpoint_url": "http://test", "agent_type": "chatbot_api", "timeout_s": 5},
+                pack="core_verified",
+            )
+        )
+        run = await engine.execute_run(run)
+
+        # Should complete normally (proxy blocks count as passed, not auth failures)
+        assert run.state == RunState.COMPLETED
+
+    async def test_auth_failures_reset_on_success(self) -> None:
+        """A 200 response resets the consecutive auth failure counter."""
+        # 4 x 401 then a 200 then 4 more 401 → should NOT abort (counter resets)
+        responses = [
+            (401, "Unauthorized", {}),
+            (401, "Unauthorized", {}),
+            (401, "Unauthorized", {}),
+            (401, "Unauthorized", {}),
+            (200, "I cannot help with that.", {}),
+            (401, "Unauthorized", {}),
+            (401, "Unauthorized", {}),
+            (401, "Unauthorized", {}),
+            (401, "Unauthorized", {}),
+            (200, "I cannot help with that.", {}),
+        ]
+        # Pad with 200s for the rest of scenarios
+        responses.extend([(200, "I cannot help with that.", {})] * 50)
+        http = SequentialMockHttpClient(responses)
+        engine = RunEngine(http, MockNormalizer(), MockPersistence(), MockProgress())
+        run = await engine.create_run(
+            RunConfig(
+                target_type="hosted_endpoint",
+                target_config={"endpoint_url": "http://test", "agent_type": "chatbot_api", "timeout_s": 5},
+                pack="core_verified",
+            )
+        )
+        run = await engine.execute_run(run)
+
+        # Should complete — never hit 5 consecutive
+        assert run.state == RunState.COMPLETED
+
+
+# ===========================================================================
+# Bare 403 from target → NOT treated as proxy block in integration
+# ===========================================================================
+
+
+class TestBare403InEngine:
+    """A 403 without proxy fingerprint should not be treated as ingress_block pass."""
+
+    async def test_ingress_block_fails_on_bare_403(self) -> None:
+        """403 from target (no proxy headers) → ingress_block fails (payload got through)."""
+        http = MockHttpClient(status_code=403, body="Forbidden")
+        engine = RunEngine(http, MockNormalizer(), MockPersistence(), MockProgress())
+        run = await engine.create_run(
+            RunConfig(
+                target_type="hosted_endpoint",
+                target_config={"endpoint_url": "http://test", "agent_type": "chatbot_api", "timeout_s": 5},
+                pack="core_verified",
+            )
+        )
+        run = await engine.execute_run(run)
+
+        sec001 = next((r for r in run.results if r.scenario_id == "SEC-001"), None)
+        assert sec001 is not None
+        assert sec001.outcome.value == "failed", "bare 403 without proxy headers should NOT count as proxy block"

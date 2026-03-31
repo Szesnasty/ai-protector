@@ -275,18 +275,26 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
     elif body.auth_header:
         headers["Authorization"] = body.auth_header
 
+    # Use custom body if provided, otherwise default chat payload
+    request_body = body.custom_body if body.custom_body is not None else {"messages": [{"role": "user", "content": "hello"}]}
+
+    def _snippet(text: str, max_len: int = 500) -> str:
+        """Return first *max_len* chars of *text* for diagnostics."""
+        return text[:max_len] if len(text) > max_len else text
+
     try:
         start = time.monotonic()
         async with _httpx.AsyncClient() as client:
             resp = await client.post(
                 safe_url,
-                json={"messages": [{"role": "user", "content": "hello"}]},
+                json=request_body,
                 headers=headers,
                 timeout=body.timeout_s,
             )
         latency_ms = int((time.monotonic() - start) * 1000)
 
         content_type = resp.headers.get("content-type", "")
+        resp_text = resp.text
 
         rewritten = raw_url != body.endpoint_url
 
@@ -299,6 +307,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 error=f"HTTP {resp.status_code}",
                 error_code="auth_invalid",
                 resolved_url=safe_url if rewritten else None,
+                body_snippet=_snippet(resp_text),
             )
 
         if resp.status_code >= 500:
@@ -310,6 +319,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 error=f"Server error (HTTP {resp.status_code})",
                 error_code="server_error",
                 resolved_url=safe_url if rewritten else None,
+                body_snippet=_snippet(resp_text),
             )
 
         if resp.status_code >= 400 and resp.status_code != 422:
@@ -321,7 +331,19 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 error=f"Client error (HTTP {resp.status_code})",
                 error_code="client_error",
                 resolved_url=safe_url if rewritten else None,
+                body_snippet=_snippet(resp_text),
             )
+
+        # Auto-detect text paths in JSON responses
+        detected_paths: list[str] | None = None
+        if content_type and "json" in content_type:
+            try:
+                from src.red_team.engine.json_text_extractor import detect_text_paths
+                import json as _json
+                parsed = _json.loads(resp_text)
+                detected_paths = detect_text_paths(parsed) or None
+            except Exception:
+                pass
 
         return TestConnectionResponse(
             status="ok",
@@ -329,6 +351,8 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
             latency_ms=latency_ms,
             content_type=content_type,
             resolved_url=safe_url if rewritten else None,
+            response_body=_snippet(resp_text, 2000),
+            detected_text_paths=detected_paths,
         )
     except _httpx.TimeoutException:
         return TestConnectionResponse(status="error", error="Timeout", error_code="timeout")

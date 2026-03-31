@@ -398,6 +398,17 @@ async function onRunBenchmark() {
       if (ephemeralHeaders) {
         targetConfig.custom_headers = ephemeralHeaders
       }
+
+      // Retrieve scan config (request template + response paths) from sessionStorage
+      const { load, clear: clearScanConfig } = useScanConfig()
+      const scanCfg = load()
+      if (scanCfg.requestTemplate) {
+        targetConfig.request_template = scanCfg.requestTemplate
+      }
+      if (scanCfg.responseTextPaths.length > 0) {
+        targetConfig.response_text_paths = scanCfg.responseTextPaths
+      }
+      clearScanConfig()
     }
 
     const result = await createRun({

@@ -106,6 +106,7 @@ def compute_target_fingerprint(target_type: str, target_config: dict[str, Any]) 
 # ---------------------------------------------------------------------------
 
 _MAX_CONSECUTIVE_FAILURES = 3
+_MAX_CONSECUTIVE_AUTH_FAILURES = 5
 _RETRY_DELAY_S = 2.0
 _DEFAULT_TIMEOUT_S = 30.0
 _IDEMPOTENCY_WINDOW_S = 60.0
@@ -225,6 +226,7 @@ class RunEngine:
         )
 
         consecutive_failures = 0
+        consecutive_auth_failures = 0
         scenarios = run.filtered_pack.scenarios
         total = len(scenarios)
 
@@ -246,8 +248,14 @@ class RunEngine:
             )
 
             try:
-                result, eval_result = await self._execute_scenario(run, scenario)
+                result, eval_result, http_status = await self._execute_scenario(run, scenario)
                 consecutive_failures = 0
+
+                # Track consecutive auth failures (target-side, not proxy)
+                if http_status in (401, 403) and not run.protection_detected:
+                    consecutive_auth_failures += 1
+                else:
+                    consecutive_auth_failures = 0
 
                 run.results.append(result)
                 run.eval_results.append((scenario.id, eval_result))
@@ -301,6 +309,31 @@ class RunEngine:
                         "latency_ms": result.latency_ms,
                     },
                 )
+
+                # Auth-expiry circuit breaker
+                if consecutive_auth_failures >= _MAX_CONSECUTIVE_AUTH_FAILURES:
+                    run.state = RunState.FAILED
+                    run.error = (
+                        f"Run aborted: {consecutive_auth_failures} consecutive auth failures "
+                        f"(HTTP 401/403). Check that your auth token is still valid."
+                    )
+                    run.completed_at = datetime.now(UTC)
+                    await self._persistence.update_run(
+                        run.id,
+                        {
+                            "state": RunState.FAILED.value,
+                            "error": run.error,
+                            "completed_at": run.completed_at.isoformat(),
+                        },
+                    )
+                    await self._progress.emit(
+                        run.id,
+                        {
+                            "type": "run_failed",
+                            "error": run.error,
+                        },
+                    )
+                    return run
 
             except ConnectionError:
                 consecutive_failures += 1
@@ -440,10 +473,10 @@ class RunEngine:
     # Internal
     # -------------------------------------------------------------------
 
-    async def _execute_scenario(self, run: BenchmarkRun, scenario: Scenario) -> tuple[ScenarioResult, EvalResult]:
+    async def _execute_scenario(self, run: BenchmarkRun, scenario: Scenario) -> tuple[ScenarioResult, EvalResult, int]:
         """Execute a single scenario: send → normalize → evaluate.
 
-        Returns (ScenarioResult for scoring, EvalResult with evidence).
+        Returns (ScenarioResult for scoring, EvalResult with evidence, HTTP status code).
         """
         timeout_s = run.config.target_config.get("timeout_s", _DEFAULT_TIMEOUT_S)
 
@@ -599,7 +632,7 @@ class RunEngine:
             latency_ms=http_response.latency_ms,
             raw_response_body=normalized.raw_body,
         )
-        return result, eval_result
+        return result, eval_result, http_response.status_code
 
     def _validate_config(self, config: RunConfig) -> None:
         """Validate RunConfig fields."""
@@ -697,22 +730,35 @@ _PROXY_FINGERPRINT_HEADERS = ("x-decision", "x-risk-score")
 def _is_proxy_block_response(http_response: HttpResponse) -> bool:
     """Heuristic: did the proxy intercept and block this request?
 
-    Returns True when the HTTP response looks like a proxy block
-    (4xx status or well-known block markers in short non-JSON body),
+    Returns True when the HTTP response looks like a proxy block,
     meaning the sensitive payload did NOT reach the model.
 
-    Body markers are ONLY checked for 4xx status codes to avoid
-    false positives from normal model refusals that contain words
-    like "blocked" or "not allowed".
+    IMPORTANT: To avoid confusing target-side 403 (auth failure, forbidden
+    resource) with a proxy block, we require proxy fingerprint headers
+    for status-code-only detection.  A bare 403 from the target is NOT
+    treated as a proxy block.
+
+    Detection tiers (any one is enough):
+    1. ``x-decision: BLOCK`` header — definitive proxy signal.
+    2. 403/451 status **with** proxy fingerprint headers.
+    3. 4xx status **with** proxy fingerprint headers **and** body markers.
     """
-    if http_response.headers.get("x-decision", "").upper() == "BLOCK":
+    headers = http_response.headers
+    has_fingerprint = _has_proxy_fingerprint(http_response)
+
+    # Tier 1: explicit header from our proxy
+    if headers.get("x-decision", "").upper() == "BLOCK":
         return True
-    if http_response.status_code in _PROXY_BLOCK_STATUSES:
+
+    # Tier 2: block status, but ONLY if proxy headers are present
+    if http_response.status_code in _PROXY_BLOCK_STATUSES and has_fingerprint:
         return True
-    # Only check body markers for 4xx responses (not 200 model refusals)
-    if 400 <= http_response.status_code < 500:
+
+    # Tier 3: other 4xx with fingerprint + body markers
+    if 400 <= http_response.status_code < 500 and has_fingerprint:
         body_lower = http_response.body[:500].lower()
         return any(marker in body_lower for marker in _PROXY_BLOCK_MARKERS)
+
     return False
 
 

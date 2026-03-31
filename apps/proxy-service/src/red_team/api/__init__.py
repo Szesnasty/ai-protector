@@ -144,6 +144,7 @@ class TestConnectionRequest(BaseModel):
     endpoint_url: str
     auth_header: str | None = None  # deprecated — kept for backward compat
     custom_headers: dict[str, str] | None = None
+    custom_body: dict[str, Any] | None = None  # optional JSON body instead of default chat payload
     timeout_s: int = Field(default=10, ge=1, le=120)
 
 
@@ -157,6 +158,9 @@ class TestConnectionResponse(BaseModel):
     error: str | None = None
     error_code: str | None = None  # "connection_failed" | "auth_invalid" | "timeout" | "ssl_error"
     resolved_url: str | None = None  # actual URL used (after localhost rewrite)
+    body_snippet: str | None = None  # first 500 chars of upstream body on errors
+    response_body: str | None = None  # full response body (truncated to 2000 chars) on success
+    detected_text_paths: list[str] | None = None  # auto-detected dot-notation paths to AI text
 
 
 class ErrorResponse(BaseModel):

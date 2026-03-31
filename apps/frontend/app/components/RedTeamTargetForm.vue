@@ -104,6 +104,36 @@
         </span>
       </v-alert>
 
+      <!-- Test request body (JSON, optional) -->
+      <div class="mb-4">
+        <p class="text-body-2 font-weight-medium mb-1">Test request body (JSON, optional)</p>
+        <v-textarea
+          v-model="requestTemplate"
+          :placeholder="requestTemplatePlaceholder"
+          variant="outlined"
+          density="compact"
+          rows="3"
+          auto-grow
+          class="font-monospace"
+          data-testid="request-template"
+        />
+        <p class="text-caption text-medium-emphasis mt-n2">
+          Use your API's real field names (e.g. Spring: <code>company_id</code>).
+          Include <code v-pre>{{PROMPT}}</code> so each attack can be injected;
+          same JSON drives the benchmark if you leave the benchmark template empty below.
+        </p>
+        <v-alert
+          v-if="requestTemplate && !requestTemplateHasPlaceholder"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mt-2"
+          data-testid="template-placeholder-warning"
+        >
+          Template is missing <code v-pre>{{PROMPT}}</code> placeholder — attack text won't be injected.
+        </v-alert>
+      </div>
+
       <!-- Test Connection -->
       <div class="d-flex align-center mb-4">
         <v-btn
@@ -137,8 +167,16 @@
         <template v-if="connectionResult.type === 'error'">
           <p class="text-body-2 mb-1 mt-1">{{ connectionResult.message }}</p>
           <p class="text-caption text-medium-emphasis mb-0">
-            Check the URL, auth header, and whether the endpoint is reachable from AI Protector.
+            Check the URL, auth header, and test JSON body.
+            <template v-if="connectionResult.bodySnippet">
+              If the endpoint responded, the box above is its reply (truncated).
+            </template>
           </p>
+          <pre
+            v-if="connectionResult.bodySnippet"
+            class="text-caption mt-2 pa-2 rounded bg-surface-variant"
+            style="white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow: auto;"
+          >{{ connectionResult.bodySnippet }}</pre>
         </template>
         <template v-else>
           {{ connectionResult.message }}
@@ -162,13 +200,57 @@
       <template v-if="connectionPassed">
         <v-divider class="my-4" />
 
-        <div class="text-center mb-4">
-          <v-icon icon="mdi-check-circle" color="success" size="32" class="mb-2" />
-          <p class="text-body-2 font-weight-medium text-success mb-1">Connection successful</p>
-          <p class="text-caption text-medium-emphasis mb-0">Your endpoint is reachable. Choose a benchmark to run.</p>
+        <!-- Response preview -->
+        <div v-if="responsePreview" class="mb-4">
+          <p class="text-body-2 font-weight-medium mb-1">Endpoint response</p>
+          <pre
+            class="text-caption pa-3 rounded bg-surface-variant font-monospace"
+            style="white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow: auto;"
+            data-testid="response-preview"
+          >{{ responsePreview }}</pre>
         </div>
 
-        <!-- Safety notice — compact, less alarming -->
+        <!-- Auto-detected / manual response path -->
+        <div class="mb-4">
+          <p class="text-body-2 font-weight-medium mb-1">
+            Where is the AI response?
+          </p>
+          <p class="text-caption text-medium-emphasis mb-2">
+            <template v-if="!responsePreview || !isJsonResponse">
+              Response is not JSON — the entire body will be used as-is.
+            </template>
+            <template v-else-if="detectedTextPaths.length">
+              Auto-detected from the response above. Edit if the wrong field was picked.
+            </template>
+            <template v-else>
+              Could not auto-detect. Enter the dot-notation path to the AI text field (e.g. <code>data.result.text</code>).
+              Use <code>*</code> for array elements.
+            </template>
+          </p>
+          <v-text-field
+            v-if="isJsonResponse"
+            v-model="responseTextPathsRaw"
+            label="Response text path"
+            :placeholder="'choices.*.message.content'"
+            variant="outlined"
+            density="compact"
+            class="font-monospace"
+            :hint="detectedTextPaths.length > 1 ? `Other candidates: ${detectedTextPaths.slice(1).join(', ')}` : ''"
+            persistent-hint
+            data-testid="response-text-paths"
+          />
+          <v-chip
+            v-if="!isJsonResponse"
+            color="info"
+            variant="tonal"
+            size="small"
+            prepend-icon="mdi-text"
+          >
+            Using full response body (not JSON)
+          </v-chip>
+        </div>
+
+        <!-- Safety notice -->
         <v-alert
           type="info"
           variant="tonal"
@@ -266,6 +348,8 @@
                   <v-radio label="Other" value="other" />
                 </v-radio-group>
               </template>
+
+              <v-divider class="my-4" />
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
@@ -308,6 +392,8 @@ export interface TargetFormConfig {
   timeout_s: number
   safe_mode: boolean
   environment: string
+  request_template: string
+  response_text_paths: string[]
 }
 
 const isHosted = computed(() => props.targetType === 'hosted_endpoint')
@@ -333,13 +419,31 @@ const timeoutS = ref(30)
 const safeMode = ref(true) // Default ON for safety
 const environment = ref('staging')
 const advancedPanel = ref<string | undefined>(undefined)
+const requestTemplatePlaceholder = '{ "user_id": "123", "description": "{{PROMPT}}", "additional_field": [] }'
+const requestTemplate = ref('')
+const responseTextPathsRaw = ref('')
+
+/** Parsed paths — comma or newline separated */
+const responseTextPaths = computed(() =>
+  responseTextPathsRaw.value
+    .split(/[,\n]/)
+    .map((l) => l.trim())
+    .filter(Boolean),
+)
+
+const requestTemplateHasPlaceholder = computed(() =>
+  requestTemplate.value.includes('{{PROMPT}}'),
+)
 
 // Connection test state
 const isTesting = ref(false)
 const connectionPassed = ref(false)
-const connectionResult = ref<{ type: 'success' | 'error'; headline: string; message: string } | null>(null)
+const connectionResult = ref<{ type: 'success' | 'error'; headline: string; message: string; bodySnippet?: string } | null>(null)
 const nonJsonWarning = ref(false)
 const nonJsonContentType = ref('')
+const responsePreview = ref('')
+const detectedTextPaths = ref<string[]>([])
+const isJsonResponse = ref(false)
 
 const timeoutOptions = [
   { label: '10 seconds', value: 10 },
@@ -384,8 +488,28 @@ async function onTestConnection() {
   connectionResult.value = null
   nonJsonWarning.value = false
   connectionPassed.value = false
+  responsePreview.value = ''
+  detectedTextPaths.value = []
+  isJsonResponse.value = false
 
   try {
+    // Build custom_body from request template if provided
+    let customBody: Record<string, unknown> | undefined
+    if (requestTemplate.value.trim()) {
+      try {
+        const rendered = requestTemplate.value.replace(/\{\{PROMPT}}/g, 'hello')
+        customBody = JSON.parse(rendered)
+      } catch {
+        connectionResult.value = {
+          type: 'error',
+          headline: 'Invalid JSON in request body',
+          message: 'The test request body is not valid JSON. Fix the syntax and try again.',
+        }
+        isTesting.value = false
+        return
+      }
+    }
+
     const res = await api.post<{
       status: string
       status_code?: number
@@ -393,10 +517,14 @@ async function onTestConnection() {
       content_type?: string
       error?: string
       resolved_url?: string
+      body_snippet?: string
+      response_body?: string
+      detected_text_paths?: string[]
     }>('/v1/benchmark/test-connection', {
       endpoint_url: endpointUrl.value,
       custom_headers: buildHeadersDict(),
       timeout_s: timeoutS.value,
+      ...(customBody !== undefined && { custom_body: customBody }),
     })
 
     const data = res.data
@@ -410,6 +538,23 @@ async function onTestConnection() {
         headline: 'Connection successful',
         message: `Your endpoint is reachable and ready for benchmarking. HTTP ${data.status_code} in ${data.latency_ms}ms${resolvedNote}`,
       }
+      // Populate response preview
+      if (data.response_body) {
+        responsePreview.value = data.response_body
+        // Try to pretty-print JSON
+        try {
+          responsePreview.value = JSON.stringify(JSON.parse(data.response_body), null, 2)
+        } catch { /* keep raw */ }
+      }
+      // Populate detected paths + auto-fill the first one
+      isJsonResponse.value = !!(data.content_type && data.content_type.includes('json'))
+      if (data.detected_text_paths?.length) {
+        detectedTextPaths.value = data.detected_text_paths
+        // Auto-fill if user hasn't manually set anything
+        if (!responseTextPathsRaw.value.trim()) {
+          responseTextPathsRaw.value = data.detected_text_paths[0]
+        }
+      }
       // Check for non-JSON
       if (data.content_type && !data.content_type.includes('json')) {
         nonJsonWarning.value = true
@@ -420,6 +565,7 @@ async function onTestConnection() {
         type: 'error',
         headline: 'Couldn\u2019t reach the endpoint',
         message: humanizeConnectionError(data.error, data.status_code),
+        bodySnippet: data.body_snippet,
       }
     }
   } catch (err: unknown) {
@@ -454,6 +600,8 @@ function onContinue() {
     timeout_s: timeoutS.value,
     safe_mode: safeMode.value,
     environment: isHosted.value ? environment.value : '',
+    request_template: requestTemplate.value,
+    response_text_paths: responseTextPaths.value,
   })
 }
 </script>

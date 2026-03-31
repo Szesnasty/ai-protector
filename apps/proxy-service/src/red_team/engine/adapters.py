@@ -38,6 +38,10 @@ if TYPE_CHECKING:
 
 _DEMO_AGENT_URL = "http://agent-demo:8002/agent/chat"
 
+# Maximum response body size to keep in memory (512 KB). Anything longer
+# is truncated before normalisation and DB storage to prevent OOM / bloat.
+_MAX_RESPONSE_BODY_BYTES = 512 * 1024
+
 
 # ---------------------------------------------------------------------------
 # HTTP Client
@@ -63,8 +67,18 @@ class RealHttpClient:
         elif auth_header := target_config.get("_decrypted_auth"):
             headers["Authorization"] = auth_header
 
-        # Payload shape depends on target
-        if "/agent/chat" in endpoint_url:
+        # Payload shape: template > demo agent > OpenAI fallback
+        request_template: str | None = target_config.get("request_template")
+        if request_template:
+            rendered = request_template.replace("{{PROMPT}}", prompt)
+            rendered = rendered.replace("{{ATTACK_PROMPT}}", prompt)
+            system_prompt = target_config.get("_system_prompt") or ""
+            rendered = rendered.replace("{{SYSTEM_PROMPT}}", system_prompt)
+            try:
+                payload = json.loads(rendered)
+            except (json.JSONDecodeError, ValueError) as exc:
+                raise ValueError(f"request_template produced invalid JSON: {exc}") from exc
+        elif "/agent/chat" in endpoint_url:
             payload: dict[str, Any] = {
                 "message": prompt,
                 "role": target_config.get("benchmark_role", "customer"),
@@ -95,9 +109,13 @@ class RealHttpClient:
 
         latency_ms = (time.monotonic() - start) * 1000
 
+        body = resp.text
+        if len(body) > _MAX_RESPONSE_BODY_BYTES:
+            body = body[:_MAX_RESPONSE_BODY_BYTES]
+
         return HttpResponse(
             status_code=resp.status_code,
-            body=resp.text,
+            body=body,
             headers={k.lower(): v for k, v in resp.headers.items()},
             latency_ms=latency_ms,
         )
@@ -159,30 +177,72 @@ class ProtectedHttpClient:
 
 
 class SimpleNormalizer:
-    """Parse HTTP response bodies into ``RawTargetResponse``."""
+    """Parse HTTP response bodies into ``RawTargetResponse``.
+
+    Resolution order for ``body_text``:
+    1. Configured ``response_text_paths`` (from ``target_config``) —
+       walks the JSON tree along dot-notation paths.
+    2. Heuristic — first non-empty value from well-known keys.
+    3. Raw body — fallback when nothing else matched.
+    """
+
+    # Well-known keys tried in order when no explicit paths are configured.
+    _HEURISTIC_KEYS = ("response", "output_text", "message", "content", "text", "output")
+
+    # Deep path patterns for common AI provider formats (tried before flat keys).
+    _DEEP_HEURISTIC_PATHS: tuple[tuple[str, ...], ...] = (
+        # OpenAI / Azure OpenAI
+        ("choices", "message", "content"),
+        # Anthropic Messages API
+        ("content", "text"),
+        # Google Vertex / Gemini
+        ("candidates", "content", "parts", "text"),
+        # AWS Bedrock (Titan, Claude)
+        ("results", "outputText"),
+        # Cohere
+        ("generations", "text"),
+    )
 
     def normalize(self, http_response: HttpResponse, target_config: dict[str, Any]) -> RawTargetResponse:
+        from src.red_team.engine.json_text_extractor import extract_text
+
         body = http_response.body
         parsed_json = None
-        body_text = body
+        body_text = ""
         provider_format = "plain_text"
+
+        # SSE frame stripping — reassemble text from `data: {...}\n\n` lines
+        content_type = http_response.headers.get("content-type", "")
+        if "text/event-stream" in content_type or body.lstrip().startswith("data: "):
+            body = self._strip_sse_frames(body)
+            provider_format = "sse"
 
         try:
             parsed_json = json.loads(body)
-            provider_format = "generic_json"
-
-            if isinstance(parsed_json, dict):
-                body_text = (
-                    parsed_json.get("response")
-                    or parsed_json.get("output_text")
-                    or parsed_json.get("message")
-                    or parsed_json.get("content")
-                    or parsed_json.get("text")
-                    or parsed_json.get("output")
-                    or body
-                )
+            provider_format = "generic_json" if provider_format != "sse" else "sse_json"
         except (json.JSONDecodeError, ValueError):
             pass
+
+        # 1) Configured paths
+        response_paths: list[str] | None = target_config.get("response_text_paths")
+        if parsed_json is not None and response_paths:
+            body_text = extract_text(parsed_json, response_paths)
+
+        # 2) Deep heuristic — common AI provider patterns
+        if not body_text and isinstance(parsed_json, dict):
+            body_text = self._try_deep_heuristic(parsed_json)
+
+        # 3) Flat heuristic — well-known top-level keys
+        if not body_text and isinstance(parsed_json, dict):
+            for key in self._HEURISTIC_KEYS:
+                val = parsed_json.get(key)
+                if val:
+                    body_text = str(val)
+                    break
+
+        # 4) Fallback — raw body
+        if not body_text:
+            body_text = body
 
         return RawTargetResponse(
             body_text=str(body_text),
@@ -193,6 +253,79 @@ class SimpleNormalizer:
             raw_body=body,
             provider_format=provider_format,
         )
+
+    @classmethod
+    def _try_deep_heuristic(cls, data: dict) -> str:
+        """Walk common AI provider response structures to extract body text.
+
+        Tries each pattern in ``_DEEP_HEURISTIC_PATHS``.  For arrays,
+        descends into the first element (index 0).  Returns the first
+        non-empty string found, or ``""`` if nothing matches.
+        """
+        for path in cls._DEEP_HEURISTIC_PATHS:
+            node: Any = data
+            for segment in path:
+                if isinstance(node, dict) and segment in node:
+                    node = node[segment]
+                elif isinstance(node, list) and node:
+                    # Descend into first element, then look for the segment
+                    first = node[0]
+                    if isinstance(first, dict) and segment in first:
+                        node = first[segment]
+                    else:
+                        node = None
+                        break
+                else:
+                    node = None
+                    break
+            if isinstance(node, str) and node:
+                return node
+            # Handle Anthropic-style content array: content[0].text
+            if isinstance(node, list) and node:
+                first = node[0]
+                if isinstance(first, str) and first:
+                    return first
+        return ""
+
+    @staticmethod
+    def _strip_sse_frames(raw: str) -> str:
+        """Reassemble text content from SSE-formatted body.
+
+        Parses ``data: <json>`` lines.  For each line, tries to extract
+        text from JSON chunks (OpenAI streaming: ``choices[0].delta.content``).
+        Falls back to concatenating raw ``data:`` payloads.
+        """
+        fragments: list[str] = []
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line.startswith("data:"):
+                continue
+            payload = line[5:].strip()
+            if payload == "[DONE]":
+                continue
+            # Try JSON chunk (OpenAI streaming format)
+            try:
+                chunk = json.loads(payload)
+                # OpenAI: choices[0].delta.content
+                choices = chunk.get("choices") or []
+                if choices:
+                    delta = choices[0].get("delta") or {}
+                    content = delta.get("content")
+                    if content:
+                        fragments.append(content)
+                        continue
+                # Anthropic streaming: delta.text
+                delta_block = chunk.get("delta") or {}
+                text = delta_block.get("text")
+                if text:
+                    fragments.append(text)
+                    continue
+            except (json.JSONDecodeError, ValueError, KeyError, IndexError):
+                pass
+            # Raw data line fallback
+            if payload:
+                fragments.append(payload)
+        return "".join(fragments) if fragments else raw
 
 
 # ---------------------------------------------------------------------------
