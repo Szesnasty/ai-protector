@@ -123,9 +123,7 @@ class TestDetectTextPaths:
 
     def test_openai_format(self):
         data = {
-            "choices": [
-                {"message": {"content": "Hello! How can I help you today?", "role": "assistant"}, "index": 0}
-            ],
+            "choices": [{"message": {"content": "Hello! How can I help you today?", "role": "assistant"}, "index": 0}],
             "model": "gpt-4",
             "id": "chatcmpl-abc",
         }

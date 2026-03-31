@@ -276,7 +276,9 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
         headers["Authorization"] = body.auth_header
 
     # Use custom body if provided, otherwise default chat payload
-    request_body = body.custom_body if body.custom_body is not None else {"messages": [{"role": "user", "content": "hello"}]}
+    request_body = (
+        body.custom_body if body.custom_body is not None else {"messages": [{"role": "user", "content": "hello"}]}
+    )
 
     def _snippet(text: str, max_len: int = 500) -> str:
         """Return first *max_len* chars of *text* for diagnostics."""
@@ -341,6 +343,7 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
                 import json as _json
 
                 from src.red_team.engine.json_text_extractor import detect_text_paths
+
                 parsed = _json.loads(resp_text)
                 detected_paths = detect_text_paths(parsed) or None
             except Exception:
