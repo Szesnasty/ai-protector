@@ -33,7 +33,17 @@
           <v-icon :icon="targetIcon" size="x-small" class="mr-1" />
           {{ targetLabel }}
           &nbsp;·&nbsp; {{ humanPack(run.pack) }}
-          &nbsp;·&nbsp; {{ timeAgo }}
+          &nbsp;·&nbsp;
+          <v-tooltip location="bottom">
+            <template #activator="{ props: tip }">
+              <span v-bind="tip" style="cursor: help; text-decoration: underline dotted;">{{ timeAgo }}</span>
+            </template>
+            <div class="text-caption">
+              <div>Started: {{ formatTimestamp(run.created_at) }}</div>
+              <div v-if="run.completed_at">Finished: {{ formatTimestamp(run.completed_at) }}</div>
+              <div v-if="run.created_at && run.completed_at">Duration: {{ durationLabel }}</div>
+            </div>
+          </v-tooltip>
           <v-chip
             v-if="runClass"
             :color="runClass.color"
@@ -982,6 +992,26 @@ const timeAgo = computed(() => {
   if (diff < 3600) return `${Math.round(diff / 60)} min ago`
   if (diff < 86400) return `${Math.round(diff / 3600)}h ago`
   return `${Math.round(diff / 86400)}d ago`
+})
+
+function formatTimestamp(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return d.toLocaleString('en-GB', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  })
+}
+
+const durationLabel = computed(() => {
+  if (!run.value?.created_at || !run.value?.completed_at) return ''
+  const ms = new Date(run.value.completed_at).getTime() - new Date(run.value.created_at).getTime()
+  const s = Math.round(ms / 1000)
+  if (s < 60) return `${s}s`
+  const m = Math.floor(s / 60)
+  const rem = s % 60
+  return rem > 0 ? `${m}m ${rem}s` : `${m}m`
 })
 
 // ---------------------------------------------------------------------------
