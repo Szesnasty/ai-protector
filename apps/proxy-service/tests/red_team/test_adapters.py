@@ -3,13 +3,9 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
-import pytest
-
-from src.red_team.engine.adapters import SimpleNormalizer, _MAX_RESPONSE_BODY_BYTES
+from src.red_team.engine.adapters import _MAX_RESPONSE_BODY_BYTES, SimpleNormalizer
 from src.red_team.engine.protocols import HttpResponse
-
 
 # ===========================================================================
 # SSE frame stripping

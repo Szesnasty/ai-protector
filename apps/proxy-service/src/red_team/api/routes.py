@@ -338,8 +338,9 @@ async def test_connection(body: TestConnectionRequest) -> TestConnectionResponse
         detected_paths: list[str] | None = None
         if content_type and "json" in content_type:
             try:
-                from src.red_team.engine.json_text_extractor import detect_text_paths
                 import json as _json
+
+                from src.red_team.engine.json_text_extractor import detect_text_paths
                 parsed = _json.loads(resp_text)
                 detected_paths = detect_text_paths(parsed) or None
             except Exception:
