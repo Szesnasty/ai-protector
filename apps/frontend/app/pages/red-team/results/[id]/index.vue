@@ -627,7 +627,7 @@
       <!-- ================================================================ -->
       <!-- Protect this endpoint — dialog                                    -->
       <!-- ================================================================ -->
-      <v-dialog v-model="showSetupDialog" max-width="600" scrollable>
+      <v-dialog v-model="showSetupDialog" max-width="780" scrollable>
         <v-card>
           <!-- Title -->
           <v-card-title class="d-flex align-center pt-5 pb-2 px-6">
@@ -641,7 +641,7 @@
               <div class="d-flex flex-column ga-1 text-caption">
                 <div class="d-flex align-center ga-2">
                   <span class="text-medium-emphasis" style="min-width: 64px;">Endpoint</span>
-                  <code class="text-truncate" style="max-width: 380px;">{{ targetEndpointUrl || 'your LLM endpoint' }}</code>
+                  <code class="text-truncate" style="max-width: 480px;">{{ targetEndpointUrl || 'your LLM endpoint' }}</code>
                 </div>
                 <div class="d-flex align-center ga-2">
                   <span class="text-medium-emphasis" style="min-width: 64px;">Pack</span>
@@ -657,73 +657,101 @@
 
           <!-- Intro -->
           <p class="text-body-2 text-medium-emphasis px-6 pb-3 mb-0">
-            Route this endpoint through AI Protector, then re-run the same pack to see which attacks are blocked.
+            AI Protector inspects every request before it reaches the model. Blocked attacks never hit the LLM.
+            Choose the integration that fits your API format:
           </p>
 
           <v-divider />
 
           <v-card-text class="pa-6">
 
-            <!-- Step 1: Copy replacement URL -->
+            <!-- ── Integration Option A: OpenAI-compatible ── -->
             <div class="setup-step mb-5">
               <div class="d-flex align-center mb-2">
-                <div class="step-number mr-3">1</div>
-                <span class="text-subtitle-2 font-weight-bold">Copy the replacement URL</span>
+                <v-chip color="primary" variant="flat" size="x-small" label class="mr-3 font-weight-bold">Option A</v-chip>
+                <span class="text-subtitle-2 font-weight-bold">OpenAI-compatible APIs</span>
+                <v-chip color="success" variant="tonal" size="x-small" class="ml-2">Drop-in</v-chip>
               </div>
-              <p class="text-body-2 text-medium-emphasis mb-2">
-                Use this localhost AI Protector URL instead of your current AI chat endpoint.
+              <p class="text-body-2 text-medium-emphasis mb-3 pl-1">
+                If your backend calls an OpenAI-compatible endpoint (<code>/v1/chat/completions</code>),
+                just swap the base URL to point at AI Protector. It acts as a transparent proxy —
+                inspects the request, blocks attacks, and forwards clean requests to your original model.
               </p>
 
-              <!-- Current / Replacement URL diff -->
-              <v-card variant="outlined" class="url-diff-card pa-3 mb-2">
-                <!-- Current URL row -->
-                <div class="d-flex align-center mb-2">
-                  <span class="url-diff-label text-caption text-medium-emphasis mr-3" style="min-width: 120px;">Current URL</span>
-                  <code class="text-caption text-medium-emphasis url-before" style="word-break: break-all;">
-                    {{ targetEndpointUrl || 'https://your-llm-api.com/v1/chat/completions' }}
-                  </code>
+              <!-- How it works diagram -->
+              <v-card variant="outlined" class="url-diff-card pa-3 mb-3">
+                <div class="text-caption text-medium-emphasis mb-2 font-weight-medium">How it works</div>
+                <div class="d-flex align-center flex-wrap ga-2 mb-2" style="font-family: monospace; font-size: 0.8rem;">
+                  <span>Your app</span>
+                  <v-icon icon="mdi-arrow-right" size="x-small" />
+                  <span class="url-proxy-highlight">{{ protectedHost }}/v1/chat/completions</span>
+                  <v-icon icon="mdi-arrow-right" size="x-small" />
+                  <span class="text-medium-emphasis">inspect &amp; filter</span>
+                  <v-icon icon="mdi-arrow-right" size="x-small" />
+                  <span>Original LLM</span>
                 </div>
-                <v-divider class="mb-2" />
-                <!-- Replacement URL row -->
-                <div class="d-flex align-center justify-space-between flex-wrap ga-2">
-                  <div class="d-flex align-center flex-grow-1 mr-2">
-                    <span class="url-diff-label text-caption font-weight-bold text-success mr-3" style="min-width: 120px;">Replace with this URL</span>
-                    <code class="text-caption" style="word-break: break-all;" data-testid="protected-url">
-                      <span class="url-proxy-highlight">{{ protectedHost }}</span><span class="text-medium-emphasis">/v1/chat/completions</span>
-                    </code>
-                  </div>
-                  <v-btn
-                    :color="urlCopied ? 'success' : 'primary'"
-                    :variant="urlCopied ? 'tonal' : 'flat'"
-                    size="x-small"
-                    :prepend-icon="urlCopied ? 'mdi-check' : 'mdi-content-copy'"
-                    @click="copyProtectedUrl"
-                  >
-                    {{ urlCopied ? '✓ Copied' : 'Copy URL' }}
-                  </v-btn>
+                <v-divider class="my-2" />
+                <div class="text-caption text-medium-emphasis">
+                  Replace <code>https://api.openai.com</code> (or any compatible host) with
+                  <code>{{ protectedHost }}</code> in your <code>.env</code>, SDK config, or deployment manifest.
+                  Keep the same path — only the host changes.
                 </div>
               </v-card>
-              <p class="text-caption text-medium-emphasis mb-0">
-                Keep the same path. Only the routing layer changes.
-              </p>
-            </div>
 
-            <!-- Step 2: Replace model URL -->
-            <div class="setup-step mb-5">
-              <div class="d-flex align-center mb-1">
-                <div class="step-number mr-3">2</div>
-                <span class="text-subtitle-2 font-weight-bold">Replace your model URL in the backend</span>
+              <div class="d-flex align-center ga-2">
+                <v-btn
+                  :color="urlCopied ? 'success' : 'primary'"
+                  :variant="urlCopied ? 'tonal' : 'outlined'"
+                  size="small"
+                  :prepend-icon="urlCopied ? 'mdi-check' : 'mdi-content-copy'"
+                  @click="copyProtectedUrl"
+                >
+                  {{ urlCopied ? 'Copied!' : 'Copy proxy URL' }}
+                </v-btn>
+                <span class="text-caption text-medium-emphasis">{{ protectedBaseUrl }}</span>
               </div>
-              <p class="text-body-2 text-medium-emphasis mb-0 pl-9">
-                Usually in your config file, <code>.env</code>, deployment config, or SDK initialization — not the frontend.
+            </div>
+
+            <v-divider class="mb-5" />
+
+            <!-- ── Integration Option B: Non-OpenAI / custom APIs ── -->
+            <div class="setup-step mb-5">
+              <div class="d-flex align-center mb-2">
+                <v-chip color="secondary" variant="flat" size="x-small" label class="mr-3 font-weight-bold">Option B</v-chip>
+                <span class="text-subtitle-2 font-weight-bold">Other API formats</span>
+              </div>
+              <p class="text-body-2 text-medium-emphasis mb-3 pl-1">
+                For non-OpenAI APIs (custom REST, gRPC, proprietary SDKs), use the <strong>scan-only endpoint</strong>
+                as a pre-check in your code. Send the prompt to <code>/v1/scan</code> first — if the verdict is
+                <code>ALLOW</code>, forward it to your model; if <code>BLOCK</code>, reject it before it ever
+                reaches the LLM.
+              </p>
+
+              <v-card variant="outlined" class="url-diff-card pa-3 mb-3">
+                <div class="text-caption text-medium-emphasis mb-2 font-weight-medium">Example: pre-check in code</div>
+                <pre class="text-caption" style="white-space: pre-wrap; margin: 0; line-height: 1.6;"><code>POST {{ protectedHost }}/v1/scan
+{
+  "messages": [{"role": "user", "content": "...user prompt..."}]
+}
+
+→ 200  { "decision": "ALLOW", ... }   # safe — call your LLM
+→ 403  { "decision": "BLOCK", ... }   # attack — reject the request</code></pre>
+              </v-card>
+
+              <p class="text-caption text-medium-emphasis mb-0 pl-1">
+                <v-icon icon="mdi-information-outline" size="12" class="mr-1" />
+                The scan endpoint runs the full firewall pipeline (intent analysis, rules, PII scanners)
+                but does not call any LLM — no extra latency or cost beyond the inspection itself.
               </p>
             </div>
 
-            <!-- Step 3: Restart backend — warning styled -->
+            <v-divider class="mb-5" />
+
+            <!-- After integration: restart + re-scan -->
             <div class="setup-step setup-step--warning mb-5">
               <div class="d-flex align-center mb-1">
-                <div class="step-number step-number--warning mr-3">3</div>
-                <span class="text-subtitle-2 font-weight-bold">Restart or reload your backend</span>
+                <div class="step-number step-number--warning mr-3">!</div>
+                <span class="text-subtitle-2 font-weight-bold">Restart your backend after the change</span>
                 <v-chip color="warning" variant="tonal" size="x-small" class="ml-2">Don't skip</v-chip>
               </div>
               <p class="text-body-2 text-medium-emphasis mb-0 pl-9">
@@ -731,10 +759,9 @@
               </p>
             </div>
 
-            <!-- Step 4: Protected re-scan -->
             <div class="setup-step mb-5">
               <div class="d-flex align-center mb-1">
-                <div class="step-number mr-3">4</div>
+                <v-icon icon="mdi-reload" color="primary" size="small" class="mr-3" />
                 <span class="text-subtitle-2 font-weight-bold">Run the protected re-scan</span>
               </div>
               <p class="text-body-2 text-medium-emphasis mb-0 pl-9">
