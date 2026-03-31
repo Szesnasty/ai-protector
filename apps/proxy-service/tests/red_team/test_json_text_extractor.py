@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-
-from src.red_team.engine.json_text_extractor import extract_text, detect_text_paths
-
+from src.red_team.engine.json_text_extractor import detect_text_paths, extract_text
 
 # ---------------------------------------------------------------------------
 # Happy paths
