@@ -108,7 +108,7 @@ def compute_target_fingerprint(target_type: str, target_config: dict[str, Any]) 
 _MAX_CONSECUTIVE_FAILURES = 3
 _MAX_CONSECUTIVE_AUTH_FAILURES = 5
 _RETRY_DELAY_S = 2.0
-_DEFAULT_TIMEOUT_S = 30.0
+_DEFAULT_TIMEOUT_S = 60.0
 _IDEMPOTENCY_WINDOW_S = 60.0
 
 
@@ -398,6 +398,30 @@ class RunEngine:
                     },
                 )
 
+            except Exception as exc:
+                import logging
+
+                logging.getLogger(__name__).error("Scenario %s unexpected error: %s", scenario.id, exc, exc_info=True)
+                skip_result = ScenarioResult(
+                    scenario_id=scenario.id,
+                    category=scenario.category.value if hasattr(scenario.category, "value") else str(scenario.category),
+                    severity=scenario.severity.value if hasattr(scenario.severity, "value") else str(scenario.severity),
+                    outcome=ScenarioOutcome.SKIPPED,
+                    skip_reason=f"error: {type(exc).__name__}",
+                )
+                run.results.append(skip_result)
+                consecutive_failures = 0
+
+                await self._progress.emit(
+                    run.id,
+                    {
+                        "type": "scenario_skipped",
+                        "scenario_id": scenario.id,
+                        "title": scenario.title,
+                        "reason": f"error: {type(exc).__name__}: {exc}",
+                    },
+                )
+
         # Compute scores and finalize
         if run.state != RunState.CANCELLED and run.state != RunState.FAILED:
             run.score = compute_scores(
@@ -417,6 +441,11 @@ class RunEngine:
                     "completed_at": run.completed_at.isoformat(),
                     "protection_detected": run.protection_detected,
                     "proxy_blocked_count": run.proxy_blocked_count,
+                    "executed": run.score.executed,
+                    "passed": run.score.passed,
+                    "failed": run.score.failed,
+                    "skipped": run.score.skipped,
+                    "false_positives": run.score.false_positives,
                 },
             )
 

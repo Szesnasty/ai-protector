@@ -70,10 +70,12 @@ class RealHttpClient:
         # Payload shape: template > demo agent > OpenAI fallback
         request_template: str | None = target_config.get("request_template")
         if request_template:
-            rendered = request_template.replace("{{PROMPT}}", prompt)
-            rendered = rendered.replace("{{ATTACK_PROMPT}}", prompt)
+            escaped_prompt = json.dumps(prompt)[1:-1]  # JSON-safe string (no wrapping quotes)
+            rendered = request_template.replace("{{PROMPT}}", escaped_prompt)
+            rendered = rendered.replace("{{ATTACK_PROMPT}}", escaped_prompt)
             system_prompt = target_config.get("_system_prompt") or ""
-            rendered = rendered.replace("{{SYSTEM_PROMPT}}", system_prompt)
+            escaped_sys = json.dumps(system_prompt)[1:-1]
+            rendered = rendered.replace("{{SYSTEM_PROMPT}}", escaped_sys)
             try:
                 payload = json.loads(rendered)
             except (json.JSONDecodeError, ValueError) as exc:

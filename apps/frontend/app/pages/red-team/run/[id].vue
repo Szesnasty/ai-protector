@@ -98,7 +98,7 @@
 
       <v-progress-linear
         :model-value="progressPercent"
-        :color="consecutiveConnectionErrors >= 3 ? 'error' : 'primary'"
+        :color="isFailed ? 'error' : consecutiveConnectionErrors >= 3 ? 'error' : 'primary'"
         height="10"
         rounded
         class="mb-3"
@@ -198,8 +198,39 @@
       </div>
     </v-card>
 
+    <!-- ═══════════════════ Failed state ═══════════════════ -->
+    <v-card v-if="isTerminal && isFailed" variant="tonal" color="error" class="mb-4 pa-4 text-center completed-card">
+      <v-icon size="36" class="mb-2" color="error">mdi-alert-circle</v-icon>
+      <p class="text-body-1 font-weight-medium mb-1">
+        Benchmark failed
+      </p>
+      <p class="text-body-2 text-medium-emphasis mb-3">
+        {{ runError || 'An unexpected error occurred during the benchmark.' }}
+      </p>
+      <v-btn
+        color="error"
+        variant="flat"
+        to="/red-team"
+        prepend-icon="mdi-arrow-left"
+        size="large"
+        class="mr-2"
+      >
+        Back to Red Team
+      </v-btn>
+      <v-btn
+        v-if="completed > 0"
+        color="error"
+        variant="outlined"
+        :to="`/red-team/results/${runId}`"
+        prepend-icon="mdi-chart-box-outline"
+        size="large"
+      >
+        View Partial Results
+      </v-btn>
+    </v-card>
+
     <!-- ═══════════════════ Completed state ═══════════════════ -->
-    <v-card v-if="isTerminal" variant="tonal" color="success" class="mb-4 pa-4 text-center completed-card">
+    <v-card v-else-if="isTerminal" variant="tonal" color="success" class="mb-4 pa-4 text-center completed-card">
       <v-icon size="36" class="mb-2" color="success">mdi-check-circle</v-icon>
       <p class="text-body-1 font-weight-medium mb-1">
         Benchmark complete
@@ -278,6 +309,7 @@ interface RunDetail {
   id: string
   pack: string
   status: string
+  error?: string | null
   target_type: string
   target_config?: Record<string, string>
   total_in_pack: number
@@ -308,6 +340,8 @@ const disconnected = ref(false)
 const showCancelDialog = ref(false)
 const isCancelling = ref(false)
 const isTerminal = ref(false)
+const isFailed = ref(false)
+const runError = ref<string | null>(null)
 const latencies = ref<number[]>([])
 const consecutiveConnectionErrors = ref(0)
 const currentScenario = ref<string | null>(null)
@@ -333,6 +367,7 @@ const progressPercent = computed(() => {
 })
 
 const headerTitle = computed(() => {
+  if (isFailed.value) return 'Benchmark Failed'
   if (isTerminal.value) return 'Benchmark Complete'
   return `Running ${humanPack(runDetail.value?.pack ?? '')} Benchmark`
 })
@@ -367,6 +402,7 @@ const etaFormatted = computed(() => {
 })
 
 const runStateMessage = computed(() => {
+  if (isFailed.value) return runError.value || 'Benchmark failed due to an unexpected error.'
   if (isTerminal.value) return `${humanPack(runDetail.value?.pack ?? '')} benchmark complete — all scenarios evaluated.`
   if (completed.value === 0) return `Running ${humanPack(runDetail.value?.pack ?? '')} benchmark — evaluating scenarios in real time.`
   if (consecutiveConnectionErrors.value >= 3) return 'Target may be unreachable. Waiting for recovery…'
@@ -514,6 +550,8 @@ function connectSSE() {
   eventSource.addEventListener('run_failed', (e: MessageEvent) => {
     const data = JSON.parse(e.data)
     isTerminal.value = true
+    isFailed.value = true
+    runError.value = data.error || null
     stopTimers()
     closeSSE()
 
@@ -565,10 +603,16 @@ async function fallbackPoll() {
     const res = await api.get<RunDetail>(`/v1/benchmark/runs/${runId.value}`)
     const run = res.data
     runDetail.value = run
+    total.value = run.total_applicable
+    completed.value = run.executed + run.skipped
 
     if (['completed', 'failed', 'cancelled'].includes(run.status)) {
       disconnected.value = false
       isTerminal.value = true
+      if (run.status === 'failed') {
+        isFailed.value = true
+        runError.value = run.error || null
+      }
       stopTimers()
       if (run.status === 'completed') {
         router.push(`/red-team/results/${runId.value}`)
@@ -631,6 +675,10 @@ async function fetchRunDetail() {
 
     if (['completed', 'failed', 'cancelled'].includes(res.data.status)) {
       isTerminal.value = true
+      if (res.data.status === 'failed') {
+        isFailed.value = true
+        runError.value = res.data.error || null
+      }
       if (res.data.status === 'completed') {
         router.push(`/red-team/results/${runId.value}`)
       }
