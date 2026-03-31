@@ -81,11 +81,7 @@ class TestDeepHeuristic:
     """SimpleNormalizer._try_deep_heuristic finds text in nested provider formats."""
 
     def test_openai_format(self) -> None:
-        data = {
-            "choices": [
-                {"index": 0, "message": {"role": "assistant", "content": "Hello from OpenAI"}}
-            ]
-        }
+        data = {"choices": [{"index": 0, "message": {"role": "assistant", "content": "Hello from OpenAI"}}]}
         assert SimpleNormalizer._try_deep_heuristic(data) == "Hello from OpenAI"
 
     def test_anthropic_format(self) -> None:
@@ -109,15 +105,11 @@ class TestDeepHeuristic:
         assert SimpleNormalizer._try_deep_heuristic(data) == "Hello from Gemini"
 
     def test_bedrock_format(self) -> None:
-        data = {
-            "results": [{"outputText": "Hello from Bedrock", "tokenCount": 5}]
-        }
+        data = {"results": [{"outputText": "Hello from Bedrock", "tokenCount": 5}]}
         assert SimpleNormalizer._try_deep_heuristic(data) == "Hello from Bedrock"
 
     def test_cohere_format(self) -> None:
-        data = {
-            "generations": [{"text": "Hello from Cohere", "id": "abc"}]
-        }
+        data = {"generations": [{"text": "Hello from Cohere", "id": "abc"}]}
         assert SimpleNormalizer._try_deep_heuristic(data) == "Hello from Cohere"
 
     def test_unknown_format_returns_empty(self) -> None:
@@ -129,9 +121,7 @@ class TestDeepHeuristic:
 
     def test_openai_via_full_normalizer(self) -> None:
         """Full normalizer pipeline extracts OpenAI content without configured paths."""
-        body = json.dumps({
-            "choices": [{"message": {"role": "assistant", "content": "Extracted!"}}]
-        })
+        body = json.dumps({"choices": [{"message": {"role": "assistant", "content": "Extracted!"}}]})
         resp = HttpResponse(status_code=200, body=body)
         norm = SimpleNormalizer()
         result = norm.normalize(resp, {})
@@ -139,10 +129,12 @@ class TestDeepHeuristic:
 
     def test_configured_paths_take_precedence(self) -> None:
         """Configured response_text_paths override the deep heuristic."""
-        body = json.dumps({
-            "choices": [{"message": {"content": "From deep heuristic"}}],
-            "custom_field": "From configured path",
-        })
+        body = json.dumps(
+            {
+                "choices": [{"message": {"content": "From deep heuristic"}}],
+                "custom_field": "From configured path",
+            }
+        )
         resp = HttpResponse(status_code=200, body=body)
         norm = SimpleNormalizer()
         result = norm.normalize(resp, {"response_text_paths": ["custom_field"]})
