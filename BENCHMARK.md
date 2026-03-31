@@ -11,7 +11,7 @@
 | Pre-LLM pipeline overhead (p50) | **50 ms** |
 | End-to-end overhead vs direct LLM | **329.8 ms** (46.5%) |
 | Attack rejection time (p50) | **340.8 ms** |
-| Memory (all scanners loaded) | **1091 MB** |
+| Memory (all scanners loaded) | **1091 MB RAM** |
 | Policy tested | balanced (default) |
 | Deterministic | Yes — no LLM-as-judge, rules + ML scanners |
 

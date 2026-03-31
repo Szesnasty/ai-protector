@@ -70,7 +70,7 @@ Request
 │  │  Semantic embeddings — FastEmbed (all-MiniLM-L6-v2, 90 MB):│  │
 │  │  • Embeds message → 384-dimensional vector                  │  │
 │  │  • Cosine similarity vs example phrases in Colang .co files │  │
-│  │  • 12 rails: tool_abuse · role_bypass · exfiltration ·      │  │
+│  │  • 13 rails: tool_abuse · role_bypass · exfiltration ·      │  │
 │  │    social_engineering · cot_manipulation · rag_poisoning ·  │  │
 │  │    confused_deputy · cross_tool · supply_chain · …          │  │
 │  │                                                             │  │
