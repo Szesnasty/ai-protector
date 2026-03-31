@@ -63,6 +63,13 @@ function onContinue(config: TargetFormConfig) {
     stash(hdrs as Record<string, string>)
   }
 
+  // Persist scan config (template + response paths) in sessionStorage
+  const { save } = useScanConfig()
+  save({
+    requestTemplate: config.request_template || '',
+    responseTextPaths: config.response_text_paths || [],
+  })
+
   router.push({
     path: '/red-team/configure',
     query: {
