@@ -235,7 +235,9 @@
             variant="outlined"
             density="compact"
             class="font-monospace"
-            :hint="detectedTextPaths.length > 1 ? `Other candidates: ${detectedTextPaths.slice(1).join(', ')}` : ''"
+            :hint="responseTextPathsRaw.trim()
+              ? (detectedTextPaths.length > 1 ? `Other candidates: ${detectedTextPaths.slice(1).join(', ')}` : '')
+              : 'Leave empty to scan the entire response body'"
             persistent-hint
             data-testid="response-text-paths"
           />
@@ -415,7 +417,7 @@ const endpointUrl = ref(props.initialEndpointUrl ?? '')
 const targetName = ref('')
 const customHeaders = ref<Array<{ name: string; value: string; visible: boolean }>>([{ name: 'Authorization', value: '', visible: false }])
 const agentType = ref('chatbot_api')
-const timeoutS = ref(30)
+const timeoutS = ref(60)
 const safeMode = ref(true) // Default ON for safety
 const environment = ref('staging')
 const advancedPanel = ref<string | undefined>(undefined)
@@ -447,8 +449,8 @@ const isJsonResponse = ref(false)
 
 const timeoutOptions = [
   { label: '10 seconds', value: 10 },
-  { label: '30 seconds (default)', value: 30 },
-  { label: '60 seconds', value: 60 },
+  { label: '30 seconds', value: 30 },
+  { label: '60 seconds (default)', value: 60 },
   { label: '120 seconds', value: 120 },
 ]
 
