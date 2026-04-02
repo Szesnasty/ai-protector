@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -25,7 +25,7 @@ from src.red_team.export.renderer import (
 # ---------------------------------------------------------------------------
 
 _RUN_ID = str(uuid.uuid4())
-_NOW = datetime.now(timezone.utc).isoformat()
+_NOW = datetime.now(UTC).isoformat()
 
 
 def _make_run(**overrides: object) -> dict:
