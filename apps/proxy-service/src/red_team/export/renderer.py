@@ -118,13 +118,15 @@ def _build_categories(scenarios: list[dict[str, Any]]) -> list[dict[str, Any]]:
     cats = []
     for slug, g in groups.items():
         pct = round(g["passed"] / g["total"] * 100) if g["total"] > 0 else 0
-        cats.append({
-            "slug": slug,
-            "label": _human_category(slug),
-            "passed_count": g["passed"],
-            "total": g["total"],
-            "percent": pct,
-        })
+        cats.append(
+            {
+                "slug": slug,
+                "label": _human_category(slug),
+                "passed_count": g["passed"],
+                "total": g["total"],
+                "percent": pct,
+            }
+        )
 
     cats.sort(key=lambda c: c["percent"])  # worst first
     return cats
