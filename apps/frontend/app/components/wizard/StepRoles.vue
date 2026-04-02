@@ -101,6 +101,13 @@
                 <td class="font-weight-medium">{{ role }}</td>
                 <td v-for="tool in matrix.tools" :key="tool" class="text-center">
                   <v-icon
+                    v-if="matrix.matrix[role]?.[tool] === 'confirm'"
+                    icon="mdi-shield-check"
+                    color="amber"
+                    size="18"
+                  />
+                  <v-icon
+                    v-else
                     :icon="matrix.matrix[role]?.[tool] === 'allow' ? 'mdi-check-circle' : 'mdi-close-circle'"
                     :color="matrix.matrix[role]?.[tool] === 'allow' ? 'green' : 'red'"
                     size="18"
@@ -217,8 +224,6 @@ const presetLoading = ref(false)
 const loadRolePreset = async (preset: RolePresetDef) => {
   presetLoading.value = true
   try {
-    // Map tool names to tool IDs from currently registered tools
-    const toolMap = new Map(tools.value.map(t => [t.name, t.id]))
     const createdRoles = new Map<string, string>() // name → id
 
     for (const r of preset.roles) {
@@ -226,12 +231,19 @@ const loadRolePreset = async (preset: RolePresetDef) => {
       const created = await createRole({ name: r.name, description: r.description, inherits_from: inheritsId })
       createdRoles.set(r.name, created.id)
 
-      // Set permissions for tools that exist
-      const toolIds = r.tool_names.map(n => toolMap.get(n)).filter((id): id is string => !!id)
-      if (toolIds.length) {
+      // Set permissions for tools that exist, using correct scopes based on access_type
+      const matchedTools = r.tool_names
+        .map(n => tools.value.find(t => t.name === n))
+        .filter((t): t is NonNullable<typeof t> => !!t)
+      if (matchedTools.length) {
         await setPermissions({
           roleId: created.id,
-          body: { permissions: toolIds.map(tid => ({ tool_id: tid, scopes: ['read'] })) },
+          body: {
+            permissions: matchedTools.map(t => ({
+              tool_id: t.id,
+              scopes: t.access_type === 'write' ? ['read', 'write'] : ['read'],
+            })),
+          },
         })
       }
     }
@@ -255,6 +267,7 @@ const { roles, matrix, isLoading, isCreating, isUpdating, isDeleting, createRole
 const { tools } = useAgentTools(() => props.agentId)
 
 watch(roles, (r) => emit('valid', r.length > 0), { immediate: true })
+watch(tools, () => refetchMatrix(), { deep: true })
 
 const dialog = ref(false)
 const dialogValid = ref(false)
@@ -299,15 +312,17 @@ const saveRole = async () => {
       roleId = created.id
     }
 
-    // Set permissions for selected tools
-    if (selectedToolIds.value.length) {
-      await setPermissions({
-        roleId,
-        body: {
-          permissions: selectedToolIds.value.map(tid => ({ tool_id: tid, scopes: ['read'] })),
-        },
-      })
-    }
+    // Set permissions for selected tools, using correct scopes based on access_type
+    const toolMap = new Map(tools.value.map(t => [t.id, t]))
+    await setPermissions({
+      roleId,
+      body: {
+        permissions: selectedToolIds.value.map(tid => {
+          const tool = toolMap.get(tid)
+          return { tool_id: tid, scopes: tool?.access_type === 'write' ? ['read', 'write'] : ['read'] }
+        }),
+      },
+    })
 
     await refetchMatrix()
     dialog.value = false
