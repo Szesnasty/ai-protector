@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import html
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -172,7 +171,7 @@ def render_pdf_report(
     from weasyprint import HTML
 
     # -- Prepare data --
-    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_str = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     score_simple = run.get("score_simple") or 0
     score_weighted = run.get("score_weighted")
