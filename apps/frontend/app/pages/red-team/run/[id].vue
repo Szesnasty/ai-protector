@@ -356,6 +356,7 @@ const skippedCount = ref(0)
 let elapsedTimer: ReturnType<typeof setInterval> | null = null
 let eventSource: EventSource | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let redirectTimer: ReturnType<typeof setTimeout> | null = null
 
 // ---------------------------------------------------------------------------
 // Computed
@@ -542,7 +543,7 @@ function connectSSE() {
     closeSSE()
 
     // Give user time to see the completion state before redirecting
-    setTimeout(() => {
+    redirectTimer = setTimeout(() => {
       router.push(`/red-team/results/${runId.value}`)
     }, 4000)
   })
@@ -572,7 +573,7 @@ function connectSSE() {
     stopTimers()
     closeSSE()
 
-    setTimeout(() => {
+    redirectTimer = setTimeout(() => {
       router.push(`/red-team/results/${runId.value}`)
     }, 1000)
   })
@@ -634,7 +635,7 @@ async function onConfirmCancel() {
   showCancelDialog.value = false
   try {
     await api.delete(`/v1/benchmark/runs/${runId.value}`)
-    setTimeout(() => {
+    redirectTimer = setTimeout(() => {
       if (!isTerminal.value) {
         router.push(`/red-team/results/${runId.value}`)
       }
@@ -663,6 +664,10 @@ function stopTimers() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
     reconnectTimer = null
+  }
+  if (redirectTimer) {
+    clearTimeout(redirectTimer)
+    redirectTimer = null
   }
 }
 
@@ -699,6 +704,11 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  stopTimers()
+  closeSSE()
+})
+
+onBeforeRouteLeave(() => {
   stopTimers()
   closeSSE()
 })
