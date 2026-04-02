@@ -96,9 +96,7 @@ def get_executive_risk_summary(
         ]
         cat_impacts = [c for c in cat_impacts if c]
         if cat_impacts:
-            parts.append(
-                "Key risk areas: " + "; ".join(cat_impacts) + "."
-            )
+            parts.append("Key risk areas: " + "; ".join(cat_impacts) + ".")
 
     parts.append(
         "These issues should be prioritized for remediation before the endpoint "

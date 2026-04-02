@@ -30,7 +30,6 @@ class ExportRunRequest(BaseModel):
     format: str = Field(default="pdf", examples=["pdf", "json"])
 
 
-
 # ---------------------------------------------------------------------------
 # Response schemas
 # ---------------------------------------------------------------------------

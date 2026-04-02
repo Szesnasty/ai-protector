@@ -208,10 +208,8 @@ class TestPdfRender:
         return [
             _make_scenario("PI-001", "prompt_injection", "medium", True),
             _make_scenario("PI-002", "prompt_injection", "medium", True),
-            _make_scenario("SEC-001", "secrets_detection", "critical", False,
-                           fix_hints=["Enable secrets scanner"]),
-            _make_scenario("PII-001", "pii_disclosure", "high", False,
-                           fix_hints=["Enable PII scanner"]),
+            _make_scenario("SEC-001", "secrets_detection", "critical", False, fix_hints=["Enable secrets scanner"]),
+            _make_scenario("PII-001", "pii_disclosure", "high", False, fix_hints=["Enable PII scanner"]),
             _make_scenario("SAFE-001", "safe_allow", "low", True),
         ]
 
