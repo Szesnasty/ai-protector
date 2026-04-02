@@ -210,8 +210,8 @@
                 <v-btn variant="outlined" size="small" prepend-icon="mdi-replay" :loading="isRerunning" @click="onRerun">
                   Re-run
                 </v-btn>
-                <v-btn variant="text" size="small" prepend-icon="mdi-download" @click="onExport">
-                  Export
+                <v-btn variant="text" size="small" prepend-icon="mdi-file-pdf-box" :loading="isExporting" @click="onExport">
+                  Export PDF
                 </v-btn>
               </div>
             </v-col>
@@ -228,8 +228,8 @@
             Deploy AI Protector in front of your production endpoint to get the same protection at runtime.
           </p>
           <div class="d-flex flex-wrap ga-2">
-            <v-btn variant="outlined" size="small" prepend-icon="mdi-download" @click="onExport">
-              Export proof report
+            <v-btn variant="outlined" size="small" prepend-icon="mdi-file-pdf-box" :loading="isExporting" @click="onExport">
+              Export PDF report
             </v-btn>
             <v-btn variant="text" size="small" prepend-icon="mdi-replay" :loading="isRerunning" @click="onRerun">
               Re-run scan
@@ -250,8 +250,8 @@
             <v-btn variant="outlined" size="small" prepend-icon="mdi-replay" :loading="isRerunning" @click="onRerun">
               Re-run with stricter policy
             </v-btn>
-            <v-btn variant="text" size="small" prepend-icon="mdi-download" @click="onExport">
-              Export report
+            <v-btn variant="text" size="small" prepend-icon="mdi-file-pdf-box" :loading="isExporting" @click="onExport">
+              Export PDF
             </v-btn>
           </div>
         </v-card>
@@ -363,7 +363,7 @@
               </p>
               <!-- Demoted secondary actions -->
               <div class="d-flex flex-wrap ga-3 mt-2">
-                <a class="text-caption text-primary" style="cursor: pointer;" @click="onExport">Export report</a>
+                <a class="text-caption text-primary" style="cursor: pointer;" @click="onExport">Export PDF</a>
                 <a class="text-caption text-primary" style="cursor: pointer;" :class="{ 'text-disabled': isRerunning }" @click="onRerun">Re-run baseline</a>
               </div>
             </v-col>
@@ -844,6 +844,7 @@ const showSetupDialog = ref(false)
 const policyApplied = ref(false)
 const _rerunPolicy = ref('Strict')
 const isRerunning = ref(false)
+const isExporting = ref(false)
 const showAllFailures = ref(false)
 const urlCopied = ref(false)
 let _urlCopiedTimer: ReturnType<typeof setTimeout> | null = null
@@ -1145,6 +1146,27 @@ async function onRerunProtected() {
 
 function onExport() {
   if (!run.value) return
+  isExporting.value = true
+  benchmarkService.exportRun(run.value.id, 'pdf')
+    .then((blob) => {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `security-audit-${run.value!.id}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    })
+    .catch(() => {
+      // Fallback: client-side JSON export if PDF endpoint unavailable
+      onExportJson()
+    })
+    .finally(() => {
+      isExporting.value = false
+    })
+}
+
+function onExportJson() {
+  if (!run.value) return
   const r = run.value
   const report = {
     exported_at: new Date().toISOString(),
@@ -1216,7 +1238,7 @@ function onExport() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `red-team-report-${run.value.id}.json`
+  a.download = `security-audit-${run.value.id}.json`
   a.click()
   URL.revokeObjectURL(url)
 }

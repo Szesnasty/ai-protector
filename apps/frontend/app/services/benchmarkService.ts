@@ -107,4 +107,7 @@ export const benchmarkService = {
 
   compareRuns: (runAId: string, runBId: string): Promise<CompareResult> =>
     api.get<CompareResult>(`/v1/benchmark/compare?a=${runAId}&b=${runBId}`).then((r) => r.data),
+
+  exportRun: (id: string, format: 'pdf' | 'json' = 'pdf'): Promise<Blob> =>
+    api.post(`/v1/benchmark/runs/${id}/export`, { format }, { responseType: 'blob' }).then((r) => r.data),
 }

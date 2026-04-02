@@ -22,9 +22,10 @@ dependencies = [
     "structlog==25.5.0",
     "httpx==0.28.1",
     "psutil==7.2.2",
-    "Jinja2>=3.1,<4",
-    "python-dotenv>=1.0,<2",
-    "pyyaml>=6.0,<7",
+    "Jinja2==3.1.6",
+    "weasyprint==63.1",
+    "python-dotenv==1.2.2",
+    "pyyaml==6.0.3",
 ]
 
 [project.optional-dependencies]
