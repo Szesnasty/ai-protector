@@ -24,6 +24,13 @@ class CreateRunRequest(BaseModel):
     idempotency_key: str | None = None
 
 
+class ExportRunRequest(BaseModel):
+    """POST /v1/benchmark/runs/:id/export body."""
+
+    format: str = Field(default="pdf", examples=["pdf", "json"])
+
+
+
 # ---------------------------------------------------------------------------
 # Response schemas
 # ---------------------------------------------------------------------------

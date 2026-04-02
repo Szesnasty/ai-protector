@@ -21,6 +21,7 @@ from src.red_team.api import (
     CompareResponse,
     CreateRunRequest,
     ErrorResponse,
+    ExportRunRequest,
     PackInfoResponse,
     RunCreatedResponse,
     RunDetailResponse,
@@ -223,6 +224,67 @@ async def delete_run(
     found = await svc.delete_run(run_id)
     if not found:
         raise HTTPException(status_code=404, detail="Run not found")
+
+
+# ---------------------------------------------------------------------------
+# POST /v1/benchmark/runs/:id/export — export report (PDF / JSON)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/runs/{run_id}/export",
+    responses={404: {"model": ErrorResponse}},
+)
+async def export_run(
+    run_id: uuid.UUID,
+    body: ExportRunRequest,
+    svc: BenchmarkService = Depends(_get_service),  # noqa: B008
+) -> StreamingResponse:
+    """Export a benchmark run as a downloadable PDF report."""
+    run = await svc.get_run_safe(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    results = await svc.list_scenarios(run_id, limit=1000, offset=0)
+    pack_name = run.pack or ""
+
+    # Enrich with pack metadata
+    enriched = [_enrich_scenario(ScenarioResultResponse.model_validate(r), pack_name) for r in results]
+
+    if body.format == "pdf":
+        from src.red_team.export.renderer import render_pdf_report
+
+        run_dict = RunDetailResponse.model_validate(run).model_dump(mode="json")
+        scenario_dicts = [s.model_dump(mode="json") for s in enriched]
+        pdf_bytes = render_pdf_report(run_dict, scenario_dicts)
+
+        filename = f"security-audit-{run_id}.pdf"
+        return StreamingResponse(
+            iter([pdf_bytes]),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    if body.format == "json":
+        import json as _json
+
+        run_dict = RunDetailResponse.model_validate(run).model_dump(mode="json")
+        scenario_dicts = [s.model_dump(mode="json") for s in enriched]
+        payload = {
+            "export_version": "1.0",
+            "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            "run": run_dict,
+            "scenarios": scenario_dicts,
+        }
+        json_bytes = _json.dumps(payload, indent=2, default=str).encode()
+        filename = f"security-audit-{run_id}.json"
+        return StreamingResponse(
+            iter([json_bytes]),
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    raise HTTPException(status_code=400, detail=f"Unsupported export format: {body.format}")
 
 
 # ---------------------------------------------------------------------------
