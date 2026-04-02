@@ -1,6 +1,6 @@
 [project]
 name = "ai-protector-proxy"
-version = "0.2.0" # x-release-please-version
+version = "0.2.1" # x-release-please-version
 description = "Blue Team LLM Firewall — agentic security pipeline"
 requires-python = ">=3.12"
 dependencies = [
