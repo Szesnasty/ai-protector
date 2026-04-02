@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/Szesnasty/ai-protector/compare/v0.2.2...v0.2.3) (2026-04-02)
+
+
+### Features
+
+* **export:** add PDF security audit report export ([fc6dbec](https://github.com/Szesnasty/ai-protector/commit/fc6dbec3228700f5c80462afad7545b9118d7fad))
+
+
+### Bug Fixes
+
+* **export:** fix ruff lint errors in renderer and test_export ([5bc59f3](https://github.com/Szesnasty/ai-protector/commit/5bc59f3ebd255b1996626a2656d14543016d3a5e))
+
 ## [0.2.2](https://github.com/Szesnasty/ai-protector/compare/v0.2.1...v0.2.2) (2026-04-02)
 
 
