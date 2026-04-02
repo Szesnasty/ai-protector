@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Szesnasty/ai-protector/compare/v0.2.1...v0.2.2) (2026-04-02)
+
+
+### Bug Fixes
+
+* **wizard:** fix role permission matrix — correct scopes, confirm display, and empty deselect ([11d948e](https://github.com/Szesnasty/ai-protector/commit/11d948e8da4352f69e1ab09ca5c1688e47daf78f))
+
 ## [0.2.1](https://github.com/Szesnasty/ai-protector/compare/v0.2.0...v0.2.1) (2026-04-02)
 
 
