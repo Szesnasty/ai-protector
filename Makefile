@@ -96,7 +96,7 @@ format:
 
 # ── Pre-commit ──────────────────────────────────────────
 pre-commit-install:
-	pip install pre-commit && pre-commit install
+	pip install pre-commit && pre-commit install && pre-commit install --hook-type pre-push
 	@echo "✅  pre-commit hooks installed"
 
 pre-commit:
