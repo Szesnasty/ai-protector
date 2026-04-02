@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/Szesnasty/ai-protector/compare/v0.2.0...v0.2.1) (2026-04-02)
+
+
+### Bug Fixes
+
+* **frontend:** prevent race condition on scan result auto-redirect (clear timeout on navigation) ([fb0eee4](https://github.com/Szesnasty/ai-protector/commit/fb0eee434a838ec2a7c18272034678e839bed698))
+
 ## [0.2.0](https://github.com/Szesnasty/ai-protector/compare/v0.1.12...v0.2.0) (2026-03-31)
 
 
