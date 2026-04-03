@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/Szesnasty/ai-protector/compare/v0.2.3...v0.2.4) (2026-04-03)
+
+
+### Bug Fixes
+
+* **agent-demo:** bump pytest-httpx 0.35.0 → 0.36.0 for pytest 9 compat ([72e78e9](https://github.com/Szesnasty/ai-protector/commit/72e78e957148c7cecece41ffc190670a4923f3dd))
+
 ## [0.2.3](https://github.com/Szesnasty/ai-protector/compare/v0.2.2...v0.2.3) (2026-04-02)
 
 
