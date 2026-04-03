@@ -1,7 +1,7 @@
 # Architecture
 
 > Internal reference for contributors and security reviewers.
-> For a quickstart see [README.md](../README.md).
+> For a quickstart see [README.md](../../README.md).
 
 ---
 
@@ -240,7 +240,7 @@ The MVP is complete (all phases except Phase 6 Enterprise). The **primary focus*
 4. Attack validation runner
 5. Traces & incidents with per-agent filtering
 
-See [ROADMAP](../ROADMAP.spec.md) and [Agents Implementation Guides](../agents-implementation/README.md) for details.
+See [ROADMAP](../archive/ROADMAP.spec.md) and [Agents Implementation Guides](../archive/agents-implementation/README.md) for details.
 
 ---
 

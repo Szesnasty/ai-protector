@@ -226,6 +226,5 @@ Total: ~1.3 GB on first `docker compose up`. Cached locally, zero API cost per r
 ## Related
 
 - [Agent pipeline (11-node)](AGENT_PIPELINE.md) — pre/post-tool gates inside the agent graph
-- [Attack scenario example](../../demo-files/nodes.md) — step-by-step trace for `rm -rf` prompt
 - [NeMo rails source](../../apps/proxy-service/src/pipeline/rails/) — Colang `.co` files
 - [Decision node source](../../apps/proxy-service/src/pipeline/nodes/decision.py)

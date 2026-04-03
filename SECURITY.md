@@ -11,9 +11,11 @@ Instead, please email the maintainer directly or use GitHub's
 
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
-| 0.1.x   | ✅ Current |
+| Version | Status              |
+|---------|---------------------|
+| 0.2.x   | ✅ Active support    |
+| 0.1.x   | ⚠️ Security fixes only |
+| < 0.1   | ❌ Unsupported        |
 
 ## Security Measures in This Project
 
