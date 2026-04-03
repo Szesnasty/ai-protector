@@ -1,6 +1,6 @@
 """Safe message builder — constructs LLM messages with role separation.
 
-Spec: docs/agents/05-agents-role-separation/SPEC.md
+Spec: docs/archive/agents/05-agents-role-separation/SPEC.md
 
 Ensures:
   - System prompt contains NO user input or tool output

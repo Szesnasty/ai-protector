@@ -1,6 +1,6 @@
 """User input & tool output sanitizer — anti-spoofing defense layer.
 
-Spec: docs/agents/05-agents-role-separation/SPEC.md
+Spec: docs/archive/agents/05-agents-role-separation/SPEC.md
 
 Provides:
   - sanitize_user_input()  — strip role markers, control chars, normalize

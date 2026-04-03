@@ -1,6 +1,6 @@
 """TraceAccumulator — builds structured agent trace incrementally.
 
-Spec: docs/agents/07-agents-trace/SPEC.md (Phase 1 — in-memory)
+Spec: docs/archive/agents/07-agents-trace/SPEC.md (Phase 1 — in-memory)
 
 Each agent request creates a TraceAccumulator that every node contributes to.
 The accumulator wraps a plain dict so it can be stored in AgentState and

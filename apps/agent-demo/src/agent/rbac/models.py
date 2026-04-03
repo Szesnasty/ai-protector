@@ -1,6 +1,6 @@
 """RBAC data models — role, tool definition, permission, and result types.
 
-Spec: docs/agents/02-agents-rbac-allowlist/SPEC.md
+Spec: docs/archive/agents/02-agents-rbac-allowlist/SPEC.md
 """
 
 from __future__ import annotations

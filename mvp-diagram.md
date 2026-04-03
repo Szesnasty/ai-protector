@@ -1,7 +1,7 @@
 # AI Protector — MVP Implementation Diagram
 
 > 20 steps across 7 phases. **All core phases complete (1–5 + 7).**
-> Next milestone: **Agents v1** — see [ROADMAP](docs/ROADMAP.spec.md).
+> Next milestone: **Agents v1**.
 >
 > ✅ = done, ⬜ = planned (deferred to post-MVP).
 
@@ -274,11 +274,4 @@ transforming the agent demo into a full product pillar where users can
 register their own agents, map tools and roles, generate guardrail
 configs, and deploy them safely.
 
-See:
-- [ROADMAP — Agents v1](docs/ROADMAP.spec.md#phase-0-agents-v1-immediate-next)
-- [Agents Implementation Guides](docs/agents-implementation/README.md)
-- [Agents v1 Spec](docs/agents-v1.spec.md)
-
----
-
-*Generated from [MVP-PLAN.md](docs/plan/MVP-PLAN.md). Last updated: 2026-03-09.*
+See [Architecture](docs/architecture/ARCHITECTURE.md) for technical details.

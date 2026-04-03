@@ -1,6 +1,6 @@
 """Argument Validator — validates tool arguments against Pydantic schemas.
 
-Spec: docs/agents/04-agents-argument-validation/SPEC.md
+Spec: docs/archive/agents/04-agents-argument-validation/SPEC.md
 
 Three possible outcomes:
   VALID      — args conform to schema, no injection detected

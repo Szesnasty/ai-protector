@@ -1,6 +1,6 @@
 """Post-tool Enforcement Gate — security gate on tool output.
 
-Spec: docs/agents/03-agents-post-tool-enforcement/SPEC.md
+Spec: docs/archive/agents/03-agents-post-tool-enforcement/SPEC.md
 
 For EACH tool result, runs a chain of scanners:
   1. PII detection — emails, phones, SSNs, credit cards, IP addresses

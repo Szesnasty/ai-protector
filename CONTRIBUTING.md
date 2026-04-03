@@ -95,7 +95,8 @@ apps/
 infra/
 └── docker-compose.yml # PostgreSQL, Redis, Ollama, Langfuse
 docs/
-└── plan/              # Step-by-step specs (20 steps)
+├── architecture/      # System design, pipelines, threat model
+└── assets/            # Screenshots and diagrams
 ```
 
 ## PR Checklist

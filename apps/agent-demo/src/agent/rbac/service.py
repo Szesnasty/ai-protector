@@ -1,6 +1,6 @@
 """RBAC Service — permission resolution with inheritance and scopes.
 
-Spec: docs/agents/02-agents-rbac-allowlist/SPEC.md
+Spec: docs/archive/agents/02-agents-rbac-allowlist/SPEC.md
 
 Loads role/tool config from YAML, resolves inheritance chains,
 checks scopes, and returns structured PermissionResult.

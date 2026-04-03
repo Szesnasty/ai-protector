@@ -1,6 +1,6 @@
 """Limits service — session counters, rate limiting, budget tracking.
 
-Spec: docs/agents/06-agents-limits-budgets/SPEC.md
+Spec: docs/archive/agents/06-agents-limits-budgets/SPEC.md
 
 Singleton service that tracks:
   - Per-session: tool calls, turns, tokens (in/out), estimated cost

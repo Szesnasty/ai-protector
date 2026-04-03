@@ -1,6 +1,6 @@
 """Tool argument schemas — Pydantic models per tool.
 
-Spec: docs/agents/04-agents-argument-validation/SPEC.md
+Spec: docs/archive/agents/04-agents-argument-validation/SPEC.md
 
 Each tool has a strict Pydantic model that defines:
   - required/optional fields with types

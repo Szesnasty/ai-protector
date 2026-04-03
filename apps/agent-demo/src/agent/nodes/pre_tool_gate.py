@@ -1,6 +1,6 @@
 """Pre-tool Enforcement Gate — security gate before tool execution.
 
-Spec: docs/agents/01-agents-pre-tool-enforcement/SPEC.md
+Spec: docs/archive/agents/01-agents-pre-tool-enforcement/SPEC.md
 
 For EACH proposed tool call, runs a chain of checks (fail-fast):
   1. RBAC allowlist — is the tool permitted for this role?

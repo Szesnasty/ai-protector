@@ -1,6 +1,6 @@
 """Limits configuration — per-role caps for iterations, tools, tokens, cost, rate.
 
-Spec: docs/agents/06-agents-limits-budgets/SPEC.md
+Spec: docs/archive/agents/06-agents-limits-budgets/SPEC.md
 """
 
 from __future__ import annotations
