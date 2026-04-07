@@ -11,7 +11,7 @@ dependencies = [
     "sqlalchemy[asyncio]==2.0.48",
     "alembic==1.18.4",
     "asyncpg==0.31.0",
-    "redis[hiredis]==7.3.0",
+    "redis[hiredis]==7.4.0",
     "litellm==1.82.0",
     "llm-guard==0.3.16",
     "presidio-analyzer==2.2.358",
