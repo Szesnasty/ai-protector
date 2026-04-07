@@ -8,7 +8,9 @@
 services:
   # ── PostgreSQL + pgvector ─────────────────────────────
   db:
-    image: pgvector/pgvector:pg16
+    build:
+      context: .
+      dockerfile: db.Dockerfile
     ports:
       - "5432:5432"
     environment:
@@ -17,7 +19,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
