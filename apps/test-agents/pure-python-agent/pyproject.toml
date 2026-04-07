@@ -1,6 +1,6 @@
 [project]
 name = "test-agent-python"
-version = "0.2.4" # x-release-please-version
+version = "0.2.5" # x-release-please-version
 description = "Pure Python test agent with wizard-generated security configs"
 requires-python = ">=3.11"
 dependencies = [
