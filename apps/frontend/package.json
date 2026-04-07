@@ -13,7 +13,7 @@
   "dependencies": {
     "@mdi/font": "7.4.47",
     "@pinia/nuxt": "0.11.3",
-    "@tanstack/vue-query": "5.92.9",
+    "@tanstack/vue-query": "5.96.2",
     "@vee-validate/zod": "4.15.1",
     "axios": "1.13.6",
     "dompurify": "3.3.2",
