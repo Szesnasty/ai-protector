@@ -12,7 +12,7 @@ dependencies = [
     "alembic==1.18.4",
     "asyncpg==0.31.0",
     "redis[hiredis]==7.3.0",
-    "litellm==1.82.0",
+    "litellm==1.83.4",
     "llm-guard==0.3.16",
     "presidio-analyzer==2.2.358",
     "presidio-anonymizer==2.2.358",
