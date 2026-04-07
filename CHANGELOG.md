@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/Szesnasty/ai-protector/compare/v0.2.4...v0.2.5) (2026-04-07)
+
+
+### Bug Fixes
+
+* replace init-db.sql bind mount with COPY in db.Dockerfile ([65c4cac](https://github.com/Szesnasty/ai-protector/commit/65c4cac282e85e036b3feb71bc2fdc54ef19cff3))
+
 ## [0.2.4](https://github.com/Szesnasty/ai-protector/compare/v0.2.3...v0.2.4) (2026-04-03)
 
 
