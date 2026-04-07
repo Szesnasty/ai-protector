@@ -9,7 +9,7 @@
 define ensure-benchmark-key
 	@if grep -q '^BENCHMARK_SECRET_KEY=$$' infra/.env 2>/dev/null; then \
 		KEY=$$(openssl rand -hex 32) && \
-		sed -i '' "s/^BENCHMARK_SECRET_KEY=$$/BENCHMARK_SECRET_KEY=$$KEY/" infra/.env && \
+		perl -i -pe "s/^BENCHMARK_SECRET_KEY=$$/BENCHMARK_SECRET_KEY=$$KEY/" infra/.env && \
 		echo "🔑  Generated BENCHMARK_SECRET_KEY"; \
 	fi
 endef
