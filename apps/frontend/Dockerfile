@@ -1,5 +1,5 @@
 # ── Stage 1: Build ──────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -8,7 +8,7 @@ COPY . .
 RUN npx nuxt prepare && npm run build
 
 # ── Stage 2: Runtime ────────────────────────────────────
-FROM node:22-alpine
+FROM node:26-alpine
 
 WORKDIR /app
 COPY --from=builder /app/.output .output
