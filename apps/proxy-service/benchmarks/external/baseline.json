@@ -1,0 +1,274 @@
+{
+  "meta": {
+    "generated_at": "2026-06-11 15:43 UTC",
+    "corpus_count": 1543,
+    "tolerances_pp": {
+      "detection_drop": 1.5,
+      "method_drop": 3.0,
+      "fpr_rise": 1.0
+    }
+  },
+  "policy": "balanced",
+  "overall": {
+    "attacks": 1103,
+    "detected": 717,
+    "detection_rate": 65.0,
+    "benign": 440,
+    "false_positives": 0,
+    "fpr": 0.0
+  },
+  "by_method": {
+    "ascii-smuggling": {
+      "total": 30,
+      "detected": 30,
+      "rate": 100.0
+    },
+    "harmful:chemical-biological-weapons": {
+      "total": 30,
+      "detected": 16,
+      "rate": 53.3
+    },
+    "harmful:child-exploitation": {
+      "total": 30,
+      "detected": 14,
+      "rate": 46.7
+    },
+    "harmful:copyright-violations": {
+      "total": 30,
+      "detected": 13,
+      "rate": 43.3
+    },
+    "harmful:cybercrime": {
+      "total": 30,
+      "detected": 16,
+      "rate": 53.3
+    },
+    "harmful:cybercrime:malicious-code": {
+      "total": 30,
+      "detected": 21,
+      "rate": 70.0
+    },
+    "harmful:graphic-content": {
+      "total": 30,
+      "detected": 17,
+      "rate": 56.7
+    },
+    "harmful:harassment": {
+      "total": 2,
+      "detected": 2,
+      "rate": 100.0
+    },
+    "harmful:harassment-bullying": {
+      "total": 30,
+      "detected": 18,
+      "rate": 60.0
+    },
+    "harmful:hate": {
+      "total": 33,
+      "detected": 17,
+      "rate": 51.5
+    },
+    "harmful:illegal-activities": {
+      "total": 30,
+      "detected": 18,
+      "rate": 60.0
+    },
+    "harmful:illegal-drugs": {
+      "total": 30,
+      "detected": 15,
+      "rate": 50.0
+    },
+    "harmful:illegal-drugs:meth": {
+      "total": 30,
+      "detected": 16,
+      "rate": 53.3
+    },
+    "harmful:indiscriminate-weapons": {
+      "total": 30,
+      "detected": 14,
+      "rate": 46.7
+    },
+    "harmful:insults": {
+      "total": 30,
+      "detected": 18,
+      "rate": 60.0
+    },
+    "harmful:intellectual-property": {
+      "total": 30,
+      "detected": 24,
+      "rate": 80.0
+    },
+    "harmful:malware": {
+      "total": 4,
+      "detected": 2,
+      "rate": 50.0
+    },
+    "harmful:misinformation-disinformation": {
+      "total": 30,
+      "detected": 20,
+      "rate": 66.7
+    },
+    "harmful:non-violent-crime": {
+      "total": 30,
+      "detected": 20,
+      "rate": 66.7
+    },
+    "harmful:privacy": {
+      "total": 30,
+      "detected": 18,
+      "rate": 60.0
+    },
+    "harmful:profanity": {
+      "total": 30,
+      "detected": 17,
+      "rate": 56.7
+    },
+    "harmful:radicalization": {
+      "total": 30,
+      "detected": 17,
+      "rate": 56.7
+    },
+    "harmful:self-harm": {
+      "total": 30,
+      "detected": 21,
+      "rate": 70.0
+    },
+    "harmful:sex-crime": {
+      "total": 30,
+      "detected": 22,
+      "rate": 73.3
+    },
+    "harmful:sexual-content": {
+      "total": 30,
+      "detected": 13,
+      "rate": 43.3
+    },
+    "harmful:specialized-advice": {
+      "total": 30,
+      "detected": 19,
+      "rate": 63.3
+    },
+    "harmful:unsafe-practices": {
+      "total": 30,
+      "detected": 16,
+      "rate": 53.3
+    },
+    "harmful:violent-crime": {
+      "total": 30,
+      "detected": 15,
+      "rate": 50.0
+    },
+    "harmful:weapons": {
+      "total": 3,
+      "detected": 3,
+      "rate": 100.0
+    },
+    "harmful:weapons:ied": {
+      "total": 30,
+      "detected": 12,
+      "rate": 40.0
+    },
+    "hijacking": {
+      "total": 32,
+      "detected": 20,
+      "rate": 62.5
+    },
+    "imitation": {
+      "total": 30,
+      "detected": 24,
+      "rate": 80.0
+    },
+    "indirect_injection": {
+      "total": 3,
+      "detected": 3,
+      "rate": 100.0
+    },
+    "jailbreak": {
+      "total": 13,
+      "detected": 13,
+      "rate": 100.0
+    },
+    "overreliance": {
+      "total": 30,
+      "detected": 22,
+      "rate": 73.3
+    },
+    "pii:api-db": {
+      "total": 30,
+      "detected": 25,
+      "rate": 83.3
+    },
+    "pii:direct": {
+      "total": 33,
+      "detected": 27,
+      "rate": 81.8
+    },
+    "pii:session": {
+      "total": 30,
+      "detected": 27,
+      "rate": 90.0
+    },
+    "pii:social": {
+      "total": 30,
+      "detected": 24,
+      "rate": 80.0
+    },
+    "prompt-extraction": {
+      "total": 30,
+      "detected": 28,
+      "rate": 93.3
+    },
+    "prompt_injection": {
+      "total": 10,
+      "detected": 10,
+      "rate": 100.0
+    },
+    "system_prompt_extract": {
+      "total": 10,
+      "detected": 10,
+      "rate": 100.0
+    }
+  },
+  "by_strategy": {
+    "base64": {
+      "total": 184,
+      "detected": 140,
+      "rate": 76.1
+    },
+    "homoglyph": {
+      "total": 182,
+      "detected": 181,
+      "rate": 99.5
+    },
+    "jailbreak-templates": {
+      "total": 175,
+      "detected": 175,
+      "rate": 100.0
+    },
+    "leetspeak": {
+      "total": 183,
+      "detected": 93,
+      "rate": 50.8
+    },
+    "multilingual": {
+      "total": 4,
+      "detected": 3,
+      "rate": 75.0
+    },
+    "plain": {
+      "total": 189,
+      "detected": 51,
+      "rate": 27.0
+    },
+    "rot13": {
+      "total": 181,
+      "detected": 69,
+      "rate": 38.1
+    },
+    "spaced": {
+      "total": 5,
+      "detected": 5,
+      "rate": 100.0
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "version": "1",
+  "generated_at": "2026-06-11",
+  "total_count": 1543,
+  "meta": {},
+  "sources": [
+    {
+      "source": "benign",
+      "source_version": "1",
+      "file": "corpus/benign.jsonl",
+      "sha256": "210fad229b3450b9ef827f4cdd94bd8ff0c9d0a0b6c4e6a8fceeb0277ed97981",
+      "count": 428,
+      "surfaces": [
+        "proxy"
+      ],
+      "attack_methods": [
+        "benign"
+      ],
+      "strategies": []
+    },
+    {
+      "source": "promptfoo",
+      "source_version": "0.121.15",
+      "file": "corpus/promptfoo.jsonl",
+      "sha256": "540b0f3a8d7b7bdb2419f66875e0db931f4acf4f42480d1c745512b282dd6637",
+      "count": 1050,
+      "surfaces": [
+        "proxy"
+      ],
+      "attack_methods": [
+        "ascii-smuggling",
+        "harmful:chemical-biological-weapons",
+        "harmful:child-exploitation",
+        "harmful:copyright-violations",
+        "harmful:cybercrime",
+        "harmful:cybercrime:malicious-code",
+        "harmful:graphic-content",
+        "harmful:harassment-bullying",
+        "harmful:hate",
+        "harmful:illegal-activities",
+        "harmful:illegal-drugs",
+        "harmful:illegal-drugs:meth",
+        "harmful:indiscriminate-weapons",
+        "harmful:insults",
+        "harmful:intellectual-property",
+        "harmful:misinformation-disinformation",
+        "harmful:non-violent-crime",
+        "harmful:privacy",
+        "harmful:profanity",
+        "harmful:radicalization",
+        "harmful:self-harm",
+        "harmful:sex-crime",
+        "harmful:sexual-content",
+        "harmful:specialized-advice",
+        "harmful:unsafe-practices",
+        "harmful:violent-crime",
+        "harmful:weapons:ied",
+        "hijacking",
+        "imitation",
+        "overreliance",
+        "pii:api-db",
+        "pii:direct",
+        "pii:session",
+        "pii:social",
+        "prompt-extraction"
+      ],
+      "strategies": [
+        "base64",
+        "homoglyph",
+        "jailbreak-templates",
+        "leetspeak",
+        "rot13"
+      ]
+    },
+    {
+      "source": "seed",
+      "source_version": "1",
+      "file": "corpus/seed.jsonl",
+      "sha256": "3fb53fdf5d9295cd161e82ca689f1f3042729ba1f28c29dd7f57042b7e0de1ed",
+      "count": 65,
+      "surfaces": [
+        "proxy"
+      ],
+      "attack_methods": [
+        "benign",
+        "harmful:harassment",
+        "harmful:hate",
+        "harmful:malware",
+        "harmful:weapons",
+        "hijacking",
+        "indirect_injection",
+        "jailbreak",
+        "pii:direct",
+        "prompt_injection",
+        "system_prompt_extract"
+      ],
+      "strategies": [
+        "base64",
+        "homoglyph",
+        "leetspeak",
+        "multilingual",
+        "rot13",
+        "spaced"
+      ]
+    }
+  ]
+}

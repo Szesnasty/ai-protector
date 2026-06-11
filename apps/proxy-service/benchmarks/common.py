@@ -64,7 +64,9 @@ POLICIES: dict[str, dict] = {
         "thresholds": {"max_risk": 0.9},
     },
     "balanced": {
-        "nodes": ["llm_guard", "nemo_guardrails", "output_filter", "memory_hygiene", "logging"],
+        # Fast path (~50 ms): deterministic + lightweight ML only. harm_ml (heavy
+        # 2 B guard) is intentionally NOT here — it lives in strict/paranoid.
+        "nodes": ["llm_guard", "nemo_guardrails", "jailbreak_ml", "output_filter", "memory_hygiene", "logging"],
         "thresholds": {"max_risk": 0.7, "injection_threshold": 0.5, "nemo_weight": 0.7},
     },
     "strict": {
@@ -72,6 +74,7 @@ POLICIES: dict[str, dict] = {
             "llm_guard",
             "presidio",
             "nemo_guardrails",
+            "jailbreak_ml",
             "ml_judge",
             "output_filter",
             "memory_hygiene",
@@ -84,6 +87,7 @@ POLICIES: dict[str, dict] = {
             "llm_guard",
             "presidio",
             "nemo_guardrails",
+            "jailbreak_ml",
             "ml_judge",
             "canary",
             "output_filter",
