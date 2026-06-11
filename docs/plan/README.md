@@ -27,6 +27,13 @@ Two tracks, derived from the project review:
 | B4 | [Optional LLM-judge tier](B4-optional-llm-judge-tier.spec.md) | — | Med | M | Semantic tail coverage, determinism preserved |
 | B5 | [Proxy rate limiting / DoS](B5-proxy-rate-limiting.spec.md) | ISS-008 | Med | S | Volume/cost controls proxy currently lacks |
 
+## Pillar 2 — Agent boundary benchmark
+
+The A/B specs above are the **proxy / prompt** pillar. The **agent / tool** pillar — benchmarking the
+pre-tool and post-tool gates that the proxy benchmark explicitly leaves out of scope — is planned
+separately in **[agent-benchmarks/](agent-benchmarks/README.md)**: deterministic replay of proposed
+tool calls + tool outputs through the gates (no LLM), headline **`0% unsafe action success`**.
+
 ## Dependency notes
 
 - **A1** is foundational: its model is reused by **B1** (indirect injection),
