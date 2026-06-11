@@ -16,6 +16,9 @@ VALID_NODES: frozenset[str] = frozenset(
         "presidio",
         "nemo_guardrails",
         "ml_judge",
+        # ML guards
+        "jailbreak_ml",
+        "harm_ml",
         # Output pipeline
         "output_filter",
         "memory_hygiene",
