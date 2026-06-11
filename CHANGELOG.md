@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.6](https://github.com/Szesnasty/ai-protector/compare/v0.2.5...v0.2.6) (2026-06-11)
+
+
+### Features
+
+* **proxy:** deobfuscation + ML jailbreak/harm guards with switchable enforcement ([e9e8e4d](https://github.com/Szesnasty/ai-protector/commit/e9e8e4d327f14d8b5ed6f86c9625be97a46395ff))
+
+
+### Bug Fixes
+
+* **proxy:** allow jailbreak_ml/harm_ml nodes in PolicyConfigSchema ([6356300](https://github.com/Szesnasty/ai-protector/commit/63563000bf9257a2b23b5951fd6126f64da3cf9f))
+* **proxy:** declare dataclasses-json for NeMo colang parser ([195eaa7](https://github.com/Szesnasty/ai-protector/commit/195eaa7cc78849cccd8b4755449cbf349edfa67a))
+* **proxy:** declare fastembed dependency for NeMo embeddings ([049c34e](https://github.com/Szesnasty/ai-protector/commit/049c34ecb29416cde92637712c12207eeda1b588))
+
 ## [0.2.5](https://github.com/Szesnasty/ai-protector/compare/v0.2.4...v0.2.5) (2026-04-07)
 
 
