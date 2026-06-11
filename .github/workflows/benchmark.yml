@@ -83,12 +83,20 @@ jobs:
           restore-keys: scanner-models-
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        # The external-attacks badge runs the harm guard (--harm below), which
+        # needs the transformers we benchmarked (5.3.0) for granite-guardian's
+        # guardian_config chat template. pip ignores the [tool.uv] override, so
+        # pin it explicitly here (replicates the Docker/dev environment).
+        run: |
+          pip install -e ".[dev]"
+          pip install "transformers==5.3.0"
 
-      - name: External deterministic attacks
+      - name: External deterministic attacks (max config)
         env:
           MODE: demo
-        run: python -m benchmarks.bench_external --subset full --emit-badge /tmp/badges/attack-detection.json
+        # --harm = HARM_ML_MODE=pre_llm → the badge advertises the max-config
+        # detection rate (labelled "external attacks (max)").
+        run: python -m benchmarks.bench_external --subset full --harm --emit-badge /tmp/badges/attack-detection.json
 
       - name: Internal scenario suite
         env:
