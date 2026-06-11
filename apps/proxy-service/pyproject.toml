@@ -17,10 +17,15 @@ dependencies = [
     "presidio-analyzer==2.2.358",
     "presidio-anonymizer==2.2.358",
     "nemoguardrails==0.20.0",
-    # NeMo's rails run in embeddings-only mode with embedding_engine=FastEmbed
-    # (see src/pipeline/rails/config.yml). nemoguardrails does NOT pull fastembed
-    # itself, so without this the NeMo scanner raises ModuleNotFoundError at
-    # runtime on a clean install (CI/Docker). Pulls onnxruntime transitively.
+    # nemoguardrails==0.20.0 under-declares two runtime deps that happen to be
+    # present transitively in a dev venv but are MISSING on a clean install
+    # (CI/Docker), so the NeMo scanner raised ModuleNotFoundError on every
+    # request until both were declared here:
+    #   - dataclasses-json: imported by the colang v2.x parser at
+    #     `import nemoguardrails` time (colang_ast.py).
+    #   - fastembed: our rails run embeddings-only with embedding_engine=FastEmbed
+    #     (src/pipeline/rails/config.yml); pulls onnxruntime transitively.
+    "dataclasses-json==0.6.7",
     "fastembed==0.7.4",
     "langgraph==1.0.10",
     "langfuse==3.14.5",
