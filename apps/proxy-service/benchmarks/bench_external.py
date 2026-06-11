@@ -326,7 +326,10 @@ async def main() -> int:
     if args.emit_badge:
         from benchmarks.badge import write_shield_badge
 
-        write_shield_badge(args.emit_badge, "external attacks", metrics["overall"]["detection_rate"])
+        # The harm guard is opt-in (HARM_ML_MODE=pre_llm); label the badge so the
+        # higher detection number is honestly attributed to the max config.
+        badge_label = "external attacks (max)" if args.harm else "external attacks"
+        write_shield_badge(args.emit_badge, badge_label, metrics["overall"]["detection_rate"])
 
     if args.update_baseline:
         baseline = build_baseline(metrics, len(records))
