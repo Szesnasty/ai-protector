@@ -60,3 +60,4 @@ demo-files/
 # ==== Benchmarks ====
 apps/proxy-service/benchmarks/results/*.json
 apps/proxy-service/benchmarks/datasets/
+apps/agent-demo/benchmarks/results/*.json

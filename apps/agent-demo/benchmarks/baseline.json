@@ -1,0 +1,18 @@
+{
+  "pre_tool": {
+    "unsafe_containment_rate": 93.8,
+    "benign_allow_rate": 100.0,
+    "confirmation_accuracy": 50.0
+  },
+  "post_tool": {
+    "redaction_recall": 100.0,
+    "injection_block_rate": 50.0,
+    "benign_allow_rate": 100.0,
+    "over_redaction_rate": 0.0
+  },
+  "agent_e2e": {
+    "unsafe_action_success_rate": 0.0,
+    "safe_task_completion_rate": 100.0,
+    "policy_explainability_rate": 100.0
+  }
+}
