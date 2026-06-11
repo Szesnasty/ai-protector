@@ -1,7 +1,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE) [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml) [![Benchmark](https://github.com/Szesnasty/ai-protector/actions/workflows/benchmark.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/benchmark.yml)
-[![Internal suite](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/internal-suite.json)](BENCHMARK.md) [![JailbreakBench](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/jailbreakbench.json)](BENCHMARK_JAILBREAKBENCH.md) [![External attacks](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/attack-detection.json)](docs/plan/A3a-external-deterministic-attacks.spec.md)
+[![Internal suite](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/internal-suite.json)](docs/BENCHMARKS.md) [![JailbreakBench](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/jailbreakbench.json)](docs/BENCHMARKS.md) [![promptfoo (max)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/attack-detection.json)](docs/BENCHMARKS.md)
 
-<!-- Badges above are live: the Benchmark workflow (nightly / manual) recomputes the numbers and publishes shields endpoints to the `badges` branch. They render once that branch exists (run the Benchmark workflow once via "Run workflow"). -->
+<!-- Badges above are live: the Benchmark workflow (weekly / manual) recomputes the numbers and publishes shields endpoints to the `badges` branch. All three link to the canonical matrix, docs/BENCHMARKS.md. -->
 
 
 # AI Protector
@@ -142,27 +142,16 @@ The Agent Wizard generates `rbac.yaml`, `config.yaml`, and a framework-specific 
 
 The benchmark catches most common attack classes with low friction and measurable runtime overhead. It is a confidence signal, not a guarantee against novel attacks.
 
-| Metric | Value |
-|---|---|
-| Attacks blocked | **98.8%** (334 / 338) |
-| False positive rate | **0 / 20** safe prompts blocked |
-| Pipeline overhead | ~50 ms per request (balanced policy) |
-| Memory (all scanners loaded) | ~1.1 GB RAM |
+One flag (`HARM_ML_MODE`) trades latency for coverage. Numbers mirror the canonical matrix — full breakdown, per-strategy detection, false positives and limitations in **[docs/BENCHMARKS.md](docs/BENCHMARKS.md)**:
 
-358 scenarios across 38 categories mapped to OWASP LLM Top 10.
+| Mode | promptfoo (1103) | JailbreakBench (698) | False positives (440 benign) | latency p50 |
+|---|:--:|:--:|:--:|:--:|
+| `off` *(default)* | 65% | 99% | 0% | 48 ms |
+| `pre_llm` / `post_llm` | 91% | 99% | 0.7% | ~450 ms / 48 ms |
 
-**JailbreakBench (NeurIPS 2024)** — 698 published jailbreak artifacts:
+Internal scenario suite — **358 scenarios, 38 OWASP-mapped categories: 99.1%**. Genuine-harm detection rises **55% → 92%** with the harm guard on. All deterministic (no LLM-as-judge), ~1.1 GB RAM with scanners loaded.
 
-| Metric | Value |
-|---|---|
-| Overall detection rate | **99.1%** |
-| Human-crafted (JBC) & random search | **100%** |
-| GCG (gradient-based) | 99.0% |
-| PAIR (iterative black-box) | 97.9% |
-
-All results are deterministic — no LLM-as-judge. Reproduce with `make benchmark-jailbreakbench`. The badge above is recomputed by CI, so this number stays honest.
-
-→ [Full internal benchmark](BENCHMARK.md) · [JailbreakBench results](BENCHMARK_JAILBREAKBENCH.md)
+→ **[Full benchmark matrix](docs/BENCHMARKS.md)** — auto-generated detail: [internal suite](BENCHMARK.md) · [JailbreakBench](BENCHMARK_JAILBREAKBENCH.md)
 
 ---
 

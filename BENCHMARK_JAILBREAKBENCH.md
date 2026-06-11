@@ -1,5 +1,8 @@
 # AI Protector — Pre-LLM Detection Results on JailbreakBench
 
+> 📊 **Canonical summary: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).**
+> This is an auto-generated detailed report; if numbers differ, BENCHMARKS.md is authoritative.
+
 > External validation against published jailbreak artifacts from
 > [JailbreakBench](https://jailbreakbench.github.io/) (NeurIPS 2024 Datasets & Benchmarks Track).
 
@@ -75,7 +78,7 @@
 | CPU | Apple M4 Pro |
 | RAM | 48.0 GB |
 | Python | 3.12.13 |
-| Date | 2026-06-11 15:55 UTC |
+| Date | 2026-06-11 19:02 UTC |
 
 ## About JailbreakBench
 

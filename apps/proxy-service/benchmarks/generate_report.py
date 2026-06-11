@@ -41,6 +41,10 @@ def generate() -> str:
         [
             "# AI Protector — Benchmark Results",
             "",
+            "> 📊 **Canonical summary: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).**",
+            "> This is an auto-generated detailed report (regenerate with `make benchmark`).",
+            "> If any number here differs from the benchmark matrix, BENCHMARKS.md is authoritative.",
+            "",
         ]
     )
 
