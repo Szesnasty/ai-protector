@@ -1,4 +1,8 @@
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE) [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml) [![Internal Suite](https://img.shields.io/badge/🎯_attack_detection-97.9%25-brightgreen)](BENCHMARK.md) [![JailbreakBench](https://img.shields.io/badge/🛡_JailbreakBench-94.8%25-brightgreen)](BENCHMARK_JAILBREAKBENCH.md)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE) [![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml) [![Benchmark](https://github.com/Szesnasty/ai-protector/actions/workflows/benchmark.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/benchmark.yml)
+[![Internal suite](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/internal-suite.json)](BENCHMARK.md) [![JailbreakBench](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/jailbreakbench.json)](BENCHMARK_JAILBREAKBENCH.md) [![External attacks](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Szesnasty/ai-protector/badges/attack-detection.json)](docs/plan/A3a-external-deterministic-attacks.spec.md)
+
+<!-- Badges above are live: the Benchmark workflow (nightly / manual) recomputes the numbers and publishes shields endpoints to the `badges` branch. They render once that branch exists (run the Benchmark workflow once via "Run workflow"). -->
+
 
 # AI Protector
 
@@ -8,10 +12,15 @@ For teams shipping tool-calling agents, AI Protector finds prompt injection and 
 
 **Find vulnerabilities → add protection → prove the improvement.**
 
-| | |
-|-|-|
-| 97.9% attacks blocked (331/338) | No false positives observed in current benchmark |
-| ~50 ms pipeline overhead | All scanners run locally — no external API calls |
+### 📊 [**Benchmark matrix → blocked % and latency per mode**](docs/BENCHMARKS.md)
+
+On the current frozen benchmark suite, AI Protector blocks **99% of JailbreakBench**
+artifacts and — with the harm guard — **91% of promptfoo red-team attacks**, at a
+**low false-positive rate** (0% on the fast path; 0.7% with the harm guard on 440
+benign prompts). The benchmark is **deterministic, reproducible, and does not use
+LLM-as-judge**. Fast path adds **~48 ms** and runs **fully local** (no external API calls).
+
+→ **[Full benchmark matrix: detection, false positives, latency & limitations per mode](docs/BENCHMARKS.md)**
 
 <p align="center">
   <img src="docs/assets/v2/hero.png" alt="AI Protector — Security Scan results showing which attacks got through" />
@@ -89,15 +98,17 @@ Run 50+ curated attack scenarios against any OpenAI-compatible endpoint. Pick an
 
 ### Proxy firewall — instant protection
 
-5 detection layers run on every LLM call:
+6 fast layers run on every LLM call (~50 ms), plus a 7th heavy guard layer on `strict`/`paranoid`:
 
 | Layer | What it does |
 |---|---|
 | **Rules** | Denylist phrases, length limits, encoding checks |
-| **Intent classifier** | ~80 regex patterns → attack type classification |
+| **Intent classifier** | A2 deobfuscation (leet/spaced/homoglyph/ROT13/base64) → ~80 regex patterns → attack type classification |
 | **LLM Guard** | DeBERTa injection detection, DistilBERT toxicity — on-premise ML models |
 | **Presidio PII** | 10+ entity types: names, emails, credit cards, PESEL, IBAN, phone numbers |
 | **NeMo Guardrails** | Semantic similarity via FastEmbed embeddings, 13 rails |
+| **Jailbreak ML** | DistilBERT classifier for roleplay/PAIR-style jailbreaks — semantic, no keywords |
+| **Harm ML** *(strict/paranoid)* | granite-guardian guard model for direct harmful requests (weapons/drugs/hate) — local, ungated; heavy, off the fast `balanced` path |
 
 Everything runs locally: no external API calls, no per-request cost.
 
@@ -133,7 +144,7 @@ The benchmark catches most common attack classes with low friction and measurabl
 
 | Metric | Value |
 |---|---|
-| Attacks blocked | **97.9%** (331 / 338) |
+| Attacks blocked | **98.8%** (334 / 338) |
 | False positive rate | **0 / 20** safe prompts blocked |
 | Pipeline overhead | ~50 ms per request (balanced policy) |
 | Memory (all scanners loaded) | ~1.1 GB RAM |
@@ -144,12 +155,12 @@ The benchmark catches most common attack classes with low friction and measurabl
 
 | Metric | Value |
 |---|---|
-| Overall detection rate | **94.8%** |
-| Human-crafted & random search | **100%** |
-| PAIR (iterative black-box) | 88.8% |
-| GCG (gradient-based) | 90.0% |
+| Overall detection rate | **99.1%** |
+| Human-crafted (JBC) & random search | **100%** |
+| GCG (gradient-based) | 99.0% |
+| PAIR (iterative black-box) | 97.9% |
 
-All results are deterministic — no LLM-as-judge. Reproduce with `make benchmark`.
+All results are deterministic — no LLM-as-judge. Reproduce with `make benchmark-jailbreakbench`. The badge above is recomputed by CI, so this number stays honest.
 
 → [Full internal benchmark](BENCHMARK.md) · [JailbreakBench results](BENCHMARK_JAILBREAKBENCH.md)
 
@@ -242,6 +253,8 @@ AI Protector reduces practical risk significantly, but does not eliminate it.
 - **No formal tool verification** — tool behavior is gated by RBAC and argument validation, but side effects after execution are not verified.
 - **Domain-specific tuning** — default thresholds cover general use. Production deployments need calibration.
 - **Single-node** — horizontal scaling and HA not yet implemented.
+- **Streaming responses are not output-filtered** — PII redaction / secret stripping run on non-streaming responses only; use non-streaming for output-side guarantees.
+- **Harm guard is heavyweight** — the optional `HARM_ML_MODE` guard adds a ~2 B model (~4 GB RAM, ~0.5–1.5 s/req); the fast default (`off`) stays ~50 ms. See the [benchmark matrix](docs/BENCHMARKS.md).
 
 ---
 

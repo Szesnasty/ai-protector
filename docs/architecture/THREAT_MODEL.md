@@ -87,9 +87,12 @@
 
 | Control | Threat mitigated | Implementation |
 |---------|-----------------|----------------|
-| **Intent classification** | Prompt injection, jailbreak, social engineering | Rule-based classifier with keyword + pattern matching |
+| **A2 deobfuscation** | Obfuscated attacks (leetspeak, spaced, homoglyph, ROT13, base64) | Decodes into a `scan_text` the intent / denylist / LLM Guard layers read |
+| **Intent classification** | Prompt injection, jailbreak, social engineering | Keyword/pattern classifier over the deobfuscated `scan_text` |
 | **Denylist rules** | Known attack patterns | Regex/keyword phrases linked to policies, individually toggleable |
 | **LLM Guard scanner** | Injection, jailbreak, toxicity | ML-based classifier (runs locally, no external calls) |
+| **Jailbreak ML guard (A1)** | Roleplay / PAIR-style jailbreaks without keywords | DistilBERT classifier, local, no external calls |
+| **Harm ML guard** | Harmful requests (weapons, drugs, hate, CSAM, …) | granite-guardian-2b, P(harm) ≥ 0.8, local; opt-in via `HARM_ML_MODE` |
 | **Presidio PII scanner** | PII leakage in prompts | 10 entity types (names, emails, SSN, credit cards, …) |
 | **NeMo Guardrails** | Dialog drift, off-topic, prohibited topics | Colang rail definitions |
 | **Risk scoring** | Multi-signal decision | Weighted aggregation of scanner scores → policy threshold |
