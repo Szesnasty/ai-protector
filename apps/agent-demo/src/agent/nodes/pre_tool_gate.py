@@ -80,6 +80,14 @@ def _check_rbac(tool_name: str, allowed_tools: list[str], user_role: str = "") -
     rbac = get_rbac_service()
     result = rbac.check_permission(user_role, tool_name, scope="read")
 
+    # A write-only tool (e.g. issueRefund: scopes=[write]) fails the read check
+    # even for a role that legitimately has it. Retry with its granted scope so
+    # the call reaches the confirmation/sensitivity gate instead of being hard
+    # blocked here. `scopes_granted` is empty when the tool is not in the role's
+    # allowlist at all, so a true RBAC denial still blocks.
+    if not result.allowed and result.scopes_granted:
+        result = rbac.check_permission(user_role, tool_name, scope=result.scopes_granted[0])
+
     if result.allowed:
         return CheckResult(check="rbac", passed=True, detail=None)
 
@@ -217,9 +225,14 @@ def _check_confirmation(tool_name: str, user_role: str = "") -> CheckResult:
     Checks RBAC service for requires_confirmation flag, with fallback
     to the module-level TOOLS_REQUIRING_CONFIRMATION set.
     """
-    # RBAC-driven confirmation
+    # RBAC-driven confirmation. Resolve under the tool's granted scope so a
+    # write-only sensitive tool (issueRefund) is detected here instead of
+    # slipping through as no-confirmation (it fails the read check). Mirrors the
+    # retry in _check_rbac.
     rbac = get_rbac_service()
     result = rbac.check_permission(user_role, tool_name, scope="read")
+    if not result.allowed and result.scopes_granted:
+        result = rbac.check_permission(user_role, tool_name, scope=result.scopes_granted[0])
     if result.allowed and result.requires_confirmation:
         return CheckResult(
             check="confirmation",

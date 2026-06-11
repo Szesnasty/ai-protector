@@ -183,10 +183,35 @@ INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         "do_not_follow",
         re.compile(r"do\s+not\s+follow\s+(your\s+)?instructions", re.IGNORECASE),
     ),
+    (
+        "unrestricted_mode",
+        re.compile(r"unrestricted\s+(model|assistant|mode|ai|version)", re.IGNORECASE),
+    ),
+    (
+        "no_rules",
+        re.compile(r"\bno\s+(rules|restrictions|filters|guidelines|limits)\b", re.IGNORECASE),
+    ),
 ]
 
 # Injection score thresholds
 INJECTION_BLOCK_THRESHOLD = 0.4  # Block if score >= this
+
+# Severity tiers (weights tuned so a single unambiguous injection blocks, while an
+# ambiguous soft signal that also appears in benign content — "jailbreak",
+# "you are now …", "pretend to be" — needs a second signal). Measured against the
+# benign tool-output corpus: 0 over-redaction. See docs/AGENT_BENCHMARKS.md.
+_HARD_PATTERNS = {"special_token_im", "special_token_inst", "special_token_sys", "role_header"}
+_STRONG_PATTERNS = {
+    "ignore_instructions",
+    "new_system_prompt",
+    "reveal_prompt",
+    "disregard",
+    "override_rules",
+    "do_anything_now",
+    "do_not_follow",
+    "unrestricted_mode",
+    "no_rules",
+}
 
 
 # ── Individual Scanners ───────────────────────────────────────────────
@@ -248,11 +273,17 @@ def scan_injection(text: str) -> tuple[float, list[str]]:
     if not matched:
         return 0.0, []
 
-    # Score: each match adds ~0.2, special tokens add extra weight
-    high_severity = {"special_token_im", "special_token_inst", "special_token_sys", "role_header"}
+    # Score by severity: hard tokens (never legitimate in tool output) and
+    # unambiguous injection imperatives block on a single match; soft signals
+    # accumulate (two needed) to avoid over-blocking benign dual-use content.
     score = 0.0
     for name in matched:
-        score += 0.3 if name in high_severity else 0.2
+        if name in _HARD_PATTERNS:
+            score += 0.5
+        elif name in _STRONG_PATTERNS:
+            score += 0.4
+        else:
+            score += 0.2
 
     return min(score, 1.0), matched
 
