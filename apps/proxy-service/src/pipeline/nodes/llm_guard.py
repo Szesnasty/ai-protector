@@ -127,7 +127,9 @@ async def llm_guard_node(state: PipelineState) -> PipelineState:
     if not settings.enable_llm_guard:
         return state
 
-    text = state.get("user_message", "")
+    # Scan the deobfuscated view (A2) when available — the original message
+    # still goes to the LLM; this only affects detection.
+    text = state.get("scan_text") or state.get("user_message", "")
     if not text:
         return state
 

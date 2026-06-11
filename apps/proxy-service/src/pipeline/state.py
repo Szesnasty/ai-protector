@@ -21,11 +21,13 @@ class PipelineState(TypedDict, total=False):
     model: str
     messages: list[dict]  # Full conversation
     user_message: str  # Extracted last user message
+    scan_text: str  # Deobfuscated detection view (raw + decoded variants); LLM never sees this
     prompt_hash: str  # SHA-256 of user_message
     temperature: float
     max_tokens: int | None
     stream: bool
     api_key: str | None  # External provider key from x-api-key header (never stored)
+    pre_llm_only: bool  # True for scan/streaming paths (no llm_call node follows)
     # ── Analysis (accumulated by nodes) ───────────────────────────────
     intent: str | None  # "qa" | "code_gen" | "tool_call" | "chitchat" | …
     intent_confidence: float  # 0.0–1.0

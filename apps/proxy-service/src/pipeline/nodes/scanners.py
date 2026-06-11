@@ -20,6 +20,8 @@ import asyncio
 import structlog
 
 from src.pipeline.nodes import timed_node
+from src.pipeline.nodes.harm_ml import harm_ml_node
+from src.pipeline.nodes.jailbreak_ml import jailbreak_ml_node
 from src.pipeline.nodes.llm_guard import llm_guard_node
 from src.pipeline.nodes.nemo_guardrails import nemo_guardrails_node
 from src.pipeline.nodes.presidio import presidio_node
@@ -44,6 +46,19 @@ async def parallel_scanners_node(state: PipelineState) -> PipelineState:
         tasks.append(("presidio", presidio_node(state)))
     if "nemo_guardrails" in policy_nodes:
         tasks.append(("nemo_guardrails", nemo_guardrails_node(state)))
+    if "jailbreak_ml" in policy_nodes:
+        tasks.append(("jailbreak_ml", jailbreak_ml_node(state)))
+    # Harm guard is controlled by the global HARM_ML_MODE flag (orthogonal to
+    # policy). It runs here (pre-LLM) when mode == "pre_llm". In "post_llm" mode
+    # it normally runs in the llm_call node (parallel with the provider) — BUT
+    # the scan (/v1/scan) and streaming paths have no llm_call node, so for those
+    # (pre_llm_only) we fall back to running it here, preserving harm enforcement
+    # instead of silently skipping it.
+    from src.config import get_settings
+
+    mode = get_settings().harm_ml_mode
+    if mode == "pre_llm" or (mode == "post_llm" and state.get("pre_llm_only")):
+        tasks.append(("harm_ml", harm_ml_node(state)))
 
     if not tasks:
         return state  # fast policy — skip entirely
