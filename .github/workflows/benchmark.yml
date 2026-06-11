@@ -56,6 +56,25 @@ jobs:
           MODE: demo
         run: python -m benchmarks.bench_external --check-baseline --subset full --policy balanced
 
+      # JailbreakBench regression gate (698 published artifacts, light ML layers,
+      # mode-independent). Floor 95% vs the current ~99%. Adds ~5 min; scope this
+      # to `if: github.event_name == 'push'` if PR latency becomes a concern.
+      - name: JailbreakBench gate
+        env:
+          MODE: demo
+        run: python -m benchmarks.bench_jailbreakbench --check-min 95
+
+      # Publish the raw last-run reports so the numbers are auditable straight
+      # from the run (not only the committed baseline). Uploaded even on failure.
+      - name: Upload benchmark reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: benchmark-results
+          path: apps/proxy-service/benchmarks/results/*.json
+          if-no-files-found: warn
+          retention-days: 30
+
   # ── Publish dynamic badges (nightly / manual; never on PRs) ────────────
   publish-badges:
     name: Publish benchmark badges
