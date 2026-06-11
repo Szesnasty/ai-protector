@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from src.pipeline.nodes import timed_node
 from src.pipeline.state import PipelineState
+from src.pipeline.utils.deobfuscate import build_scan_text
 from src.services.denylist import DenylistHit, check_denylist
 
 # ── Pattern lists (case-insensitive — caller must .lower() the text) ──
@@ -13,8 +14,9 @@ JAILBREAK_PATTERNS = [
     "ignore all prior",
     "ignore your instructions",
     "ignore all rules",
+    "previous instructions",
+    "all previous instructions",
     "you are now",
-    "pretend you are",
     "act as dan",
     "jailbreak",
     "bypass your",
@@ -33,6 +35,9 @@ JAILBREAK_PATTERNS = [
     "sudo ",
     "unrestricted",
     "uncensored",
+    # NOTE: bare "pretend you are" / "act as" removed — too broad (benign roleplay
+    # like "pretend you are a travel guide"). Roleplay jailbreaks are now caught
+    # by the jailbreak_ml (A1) model, which is the high-precision backstop.
 ]
 
 EXTRACTION_PATTERNS = [
@@ -265,6 +270,8 @@ HARMFUL_CONTENT_PATTERNS = [
     "build a bomb",
     "make a bomb",
     "build a weapon",
+    "pipe bomb",
+    "pipe-bomb",
     "self-harm",
     "self harm",
     "methods of self",
@@ -295,10 +302,10 @@ HARMFUL_CONTENT_PATTERNS = [
     "how to poison",
     "how to kill",
     "how to attack",
-    "ransomware",
-    "keylogger",
-    "malware",
-    "exploit",
+    # NOTE: bare "ransomware"/"malware"/"keylogger"/"exploit" removed — they fire
+    # on benign security education ("what is ransomware", "how does antivirus
+    # detect malware"). Malicious *requests* are caught by harm_ml (strict) and
+    # jailbreak_ml. Keep action-framed phrases like "how to hack" above.
     "step by step how to",
     "intimidating message",
     "scare them into",
@@ -460,8 +467,6 @@ PII_REQUEST_PATTERNS = [
     "tax id) is",
     "my card number",
     "numer karty",
-    "my email",
-    "my phone",
     "call +48",
     "phone: +",
     "deliver the package to",
@@ -599,8 +604,15 @@ async def check_custom_intent_rules(text: str, policy_name: str) -> list[Denylis
 
 @timed_node("intent")
 async def intent_node(state: PipelineState) -> PipelineState:
-    """Classify user intent and flag suspicious intents in risk_flags."""
-    text = state.get("user_message", "").lower()
+    """Classify user intent and flag suspicious intents in risk_flags.
+
+    Builds the deobfuscated ``scan_text`` (A2) once here, so every downstream
+    detector (this classifier, denylist, LLM Guard) sees decoded variants of
+    leetspeak / spaced / homoglyph / ROT13 / base64 obfuscations.
+    """
+    raw = state.get("user_message", "")
+    scan_text = build_scan_text(raw)
+    text = scan_text.lower()
 
     # 1. Hardcoded patterns (base layer — always runs)
     intent, confidence = classify_intent(text)
@@ -638,6 +650,7 @@ async def intent_node(state: PipelineState) -> PipelineState:
 
     return {
         **state,
+        "scan_text": scan_text,
         "intent": intent,
         "intent_confidence": confidence,
         "risk_flags": risk_flags,

@@ -46,11 +46,14 @@ async def rules_node(state: PipelineState) -> PipelineState:
     matched: list[str] = list(state.get("rules_matched", []))
     risk_flags: dict = {**state.get("risk_flags", {})}
     text = state.get("user_message", "")
+    # Denylist runs against the deobfuscated view (A2) so obfuscated banned
+    # phrases are still caught; length/special-char checks stay on the raw text.
+    scan_text = state.get("scan_text") or text
     messages = state.get("messages", [])
 
     # 1. Denylist — returns DenylistHit with action/severity
     policy_name = state.get("policy_name", "balanced")
-    denylist_hits = await check_denylist(text, policy_name)
+    denylist_hits = await check_denylist(scan_text, policy_name)
     for hit in denylist_hits:
         if hit.action == "block":
             matched.append(f"denylist:{hit.phrase}")

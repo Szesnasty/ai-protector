@@ -23,18 +23,19 @@ DEFAULT_POLICIES = [
         "name": "balanced",
         "description": "Default — rules + LLM Guard + NeMo Guardrails + output filter + memory hygiene.",
         "config": {
-            "nodes": ["llm_guard", "nemo_guardrails", "output_filter", "memory_hygiene", "logging"],
+            "nodes": ["llm_guard", "nemo_guardrails", "jailbreak_ml", "output_filter", "memory_hygiene", "logging"],
             "thresholds": {"max_risk": 0.7, "injection_threshold": 0.5, "nemo_weight": 0.7},
         },
     },
     {
         "name": "strict",
-        "description": "Full pipeline — adds Presidio PII + NeMo Guardrails + ML Judge.",
+        "description": "Full pipeline — adds Presidio PII + ML Judge. Harm ML guard is controlled by HARM_ML_MODE.",
         "config": {
             "nodes": [
                 "llm_guard",
                 "presidio",
                 "nemo_guardrails",
+                "jailbreak_ml",
                 "ml_judge",
                 "output_filter",
                 "memory_hygiene",
@@ -51,6 +52,7 @@ DEFAULT_POLICIES = [
                 "llm_guard",
                 "presidio",
                 "nemo_guardrails",
+                "jailbreak_ml",
                 "ml_judge",
                 "canary",
                 "output_filter",

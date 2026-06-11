@@ -92,6 +92,21 @@ class Settings(BaseSettings):
     enable_nemo_guardrails: bool = True
     scanner_timeout: int = 30  # Max seconds per scanner
 
+    # Jailbreak ML classifier (A1) — semantic detection of roleplay/PAIR jailbreaks
+    enable_jailbreak_ml: bool = True
+    jailbreak_ml_model: str = "madhurjindal/Jailbreak-Detector"
+    jailbreak_ml_threshold: float = 0.85  # min confidence to flag
+
+    # Harm ML guard model (A1-harm) — semantic harmful-request detection.
+    # Heavyweight (~2 B params, ~0.5–1.5 s/req). Switchable enforcement mode:
+    #   "off"      — never run (fastest pre-LLM path, ~50 ms)
+    #   "pre_llm"  — run before the LLM call; blocks BEFORE the provider (slow pre-LLM)
+    #   "post_llm" — run in parallel with the LLM call; blocks the response
+    #                (pre-LLM stays ~50 ms; harm latency hidden behind the LLM)
+    harm_ml_mode: str = "off"
+    harm_ml_model: str = "ibm-granite/granite-guardian-3.0-2b"
+    harm_ml_threshold: float = 0.8  # P(harm) ≥ this → flag (tuned for ~0 FP on benign)
+
     # Presidio PII
     enable_presidio: bool = True
     presidio_language: str = "en"

@@ -61,6 +61,14 @@ def calculate_risk_score(state: PipelineState) -> float:
     if flags.get("length_exceeded"):
         score += 0.1
 
+    # Jailbreak ML classifier (A1) — strong semantic signal (high precision)
+    if "jailbreak_ml" in flags:
+        score += float(flags["jailbreak_ml"]) * thresholds.get("jailbreak_ml_weight", 0.8)
+
+    # Harm ML guard model (A1-harm) — strong harmful-request signal (high precision @ threshold)
+    if "harm_ml" in flags:
+        score += float(flags["harm_ml"]) * thresholds.get("harm_ml_weight", 0.9)
+
     # LLM Guard signals
     if "promptinjection" in flags:
         score += float(flags["promptinjection"]) * injection_weight

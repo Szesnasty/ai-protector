@@ -103,6 +103,7 @@ async def run_pipeline(
         "max_tokens": max_tokens,
         "stream": stream,
         "api_key": api_key,
+        "pre_llm_only": False,  # full graph — llm_call runs harm in post_llm mode
     }
 
     result = await pipeline.ainvoke(initial_state)
@@ -171,6 +172,9 @@ async def run_pre_llm_pipeline(
         "max_tokens": max_tokens,
         "stream": stream,
         "api_key": api_key,
+        # scan/streaming have no llm_call node → run the harm guard here even in
+        # post_llm mode, so harm enforcement is never silently skipped.
+        "pre_llm_only": True,
     }
 
     result = await _pre_llm_pipeline.ainvoke(initial_state)

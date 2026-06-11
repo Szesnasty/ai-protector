@@ -90,6 +90,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
                 logger.info("preload_start", scanner="nemo_guardrails")
                 await asyncio.to_thread(get_rails)
+            if settings.enable_jailbreak_ml:
+                from src.pipeline.nodes.jailbreak_ml import get_classifier
+
+                logger.info("preload_start", scanner="jailbreak_ml")
+                await asyncio.to_thread(get_classifier)
+            if settings.harm_ml_mode != "off":
+                from src.pipeline.nodes.harm_ml import get_guard
+
+                logger.info("preload_start", scanner="harm_ml", mode=settings.harm_ml_mode)
+                await asyncio.to_thread(get_guard)
             if settings.enable_presidio:
                 from src.pipeline.nodes.presidio import get_analyzer, get_anonymizer
 
