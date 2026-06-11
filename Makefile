@@ -1,4 +1,4 @@
-.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench benchmark-external benchmark-external-harm benchmark-external-gate benchmark-external-baseline benchmark-external-seed
+.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench benchmark-jailbreakbench-gate benchmark-external benchmark-external-harm benchmark-external-gate benchmark-external-baseline benchmark-external-seed
 
 # ── Quick start ─────────────────────────────────────────
 # Demo (no Ollama, mock LLM):     make demo
@@ -136,6 +136,9 @@ benchmark-jailbreakbench:  ## JailbreakBench (NeurIPS 2024) detection benchmark
 	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_jailbreakbench
 	@echo ""
 	@echo "📊  JailbreakBench results — see BENCHMARK_JAILBREAKBENCH.md"
+
+benchmark-jailbreakbench-gate:  ## JailbreakBench regression gate (exit 1 if < 95%) — same as CI
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_jailbreakbench --check-min 95
 
 benchmark-external:  ## External deterministic attack corpus — detection report (fast pre-LLM, no harm guard)
 	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_external --subset full

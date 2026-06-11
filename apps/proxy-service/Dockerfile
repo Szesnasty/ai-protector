@@ -43,6 +43,15 @@ RUN python -c "from transformers import pipeline; pipeline('text-classification'
     python -c "import torch; from transformers import AutoTokenizer, AutoModelForCausalLM; m='ibm-granite/granite-guardian-3.0-2b'; tok=AutoTokenizer.from_pretrained(m); mdl=AutoModelForCausalLM.from_pretrained(m).eval(); ids=tok.apply_chat_template([{'role':'user','content':'hello'}], guardian_config={'risk_name':'harm'}, add_generation_prompt=True, return_tensors='pt', return_dict=True); mdl.generate(**ids, max_new_tokens=1); print('granite-guardian guardian_config OK')"
 
 COPY src/ src/
+
+# Warm + smoke-test NeMo Guardrails: build the embeddings-only rails and run one
+# scan. This downloads the FastEmbed embedding model into the image (HF_HOME) so
+# there is no runtime download / cold start (matches the "works offline" goal
+# above), and fails the BUILD if a NeMo runtime dep is missing (fastembed /
+# dataclasses-json — both under-declared by nemoguardrails) instead of silently
+# at the first request in prod.
+RUN python -c "import asyncio; from nemoguardrails import LLMRails, RailsConfig; app=LLMRails(RailsConfig.from_path('src/pipeline/rails')); asyncio.run(app.generate_async(messages=[{'role':'user','content':'warmup'}])); print('nemo rails + FastEmbed model OK')"
+
 COPY data/ data/
 COPY alembic/ alembic/
 COPY alembic.ini .
