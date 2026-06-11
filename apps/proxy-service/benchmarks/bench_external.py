@@ -326,9 +326,10 @@ async def main() -> int:
     if args.emit_badge:
         from benchmarks.badge import write_shield_badge
 
-        # The harm guard is opt-in (HARM_ML_MODE=pre_llm); label the badge so the
-        # higher detection number is honestly attributed to the max config.
-        badge_label = "external attacks (max)" if args.harm else "external attacks"
+        # Name the recognized source (promptfoo red-team). The harm guard is
+        # opt-in (HARM_ML_MODE=pre_llm); the "(max)" qualifier keeps the higher
+        # number honestly attributed to the max config (off-mode is lower).
+        badge_label = "promptfoo (max)" if args.harm else "promptfoo"
         write_shield_badge(args.emit_badge, badge_label, metrics["overall"]["detection_rate"])
 
     if args.update_baseline:
