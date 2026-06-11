@@ -1,4 +1,4 @@
-.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench
+.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench benchmark-external benchmark-external-harm benchmark-external-gate benchmark-external-baseline benchmark-external-seed
 
 # ── Quick start ─────────────────────────────────────────
 # Demo (no Ollama, mock LLM):     make demo
@@ -136,6 +136,21 @@ benchmark-jailbreakbench:  ## JailbreakBench (NeurIPS 2024) detection benchmark
 	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_jailbreakbench
 	@echo ""
 	@echo "📊  JailbreakBench results — see BENCHMARK_JAILBREAKBENCH.md"
+
+benchmark-external:  ## External deterministic attack corpus — detection report (fast pre-LLM, no harm guard)
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_external --subset full
+
+benchmark-external-harm:  ## External corpus WITH the harm guard (HARM_ML_MODE=pre_llm) — strict detection
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_external --subset full --harm
+
+benchmark-external-gate:  ## External attack regression gate (exit 1 on regression) — same as CI
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_external --check-baseline --subset full
+
+benchmark-external-baseline:  ## Re-baseline the external attack gate (commit baseline.json via PR)
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.bench_external --update-baseline --subset full
+
+benchmark-external-seed:  ## Regenerate the deterministic seed corpus + manifest (offline)
+	cd apps/proxy-service && .venv/bin/python -m benchmarks.external.harvest.generate_seed
 
 # ── Verify ──────────────────────────────────────────────
 verify:

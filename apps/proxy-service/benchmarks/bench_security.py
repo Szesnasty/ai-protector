@@ -283,6 +283,9 @@ async def main() -> None:
     parser.add_argument("--all-policies", action="store_true")
     parser.add_argument("--include-jailbreakbench", action="store_true", help="Include JailbreakBench dataset")
     parser.add_argument("--output", type=str, default=None)
+    parser.add_argument(
+        "--emit-badge", default=None, help="write a shields.io badge JSON (internal detection rate) to this path"
+    )
     args = parser.parse_args()
 
     policies = list(POLICIES.keys()) if args.all_policies else [args.policy]
@@ -331,6 +334,13 @@ async def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(all_results, indent=2))
     print(f"Results saved to {out_path}")
+
+    if args.emit_badge:
+        from benchmarks.badge import write_shield_badge
+
+        internal = [r for r in all_results if r["source"] == "ai-protector/internal"]
+        if internal:
+            write_shield_badge(args.emit_badge, "internal suite", internal[0]["detection_rate"])
 
 
 if __name__ == "__main__":

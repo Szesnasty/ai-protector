@@ -447,6 +447,7 @@ async def main() -> None:
         choices=ATTACK_SOURCES.keys(),
     )
     parser.add_argument("--output", type=str, default=None)
+    parser.add_argument("--emit-badge", default=None, help="write a shields.io badge JSON to this path")
     args = parser.parse_args()
 
     policies = list(POLICIES.keys()) if args.all_policies else [args.policy]
@@ -473,6 +474,14 @@ async def main() -> None:
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(result_dicts, indent=2))
     print(f"JSON saved to {out_json}")
+
+    if args.emit_badge:
+        from benchmarks.badge import write_shield_badge
+
+        balanced = [r for r in result_dicts if r["policy"] == "balanced"]
+        tot = sum(r["total"] for r in balanced)
+        blk = sum(r["blocked"] for r in balanced)
+        write_shield_badge(args.emit_badge, "JailbreakBench", (blk / tot * 100) if tot else 0.0)
 
     # Generate markdown report
     machine = collect_machine_info()
