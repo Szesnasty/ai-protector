@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import sys
 from dataclasses import dataclass, field
 from datetime import UTC
 from pathlib import Path
@@ -270,6 +271,9 @@ def generate_jbb_report(results: list[dict], machine: dict) -> str:
         [
             "# AI Protector — Pre-LLM Detection Results on JailbreakBench",
             "",
+            "> 📊 **Canonical summary: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).**",
+            "> This is an auto-generated detailed report; if numbers differ, BENCHMARKS.md is authoritative.",
+            "",
             "> External validation against published jailbreak artifacts from",
             "> [JailbreakBench](https://jailbreakbench.github.io/) (NeurIPS 2024 Datasets & Benchmarks Track).",
             "",
@@ -448,6 +452,12 @@ async def main() -> None:
     )
     parser.add_argument("--output", type=str, default=None)
     parser.add_argument("--emit-badge", default=None, help="write a shields.io badge JSON to this path")
+    parser.add_argument(
+        "--check-min",
+        type=float,
+        default=None,
+        help="CI gate: exit 1 if the overall balanced detection rate (%%) is below this floor",
+    )
     args = parser.parse_args()
 
     policies = list(POLICIES.keys()) if args.all_policies else [args.policy]
@@ -489,6 +499,18 @@ async def main() -> None:
     report_path = Path(__file__).resolve().parents[3] / "BENCHMARK_JAILBREAKBENCH.md"
     report_path.write_text(report)
     print(f"Report saved to {report_path}")
+
+    # Regression gate (opt-in via --check-min): fail CI if JailbreakBench
+    # detection drops below the floor. Mode-independent (light ML layers).
+    if args.check_min is not None:
+        balanced = [r for r in result_dicts if r["policy"] == "balanced"]
+        tot = sum(r["total"] for r in balanced)
+        blk = sum(r["blocked"] for r in balanced)
+        rate = (blk / tot * 100) if tot else 0.0
+        if rate < args.check_min:
+            print(f"\n✗ JailbreakBench gate FAILED: {rate:.1f}% < {args.check_min:.1f}% floor")
+            sys.exit(1)
+        print(f"\n✓ JailbreakBench gate PASSED: {rate:.1f}% ≥ {args.check_min:.1f}% floor")
 
 
 if __name__ == "__main__":
