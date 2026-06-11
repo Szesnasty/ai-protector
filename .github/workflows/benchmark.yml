@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - "apps/proxy-service/**"
+      - "apps/agent-demo/**"
       - ".github/workflows/benchmark.yml"
   push:
     branches: [main]
     paths:
       - "apps/proxy-service/**"
+      - "apps/agent-demo/**"
   schedule:
     - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC — refreshes the dynamic badges
   workflow_dispatch:
@@ -55,6 +57,38 @@ jobs:
         env:
           MODE: demo
         run: python -m benchmarks.bench_external --check-baseline --subset full --policy balanced
+
+  # ── Blocking gate: agent boundary (pre/post-tool gates + e2e) ──────────
+  # Pure-function replay — no ML models to download, so it is fast and cheap
+  # on every PR/push, unlike the ML-heavy proxy gate above.
+  agent-boundary-gate:
+    name: Agent boundary gate (pre/post-tool + e2e)
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/agent-demo
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -e .
+      - name: Pre-tool gate (RBAC / scope / args / spoofing)
+        run: python -m benchmarks.bench_pre_tool --check-baseline
+      - name: Post-tool gate (redaction / indirect injection)
+        run: python -m benchmarks.bench_post_tool --check-baseline
+      - name: End-to-end agent traces (0% unsafe action)
+        run: python -m benchmarks.bench_agent_e2e --check-baseline
+      - name: Upload agent benchmark reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agent-benchmark-results
+          path: apps/agent-demo/benchmarks/results/*.json
+          if-no-files-found: warn
+          retention-days: 30
 
   # ── Publish dynamic badges (nightly / manual; never on PRs) ────────────
   publish-badges:

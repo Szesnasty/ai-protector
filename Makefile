@@ -1,4 +1,4 @@
-.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench benchmark-external benchmark-external-harm benchmark-external-gate benchmark-external-baseline benchmark-external-seed
+.PHONY: demo up dev init down pull-model seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench benchmark-external benchmark-external-harm benchmark-external-gate benchmark-external-baseline benchmark-external-seed benchmark-agent benchmark-agent-gate benchmark-agent-corpora
 
 # ── Quick start ─────────────────────────────────────────
 # Demo (no Ollama, mock LLM):     make demo
@@ -151,6 +151,20 @@ benchmark-external-baseline:  ## Re-baseline the external attack gate (commit ba
 
 benchmark-external-seed:  ## Regenerate the deterministic seed corpus + manifest (offline)
 	cd apps/proxy-service && .venv/bin/python -m benchmarks.external.harvest.generate_seed
+
+# ── Agent boundary benchmark (pre/post-tool gates + e2e, deterministic, no LLM) ──
+benchmark-agent:  ## Agent boundary benchmark — pre-tool + post-tool + e2e traces
+	cd apps/agent-demo && .venv/bin/python -m benchmarks.bench_pre_tool
+	cd apps/agent-demo && .venv/bin/python -m benchmarks.bench_post_tool
+	cd apps/agent-demo && .venv/bin/python -m benchmarks.bench_agent_e2e
+
+benchmark-agent-gate:  ## Agent boundary regression gate (exit 1 on regression) — same as CI
+	cd apps/agent-demo && .venv/bin/python -m benchmarks.bench_pre_tool --check-baseline
+	cd apps/agent-demo && .venv/bin/python -m benchmarks.bench_post_tool --check-baseline
+	cd apps/agent-demo && .venv/bin/python -m benchmarks.bench_agent_e2e --check-baseline
+
+benchmark-agent-corpora:  ## Regenerate the frozen agent corpora + sha256 manifest
+	cd apps/agent-demo && .venv/bin/python -m benchmarks.gen_corpora
 
 # ── Verify ──────────────────────────────────────────────
 verify:
