@@ -36,7 +36,7 @@ jobs:
       # Cache the heavy ML scanner models (~1 GB) so the gate stays fast.
       # NOTE: pin this to a full SHA per repo convention before merging.
       - name: Cache scanner models
-        uses: actions/cache@v4 # TODO: pin to SHA
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ~/.cache/huggingface
@@ -73,7 +73,7 @@ jobs:
           python-version: "3.12"
 
       - name: Cache scanner models
-        uses: actions/cache@v4 # TODO: pin to SHA
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ~/.cache/huggingface
