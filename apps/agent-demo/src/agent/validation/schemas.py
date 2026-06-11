@@ -33,6 +33,7 @@ _INJECTION_RES: list[re.Pattern[str]] = [
         r"<\|im_start\|>",
         r"forget\s+(everything|what)",
         r"new\s+instructions?\s*:",
+        r"new\s+system\s+prompt",
         r"disregard\s+(all\s+)?(prior|previous|above)",
         r"override\s+(all\s+)?rules",
         r"do\s+anything\s+now",

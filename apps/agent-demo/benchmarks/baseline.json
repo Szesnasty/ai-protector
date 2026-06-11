@@ -1,12 +1,12 @@
 {
   "pre_tool": {
-    "unsafe_containment_rate": 93.8,
+    "unsafe_containment_rate": 95.8,
     "benign_allow_rate": 100.0,
-    "confirmation_accuracy": 50.0
+    "confirmation_accuracy": 100.0
   },
   "post_tool": {
     "redaction_recall": 100.0,
-    "injection_block_rate": 50.0,
+    "injection_block_rate": 83.3,
     "benign_allow_rate": 100.0,
     "over_redaction_rate": 0.0
   },
