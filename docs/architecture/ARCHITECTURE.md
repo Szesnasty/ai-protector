@@ -53,12 +53,12 @@ parse → intent → rules → scanners → decision
 | Node | Purpose |
 |------|---------|
 | **ParseNode** | Validate & normalize the incoming OpenAI-format request |
-| **IntentNode** | Classify user intent (benign, injection, jailbreak, social engineering, …) |
+| **IntentNode** | Build `scan_text` (A2 deobfuscation), classify user intent (benign, injection, jailbreak, social engineering, …) |
 | **RulesNode** | Evaluate denylist phrases, custom regex/keyword rules |
-| **ScannersNode** | Run scanner backends in parallel (Presidio, LLM Guard, NeMo Guardrails) |
+| **ScannersNode** | Run scanner backends in parallel (LLM Guard, Presidio, NeMo Guardrails, Jailbreak ML, Harm ML) |
 | **DecisionNode** | Aggregate risk scores, apply policy thresholds → BLOCK / MODIFY / ALLOW |
 | **TransformNode** | Redact or rewrite the prompt before forwarding (MODIFY path only) |
-| **LLMCallNode** | Forward the (possibly transformed) request to the LLM provider via LiteLLM |
+| **LLMCallNode** | Forward the (possibly transformed) request to the LLM provider via LiteLLM. In `post_llm` harm mode, also runs the harm guard **in parallel** with the provider call and turns the decision into BLOCK if the prompt is harmful |
 | **OutputFilterNode** | Post-process LLM response: PII redaction, secrets stripping, system prompt leak detection |
 | **LoggingNode** | Persist the full request trace to PostgreSQL and optionally to Langfuse |
 
@@ -69,6 +69,8 @@ parse → intent → rules → scanners → decision
 | **Presidio** (Microsoft) | PII: names, emails, phone numbers, credit cards, SSN, 10 entity types |
 | **LLM Guard** (Protect AI) | Prompt injection, jailbreak, toxicity, encoded attacks |
 | **NeMo Guardrails** (NVIDIA) | Dialog policy violations, topic drift, off-topic requests |
+| **Jailbreak ML** (DistilBERT) | Semantic roleplay / PAIR-style jailbreaks with no attack keywords (A1) |
+| **Harm ML** (granite-guardian-2b) | Direct harmful requests — weapons, drugs, hate, violence, CSAM (A1-harm) |
 
 ### Firewall policies
 
@@ -82,6 +84,21 @@ Four built-in policies with different risk tolerance:
 | paranoid | 0.15 | 0.1 | block |
 
 Custom policies can be created via the REST API.
+
+### Harm-guard enforcement modes (`HARM_ML_MODE`)
+
+The heavyweight harm guard (IBM `granite-guardian-2b`) is **orthogonal** to the
+policy level and switched by one environment flag:
+
+| Mode | Behaviour | Blocks before provider? |
+|------|-----------|-------------------------|
+| `off` *(default)* | Guard disabled — fast deterministic + light-ML path (~50 ms) | — |
+| `pre_llm` | Guard runs in the **scanners** node — blocks harmful requests before the call | ✅ yes |
+| `post_llm` | Guard runs in **llm_call**, in parallel with the provider, and blocks the **response**; `/v1/scan` and streaming fall back to `pre_llm` so harm is never silently skipped | ❌ blocks the response |
+
+`post_llm` is **not** the same security boundary as `pre_llm` — the prompt still
+reaches the provider. Detection / false-positive / latency numbers for every
+mode are in the **[Benchmark matrix](../BENCHMARKS.md)**.
 
 ---
 
