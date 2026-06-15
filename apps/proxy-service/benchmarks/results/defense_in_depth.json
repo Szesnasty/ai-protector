@@ -1,0 +1,30 @@
+{
+  "gpt-3.5-turbo": {
+    "solo": 62.6,
+    "combined": 8.3
+  },
+  "gpt-4": {
+    "solo": 34.8,
+    "combined": 6.3
+  },
+  "gpt-4o": {
+    "solo": 41.2,
+    "combined": 7.1
+  },
+  "gpt-4.1": {
+    "solo": 47.9,
+    "combined": 7.9
+  },
+  "gpt-5-mini": {
+    "solo": 24.7,
+    "combined": 3.4
+  },
+  "gpt-5.1": {
+    "solo": 38.1,
+    "combined": 6.0
+  },
+  "gpt-5.5": {
+    "solo": 33.8,
+    "combined": 4.1
+  }
+}

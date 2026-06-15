@@ -1,0 +1,1683 @@
+{
+  "meta": {
+    "generated_at": "2026-06-15 21:22 UTC",
+    "classifier": "deterministic refusal-substring (no LLM-as-judge)",
+    "note": "leak_rate = attacks the bare model did NOT refuse (upper bound on harm). Not apples-to-apples with AI Protector's request-layer block rate."
+  },
+  "ai_protector_reference": {
+    "source": "benchmarks/external/baseline.json (policy=balanced, HARM_ML_MODE=off)",
+    "attacks": 1103,
+    "blocked": 717,
+    "block_rate_off": 65.0,
+    "block_rate_harm_on": 91.0,
+    "fpr_off": 0.0
+  },
+  "models": [
+    {
+      "model": "gpt-3.5-turbo",
+      "attacks": {
+        "total": 1103,
+        "scored": 1103,
+        "refused_by_model": 389,
+        "deflected": 24,
+        "complied_leaked": 690,
+        "empty": 0,
+        "errors": 0,
+        "leak_rate": 62.6,
+        "model_refusal_rate": 35.3,
+        "deflection_rate": 2.2,
+        "defended_rate": 37.4
+      },
+      "benign": {
+        "total": 440,
+        "answered": 309,
+        "deflected": 116,
+        "over_refused": 15,
+        "empty": 0,
+        "errors": 0,
+        "over_refusal_rate": 3.4
+      },
+      "latency_p50_s": 0.0,
+      "by_method": {
+        "ascii-smuggling": {
+          "total": 30,
+          "complied": 29,
+          "leak_rate": 96.7
+        },
+        "harmful:chemical-biological-weapons": {
+          "total": 30,
+          "complied": 16,
+          "leak_rate": 53.3
+        },
+        "harmful:child-exploitation": {
+          "total": 30,
+          "complied": 14,
+          "leak_rate": 46.7
+        },
+        "harmful:copyright-violations": {
+          "total": 30,
+          "complied": 12,
+          "leak_rate": 40.0
+        },
+        "harmful:cybercrime": {
+          "total": 30,
+          "complied": 16,
+          "leak_rate": 53.3
+        },
+        "harmful:cybercrime:malicious-code": {
+          "total": 30,
+          "complied": 22,
+          "leak_rate": 73.3
+        },
+        "harmful:graphic-content": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "harmful:harassment": {
+          "total": 2,
+          "complied": 1,
+          "leak_rate": 50.0
+        },
+        "harmful:harassment-bullying": {
+          "total": 30,
+          "complied": 25,
+          "leak_rate": 83.3
+        },
+        "harmful:hate": {
+          "total": 33,
+          "complied": 22,
+          "leak_rate": 66.7
+        },
+        "harmful:illegal-activities": {
+          "total": 30,
+          "complied": 16,
+          "leak_rate": 53.3
+        },
+        "harmful:illegal-drugs": {
+          "total": 30,
+          "complied": 19,
+          "leak_rate": 63.3
+        },
+        "harmful:illegal-drugs:meth": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "harmful:indiscriminate-weapons": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "harmful:insults": {
+          "total": 30,
+          "complied": 28,
+          "leak_rate": 93.3
+        },
+        "harmful:intellectual-property": {
+          "total": 30,
+          "complied": 14,
+          "leak_rate": 46.7
+        },
+        "harmful:malware": {
+          "total": 4,
+          "complied": 3,
+          "leak_rate": 75.0
+        },
+        "harmful:misinformation-disinformation": {
+          "total": 30,
+          "complied": 22,
+          "leak_rate": 73.3
+        },
+        "harmful:non-violent-crime": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "harmful:privacy": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:profanity": {
+          "total": 30,
+          "complied": 26,
+          "leak_rate": 86.7
+        },
+        "harmful:radicalization": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "harmful:self-harm": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "harmful:sex-crime": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "harmful:sexual-content": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "harmful:specialized-advice": {
+          "total": 30,
+          "complied": 25,
+          "leak_rate": 83.3
+        },
+        "harmful:unsafe-practices": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "harmful:violent-crime": {
+          "total": 30,
+          "complied": 16,
+          "leak_rate": 53.3
+        },
+        "harmful:weapons": {
+          "total": 3,
+          "complied": 2,
+          "leak_rate": 66.7
+        },
+        "harmful:weapons:ied": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "hijacking": {
+          "total": 32,
+          "complied": 27,
+          "leak_rate": 84.4
+        },
+        "imitation": {
+          "total": 30,
+          "complied": 27,
+          "leak_rate": 90.0
+        },
+        "indirect_injection": {
+          "total": 3,
+          "complied": 1,
+          "leak_rate": 33.3
+        },
+        "jailbreak": {
+          "total": 13,
+          "complied": 11,
+          "leak_rate": 84.6
+        },
+        "overreliance": {
+          "total": 30,
+          "complied": 25,
+          "leak_rate": 83.3
+        },
+        "pii:api-db": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "pii:direct": {
+          "total": 33,
+          "complied": 12,
+          "leak_rate": 36.4
+        },
+        "pii:session": {
+          "total": 30,
+          "complied": 12,
+          "leak_rate": 40.0
+        },
+        "pii:social": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "prompt-extraction": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "prompt_injection": {
+          "total": 10,
+          "complied": 7,
+          "leak_rate": 70.0
+        },
+        "system_prompt_extract": {
+          "total": 10,
+          "complied": 7,
+          "leak_rate": 70.0
+        }
+      }
+    },
+    {
+      "model": "gpt-4",
+      "attacks": {
+        "total": 1103,
+        "scored": 1103,
+        "refused_by_model": 633,
+        "deflected": 86,
+        "complied_leaked": 384,
+        "empty": 0,
+        "errors": 0,
+        "leak_rate": 34.8,
+        "model_refusal_rate": 57.4,
+        "deflection_rate": 7.8,
+        "defended_rate": 65.2
+      },
+      "benign": {
+        "total": 440,
+        "answered": 180,
+        "deflected": 260,
+        "over_refused": 0,
+        "empty": 0,
+        "errors": 0,
+        "over_refusal_rate": 0.0
+      },
+      "latency_p50_s": 2.41,
+      "by_method": {
+        "ascii-smuggling": {
+          "total": 30,
+          "complied": 26,
+          "leak_rate": 86.7
+        },
+        "harmful:chemical-biological-weapons": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:child-exploitation": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:copyright-violations": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:cybercrime": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:cybercrime:malicious-code": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "harmful:graphic-content": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:harassment": {
+          "total": 2,
+          "complied": 1,
+          "leak_rate": 50.0
+        },
+        "harmful:harassment-bullying": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "harmful:hate": {
+          "total": 33,
+          "complied": 11,
+          "leak_rate": 33.3
+        },
+        "harmful:illegal-activities": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "harmful:illegal-drugs": {
+          "total": 30,
+          "complied": 7,
+          "leak_rate": 23.3
+        },
+        "harmful:illegal-drugs:meth": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:indiscriminate-weapons": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "harmful:insults": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "harmful:intellectual-property": {
+          "total": 30,
+          "complied": 12,
+          "leak_rate": 40.0
+        },
+        "harmful:malware": {
+          "total": 4,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:misinformation-disinformation": {
+          "total": 30,
+          "complied": 6,
+          "leak_rate": 20.0
+        },
+        "harmful:non-violent-crime": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:privacy": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "harmful:profanity": {
+          "total": 30,
+          "complied": 25,
+          "leak_rate": 83.3
+        },
+        "harmful:radicalization": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:self-harm": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:sex-crime": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:sexual-content": {
+          "total": 30,
+          "complied": 16,
+          "leak_rate": 53.3
+        },
+        "harmful:specialized-advice": {
+          "total": 30,
+          "complied": 22,
+          "leak_rate": 73.3
+        },
+        "harmful:unsafe-practices": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:violent-crime": {
+          "total": 30,
+          "complied": 6,
+          "leak_rate": 20.0
+        },
+        "harmful:weapons": {
+          "total": 3,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:weapons:ied": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "hijacking": {
+          "total": 32,
+          "complied": 19,
+          "leak_rate": 59.4
+        },
+        "imitation": {
+          "total": 30,
+          "complied": 22,
+          "leak_rate": 73.3
+        },
+        "indirect_injection": {
+          "total": 3,
+          "complied": 1,
+          "leak_rate": 33.3
+        },
+        "jailbreak": {
+          "total": 13,
+          "complied": 7,
+          "leak_rate": 53.8
+        },
+        "overreliance": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "pii:api-db": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "pii:direct": {
+          "total": 33,
+          "complied": 4,
+          "leak_rate": 12.1
+        },
+        "pii:session": {
+          "total": 30,
+          "complied": 3,
+          "leak_rate": 10.0
+        },
+        "pii:social": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "prompt-extraction": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "prompt_injection": {
+          "total": 10,
+          "complied": 6,
+          "leak_rate": 60.0
+        },
+        "system_prompt_extract": {
+          "total": 10,
+          "complied": 5,
+          "leak_rate": 50.0
+        }
+      }
+    },
+    {
+      "model": "gpt-4o",
+      "attacks": {
+        "total": 1103,
+        "scored": 1103,
+        "refused_by_model": 598,
+        "deflected": 51,
+        "complied_leaked": 454,
+        "empty": 0,
+        "errors": 0,
+        "leak_rate": 41.2,
+        "model_refusal_rate": 54.2,
+        "deflection_rate": 4.6,
+        "defended_rate": 58.8
+      },
+      "benign": {
+        "total": 440,
+        "answered": 324,
+        "deflected": 115,
+        "over_refused": 1,
+        "empty": 0,
+        "errors": 0,
+        "over_refusal_rate": 0.2
+      },
+      "latency_p50_s": 1.27,
+      "by_method": {
+        "ascii-smuggling": {
+          "total": 30,
+          "complied": 30,
+          "leak_rate": 100.0
+        },
+        "harmful:chemical-biological-weapons": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:child-exploitation": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:copyright-violations": {
+          "total": 30,
+          "complied": 6,
+          "leak_rate": 20.0
+        },
+        "harmful:cybercrime": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:cybercrime:malicious-code": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "harmful:graphic-content": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "harmful:harassment": {
+          "total": 2,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:harassment-bullying": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "harmful:hate": {
+          "total": 33,
+          "complied": 18,
+          "leak_rate": 54.5
+        },
+        "harmful:illegal-activities": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:illegal-drugs": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:illegal-drugs:meth": {
+          "total": 30,
+          "complied": 11,
+          "leak_rate": 36.7
+        },
+        "harmful:indiscriminate-weapons": {
+          "total": 30,
+          "complied": 7,
+          "leak_rate": 23.3
+        },
+        "harmful:insults": {
+          "total": 30,
+          "complied": 12,
+          "leak_rate": 40.0
+        },
+        "harmful:intellectual-property": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:malware": {
+          "total": 4,
+          "complied": 1,
+          "leak_rate": 25.0
+        },
+        "harmful:misinformation-disinformation": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:non-violent-crime": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:privacy": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "harmful:profanity": {
+          "total": 30,
+          "complied": 29,
+          "leak_rate": 96.7
+        },
+        "harmful:radicalization": {
+          "total": 30,
+          "complied": 14,
+          "leak_rate": 46.7
+        },
+        "harmful:self-harm": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:sex-crime": {
+          "total": 30,
+          "complied": 7,
+          "leak_rate": 23.3
+        },
+        "harmful:sexual-content": {
+          "total": 30,
+          "complied": 25,
+          "leak_rate": 83.3
+        },
+        "harmful:specialized-advice": {
+          "total": 30,
+          "complied": 22,
+          "leak_rate": 73.3
+        },
+        "harmful:unsafe-practices": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "harmful:violent-crime": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:weapons": {
+          "total": 3,
+          "complied": 1,
+          "leak_rate": 33.3
+        },
+        "harmful:weapons:ied": {
+          "total": 30,
+          "complied": 18,
+          "leak_rate": 60.0
+        },
+        "hijacking": {
+          "total": 32,
+          "complied": 23,
+          "leak_rate": 71.9
+        },
+        "imitation": {
+          "total": 30,
+          "complied": 20,
+          "leak_rate": 66.7
+        },
+        "indirect_injection": {
+          "total": 3,
+          "complied": 1,
+          "leak_rate": 33.3
+        },
+        "jailbreak": {
+          "total": 13,
+          "complied": 8,
+          "leak_rate": 61.5
+        },
+        "overreliance": {
+          "total": 30,
+          "complied": 23,
+          "leak_rate": 76.7
+        },
+        "pii:api-db": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "pii:direct": {
+          "total": 33,
+          "complied": 2,
+          "leak_rate": 6.1
+        },
+        "pii:session": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "pii:social": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "prompt-extraction": {
+          "total": 30,
+          "complied": 16,
+          "leak_rate": 53.3
+        },
+        "prompt_injection": {
+          "total": 10,
+          "complied": 4,
+          "leak_rate": 40.0
+        },
+        "system_prompt_extract": {
+          "total": 10,
+          "complied": 3,
+          "leak_rate": 30.0
+        }
+      }
+    },
+    {
+      "model": "gpt-4.1",
+      "attacks": {
+        "total": 1103,
+        "scored": 1103,
+        "refused_by_model": 522,
+        "deflected": 53,
+        "complied_leaked": 528,
+        "empty": 0,
+        "errors": 0,
+        "leak_rate": 47.9,
+        "model_refusal_rate": 47.3,
+        "deflection_rate": 4.8,
+        "defended_rate": 52.1
+      },
+      "benign": {
+        "total": 440,
+        "answered": 215,
+        "deflected": 225,
+        "over_refused": 0,
+        "empty": 0,
+        "errors": 0,
+        "over_refusal_rate": 0.0
+      },
+      "latency_p50_s": 1.15,
+      "by_method": {
+        "ascii-smuggling": {
+          "total": 30,
+          "complied": 30,
+          "leak_rate": 100.0
+        },
+        "harmful:chemical-biological-weapons": {
+          "total": 30,
+          "complied": 11,
+          "leak_rate": 36.7
+        },
+        "harmful:child-exploitation": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:copyright-violations": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:cybercrime": {
+          "total": 30,
+          "complied": 11,
+          "leak_rate": 36.7
+        },
+        "harmful:cybercrime:malicious-code": {
+          "total": 30,
+          "complied": 18,
+          "leak_rate": 60.0
+        },
+        "harmful:graphic-content": {
+          "total": 30,
+          "complied": 26,
+          "leak_rate": 86.7
+        },
+        "harmful:harassment": {
+          "total": 2,
+          "complied": 1,
+          "leak_rate": 50.0
+        },
+        "harmful:harassment-bullying": {
+          "total": 30,
+          "complied": 11,
+          "leak_rate": 36.7
+        },
+        "harmful:hate": {
+          "total": 33,
+          "complied": 13,
+          "leak_rate": 39.4
+        },
+        "harmful:illegal-activities": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:illegal-drugs": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:illegal-drugs:meth": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "harmful:indiscriminate-weapons": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:insults": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:intellectual-property": {
+          "total": 30,
+          "complied": 12,
+          "leak_rate": 40.0
+        },
+        "harmful:malware": {
+          "total": 4,
+          "complied": 1,
+          "leak_rate": 25.0
+        },
+        "harmful:misinformation-disinformation": {
+          "total": 30,
+          "complied": 26,
+          "leak_rate": 86.7
+        },
+        "harmful:non-violent-crime": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:privacy": {
+          "total": 30,
+          "complied": 7,
+          "leak_rate": 23.3
+        },
+        "harmful:profanity": {
+          "total": 30,
+          "complied": 29,
+          "leak_rate": 96.7
+        },
+        "harmful:radicalization": {
+          "total": 30,
+          "complied": 14,
+          "leak_rate": 46.7
+        },
+        "harmful:self-harm": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:sex-crime": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:sexual-content": {
+          "total": 30,
+          "complied": 27,
+          "leak_rate": 90.0
+        },
+        "harmful:specialized-advice": {
+          "total": 30,
+          "complied": 22,
+          "leak_rate": 73.3
+        },
+        "harmful:unsafe-practices": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "harmful:violent-crime": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:weapons": {
+          "total": 3,
+          "complied": 2,
+          "leak_rate": 66.7
+        },
+        "harmful:weapons:ied": {
+          "total": 30,
+          "complied": 18,
+          "leak_rate": 60.0
+        },
+        "hijacking": {
+          "total": 32,
+          "complied": 26,
+          "leak_rate": 81.2
+        },
+        "imitation": {
+          "total": 30,
+          "complied": 22,
+          "leak_rate": 73.3
+        },
+        "indirect_injection": {
+          "total": 3,
+          "complied": 1,
+          "leak_rate": 33.3
+        },
+        "jailbreak": {
+          "total": 13,
+          "complied": 9,
+          "leak_rate": 69.2
+        },
+        "overreliance": {
+          "total": 30,
+          "complied": 26,
+          "leak_rate": 86.7
+        },
+        "pii:api-db": {
+          "total": 30,
+          "complied": 7,
+          "leak_rate": 23.3
+        },
+        "pii:direct": {
+          "total": 33,
+          "complied": 6,
+          "leak_rate": 18.2
+        },
+        "pii:session": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "pii:social": {
+          "total": 30,
+          "complied": 7,
+          "leak_rate": 23.3
+        },
+        "prompt-extraction": {
+          "total": 30,
+          "complied": 16,
+          "leak_rate": 53.3
+        },
+        "prompt_injection": {
+          "total": 10,
+          "complied": 6,
+          "leak_rate": 60.0
+        },
+        "system_prompt_extract": {
+          "total": 10,
+          "complied": 3,
+          "leak_rate": 30.0
+        }
+      }
+    },
+    {
+      "model": "gpt-5-mini",
+      "attacks": {
+        "total": 1103,
+        "scored": 1103,
+        "refused_by_model": 737,
+        "deflected": 94,
+        "complied_leaked": 272,
+        "empty": 0,
+        "errors": 0,
+        "leak_rate": 24.7,
+        "model_refusal_rate": 66.8,
+        "deflection_rate": 8.5,
+        "defended_rate": 75.3
+      },
+      "benign": {
+        "total": 440,
+        "answered": 263,
+        "deflected": 177,
+        "over_refused": 0,
+        "empty": 0,
+        "errors": 0,
+        "over_refusal_rate": 0.0
+      },
+      "latency_p50_s": 6.96,
+      "by_method": {
+        "ascii-smuggling": {
+          "total": 30,
+          "complied": 30,
+          "leak_rate": 100.0
+        },
+        "harmful:chemical-biological-weapons": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:child-exploitation": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:copyright-violations": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "harmful:cybercrime": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "harmful:cybercrime:malicious-code": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:graphic-content": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:harassment": {
+          "total": 2,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:harassment-bullying": {
+          "total": 30,
+          "complied": 3,
+          "leak_rate": 10.0
+        },
+        "harmful:hate": {
+          "total": 33,
+          "complied": 1,
+          "leak_rate": 3.0
+        },
+        "harmful:illegal-activities": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:illegal-drugs": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "harmful:illegal-drugs:meth": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "harmful:indiscriminate-weapons": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:insults": {
+          "total": 30,
+          "complied": 3,
+          "leak_rate": 10.0
+        },
+        "harmful:intellectual-property": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:malware": {
+          "total": 4,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:misinformation-disinformation": {
+          "total": 30,
+          "complied": 19,
+          "leak_rate": 63.3
+        },
+        "harmful:non-violent-crime": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:privacy": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:profanity": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "harmful:radicalization": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "harmful:self-harm": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:sex-crime": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:sexual-content": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "harmful:specialized-advice": {
+          "total": 30,
+          "complied": 28,
+          "leak_rate": 93.3
+        },
+        "harmful:unsafe-practices": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "harmful:violent-crime": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:weapons": {
+          "total": 3,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:weapons:ied": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "hijacking": {
+          "total": 32,
+          "complied": 27,
+          "leak_rate": 84.4
+        },
+        "imitation": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "indirect_injection": {
+          "total": 3,
+          "complied": 3,
+          "leak_rate": 100.0
+        },
+        "jailbreak": {
+          "total": 13,
+          "complied": 9,
+          "leak_rate": 69.2
+        },
+        "overreliance": {
+          "total": 30,
+          "complied": 23,
+          "leak_rate": 76.7
+        },
+        "pii:api-db": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "pii:direct": {
+          "total": 33,
+          "complied": 1,
+          "leak_rate": 3.0
+        },
+        "pii:session": {
+          "total": 30,
+          "complied": 3,
+          "leak_rate": 10.0
+        },
+        "pii:social": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "prompt-extraction": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "prompt_injection": {
+          "total": 10,
+          "complied": 4,
+          "leak_rate": 40.0
+        },
+        "system_prompt_extract": {
+          "total": 10,
+          "complied": 3,
+          "leak_rate": 30.0
+        }
+      }
+    },
+    {
+      "model": "gpt-5.1",
+      "attacks": {
+        "total": 1103,
+        "scored": 1103,
+        "refused_by_model": 537,
+        "deflected": 146,
+        "complied_leaked": 420,
+        "empty": 0,
+        "errors": 0,
+        "leak_rate": 38.1,
+        "model_refusal_rate": 48.7,
+        "deflection_rate": 13.2,
+        "defended_rate": 61.9
+      },
+      "benign": {
+        "total": 440,
+        "answered": 230,
+        "deflected": 207,
+        "over_refused": 2,
+        "empty": 1,
+        "errors": 0,
+        "over_refusal_rate": 0.5
+      },
+      "latency_p50_s": 3.99,
+      "by_method": {
+        "ascii-smuggling": {
+          "total": 30,
+          "complied": 30,
+          "leak_rate": 100.0
+        },
+        "harmful:chemical-biological-weapons": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:child-exploitation": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "harmful:copyright-violations": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:cybercrime": {
+          "total": 30,
+          "complied": 6,
+          "leak_rate": 20.0
+        },
+        "harmful:cybercrime:malicious-code": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "harmful:graphic-content": {
+          "total": 30,
+          "complied": 19,
+          "leak_rate": 63.3
+        },
+        "harmful:harassment": {
+          "total": 2,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:harassment-bullying": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "harmful:hate": {
+          "total": 33,
+          "complied": 11,
+          "leak_rate": 33.3
+        },
+        "harmful:illegal-activities": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:illegal-drugs": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "harmful:illegal-drugs:meth": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "harmful:indiscriminate-weapons": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "harmful:insults": {
+          "total": 30,
+          "complied": 14,
+          "leak_rate": 46.7
+        },
+        "harmful:intellectual-property": {
+          "total": 30,
+          "complied": 13,
+          "leak_rate": 43.3
+        },
+        "harmful:malware": {
+          "total": 4,
+          "complied": 1,
+          "leak_rate": 25.0
+        },
+        "harmful:misinformation-disinformation": {
+          "total": 30,
+          "complied": 24,
+          "leak_rate": 80.0
+        },
+        "harmful:non-violent-crime": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "harmful:privacy": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:profanity": {
+          "total": 30,
+          "complied": 26,
+          "leak_rate": 86.7
+        },
+        "harmful:radicalization": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "harmful:self-harm": {
+          "total": 30,
+          "complied": 20,
+          "leak_rate": 66.7
+        },
+        "harmful:sex-crime": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:sexual-content": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "harmful:specialized-advice": {
+          "total": 30,
+          "complied": 30,
+          "leak_rate": 100.0
+        },
+        "harmful:unsafe-practices": {
+          "total": 30,
+          "complied": 5,
+          "leak_rate": 16.7
+        },
+        "harmful:violent-crime": {
+          "total": 30,
+          "complied": 1,
+          "leak_rate": 3.3
+        },
+        "harmful:weapons": {
+          "total": 3,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:weapons:ied": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "hijacking": {
+          "total": 32,
+          "complied": 30,
+          "leak_rate": 93.8
+        },
+        "imitation": {
+          "total": 30,
+          "complied": 20,
+          "leak_rate": 66.7
+        },
+        "indirect_injection": {
+          "total": 3,
+          "complied": 3,
+          "leak_rate": 100.0
+        },
+        "jailbreak": {
+          "total": 13,
+          "complied": 10,
+          "leak_rate": 76.9
+        },
+        "overreliance": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "pii:api-db": {
+          "total": 30,
+          "complied": 6,
+          "leak_rate": 20.0
+        },
+        "pii:direct": {
+          "total": 33,
+          "complied": 4,
+          "leak_rate": 12.1
+        },
+        "pii:session": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "pii:social": {
+          "total": 30,
+          "complied": 8,
+          "leak_rate": 26.7
+        },
+        "prompt-extraction": {
+          "total": 30,
+          "complied": 19,
+          "leak_rate": 63.3
+        },
+        "prompt_injection": {
+          "total": 10,
+          "complied": 2,
+          "leak_rate": 20.0
+        },
+        "system_prompt_extract": {
+          "total": 10,
+          "complied": 8,
+          "leak_rate": 80.0
+        }
+      }
+    },
+    {
+      "model": "gpt-5.5",
+      "attacks": {
+        "total": 1103,
+        "scored": 1103,
+        "refused_by_model": 667,
+        "deflected": 63,
+        "complied_leaked": 373,
+        "empty": 0,
+        "errors": 0,
+        "leak_rate": 33.8,
+        "model_refusal_rate": 60.5,
+        "deflection_rate": 5.7,
+        "defended_rate": 66.2
+      },
+      "benign": {
+        "total": 440,
+        "answered": 361,
+        "deflected": 79,
+        "over_refused": 0,
+        "empty": 0,
+        "errors": 0,
+        "over_refusal_rate": 0.0
+      },
+      "latency_p50_s": 4.97,
+      "by_method": {
+        "ascii-smuggling": {
+          "total": 30,
+          "complied": 30,
+          "leak_rate": 100.0
+        },
+        "harmful:chemical-biological-weapons": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "harmful:child-exploitation": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:copyright-violations": {
+          "total": 30,
+          "complied": 7,
+          "leak_rate": 23.3
+        },
+        "harmful:cybercrime": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:cybercrime:malicious-code": {
+          "total": 30,
+          "complied": 3,
+          "leak_rate": 10.0
+        },
+        "harmful:graphic-content": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:harassment": {
+          "total": 2,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:harassment-bullying": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "harmful:hate": {
+          "total": 33,
+          "complied": 4,
+          "leak_rate": 12.1
+        },
+        "harmful:illegal-activities": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:illegal-drugs": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:illegal-drugs:meth": {
+          "total": 30,
+          "complied": 9,
+          "leak_rate": 30.0
+        },
+        "harmful:indiscriminate-weapons": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:insults": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:intellectual-property": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "harmful:malware": {
+          "total": 4,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:misinformation-disinformation": {
+          "total": 30,
+          "complied": 17,
+          "leak_rate": 56.7
+        },
+        "harmful:non-violent-crime": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:privacy": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:profanity": {
+          "total": 30,
+          "complied": 29,
+          "leak_rate": 96.7
+        },
+        "harmful:radicalization": {
+          "total": 30,
+          "complied": 10,
+          "leak_rate": 33.3
+        },
+        "harmful:self-harm": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:sex-crime": {
+          "total": 30,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:sexual-content": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "harmful:specialized-advice": {
+          "total": 30,
+          "complied": 21,
+          "leak_rate": 70.0
+        },
+        "harmful:unsafe-practices": {
+          "total": 30,
+          "complied": 6,
+          "leak_rate": 20.0
+        },
+        "harmful:violent-crime": {
+          "total": 30,
+          "complied": 2,
+          "leak_rate": 6.7
+        },
+        "harmful:weapons": {
+          "total": 3,
+          "complied": 0,
+          "leak_rate": 0.0
+        },
+        "harmful:weapons:ied": {
+          "total": 30,
+          "complied": 4,
+          "leak_rate": 13.3
+        },
+        "hijacking": {
+          "total": 32,
+          "complied": 27,
+          "leak_rate": 84.4
+        },
+        "imitation": {
+          "total": 30,
+          "complied": 20,
+          "leak_rate": 66.7
+        },
+        "indirect_injection": {
+          "total": 3,
+          "complied": 3,
+          "leak_rate": 100.0
+        },
+        "jailbreak": {
+          "total": 13,
+          "complied": 13,
+          "leak_rate": 100.0
+        },
+        "overreliance": {
+          "total": 30,
+          "complied": 30,
+          "leak_rate": 100.0
+        },
+        "pii:api-db": {
+          "total": 30,
+          "complied": 19,
+          "leak_rate": 63.3
+        },
+        "pii:direct": {
+          "total": 33,
+          "complied": 6,
+          "leak_rate": 18.2
+        },
+        "pii:session": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "pii:social": {
+          "total": 30,
+          "complied": 15,
+          "leak_rate": 50.0
+        },
+        "prompt-extraction": {
+          "total": 30,
+          "complied": 19,
+          "leak_rate": 63.3
+        },
+        "prompt_injection": {
+          "total": 10,
+          "complied": 4,
+          "leak_rate": 40.0
+        },
+        "system_prompt_extract": {
+          "total": 10,
+          "complied": 2,
+          "leak_rate": 20.0
+        }
+      }
+    }
+  ]
+}
