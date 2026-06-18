@@ -194,10 +194,21 @@ class TestRendererHelpers:
 
 
 # ===========================================================================
-# PDF rendering (integration — requires weasyprint)
+# PDF rendering (integration — requires weasyprint native libs)
 # ===========================================================================
 
+# WeasyPrint fails to *import* when its native libs (cairo/pango/gobject) are absent, and it
+# raises OSError — not ImportError — so importorskip won't catch it. Probe explicitly and skip:
+# PDF export is optional; the HTML report path is covered by TestRendererHelpers above.
+try:
+    import weasyprint  # noqa: F401
 
+    _WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError):
+    _WEASYPRINT_AVAILABLE = False
+
+
+@pytest.mark.skipif(not _WEASYPRINT_AVAILABLE, reason="WeasyPrint native libs unavailable (PDF export is optional)")
 class TestPdfRender:
     @pytest.fixture()
     def sample_run(self) -> dict:

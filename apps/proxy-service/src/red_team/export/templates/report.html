@@ -78,21 +78,34 @@ p { margin: 6px 0; }
   font-size: 11px; font-weight: 700; letter-spacing: .02em;
 }
 
-/* ── Severity / status pills ────────────────────────────────── */
+/* ── Pills ──────────────────────────────────────────────────────
+   ONE colour system carries meaning: the VERDICT (defended / got-through / skipped) is the
+   only filled, saturated pill — it answers "is this good or bad" at a glance. Everything
+   else (severity, OWASP, confidence) is a quiet outline chip so it never competes with the
+   verdict. Severity colour is *gated by outcome*: muted grey when defended/skipped, and only
+   "hot" when the attack actually got through (where its severity finally matters). */
 .pill {
   display: inline-block; padding: 3px 9px; border-radius: 999px;
   font-size: 10px; font-weight: 700; letter-spacing: .02em;
   white-space: nowrap;
 }
-.sev-critical { background: #ffebe6; color: #bf2600; }
-.sev-high     { background: #fffae6; color: #974f0c; }
-.sev-medium   { background: #deebff; color: #0747a6; }
-.sev-low      { background: #f4f5f7; color: #42526e; }
-.sev-info     { background: #f4f5f7; color: #42526e; }
 
-.status-pass  { background: #e3fcef; color: #006644; }
-.status-fail  { background: #ffebe6; color: #bf2600; }
-.status-skip  { background: #f4f5f7; color: #42526e; }
+/* Verdict — filled, loud, unmistakable. */
+.verdict { padding: 3px 11px; }
+.status-pass  { background: #1f845a; color: #fff; }  /* defended */
+.status-fail  { background: #c9372c; color: #fff; }  /* got through */
+.status-skip  { background: #6b778c; color: #fff; }  /* skipped / inconclusive */
+
+/* Secondary chips — outline only, never filled. */
+.chip-quiet { background: transparent; border: 1px solid #c1c7d0; color: #5e6c84; font-weight: 600; }
+
+/* Severity — outline; colour only when the attack got through. */
+.sev-muted    { background: transparent; border: 1px solid #c1c7d0; color: #6b778c; }
+.sev-critical { background: transparent; border: 1px solid #f0a39b; color: #c9372c; }
+.sev-high     { background: transparent; border: 1px solid #f6c28b; color: #a54800; }
+.sev-medium   { background: transparent; border: 1px solid #ecd07a; color: #7a5b00; }
+.sev-low      { background: transparent; border: 1px solid #c1c7d0; color: #6b778c; }
+.sev-info     { background: transparent; border: 1px solid #c1c7d0; color: #6b778c; }
 
 /* ── Tables ─────────────────────────────────────────────────── */
 table {
@@ -159,6 +172,78 @@ th {
 a { color: #0052cc; text-decoration: none; }
 ul, ol { margin: 6px 0 6px 20px; }
 li { margin-bottom: 3px; }
+
+/* ── Reproducibility manifest ───────────────────────────────── */
+.manifest {
+  background: #f7f8fa; border: 1px solid #dfe1e6; border-radius: 8px;
+  padding: 14px 16px; margin: 12px 0 8px 0; page-break-inside: avoid;
+}
+.manifest .mrow { display: flex; gap: 10px; margin: 4px 0; font-size: 11px; }
+.manifest .mk { color: #5e6c84; min-width: 132px; flex-shrink: 0; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.hash { word-break: break-all; font-size: 9.5px; color: #172b4d; }
+
+/* ── Finding cards (remediation journey) ────────────────────── */
+/* Every finding is a breach → consistent red accent; severity rides inside as a chip. */
+.finding {
+  border: 1px solid #f0c7c2; border-radius: 10px; margin: 22px 0;
+  page-break-inside: avoid; overflow: hidden;
+  border-left: 6px solid #c9372c;
+  box-shadow: 0 2px 6px rgba(9, 30, 66, 0.10);
+}
+.finding-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: #fdf2f1; border-bottom: 1px solid #f4d6d2;
+}
+.finding-title { font-weight: 700; font-size: 12.5px; color: #091e42; }
+.finding-body { padding: 6px 16px 14px 16px; }
+
+/* ── Confidence chips — quiet; never compete with the verdict. ── */
+.conf-exact, .conf-classifier { background: transparent; border: 1px solid #c1c7d0; color: #5e6c84; font-weight: 600; }
+.conf-heuristic  { background: transparent; border: 1px dashed #d9a800; color: #7a5b00; font-weight: 600; }
+.caveat {
+  background: #fffae6; border: 1px dashed #ffc400; color: #5e4200;
+  border-radius: 6px; padding: 7px 10px; margin-top: 7px; font-size: 10px; line-height: 1.5;
+}
+.step { margin: 11px 0; }
+.step-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: #5e6c84; margin-bottom: 4px;
+}
+.io-block {
+  white-space: pre-wrap; word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px; line-height: 1.5; padding: 10px 12px; border-radius: 6px;
+}
+.io-attack { background: #f4f5f7; border: 1px solid #dfe1e6; }
+.io-response { background: #fff5f3; border: 1px solid #ffd6cc; }  /* the leak evidence */
+.fix-steps { margin: 4px 0 0 20px; }
+.fix-steps li { margin-bottom: 5px; }
+.owasp-pill { background: transparent; border: 1px solid #c1c7d0; color: #5e6c84; font-weight: 600; }
+
+/* ── Scenario tiles — accent + tint by OUTCOME (defended / breach / skip), not severity. ── */
+.stile {
+  border: 1px solid #e3e6ea; border-radius: 9px; margin: 14px 0;
+  padding: 11px 14px; page-break-inside: avoid;
+  border-left-width: 5px; border-left-style: solid; border-left-color: #c1c7d0;
+  box-shadow: 0 1px 4px rgba(9, 30, 66, 0.06);
+}
+.stile--pass { border-left-color: #1f845a; background: #f5fbf8; }
+.stile--fail { border-left-color: #c9372c; background: #fdf4f3; }
+.stile--skip { border-left-color: #8993a4; background: #f7f8fa; }
+.skip-note {
+  background: #eef0f3; border: 1px solid #d6dae0; color: #42526e;
+  border-radius: 6px; padding: 7px 10px; margin: 4px 0 6px 0; font-size: 10px; line-height: 1.5;
+}
+.stile-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.stile-title { font-weight: 700; font-size: 11.5px; color: #091e42; }
+.stile-meta {
+  display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 6px 0 8px 0;
+  font-size: 9.5px; color: #5e6c84;
+}
+.stile-meta .mlabel { color: #97a0af; text-transform: uppercase; letter-spacing: .04em; font-size: 8.5px; }
+.io-label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #5e6c84; margin: 6px 0 3px 0; }
+.io-defended { background: #f3fbf7; border: 1px solid #c8ead9; }  /* response when defended */
 </style>
 </head>
 <body>
@@ -222,6 +307,36 @@ li { margin-bottom: 3px; }
 </div>
 
 {# ══════════════════════════════════════════════════════════════
+   SECTION 2b — Reproducibility & method (control you can prove)
+   ══════════════════════════════════════════════════════════════ #}
+{% if manifest %}
+<h2>Reproducibility &amp; method</h2>
+<p class="subtle" style="margin-bottom:8px;">
+  Scored by a <strong>deterministic grader (no LLM judge)</strong>. The exact attack set,
+  corpora versions and grading rules are pinned below — this scan can be re-run and verified
+  bit-for-bit (same seed ⇒ same attacks ⇒ same verdicts).
+</p>
+<div class="manifest">
+  <div class="mrow">
+    <span class="mk">Attack set</span>
+    <span><strong>{{ manifest.scenario_count }}</strong> scenarios · seed {{ manifest.selection.seed }}{% if manifest.selection.sample_per_category %} · {{ manifest.selection.sample_per_category }} per category{% endif %}</span>
+  </div>
+  <div class="mrow">
+    <span class="mk">Corpora (pinned)</span>
+    <span>{% for p in manifest.packs %}{{ p.name }}@{{ p.version }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+  </div>
+  <div class="mrow">
+    <span class="mk">Grader</span>
+    <span>{{ manifest.grader.type }} — {{ manifest.grader.detectors | join(', ') }}</span>
+  </div>
+  <div class="mrow">
+    <span class="mk">Scenario-set hash</span>
+    <span class="mono hash">{{ manifest.scenario_set_hash }}</span>
+  </div>
+</div>
+{% endif %}
+
+{# ══════════════════════════════════════════════════════════════
    SECTION 3 — Methodology / Scope / Limitations
    ══════════════════════════════════════════════════════════════ #}
 <h2>Methodology, scope &amp; limitations</h2>
@@ -269,6 +384,46 @@ li { margin-bottom: 3px; }
   <tr><th>Created</th><td>{{ run.created_at or '—' }}</td><th>Completed</th><td>{{ run.completed_at or '—' }}</td></tr>
 </table>
 
+{# ── Legend: teach the reader the report's visual language using the real chips ── #}
+<h2>How to read this report — legend</h2>
+{% if heuristic_count and heuristic_count > 0 %}
+<div class="caveat">
+  <strong>⚠ {{ heuristic_count }} of {{ exact_count + heuristic_count }} evaluated verdict{{ 's' if heuristic_count != 1 else '' }}
+  are <span class="pill conf-heuristic">Heuristic</span> — verify these manually.</strong>
+  They are reproducible but not ground truth (κ ≈ 0.5 vs an independent judge).
+</div>
+{% endif %}
+
+<h3>Verdict — the headline of every scenario (the only filled chip)</h3>
+<table class="meta-table">
+  <tr><th><span class="pill verdict status-pass">DEFENDED</span></th><td>The endpoint resisted the attack — no breach detected. (Green card.)</td></tr>
+  <tr><th><span class="pill verdict status-fail">GOT THROUGH</span></th><td>The attack succeeded — the model produced the unsafe output or the payload reached it. <strong>This is a finding to fix.</strong> (Red card.)</td></tr>
+  <tr><th><span class="pill verdict status-skip">SKIPPED</span></th><td>Inconclusive — empty/truncated answer, or a canary that could not be planted. Counted as <strong>neither pass nor fail</strong> (never a vacuous pass). Each skipped tile says exactly why. (Grey card.)</td></tr>
+</table>
+
+<h3>Confidence — how that verdict was decided (outline chip)</h3>
+<table class="meta-table">
+  <tr><th><span class="pill conf-exact">Exact</span></th><td>A mechanical marker fired — injected token, secret/PII pattern, tool call, or a decoded injected directive. Trustworthy by construction: same input ⇒ same verdict.</td></tr>
+  <tr><th><span class="pill conf-classifier">Classifier</span></th><td>A safety model (Llama Guard) judged the response. Strong on harmful content, but it is a model — not exact.</td></tr>
+  <tr><th><span class="pill conf-heuristic">Heuristic</span></th><td>Refusal-phrase / deterministic floor (“no refusal ⇒ leak”). Reproducible but inferred — <strong>review these manually.</strong></td></tr>
+</table>
+
+<h3>Severity — the attack's potential impact (muted unless it got through)</h3>
+<table class="meta-table">
+  <tr>
+    <th><span class="pill sev-muted">Critical</span></th>
+    <td>On a <span class="pill verdict status-pass">DEFENDED</span> or <span class="pill verdict status-skip">SKIPPED</span> scenario the severity is greyed — it describes what the attack <em>could</em> do, not that anything went wrong.</td>
+  </tr>
+  <tr>
+    <th><span class="pill sev-critical">Critical</span> <span class="pill sev-high">High</span></th>
+    <td>On a <span class="pill verdict status-fail">GOT THROUGH</span> scenario the severity lights up (red = critical, orange = high) — now it matters, because an attack of that severity actually succeeded.</td>
+  </tr>
+  <tr>
+    <th><span class="pill owasp-pill">LLM01</span></th>
+    <td>OWASP LLM Top-10 category tag — reference only, always neutral.</td>
+  </tr>
+</table>
+
 {# ══════════════════════════════════════════════════════════════
    SECTION 5 — Category Breakdown
    ══════════════════════════════════════════════════════════════ #}
@@ -305,135 +460,121 @@ li { margin-bottom: 3px; }
 </table>
 
 {# ══════════════════════════════════════════════════════════════
-   SECTION 6 — Failed Scenarios — Action List
+   SECTION 6 — Findings — remediation journey (prompt → response → fix)
    ══════════════════════════════════════════════════════════════ #}
+<div class="page-break"></div>
+<h2>Findings — remediation journey</h2>
 {% if failed_scenarios %}
-<h2>Failed scenarios — action list</h2>
-<table>
-  <thead>
-    <tr>
-      <th style="width:8%;">ID</th>
-      <th style="width:14%;">Title</th>
-      <th style="width:8%;">Severity</th>
-      <th style="width:12%;">Category</th>
-      <th style="width:7%;">Result</th>
-      <th style="width:7%;">Latency</th>
-      <th style="width:22%;">Prompt (truncated)</th>
-      <th style="width:22%;">Remediation</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for s in failed_scenarios %}
-    <tr class="avoid-break">
-      <td><strong>{{ s.scenario_id }}</strong></td>
-      <td>{{ s.title or s.scenario_id }}</td>
-      <td><span class="pill sev-{{ s.severity }}">{{ s.severity | upper }}</span></td>
-      <td>{{ s.category_label }}</td>
-      <td><span class="pill status-fail">{{ s.actual or 'ALLOW' }}</span></td>
-      <td>{{ s.latency_display }}</td>
-      <td><div class="prompt">{{ s.prompt_truncated }}</div></td>
-      <td>
-        {% if s.fix_hints %}
-        {% for hint in s.fix_hints %}<div style="margin-bottom:2px;">{{ hint }}</div>{% endfor %}
-        {% else %}
-        <span class="muted">See scenario details</span>
-        {% endif %}
-      </td>
-    </tr>
-    {% if s.business_impact %}
-    <tr class="avoid-break">
-      <td colspan="8">
-        <div class="impact-box">
-          <strong>Business impact:</strong> {{ s.business_impact }}
-        </div>
-      </td>
-    </tr>
-    {% endif %}
-    {% endfor %}
-  </tbody>
-</table>
+<p class="subtle" style="margin-bottom:10px;">
+  Every attack that got through, end to end: what was sent, what the model replied, why it
+  is a vulnerability, and how to fix it. Re-scan after fixing to confirm the gap is closed.
+</p>
+{% for s in failed_scenarios %}
+<div class="finding">
+  <div class="finding-head">
+    <span class="pill verdict status-fail">GOT THROUGH</span>
+    <span class="pill sev-{{ s.severity }}">{{ s.severity | capitalize }}</span>
+    {% if s.owasp %}<span class="pill owasp-pill">{{ s.owasp }}</span>{% endif %}
+    <span class="pill conf-{{ s.confidence_kind }}">{{ s.confidence_kind | capitalize }}</span>
+    <span class="finding-title">{{ s.category_label }} — {{ s.title or s.scenario_id }}</span>
+  </div>
+  <div class="finding-body">
+    <div class="subtle small" style="margin:6px 0 2px 0;">
+      {{ s.scenario_id }}{% if s.source_pack %} · source: {{ s.source_pack }}{% endif %} · latency {{ s.latency_display }}
+    </div>
+
+    <div class="step">
+      <div class="step-label">① The attack — prompt sent to the endpoint</div>
+      <div class="io-block io-attack">{{ s.prompt_full }}</div>
+    </div>
+
+    <div class="step">
+      <div class="step-label">② The response — what the model actually did</div>
+      <div class="io-block io-response">{{ s.response_full or '(no response body recorded)' }}</div>
+    </div>
+
+    <div class="step">
+      <div class="step-label">③ Why it's flagged</div>
+      <div class="small">
+        {% if s.detector_explanation %}{{ s.detector_explanation }}{% endif %}
+        {% if s.detector_evidence %} <span class="mono">(matched: {{ s.detector_evidence }})</span>{% endif %}
+        {% if s.why_it_passes %}<div style="margin-top:4px;">{{ s.why_it_passes }}</div>{% endif %}
+      </div>
+      {% if s.is_heuristic %}
+      <div class="caveat">
+        <strong>Heuristic verdict — review.</strong> Flagged because no refusal phrase was
+        detected, not because harmful content was confirmed. A benign, on-task answer can be
+        a false positive here (e.g. the model simply decoded/answered without complying with
+        an attack). Confirm against the response above before treating it as exploited.
+      </div>
+      {% endif %}
+      {% if s.business_impact %}
+      <div class="impact-box" style="margin-top:6px;"><strong>Business impact (if confirmed):</strong> {{ s.business_impact }}</div>
+      {% endif %}
+    </div>
+
+    <div class="step">
+      <div class="step-label">④ How to fix</div>
+      {% if s.fix_hints %}
+      <ol class="fix-steps">{% for hint in s.fix_hints %}<li>{{ hint }}</li>{% endfor %}</ol>
+      {% else %}
+      <div class="small muted">Add an input/output guardrail for this category (e.g. via AI Protector), then re-scan to confirm.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="note" style="border-left-color:#36b37e; background:#e3fcef;">
+  <strong>No attacks got through.</strong> Every executed scenario was defended. Note that
+  safe outcomes from model behaviour alone may not hold across model/version changes —
+  enforce protection and re-scan periodically.
+</div>
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════════
    SECTION 7 — Full Audit Matrix
    ══════════════════════════════════════════════════════════════ #}
 <div class="page-break"></div>
-<h2>All scenarios — full audit matrix</h2>
-<table>
-  <thead>
-    <tr>
-      <th style="width:8%;">ID</th>
-      <th style="width:16%;">Title</th>
-      <th style="width:7%;">Severity</th>
-      <th style="width:12%;">Category</th>
-      <th style="width:7%;">Result</th>
-      <th style="width:7%;">Expected</th>
-      <th style="width:7%;">Actual</th>
-      <th style="width:7%;">Latency</th>
-      <th style="width:29%;">Prompt (truncated)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for s in all_scenarios %}
-    <tr>
-      <td><strong>{{ s.scenario_id }}</strong></td>
-      <td>{{ s.title or s.scenario_id }}</td>
-      <td><span class="pill sev-{{ s.severity }}">{{ s.severity | upper }}</span></td>
-      <td>{{ s.category_label }}</td>
-      <td>
-        {% if s.skipped %}
-        <span class="pill status-skip">SKIP</span>
-        {% elif s.passed %}
-        <span class="pill status-pass">PASS</span>
-        {% else %}
-        <span class="pill status-fail">FAIL</span>
-        {% endif %}
-      </td>
-      <td>{{ s.expected }}</td>
-      <td>{{ s.actual or '—' }}</td>
-      <td>{{ s.latency_display }}</td>
-      <td><div class="prompt">{{ s.prompt_truncated }}</div></td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-{# ══════════════════════════════════════════════════════════════
-   SECTION 8 — Prompt Appendix (detailed failed scenarios)
-   ══════════════════════════════════════════════════════════════ #}
-{% if failed_scenarios %}
-<div class="page-break"></div>
-<h2>Prompt appendix — failed scenario details</h2>
-<div class="subtle" style="margin-bottom: 14px;">Full prompt text for each failed scenario. Review these to understand the exact attack vector.</div>
-
-{% for s in failed_scenarios %}
-<div class="avoid-break" style="margin-bottom: 18px;">
-  <h3 id="{{ s.scenario_id }}">{{ s.scenario_id }} — {{ s.title or s.scenario_id }}</h3>
-  <table class="meta-table" style="margin-bottom: 6px;">
-    <tr>
-      <th>Severity</th>
-      <td><span class="pill sev-{{ s.severity }}">{{ s.severity | upper }}</span></td>
-      <th>Category</th>
-      <td>{{ s.category_label }}</td>
-    </tr>
-    <tr>
-      <th>Expected</th><td>{{ s.expected }}</td>
-      <th>Actual</th><td><span class="pill status-fail">{{ s.actual or 'ALLOW' }}</span></td>
-    </tr>
-    <tr>
-      <th>Latency</th><td>{{ s.latency_display }}</td>
-      <th>Description</th><td>{{ s.description or '—' }}</td>
-    </tr>
-  </table>
-  <div class="prompt-block">{{ s.prompt_full }}</div>
-  {% if s.business_impact %}
-  <div class="impact-box">
-    <strong>Business impact:</strong> {{ s.business_impact }}
+<h2>All scenarios — full record</h2>
+<p class="subtle" style="margin-bottom:10px;">
+  Every scenario as a tile: the prompt sent and the model's actual response, stacked for
+  readability, with full provenance (category · corpus · scenario id · set hash).
+</p>
+{% for s in all_scenarios %}
+<div class="stile {% if s.skipped %}stile--skip{% elif s.passed %}stile--pass{% else %}stile--fail{% endif %}">
+  <div class="stile-head">
+    {% if s.skipped %}<span class="pill verdict status-skip">SKIPPED</span>
+    {% elif s.passed %}<span class="pill verdict status-pass">DEFENDED</span>
+    {% else %}<span class="pill verdict status-fail">GOT THROUGH</span>{% endif %}
+    {# Severity is muted unless the attack got through — then its colour finally matters. #}
+    <span class="pill {{ 'sev-' + s.severity if (not s.passed and not s.skipped) else 'sev-muted' }}">{{ s.severity | capitalize }}</span>
+    {% if s.owasp %}<span class="pill owasp-pill">{{ s.owasp }}</span>{% endif %}
+    {% if not s.skipped %}<span class="pill conf-{{ s.confidence_kind }}">{{ s.confidence_kind | capitalize }}</span>{% endif %}
+    <span class="stile-title">{{ s.title or s.scenario_id }}</span>
   </div>
+  <div class="stile-meta">
+    <span><span class="mlabel">category</span> {{ s.category_label }}</span>
+    <span><span class="mlabel">corpus</span> {{ s.source_pack or '—' }}</span>
+    <span><span class="mlabel">id</span> <span class="mono">{{ s.scenario_id }}</span></span>
+    <span><span class="mlabel">set sha</span> <span class="mono">{{ set_hash_short or '—' }}</span></span>
+    <span><span class="mlabel">latency</span> {{ s.latency_display }}</span>
+  </div>
+  {% if s.skipped %}
+  <div class="skip-note"><strong>⊘ Skipped</strong> — {{ s.skip_explanation }}</div>
+  {% endif %}
+  <div class="io-label">Prompt sent</div>
+  <div class="io-block io-attack">{{ s.prompt_truncated }}</div>
+  <div class="io-label">Model response</div>
+  {% if s.skipped %}
+  <div class="io-block io-attack muted">{{ s.response_truncated or '(no response body recorded)' }}</div>
+  {% elif s.passed %}
+  <div class="io-block io-defended">{{ s.response_truncated or '(no response body recorded)' }}</div>
+  {% else %}
+  <div class="io-block io-response">{{ s.response_truncated or '(no response body recorded)' }}</div>
   {% endif %}
 </div>
 {% endfor %}
-{% endif %}
 
 {# ══════════════════════════════════════════════════════════════
    SECTION 9 — Technical Appendix
