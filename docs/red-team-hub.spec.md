@@ -57,6 +57,32 @@ Mix = HIGH anchor (yours) + breadth with borrowed credibility (JBB/promptfoo),
 with honest per-pack oracle labels. **Named gap deferred to v2: indirect/agent
 (BIPIA)** — i.e. the "what it *does*" thesis; ship v1 knowing it's missing.
 
+### Selection model — category-first (taxonomy TBD)
+
+The select's primary axis is the **threat category**, not the pack. Users think
+in threats ("test my injection / PII / tool-abuse risk"), not in "run promptfoo".
+
+- **Primary:** pick category(ies) → the engine runs matching scenarios **across
+  all selected packs**. **Secondary:** narrow by pack/source (also the credibility
+  attribution — "these 40 injection attacks came from promptfoo + JBB + Core").
+- **Output is per-category** ("Prompt Injection 92% · PII 81% · Tool Abuse 74%") —
+  the most useful verdict *and* the best brand content (rankings by category).
+- This is the **Nuclei (tags) / ZAP (policies)** model — what turns a big library
+  from overwhelming into *targeted* (the answer to "nobody checks thousands").
+
+**Enabler = unified category taxonomy.** Each pack ships native categories
+(core_security: `prompt_injection`/`secrets_detection`/…; promptfoo: plugin names;
+JBB: `prompt_injection_jailbreak`). Cross-pack category-select needs a map from each
+pack's native categories → a **shared set**. This is the "unified schema" moat.
+
+> **Deferred on purpose:** the concrete shared category set is **not** defined
+> top-down now. Derive it **empirically once the v1 packs are in** — from the
+> categories that actually appear in Core Security + JailbreakBench + promptfoo —
+> then map. Bottom-up from real packs beats a speculative taxonomy.
+
+**UX caution:** category-first, pack/source as a collapsible secondary filter —
+not a 3-D checkbox maze (pack × category × severity).
+
 ---
 
 ## 2. Why it matters
@@ -247,6 +273,9 @@ scenarios: [ { id, title, category, severity, prompt, expected, detector, fix_hi
 
 - [ ] Multi-select: pick ≥2 packs → one run → merged results, each result tagged
       with its origin pack.
+- [ ] Category-first: picking a category runs matching scenarios across **all**
+      selected packs; results are reported **per-category** (e.g. "Prompt
+      Injection 92%"). Category taxonomy derived bottom-up from the shipped packs.
 - [ ] Each external pack carries `source` + `license` + `oracle_confidence`,
       shown on the card and in the PDF.
 - [ ] Scores are **reproducible given recorded responses**; each scenario stores
@@ -296,6 +325,9 @@ scenarios: [ { id, title, category, severity, prompt, expected, detector, fix_hi
   result framed as `score → critical → fixes → re-scan` (not a row dump).
 - Minimal path: can ship JBB + Core Security first (2 packs), add the promptfoo
   adapter (~a day) right after.
+- **Then derive the unified category taxonomy** from the 3 packs' *actual*
+  categories (bottom-up, not invented up front) → map each pack's natives onto it
+  → enable **category-first selection + per-category scores**.
 - Then: get it in front of people + demo/post it (brand). Expand packs **by what
   users actually ask for**, not speculatively.
 
