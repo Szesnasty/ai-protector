@@ -10,6 +10,7 @@ Public API:
 from src.red_team.evaluators.detectors import (
     exact_match,
     heuristic_detector,
+    jailbreak_persona,
     json_assertion,
     keyword_detector,
     refusal_pattern,
@@ -37,6 +38,7 @@ register_detector(DetectorType.REFUSAL_PATTERN.value, refusal_pattern)
 register_detector(DetectorType.JSON_ASSERTION.value, json_assertion)
 register_detector(DetectorType.TOOL_CALL_DETECT.value, tool_call_detect)
 register_detector(DetectorType.HEURISTIC.value, heuristic_detector)
+register_detector(DetectorType.JAILBREAK_PERSONA.value, jailbreak_persona)
 
 
 # ---------------------------------------------------------------------------
