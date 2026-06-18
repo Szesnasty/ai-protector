@@ -1,15 +1,11 @@
 name: Benchmark
 
 on:
+  # The benchmark is expensive, so it does NOT run on every push/PR. Trigger it by adding the
+  # `run-benchmark` label to a PR, or run it manually (workflow_dispatch). The weekly schedule
+  # only refreshes the dynamic badges.
   pull_request:
-    branches: [main]
-    paths:
-      - "apps/proxy-service/**"
-      - ".github/workflows/benchmark.yml"
-  push:
-    branches: [main]
-    paths:
-      - "apps/proxy-service/**"
+    types: [labeled]
   schedule:
     - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC — refreshes the dynamic badges
   workflow_dispatch:
@@ -19,10 +15,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Blocking gate: external deterministic attacks (fast, every PR) ──────
+  # ── External deterministic attacks gate — opt-in via the `run-benchmark` label ──────
   detection-gate:
     name: External attack detection gate (proxy)
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.label.name == 'run-benchmark')
     runs-on: ubuntu-latest
     defaults:
       run:
