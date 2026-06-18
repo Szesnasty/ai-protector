@@ -60,3 +60,6 @@ demo-files/
 # ==== Benchmarks ====
 apps/proxy-service/benchmarks/results/*.json
 apps/proxy-service/benchmarks/datasets/
+
+# ==== Agent / editor tooling (never commit) ====
+.claude/
