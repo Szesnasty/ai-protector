@@ -50,17 +50,6 @@ repos:
         files: ^apps/frontend/.*\.(vue|ts|js|mjs)$
         types: [file]
 
-      # Pre-push only: catch external-attack detection regressions locally before
-      # they reach CI. Runs the same gate as CI (full frozen corpus, off-mode,
-      # compared to baseline.json). Only fires when proxy source / benchmark code
-      # changes. Skips cleanly if the proxy venv is not set up; bypass with
-      # SKIP_BENCH=1 or `git push --no-verify`. ~2 min on Apple Silicon; on
-      # CPU-only machines prefer SKIP_BENCH and rely on the CI gate.
-      - id: bench-external-gate
-        name: external attack regression gate (pre-push)
-        language: system
-        entry: scripts/bench-prepush.sh
-        files: ^apps/proxy-service/(src|benchmarks)/.*\.(py|json|jsonl|ya?ml)$
-        pass_filenames: false
-        stages: [pre-push]
-        verbose: true
+      # NOTE: the external-attack benchmark no longer runs on pre-push (it was slow and
+      # heavy). It runs in CI only when a PR is labelled `run-benchmark` (see
+      # .github/workflows/benchmark.yml), plus the weekly schedule for badges.
