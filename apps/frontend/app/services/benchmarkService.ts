@@ -9,12 +9,55 @@ export interface PackInfo {
   applicable_to: string[]
 }
 
+export interface SubcategoryInfo {
+  name: string
+  count: number
+}
+
+export interface SourceInfo {
+  name: string
+  display_name: string
+  count: number
+  subcategories: SubcategoryInfo[]
+}
+
+export interface CategoryInfo {
+  category: string
+  owasp: string
+  count: number
+  packs: string[]
+  subcategories: SubcategoryInfo[]
+  sources: SourceInfo[]
+}
+
+// Precise tree pick: a category, a source within it, or a subtype within a source.
+export interface SelectionFilter {
+  category?: string
+  pack?: string
+  subcategory?: string
+}
+
 export interface CreateRunPayload {
   target_type: string
   target_config?: Record<string, unknown>
   pack: string
+  packs?: string[] // multi-pack selection; overrides `pack`
+  categories?: string[] // category-first filter across selected packs
+  subcategories?: string[] // native subcategory drill-down within categories
+  filters?: SelectionFilter[] // precise tree picks (category / source / subtype)
+  sample_per_category?: number // cap N scenarios/category (deterministic, seeded)
+  seed?: number // sampling seed; omit for the reproducible default
   policy?: string
   source_run_id?: string
+}
+
+export interface ManifestVerify {
+  reproducible: boolean
+  expected_hash: string | null
+  actual_hash: string | null
+  expected_count: number | null
+  actual_count: number | null
+  manifest: Record<string, unknown> | null
 }
 
 export interface RunCreated {
@@ -90,8 +133,14 @@ export const benchmarkService = {
   listPacks: (): Promise<PackInfo[]> =>
     api.get<PackInfo[]>('/v1/benchmark/packs').then((r) => r.data),
 
+  listCategories: (): Promise<CategoryInfo[]> =>
+    api.get<CategoryInfo[]>('/v1/benchmark/categories').then((r) => r.data),
+
   createRun: (payload: CreateRunPayload): Promise<RunCreated> =>
     api.post<RunCreated>('/v1/benchmark/runs', payload).then((r) => r.data),
+
+  verifyRun: (id: string): Promise<ManifestVerify> =>
+    api.get<ManifestVerify>(`/v1/benchmark/runs/${id}/verify`).then((r) => r.data),
 
   getRun: (id: string): Promise<RunDetail> =>
     api.get<RunDetail>(`/v1/benchmark/runs/${id}`).then((r) => r.data),

@@ -519,6 +519,36 @@
       <!-- Category breakdown — shared by baseline and protected              -->
       <!-- ================================================================ -->
       <template v-if="run && run.executed > 0">
+        <!-- Reproducibility manifest — provenance + verifiable hash -->
+        <v-card
+          v-if="manifest"
+          variant="flat"
+          class="mb-6 pa-4"
+          data-testid="reproducibility"
+          :style="{ borderLeft: `4px solid rgb(var(--v-theme-${verifyColor}))` }"
+        >
+          <div class="d-flex align-center flex-wrap mb-2">
+            <v-icon icon="mdi-fingerprint" class="mr-2" />
+            <span class="text-subtitle-2 font-weight-bold mr-2">Reproducible result</span>
+            <v-chip v-if="manifestVerify" :color="verifyColor" size="x-small" variant="tonal">
+              <v-icon :icon="manifestVerify.reproducible ? 'mdi-check' : 'mdi-alert'" size="x-small" start />
+              {{ manifestVerify.reproducible ? 'Verified — identical set re-resolves' : 'Corpus drifted since this run' }}
+            </v-chip>
+            <v-spacer />
+            <v-btn variant="text" size="x-small" :loading="isVerifying" prepend-icon="mdi-refresh" @click="onReverify">
+              Re-verify
+            </v-btn>
+          </div>
+          <div class="d-flex flex-wrap ga-2 mb-2">
+            <v-chip v-if="manifestCount !== undefined" size="x-small" variant="outlined">{{ manifestCount }} attacks pinned</v-chip>
+            <v-chip v-if="manifestSeed !== undefined" size="x-small" variant="outlined">seed {{ manifestSeed }}</v-chip>
+            <v-chip v-if="manifestHashShort" size="x-small" variant="outlined" prepend-icon="mdi-pound">{{ manifestHashShort }}…</v-chip>
+          </div>
+          <p class="text-caption text-medium-emphasis mb-0">
+            The exact attack set + grader are pinned. Re-run the same recipe (seed + sources) to get identical attacks — the full manifest is in the JSON export.
+          </p>
+        </v-card>
+
         <h2 class="text-h6 mb-3">Category breakdown</h2>
         <v-card variant="flat" class="mb-6 pa-4" data-testid="category-breakdown">
           <div
@@ -823,7 +853,7 @@
 
 <script setup lang="ts">
 import { benchmarkService } from '~/services/benchmarkService'
-import type { RunDetail, ScenarioResult, CompareResult } from '~/services/benchmarkService'
+import type { RunDetail, ScenarioResult, CompareResult, ManifestVerify } from '~/services/benchmarkService'
 import { humanCategory, severityMeta, humanPack, scoreLabel, baselineScoreLabel, classifyRun } from '~/utils/redTeamLabels'
 
 definePageMeta({ layout: 'default' })
@@ -847,6 +877,26 @@ const isRerunning = ref(false)
 const isExporting = ref(false)
 const showAllFailures = ref(false)
 const urlCopied = ref(false)
+const manifestVerify = ref<ManifestVerify | null>(null)
+const isVerifying = ref(false)
+
+// Manifest summary for the reproducibility tile (recipe + hash).
+const manifest = computed(() => {
+  const m = (run.value?.target_config as Record<string, unknown> | undefined)?.manifest
+  return (m as Record<string, unknown> | undefined) ?? null
+})
+const manifestSeed = computed(() => {
+  const sel = manifest.value?.selection as Record<string, unknown> | undefined
+  return sel?.seed as number | undefined
+})
+const manifestHashShort = computed(() => {
+  const h = manifest.value?.scenario_set_hash as string | undefined
+  return h ? h.replace('sha256:', '').slice(0, 12) : null
+})
+const manifestCount = computed(() => manifest.value?.scenario_count as number | undefined)
+const verifyColor = computed(() =>
+  manifestVerify.value ? (manifestVerify.value.reproducible ? 'success' : 'warning') : 'primary',
+)
 let _urlCopiedTimer: ReturnType<typeof setTimeout> | null = null
 
 // ---------------------------------------------------------------------------
@@ -1264,10 +1314,31 @@ async function fetchData() {
         // Comparison is optional
       }
     }
+
+    // Reproducibility manifest verification (optional — only runs that carry a manifest).
+    if (runData.target_config && (runData.target_config as Record<string, unknown>).manifest) {
+      try {
+        manifestVerify.value = await benchmarkService.verifyRun(runData.id)
+      } catch {
+        // Verification is best-effort
+      }
+    }
   } catch {
     run.value = null
   } finally {
     loading.value = false
+  }
+}
+
+async function onReverify() {
+  if (!run.value) return
+  isVerifying.value = true
+  try {
+    manifestVerify.value = await benchmarkService.verifyRun(run.value.id)
+  } catch {
+    // best-effort
+  } finally {
+    isVerifying.value = false
   }
 }
 

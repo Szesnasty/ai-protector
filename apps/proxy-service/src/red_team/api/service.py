@@ -21,6 +21,7 @@ from src.red_team.engine.run_engine import (
     compute_target_fingerprint,
 )
 from src.red_team.packs import PackInfo, list_packs
+from src.red_team.packs.loader import CategoryInfo, list_categories
 from src.red_team.persistence.models import BenchmarkRun, BenchmarkScenarioResult
 from src.red_team.persistence.repository import (
     BenchmarkRunRepository,
@@ -61,6 +62,12 @@ class BenchmarkService:
         target_type: str,
         target_config: dict[str, Any],
         pack: str,
+        packs: list[str] | None = None,
+        categories: list[str] | None = None,
+        subcategories: list[str] | None = None,
+        filters: list[dict[str, Any]] | None = None,
+        sample_per_category: int | None = None,
+        seed: int | None = None,
         policy: str | None = None,
         source_run_id: str | None = None,
         idempotency_key: str | None = None,
@@ -74,6 +81,17 @@ class BenchmarkService:
         """
         # Encrypt auth header before storing
         config = dict(target_config)  # shallow copy
+        if packs:  # multi-pack selection (+ optional category/subcategory filter) → resolved at run time
+            selection: dict[str, Any] = {"packs": packs, "categories": categories or []}
+            if subcategories:
+                selection["subcategories"] = subcategories
+            if filters:
+                selection["filters"] = filters
+            if sample_per_category:
+                selection["sample_per_category"] = sample_per_category
+            if seed is not None:
+                selection["seed"] = seed
+            config["selection"] = selection
         # Encrypt sensitive headers before persisting
         custom_headers = config.pop("custom_headers", None)
         auth_header = config.pop("auth_header", None)
@@ -98,15 +116,20 @@ class BenchmarkService:
         if active:
             raise ConcurrencyConflictError(f"Benchmark already running for target {fingerprint}")
 
-        # Resolve pack metadata for counting
+        # Resolve scenario set for counting (single pack or multi-pack selection)
         from src.red_team.packs import TargetConfig as PackTargetConfig
-        from src.red_team.packs import filter_pack, load_pack
+        from src.red_team.packs.loader import resolve_filtered_pack
 
         agent_type = config.get("agent_type", "chatbot_api")
         safe_mode = config.get("safe_mode", False)
-        pack_obj = load_pack(pack)
         target_cfg = PackTargetConfig(agent_type=agent_type, safe_mode=safe_mode)
-        filtered = filter_pack(pack_obj, target_cfg)
+        filtered = resolve_filtered_pack(pack, config, target_cfg)
+
+        # Reproducibility manifest — pins the exact attack set + grader (config JSON,
+        # survives auth masking). Lets any run be replayed/verified after the fact.
+        from src.red_team.manifest import build_manifest
+
+        config["manifest"] = build_manifest(pack, config, filtered)
 
         run = BenchmarkRun(
             target_type=target_type,
@@ -194,6 +217,10 @@ class BenchmarkService:
     @staticmethod
     def list_packs() -> list[PackInfo]:
         return list_packs()
+
+    @staticmethod
+    def list_categories() -> list[CategoryInfo]:
+        return list_categories()
 
     # -- Compare --------------------------------------------------------
 

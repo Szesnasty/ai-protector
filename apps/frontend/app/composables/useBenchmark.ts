@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import { benchmarkService } from '~/services/benchmarkService'
-import type { CreateRunPayload, PackInfo } from '~/services/benchmarkService'
+import type { CategoryInfo, CreateRunPayload, PackInfo } from '~/services/benchmarkService'
 
 export const useBenchmarkPacks = () => {
   const { data: packs, isLoading, error } = useQuery<PackInfo[]>({
@@ -10,6 +10,16 @@ export const useBenchmarkPacks = () => {
   })
 
   return { packs, isLoading, error }
+}
+
+export const useBenchmarkCategories = () => {
+  const { data: categories, isLoading, error } = useQuery<CategoryInfo[]>({
+    queryKey: ['benchmark-categories'],
+    queryFn: () => benchmarkService.listCategories(),
+    staleTime: 60_000,
+  })
+
+  return { categories, isLoading, error }
 }
 
 export const useBenchmarkCreateRun = () => {

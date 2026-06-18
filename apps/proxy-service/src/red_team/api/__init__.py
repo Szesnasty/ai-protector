@@ -18,7 +18,13 @@ class CreateRunRequest(BaseModel):
 
     target_type: str = Field(..., examples=["demo"])
     target_config: dict[str, Any] = Field(default_factory=dict)
-    pack: str = Field(..., examples=["core_security"])
+    pack: str = Field(default="selection", examples=["core_security"])
+    packs: list[str] | None = None  # multi-pack selection; when set, overrides `pack`
+    categories: list[str] | None = None  # category-first filter across selected packs
+    subcategories: list[str] | None = None  # native subcategory drill-down within categories
+    filters: list[dict[str, Any]] | None = None  # precise tree picks: {category?, pack?, subcategory?}
+    sample_per_category: int | None = None  # cap N scenarios/category (deterministic, seeded)
+    seed: int | None = None  # sampling seed; omit for the reproducible default
     policy: str | None = None
     source_run_id: str | None = None
     idempotency_key: str | None = None
@@ -123,6 +129,28 @@ class PackInfoResponse(BaseModel):
     version: str
     scenario_count: int
     applicable_to: list[str]
+
+
+class CategoryInfoResponse(BaseModel):
+    """A canonical threat category for the category-first selector."""
+
+    category: str
+    owasp: str
+    count: int
+    packs: list[str]
+    subcategories: list[dict] = Field(default_factory=list)
+    sources: list[dict] = Field(default_factory=list)  # nested: corpus → subtype breakdown
+
+
+class ManifestVerifyResponse(BaseModel):
+    """Result of re-resolving a run's reproducibility manifest against current packs."""
+
+    reproducible: bool
+    expected_hash: str | None = None
+    actual_hash: str | None = None
+    expected_count: int | None = None
+    actual_count: int | None = None
+    manifest: dict[str, Any] | None = None
 
 
 class CompareResponse(BaseModel):

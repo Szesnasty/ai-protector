@@ -18,10 +18,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
 from src.red_team.api import (
+    CategoryInfoResponse,
     CompareResponse,
     CreateRunRequest,
     ErrorResponse,
     ExportRunRequest,
+    ManifestVerifyResponse,
     PackInfoResponse,
     RunCreatedResponse,
     RunDetailResponse,
@@ -42,9 +44,12 @@ router = APIRouter(prefix="/benchmark", tags=["Red Team Benchmark"])
 def _enrich_scenario(resp: ScenarioResultResponse, pack_name: str) -> ScenarioResultResponse:
     """Look up scenario metadata from the pack YAML and inject title/description/why/fix."""
     try:
+        sid = resp.scenario_id
+        if "::" in sid:  # multi-pack selection id: "<pack>::<id>"
+            pack_name, sid = sid.split("::", 1)
         pack = load_pack(pack_name)
         for s in pack.scenarios:
-            if s.id == resp.scenario_id:
+            if s.id == sid:
                 resp.title = s.title
                 resp.description = getattr(s, "description", None) or None
                 resp.why_it_passes = getattr(s, "why_it_passes", None) or None
@@ -88,7 +93,13 @@ async def create_run(
         run = await svc.create_run(
             target_type=body.target_type,
             target_config=body.target_config,
-            pack=body.pack,
+            pack="selection" if body.packs else body.pack,
+            packs=body.packs,
+            categories=body.categories,
+            subcategories=body.subcategories,
+            filters=body.filters,
+            sample_per_category=body.sample_per_category,
+            seed=body.seed,
             policy=body.policy,
             source_run_id=body.source_run_id,
             idempotency_key=body.idempotency_key,
@@ -207,6 +218,35 @@ async def get_scenario(
 
 
 # ---------------------------------------------------------------------------
+# GET /v1/benchmark/runs/:id/verify — re-resolve manifest, prove reproducibility
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/runs/{run_id}/verify",
+    response_model=ManifestVerifyResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+async def verify_run(
+    run_id: uuid.UUID,
+    svc: BenchmarkService = Depends(_get_service),  # noqa: B008
+) -> ManifestVerifyResponse:
+    """Re-resolve the run's reproducibility manifest against the current packs and
+    report whether the exact same attack set + grading would run again."""
+    run = await svc.get_run_safe(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    manifest = (run.target_config or {}).get("manifest")
+    if not manifest:
+        raise HTTPException(status_code=404, detail="Run has no reproducibility manifest")
+
+    from src.red_team.manifest import verify_manifest
+
+    result = verify_manifest(manifest)
+    return ManifestVerifyResponse(**result, manifest=manifest)
+
+
+# ---------------------------------------------------------------------------
 # DELETE /v1/benchmark/runs/:id — cancel or delete
 # ---------------------------------------------------------------------------
 
@@ -273,6 +313,8 @@ async def export_run(
         payload = {
             "export_version": "1.0",
             "generated_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            # Reproducibility manifest at top level for auditability (recipe + hash).
+            "manifest": (run.target_config or {}).get("manifest"),
             "run": run_dict,
             "scenarios": scenario_dicts,
         }
@@ -455,6 +497,23 @@ async def list_packs() -> list[PackInfoResponse]:
             applicable_to=p.applicable_to,
         )
         for p in packs
+    ]
+
+
+@router.get("/categories", response_model=list[CategoryInfoResponse])
+async def list_categories() -> list[CategoryInfoResponse]:
+    """Canonical threat categories across all packs — drives the category-first
+    selector (count, OWASP, contributing packs, native subcategory breakdown)."""
+    return [
+        CategoryInfoResponse(
+            category=c.category,
+            owasp=c.owasp,
+            count=c.count,
+            packs=c.packs,
+            subcategories=c.subcategories,
+            sources=c.sources,
+        )
+        for c in BenchmarkService.list_categories()
     ]
 
 
