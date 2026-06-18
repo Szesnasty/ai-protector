@@ -43,6 +43,23 @@ _DEMO_AGENT_URL = "http://agent-demo:8002/agent/chat"
 _MAX_RESPONSE_BODY_BYTES = 512 * 1024
 
 
+def system_prompt_is_injectable(target_config: dict[str, Any]) -> bool:
+    """Whether ``send_prompt`` will actually place ``_system_prompt`` into the request.
+
+    Single source of truth (mirrors the payload logic below) so the engine can tell if a
+    canary was really planted — a canary-based test is vacuous (auto-pass) if it wasn't.
+    A custom ``request_template`` must contain ``{{SYSTEM_PROMPT}}``; otherwise only the
+    OpenAI-style fallback injects a system message (the demo ``/agent/chat`` shape does not).
+    """
+    if not target_config.get("_system_prompt"):
+        return False
+    template = target_config.get("request_template")
+    if template:
+        return "{{SYSTEM_PROMPT}}" in template
+    url = target_config.get("endpoint_url") or _DEMO_AGENT_URL
+    return "/agent/chat" not in url
+
+
 # ---------------------------------------------------------------------------
 # HTTP Client
 # ---------------------------------------------------------------------------
@@ -245,6 +262,14 @@ class SimpleNormalizer:
         # 4) Fallback — raw body
         if not body_text:
             body_text = body
+
+        # Reasoning models (qwen3, deepseek-r1, …) emit a <think>…</think> block
+        # before the user-facing answer. Strip it so detectors evaluate what the
+        # user actually sees, not the internal monologue (raw_body keeps the full
+        # text for audit). Lets reasoning models be valid scan targets.
+        import re as _re
+
+        body_text = _re.sub(r"(?is)<think>.*?</think>|<thinking>.*?</thinking>", "", str(body_text)).strip()
 
         return RawTargetResponse(
             body_text=str(body_text),

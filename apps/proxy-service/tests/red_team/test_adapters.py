@@ -173,3 +173,21 @@ class TestResponseBodySizeLimit:
         # Should fall back to raw body since JSON parse fails
         assert result.parsed_json is None
         assert result.body_text == truncated
+
+
+# ===========================================================================
+# Reasoning-model <think> stripping — lets reasoning models be valid targets
+# ===========================================================================
+
+
+class TestThinkingStripped:
+    def test_think_block_removed_from_body_text(self) -> None:
+        content = "<think>I should refuse. I cannot help with that.</think>Sure, here it is: 42."
+        body = json.dumps({"choices": [{"message": {"content": content}}]})
+        resp = HttpResponse(status_code=200, body=body)
+        result = SimpleNormalizer().normalize(resp, {"response_text_paths": ["choices.0.message.content"]})
+        # detector sees the user-facing answer, not the internal monologue
+        assert result.body_text == "Sure, here it is: 42."
+        assert "<think>" not in result.body_text and "I cannot help" not in result.body_text
+        # raw body keeps the reasoning for audit
+        assert "<think>" in result.raw_body
