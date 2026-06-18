@@ -299,6 +299,18 @@ li { margin-bottom: 3px; }
   </div>
 </div>
 
+{# Top-of-report honesty banner — what this score is and is NOT. #}
+<div class="note-warning">
+  <strong>⚠ This is a confidence signal, not a safety certificate.</strong>
+  Verdicts labeled <strong>HEURISTIC</strong> are reproducible but not ground truth, and
+  <strong>SKIPPED</strong> rows — empty/truncated answers, un-plantable canaries, or semantic
+  categories such as impersonation that have no deterministic marker — are <em>excluded from the
+  score</em> and <strong>require manual review</strong> (they are never reported as a vacuous
+  “defended”). Scope: single-turn request → response on the model endpoint (the agent’s “brain”);
+  it does not exercise the agent action loop — tool execution, multi-turn, or indirect injection
+  via retrieved content.
+</div>
+
 {# ══════════════════════════════════════════════════════════════
    SECTION 2 — Executive Risk Summary
    ══════════════════════════════════════════════════════════════ #}

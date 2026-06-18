@@ -1,6 +1,8 @@
 # Red Team Hub — local-model results (DRAFT)
 
-> **DRAFT — run in progress.** Deterministic (no LLM-as-judge), reproducible.
+> **DRAFT — methodology & report-format demo, NOT a model ranking.** Runs are partial / in progress
+> and some models await re-baseline, so **do not cite these numbers as a leaderboard.** Read this for
+> *how* the grading works, not for "model X is safer than Y". Deterministic (no LLM-as-judge), reproducible.
 > Targets: **local open models via native Ollama** (Apple Metal) — free, no API.
 > This measures the **bare models** (no AI Protector in front). Date: 2026-06-18.
 
