@@ -15,8 +15,13 @@ from src.red_team.packs import (
     list_packs,
     load_pack,
 )
-from src.red_team.packs.loader import clear_cache
-from src.red_team.schemas import Pack
+from src.red_team.packs.loader import (
+    _sample_per_category,
+    clear_cache,
+    list_categories,
+    load_selection,
+)
+from src.red_team.schemas import Pack, Scenario
 from src.red_team.schemas.enums import AgentType, DetectorType
 
 # ---------------------------------------------------------------------------
@@ -480,3 +485,126 @@ class TestAgentThreatsPack:
             assert AgentType.TOOL_CALLING in scenario.applicable_to, (
                 f"Scenario {scenario.id} should be applicable to tool_calling"
             )
+
+
+# ---------------------------------------------------------------------------
+# Selection: subcategory drill-down + deterministic bounded sampling
+# ---------------------------------------------------------------------------
+
+
+def _scn(sid: str, category: str, subcategory: str | None = None) -> Scenario:
+    return Scenario(**_make_scenario(id=sid, category=category, subcategory=subcategory))
+
+
+class TestSamplePerCategory:
+    """`_sample_per_category` — the reproducibility primitive for bounded scans."""
+
+    def _pool(self) -> list[Scenario]:
+        a = [_scn(f"A-{i:02d}", "harmful_content") for i in range(10)]
+        b = [_scn(f"B-{i:02d}", "impersonation") for i in range(3)]
+        return a + b
+
+    def test_caps_each_category(self) -> None:
+        out = _sample_per_category(self._pool(), per_category=4, seed=1)
+        by_cat: dict[str, int] = {}
+        for s in out:
+            by_cat[s.category.value] = by_cat.get(s.category.value, 0) + 1
+        assert by_cat["harmful_content"] == 4  # capped
+        assert by_cat["impersonation"] == 3  # smaller than cap → kept whole
+
+    def test_is_deterministic(self) -> None:
+        ids1 = [s.id for s in _sample_per_category(self._pool(), 4, seed=42)]
+        ids2 = [s.id for s in _sample_per_category(self._pool(), 4, seed=42)]
+        assert ids1 == ids2  # same seed ⇒ identical subset AND order
+
+    def test_seed_changes_subset(self) -> None:
+        a = {s.id for s in _sample_per_category(self._pool(), 4, seed=1) if s.category.value == "harmful_content"}
+        b = {s.id for s in _sample_per_category(self._pool(), 4, seed=2) if s.category.value == "harmful_content"}
+        assert a != b  # different seed ⇒ different draw (both size 4)
+        assert len(a) == len(b) == 4
+
+    def test_output_is_subset_and_sorted(self) -> None:
+        pool = self._pool()
+        out = _sample_per_category(pool, 4, seed=7)
+        all_ids = {s.id for s in pool}
+        assert {s.id for s in out} <= all_ids
+        assert [s.id for s in out] == sorted(s.id for s in out)  # stable final order
+
+
+class TestLoadSelection:
+    """`load_selection` over the real packs — category + subcategory + sampling."""
+
+    _CFG = TargetConfig(agent_type="chatbot_api")
+
+    def test_subcategory_drilldown(self) -> None:
+        # PII from promptfoo, only the api-db + session subtypes.
+        fp = load_selection(
+            ["promptfoo"],
+            self._CFG,
+            categories=["pii_disclosure"],
+            subcategories=["api-db", "session"],
+        )
+        assert fp.scenarios, "expected some PII api-db/session scenarios"
+        for s in fp.scenarios:
+            assert s.category.value == "pii_disclosure"
+            assert s.subcategory in ("api-db", "session")
+            assert s.id.startswith("promptfoo::")  # origin namespacing preserved
+
+    def test_category_filter_without_subcategory(self) -> None:
+        fp = load_selection(["promptfoo"], self._CFG, categories=["pii_disclosure"])
+        subs = {s.subcategory for s in fp.scenarios}
+        assert subs >= {"api-db", "session"}  # broader than the drill-down above
+
+    def test_subcategory_is_per_category_aware(self) -> None:
+        # PII drilled to api-db, system_prompt_leak NOT drilled → the global subs must
+        # not wipe out system_prompt_leak (regression guard for the constrained rule).
+        fp = load_selection(
+            ["promptfoo"],
+            self._CFG,
+            categories=["pii_disclosure", "system_prompt_leak"],
+            subcategories=["api-db"],
+        )
+        by_cat: dict[str, set[str | None]] = {}
+        for s in fp.scenarios:
+            by_cat.setdefault(s.category.value, set()).add(s.subcategory)
+        assert "system_prompt_leak" in by_cat, "non-drilled category must survive"
+        assert by_cat["pii_disclosure"] == {"api-db"}  # drilled category constrained
+
+    def test_bounded_sampling_is_reproducible(self) -> None:
+        kw = dict(categories=["pii_disclosure"], sample_per_category=5, seed=99)
+        ids1 = [s.id for s in load_selection(["promptfoo"], self._CFG, **kw).scenarios]
+        ids2 = [s.id for s in load_selection(["promptfoo"], self._CFG, **kw).scenarios]
+        assert ids1 == ids2  # identical across runs
+        assert 0 < len(ids1) <= 5  # capped per category
+
+    def test_filters_or_of_leaves(self) -> None:
+        # Precise tree picks: PII from promptfoo→api-db only, PLUS all system_prompt_leak.
+        fp = load_selection(
+            ["promptfoo"],
+            self._CFG,
+            filters=[
+                {"category": "pii_disclosure", "pack": "promptfoo", "subcategory": "api-db"},
+                {"category": "system_prompt_leak"},
+            ],
+        )
+        assert fp.scenarios
+        for s in fp.scenarios:
+            if s.category.value == "pii_disclosure":
+                assert s.subcategory == "api-db" and s.id.startswith("promptfoo::")
+            else:
+                assert s.category.value == "system_prompt_leak"
+        cats = {s.category.value for s in fp.scenarios}
+        assert cats == {"pii_disclosure", "system_prompt_leak"}
+
+
+class TestCategoryCatalog:
+    def test_sources_hierarchy_present(self) -> None:
+        cats = {c.category: c for c in list_categories()}
+        pii = cats["pii_disclosure"]
+        assert pii.sources, "expected a source breakdown"
+        src_names = {s["name"] for s in pii.sources}
+        assert "promptfoo" in src_names
+        promptfoo = next(s for s in pii.sources if s["name"] == "promptfoo")
+        assert promptfoo["count"] > 0
+        sub_names = {sub["name"] for sub in promptfoo["subcategories"]}
+        assert {"api-db", "session"} <= sub_names  # subtype provenance under its corpus

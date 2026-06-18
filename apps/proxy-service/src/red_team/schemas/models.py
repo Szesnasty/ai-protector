@@ -75,6 +75,13 @@ class HeuristicConfig(BaseModel):
     fail_threshold: int = 2
 
 
+class JailbreakPersonaConfig(BaseModel):
+    type: Literal[DetectorType.JAILBREAK_PERSONA] = DetectorType.JAILBREAK_PERSONA
+    persona_phrases: list[str] = []  # empty → use the detector's built-in default set
+    min_match: int = 1
+    match_means: Literal["pass", "fail"] = "fail"  # adopting an unrestricted persona = fail (leak)
+
+
 class LlmJudgeConfig(BaseModel):
     type: Literal[DetectorType.LLM_JUDGE] = DetectorType.LLM_JUDGE
     judge_prompt: str
@@ -90,6 +97,7 @@ DetectorConfig = Annotated[
     | ToolCallDetectConfig
     | ExactMatchConfig
     | HeuristicConfig
+    | JailbreakPersonaConfig
     | LlmJudgeConfig,
     Field(discriminator="type"),
 ]
@@ -106,6 +114,7 @@ class Scenario(BaseModel):
     id: str
     title: str
     category: Category
+    subcategory: str | None = None  # native source label for drill-down (e.g. "cybercrime_intrusion")
     severity: Severity
     mutating: bool = False
     applicable_to: list[AgentType] = Field(min_length=1)
