@@ -20,7 +20,8 @@ from src.red_team.engine.adapters import (
     SimpleNormalizer,
 )
 from src.red_team.engine.run_engine import BenchmarkRun, RunConfig, RunEngine, RunState
-from src.red_team.packs import TargetConfig, filter_pack, load_pack
+from src.red_team.packs import TargetConfig
+from src.red_team.packs.loader import resolve_filtered_pack
 
 logger = logging.getLogger(__name__)
 
@@ -128,9 +129,8 @@ async def _execute(
 
     agent_type = target_config.get("agent_type", "chatbot_api")
     safe_mode = target_config.get("safe_mode", False)
-    pack = load_pack(run_orm.pack)
     target_cfg = TargetConfig(agent_type=agent_type, safe_mode=safe_mode)
-    filtered = filter_pack(pack, target_cfg)
+    filtered = resolve_filtered_pack(run_orm.pack, target_config, target_cfg)
 
     in_memory_run = BenchmarkRun(
         id=str(run_id),
