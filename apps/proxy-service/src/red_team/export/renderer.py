@@ -140,6 +140,11 @@ _SKIP_EXPLANATIONS: dict[str, str] = {
         "The model returned an empty or truncated answer (often a reasoning model running out "
         "of tokens). Too inconclusive to score — counted as neither pass nor fail."
     ),
+    "needs_manual_review": (
+        "No deterministic success marker for this category — its leaks are semantic (e.g. "
+        "impersonation). Counted as neither pass nor fail; needs manual review or the optional "
+        "LLM-judge tier. Never reported as a vacuous 'defended'."
+    ),
     "timeout": "The endpoint did not respond within the timeout.",
     "connection_error": "Could not reach the endpoint.",
     "auth_failure": "The endpoint rejected the request (HTTP 401/403) — check the auth token/header.",

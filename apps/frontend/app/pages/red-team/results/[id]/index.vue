@@ -62,6 +62,22 @@
         </div>
       </div>
 
+      <!-- Confidence-signal disclaimer (always shown) -->
+      <v-alert
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mb-4"
+        data-testid="confidence-signal-banner"
+      >
+        <template #text>
+          This is a <strong>confidence signal, not a safety certificate</strong>. HEURISTIC verdicts are
+          reproducible but not ground truth, and SKIPPED rows (empty answers, un-plantable canaries, or
+          semantic categories like impersonation) are excluded from the score and need manual review.
+          Scope: single-turn model endpoint (the agent's "brain") — not the agent action loop.
+        </template>
+      </v-alert>
+
       <!-- Safe mode banner -->
       <v-alert
         v-if="skippedMutating > 0"

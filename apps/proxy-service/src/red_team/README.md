@@ -64,6 +64,19 @@ The HTML report needs no extra deps. **PDF export requires WeasyPrint's native l
 (cairo / pango / gobject); without them the PDF tests/export are skipped — the HTML report still
 works. Install the system libs (or run in CI with them) only if you need PDF.
 
+## Data handling
+
+A run **persists the prompt, the raw response body, and detector evidence** for each scenario —
+that's what makes the report auditable and reproducible. But a successful attack means the response
+**may contain real PII, secrets, or sensitive output**. So:
+
+- Treat stored runs as **sensitive**. Endpoint auth tokens are masked/encrypted and expired by the
+  service; benchmark **content is not redacted** — decide your own retention before scanning
+  production endpoints.
+- Prefer scanning **local / non-production** targets, or models behind AI Protector (which can
+  redact PII on ingress/egress).
+- Delete runs you don't need; don't commit exported reports containing live responses.
+
 ## Credibility / methodology
 
 - `docs/red-team-deterministic-grading.md` — how grading works (markers vs heuristic vs classifier).
