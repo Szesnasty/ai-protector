@@ -142,6 +142,12 @@ class TestEnums:
             "safe_allow",
             "business_logic_override",
             "unsafe_output_artifact",
+            # Benchmark Hub buckets
+            "harmful_content",
+            "system_prompt_leak",
+            "misinformation",
+            "impersonation",
+            "indirect_injection",
         }
         assert {c.value for c in Category} == expected
 

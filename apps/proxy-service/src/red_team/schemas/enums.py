@@ -16,6 +16,7 @@ class DetectorType(str, Enum):
     JSON_ASSERTION = "json_assertion"
     TOOL_CALL_DETECT = "tool_call_detect"
     HEURISTIC = "heuristic"
+    JAILBREAK_PERSONA = "jailbreak_persona"  # deterministic: model adopted an unrestricted persona
     LLM_JUDGE = "llm_judge"  # NOT in MVP — scenarios using this are skipped
 
 
@@ -74,3 +75,9 @@ class Category(str, Enum):
     BUSINESS_LOGIC_OVERRIDE = "business_logic_override"
     UNSAFE_OUTPUT_ARTIFACT = "unsafe_output_artifact"
     SAFE_ALLOW = "safe_allow"
+    # Benchmark Hub buckets (broader red-team threats beyond the firewall set).
+    HARMFUL_CONTENT = "harmful_content"
+    SYSTEM_PROMPT_LEAK = "system_prompt_leak"
+    MISINFORMATION = "misinformation"
+    IMPERSONATION = "impersonation"
+    INDIRECT_INJECTION = "indirect_injection"
