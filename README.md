@@ -87,7 +87,7 @@ AI Protector starts with testing: show the gap first, then enforce policy determ
 All three work together. **Recommended: Scan → Protect → Re-scan.**
 
 ```mermaid
-flowchart LR
+flowchart TD
     Scan["Benchmark Hub<br/>~5,070 scenarios · 6 public datasets"]
     Proxy["Proxy firewall<br/>7 layers · ~50 ms · fully local"]
     Agent["Agent gates<br/>RBAC · pre/post-tool"]
@@ -118,7 +118,7 @@ flowchart TD
     R --> M{"Exact marker?<br/>planted canary / secret"}
     M -->|hit| V1["LEAK — exact (mechanical)"]
     M -->|miss| H{"Refusal / heuristic floor"}
-    H -->|harm or jailbreak| G["Optional: Llama Guard escalation"]
+    H -->|harm or jailbreak| G["LLM guard — opt-in flag<br/>(Llama Guard, default off)"]
     H -->|other| V2["Verdict + confidence label"]
     G --> V2
     V2 --> Rep["Report: exact · heuristic · needs review"]
@@ -143,7 +143,7 @@ The Playground adds 200+ individual prompts for manual exploration.
 | **Harm ML** *(strict/paranoid)* | granite-guardian guard model for direct harmful requests (weapons/drugs/hate) — local, ungated; heavy, off the fast `balanced` path |
 
 ```mermaid
-flowchart LR
+flowchart TD
     Req["LLM request"] --> L1["Rules"]
     L1 --> L2["Intent classifier<br/>deobfuscate → classify"]
     L2 --> L3["LLM Guard<br/>injection · toxicity"]
