@@ -293,7 +293,7 @@ AI Protector reduces practical risk significantly, but does not eliminate it.
 | [Proxy Firewall Pipeline](docs/architecture/PROXY_FIREWALL_PIPELINE.md) | 9-node proxy pipeline — scanner models, risk scoring |
 | [Architecture](docs/architecture/ARCHITECTURE.md) | System design, service topology, two-phase LLM call flow |
 | [Threat Model](docs/architecture/THREAT_MODEL.md) | Threat categories, scanner mapping, explicit scope |
-| [Contributing](CONTRIBUTING.md) | How to contribute |
+| [Contributing & running locally](CONTRIBUTING.md) | Solo-authored — how to run it locally; feedback welcome |
 
 ---
 
@@ -308,6 +308,10 @@ make benchmark     # Reproduce benchmark results
 ```
 
 Questions, bugs, feedback? [Open an issue](https://github.com/Szesnasty/ai-protector/issues).
+
+## Contributing
+
+AI Protector is a **solo-authored, source-available** project — built and maintained by one person, as both a working tool and a portfolio of how I approach agent security. **Issues, bug reports and feedback are very welcome; code contributions are not accepted.** You are free to fork and adapt it under [Apache-2.0](LICENSE). See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run it locally.
 
 ## Security
 

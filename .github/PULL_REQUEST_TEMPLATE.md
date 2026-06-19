@@ -1,24 +1,10 @@
-## Description
+👋 Thanks for your interest in AI Protector!
 
-Brief description of what this PR does.
+**This is a solo-authored project and I'm not accepting code contributions** — pull
+requests will be closed unmerged. It's a deliberate choice to keep the codebase fully
+owned and vouched-for.
 
-## Type of Change
+**Found a bug or have an idea?** Please [open an issue](https://github.com/Szesnasty/ai-protector/issues)
+instead — that kind of feedback is genuinely welcome.
 
-- [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] New feature (non-breaking change that adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to change)
-- [ ] Documentation update
-- [ ] Refactoring (no functional changes)
-
-## Related Issue
-
-Closes #(issue number)
-
-## Checklist
-
-- [ ] Tests pass (`make test`)
-- [ ] Linting passes (`make lint`)
-- [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
-- [ ] New features include tests
-- [ ] Documentation updated (if applicable)
-- [ ] No secrets or credentials in the code
+You're free to **fork and adapt** the project under the [Apache-2.0](../LICENSE) license for your own use.
