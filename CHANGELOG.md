@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.7](https://github.com/Szesnasty/ai-protector/compare/v0.2.6...v0.2.7) (2026-06-19)
+
+
+### Features
+
+* **red-team-hub:** JailbreakBench pack + Benchmark Hub spec ([ecb3c67](https://github.com/Szesnasty/ai-protector/commit/ecb3c6725d135a95d3e7c1710d40c5dabe5c767e))
+* **red-team:** audit report verdict-confidence labels + manual-review flags ([ed82f1c](https://github.com/Szesnasty/ai-protector/commit/ed82f1c2a787c6c4b88ac4394e51fec1ed582c2a))
+* **red-team:** benchmark API + category-first selection UI ([18efd6b](https://github.com/Szesnasty/ai-protector/commit/18efd6badca7521a396db81945bad0ab46d38de7))
+* **red-team:** canonical taxonomy + external attack packs ([914406f](https://github.com/Szesnasty/ai-protector/commit/914406f4829ec0a942440184983656b93004387c))
+* **red-team:** category-aware layered grading + Llama Guard grader ([4452cc7](https://github.com/Szesnasty/ai-protector/commit/4452cc773dbfd32863c51be1235093b242947e53))
+* **red-team:** engine inconclusive handling + reasoning-model support ([0f164a2](https://github.com/Szesnasty/ai-protector/commit/0f164a247baa9cdbcdf2869154601da6cf9ec61c))
+* **red-team:** oracle calibration harness + deterministic grader fixes + canned demo scan ([33475f9](https://github.com/Szesnasty/ai-protector/commit/33475f9a3d1148b9ca899c3cca91f8f6ea35ad99))
+* **red-team:** three-way refusal detector + jailbreak_persona + structural_leak ([7c2c1ca](https://github.com/Szesnasty/ai-protector/commit/7c2c1ca887c284574aebde9557ae1356483b298a))
+
+
+### Bug Fixes
+
+* **red-team:** impersonation→inconclusive (not vacuous defended), honest layered provenance, confidence-signal banner ([ac45289](https://github.com/Szesnasty/ai-protector/commit/ac452899dfa866af7dc1d762ad4e802a909ebaf6))
+
 ## [0.2.6](https://github.com/Szesnasty/ai-protector/compare/v0.2.5...v0.2.6) (2026-06-11)
 
 
