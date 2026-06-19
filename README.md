@@ -8,9 +8,9 @@
 
 **Ship AI agents with guardrails — not prayers.**
 
-For teams shipping tool-calling agents, AI Protector finds prompt injection and unauthorized tool use before production — then enforces policy deterministically, with no LLM in the loop.
+AI Protector is an **AI agent security runtime** — a deterministic layer in the path of every model call and tool action that stops prompt injection, unauthorized tool use, and data leaks. No LLM in the loop · ~50 ms · fully local.
 
-**Find vulnerabilities → add protection → prove the improvement.**
+> ⚖️ **And unlike most, it's provable.** Find what gets through (Benchmark Hub), enforce it (the runtime), prove it held — with a grader validated against objective ground truth (planted secret/canary, **no LLM-as-judge**): **94% → 99%** verdict accuracy. *A score you can't validate isn't proof.*
 
 ### 📊 [**Benchmark matrix → blocked % and latency per mode**](docs/BENCHMARKS.md)
 
@@ -77,6 +77,8 @@ AI Protector starts with testing: show the gap first, then enforce policy determ
 ---
 
 ## When to use what
+
+One runtime, used as a loop — **Find** what gets through, **Protect** it in the path, **Prove** it held:
 
 | You need to… | Use this | How |
 |---|---|---|
