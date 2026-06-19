@@ -150,6 +150,89 @@ class BenchmarkService:
         await self._session.commit()
         return run
 
+    # -- Demo mock run --------------------------------------------------
+
+    async def populate_mock_run(self, run: BenchmarkRun) -> BenchmarkRun:
+        """Fill the DEMO-TARGET run with a fixed, realistic audit INSTEAD of executing the engine —
+        an instant quick-win that works identically in demo and real mode. Results are real
+        scenarios with a curated verdict overlay (see :mod:`src.red_team.demo_fixture`), persisted
+        so the existing results UI and PDF export consume it as a normal completed run.
+
+        Loop-aware: a re-run routed through AI Protector (``through_proxy`` / a registered-agent
+        target) gets the **protected** view — the same attacks now blocked/redacted — so the
+        find→fix→prove loop visibly improves. Otherwise the **baseline** view (attacks get through).
+        """
+        from src.red_team.demo_fixture import build_demo_rows
+        from src.red_team.scoring.calculator import ScenarioOutcome, ScenarioResult, compute_scores
+
+        protected = bool((run.target_config or {}).get("through_proxy")) or run.target_type == "registered_agent"
+        rows = build_demo_rows(protected=protected)
+        orm_results: list[BenchmarkScenarioResult] = []
+        score_inputs: list[ScenarioResult] = []
+        for i, r in enumerate(rows):
+            outcome = ScenarioOutcome(r["outcome"])
+            skipped = outcome == ScenarioOutcome.SKIPPED
+            passed = None if skipped else (outcome == ScenarioOutcome.PASSED)
+            latency = 0 if skipped else 480 + i * 55
+            if r["evidence"]:
+                evidence = {"matched_value": r["evidence"], "detail": "positive leak marker matched"}
+            elif passed:
+                evidence = {"detail": "refusal / no positive leak marker"}
+            else:
+                evidence = {}
+            orm_results.append(
+                BenchmarkScenarioResult(
+                    run_id=run.id,
+                    scenario_id=r["scenario_id"],
+                    category=r["category"],
+                    severity=r["severity"],
+                    mutating=r["mutating"],
+                    applicable_to=r["applicable_to"],
+                    prompt=r["prompt"],
+                    expected=r["expected"],
+                    actual=None if skipped else ("ALLOW" if passed is False else "BLOCK"),
+                    passed=passed,
+                    skipped=skipped,
+                    skipped_reason="needs_manual_review" if skipped else None,
+                    detector_type=r["detector_type"],
+                    detector_detail={"evidence": evidence} if evidence else None,
+                    latency_ms=None if skipped else latency,
+                    raw_response_body=r["response"] or None,
+                )
+            )
+            score_inputs.append(
+                ScenarioResult(
+                    scenario_id=r["scenario_id"],
+                    category=r["category"],
+                    severity=r["severity"],
+                    outcome=outcome,
+                    skip_reason="needs_manual_review" if skipped else None,
+                    latency_ms=float(latency),
+                    raw_response_body=r["response"] or None,
+                )
+            )
+
+        await self._result_repo.create_batch(orm_results)
+
+        scores = compute_scores(score_inputs, total_in_pack=len(rows))
+        now = datetime.now(UTC)
+        run.status = "completed"
+        run.score_simple = scores.score_simple
+        run.score_weighted = scores.score_weighted
+        run.total_in_pack = len(rows)
+        run.total_applicable = scores.total_applicable
+        run.executed = scores.executed
+        run.passed = scores.passed
+        run.failed = scores.failed
+        run.skipped = scores.skipped
+        run.skipped_reasons = scores.skipped_reasons
+        run.false_positives = scores.false_positives
+        run.protection_detected = protected  # drives the "Protected" vs "Baseline" classification
+        run.started_at = now - timedelta(seconds=7)
+        run.completed_at = now
+        await self._session.commit()
+        return run
+
     # -- Get / list / delete -------------------------------------------
 
     async def get_run(self, run_id: uuid.UUID) -> BenchmarkRun | None:

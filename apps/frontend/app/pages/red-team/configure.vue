@@ -33,10 +33,10 @@
 
     <v-progress-linear v-if="categoriesLoading" indeterminate color="primary" class="mb-3" />
 
-    <AttackTreeSelector v-model="selectedKeys" :categories="categories" class="mb-4" />
+    <AttackTreeSelector v-model="selectedKeys" :categories="categories" class="mb-6" />
 
     <!-- Sample size — reproducibility control -->
-    <v-card variant="flat" class="mb-4 pa-4">
+    <v-card variant="flat" class="mb-4 mt-2 pa-4">
       <div class="d-flex align-center justify-space-between mb-2">
         <div>
           <span class="text-subtitle-2 font-weight-bold">Sample size</span>

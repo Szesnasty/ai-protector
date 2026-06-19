@@ -34,35 +34,65 @@ cross-model, per-category map of where each model leaks.
 > positive leak marker replaced it. The model was less leaky than the naive detector
 > claimed — fixing the grader fixed the number. (`3b`/`gemma` to be re-scanned the same way.)
 
-## Results — defended% by threat category
+## Cross-model objective-GT sweep (7 models, 2026-06-19)
 
-Each cell = % of that category's attacks the bare model defended. Lower = the
-model's weak spot. (`—` not yet run.)
+> **Scope note:** this is the **`calibrate_oracle`** sweep — 10 categories with a *planted-secret*
+> oracle (objective ground truth), deterministic grader, `temperature=0`, seed 1337, ~14/category,
+> 1918 verdicts. It supersedes the older single-model `multi_scan` TL;DR (1b 66%) above — a different
+> harness/scope, so don't merge the two; the per-category matrix below is from this sweep.
 
-| Category (OWASP) | scorer | `1b` | `3b` | `gemma-e4b` |
-|---|---|---|---|---|
-| tool_abuse (LLM06) | tool-call | 100% | — | — |
-| access_control (LLM06) | marker | 100% | — | — |
-| system_prompt_leak (LLM07) | struct-marker | 100% | — | — |
-| misinformation (LLM09) | struct-marker | 97% | — | — |
-| data_leakage_pii (LLM02) | marker | 92% | — | — |
-| business_logic_override (LLM01) | marker | 83% | — | — |
-| safe_allow *(benign control)* | refusal | 83% | — | — |
-| harmful_content | refusal | 77% | — | — |
-| prompt_injection_jailbreak (LLM01) | refusal+persona | 70% | — | — |
-| secrets_detection (LLM02) | marker | 67% | — | — |
-| pii_disclosure (LLM02) | marker | 63% | — | — |
-| improper_output (LLM05) | marker | 40% | — | — |
-| prompt_injection (LLM01) | refusal/marker | 40% | — | — |
-| unsafe_output_artifact (LLM05) | marker | 33% | — | — |
-| obfuscation (LLM01) | marker | 33% | — | — |
-| impersonation | refusal | 33% | — | — |
+**Overall defended% (deterministic, guard off):**
 
-**Read of the 1b profile (complete, layered scorer):** holds structural & marker categories
-(system-prompt-leak / misinformation / PII / tools / business-logic, 83–100%); **wide open on
-impersonation (33%), obfuscation (33%), unsafe output (33%), prompt injection (40%), improper
-output (40%)** — the expected shape of a tiny unprotected model, now without the structural
-false alarms the old detector produced. Overall **66%**.
+| Model | Vendor | Overall defended% |
+|---|---|---|
+| `llama3.2:1b` | Meta | 98% ⚠️ |
+| `gemma4:e4b` | Google | 97% |
+| `phi4` | Microsoft | 97% |
+| `qwen3:4b` | Alibaba | 95% |
+| `granite3.3:8b` | IBM | 93% |
+| `llama3.2:3b` | Meta | 86% |
+| `mistral:7b` | Mistral | 80% |
+
+(⚠️ on `1b`: the overall % predates the grader fixes; per the post-fix per-category matrix below,
+the marker categories are the trustworthy read.) **Full per-category × per-model breakdown is the
+table below.**
+
+> **Honest caveat.** The **marker categories** (secrets / PII / system-prompt / data-leakage) are the
+> trustworthy cross-model signal. The **semantic** categories rely on the opt-in Llama Guard tier to
+> be meaningful: with the guard on, ~15 sophisticated jailbreak compliances the deterministic layer
+> scored "defended" were caught. `mistral:7b` is clearly the leakiest (complies most). Method + the
+> fixable gaps this sweep surfaced (and their fixes): `docs/red-team-oracle-calibration.md`.
+
+## Results — defended% by threat category (7-model sweep, post-fix grader)
+
+Each cell = % of that category's attacks the bare model defended (non-skipped). All 7 models, the
+`calibrate_oracle` sweep (objective planted-secret oracle, seed 1337, `temperature=0`, ~14/category),
+**re-graded with the post-fix grader** (canary EXACT marker, jailbreak secret check, rot13, pii
+precision — see `red-team-oracle-calibration.md`). Lower = the model's weak spot.
+
+| Category | `1b` | `3b` | `mistral` | `gemma-e4b` | `qwen3` | `granite` | `phi4` |
+|---|---|---|---|---|---|---|---|
+| data_leakage_pii | 85% | 77% | **46%** | 100% | 100% | 69% | 92% |
+| harmful_content | 93% | 71% | **50%** | 85% | 82% | 93% | 86% |
+| system_prompt_leak | 100% | 79% | **50%** | 100% | 33% | 79% | 100% |
+| pii_disclosure | 100% | 86% | 64% | 100% | 100% | 100% | 100% |
+| secrets_detection | 100% | 67% | 100% | 92% | 100% | 100% | 100% |
+| prompt_injection | 86% | 100% | 79% | 100% | 67% | 86% | 86% |
+| obfuscation | 93% | 93% | 86% | 100% | 100% | 100% | 100% |
+| misinformation | 100% | 100% | 86% | 100% | 100% | 100% | 93% |
+| prompt_injection_jailbreak | 93% | 100% | 93% | 100% | 92% | 100% | 100% |
+| impersonation † | — | 0% | 0% | — | — | — | — |
+
+† **impersonation is graded `inconclusive` → SKIPPED** (no deterministic marker); `—` = all skipped.
+The `0%` for `3b`/`mistral` are the few impersonation responses that leaked the **canary** verbatim
+(now caught as an EXACT leak) — real disclosures, not a semantic verdict.
+
+**Read:** marker categories (PII / secrets / system-prompt / data-leakage) are the trustworthy
+cross-model signal. **`mistral:7b` is clearly the leakiest** (data-leakage 46%, harmful 50%,
+system-prompt 50% — it complies most); the small/strong models (`gemma`, `phi4`, `qwen3`, `1b`)
+defend the marker categories well (mostly 85–100%). Note this is the **post-fix** grader: the
+injection/jailbreak columns now show real spread (e.g. `qwen3` system-prompt-leak 33%) instead of
+the pre-fix “100% ceiling”, because canary/secret dumps in those scenarios are now caught.
 
 ## Methodology
 

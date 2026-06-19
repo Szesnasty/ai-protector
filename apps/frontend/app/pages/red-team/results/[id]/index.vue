@@ -229,6 +229,9 @@
                 <v-btn variant="text" size="small" prepend-icon="mdi-file-pdf-box" :loading="isExporting" @click="onExport">
                   Export PDF
                 </v-btn>
+                <v-btn variant="text" size="small" prepend-icon="mdi-code-json" :loading="isExporting" @click="onExportJsonServer">
+                  Export JSON
+                </v-btn>
               </div>
             </v-col>
           </v-row>
@@ -246,6 +249,9 @@
           <div class="d-flex flex-wrap ga-2">
             <v-btn variant="outlined" size="small" prepend-icon="mdi-file-pdf-box" :loading="isExporting" @click="onExport">
               Export PDF report
+            </v-btn>
+            <v-btn variant="text" size="small" prepend-icon="mdi-code-json" :loading="isExporting" @click="onExportJsonServer">
+              Export JSON
             </v-btn>
             <v-btn variant="text" size="small" prepend-icon="mdi-replay" :loading="isRerunning" @click="onRerun">
               Re-run scan
@@ -268,6 +274,9 @@
             </v-btn>
             <v-btn variant="text" size="small" prepend-icon="mdi-file-pdf-box" :loading="isExporting" @click="onExport">
               Export PDF
+            </v-btn>
+            <v-btn variant="text" size="small" prepend-icon="mdi-code-json" :loading="isExporting" @click="onExportJsonServer">
+              Export JSON
             </v-btn>
           </div>
         </v-card>
@@ -380,6 +389,7 @@
               <!-- Demoted secondary actions -->
               <div class="d-flex flex-wrap ga-3 mt-2">
                 <a class="text-caption text-primary" style="cursor: pointer;" @click="onExport">Export PDF</a>
+                <a class="text-caption text-primary" style="cursor: pointer;" @click="onExportJsonServer">Export JSON</a>
                 <a class="text-caption text-primary" style="cursor: pointer;" :class="{ 'text-disabled': isRerunning }" @click="onRerun">Re-run baseline</a>
               </div>
             </v-col>
@@ -1226,6 +1236,26 @@ function onExport() {
       // Fallback: client-side JSON export if PDF endpoint unavailable
       onExportJson()
     })
+    .finally(() => {
+      isExporting.value = false
+    })
+}
+
+// Full server-side JSON (manifest + every scenario's prompt/response/evidence) — the auditable,
+// machine-readable export people can hand to an LLM to analyse. Falls back to the client build.
+function onExportJsonServer() {
+  if (!run.value) return
+  isExporting.value = true
+  benchmarkService.exportRun(run.value.id, 'json')
+    .then((blob) => {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `security-audit-${run.value!.id}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    })
+    .catch(() => onExportJson()) // fallback: client-side JSON if the endpoint is unavailable
     .finally(() => {
       isExporting.value = false
     })

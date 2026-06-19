@@ -107,8 +107,14 @@ async def create_run(
     except ConcurrencyConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
-    # Launch engine execution as a background task
-    asyncio.create_task(run_benchmark_background(run.id, _progress_emitter))
+    # The DEMO TARGET is always a canned quick-win — identical in demo AND real mode (it's the
+    # public "try it" showcase, never a live scan). Real targets always run the engine. The trigger
+    # is the target, NOT the global MODE: a real endpoint scan must work normally in any mode.
+    if run.target_type == "demo":
+        await svc.populate_mock_run(run)
+    else:
+        # Launch engine execution as a background task
+        asyncio.create_task(run_benchmark_background(run.id, _progress_emitter))
 
     return RunCreatedResponse(
         id=run.id,

@@ -57,6 +57,20 @@
 
     <!-- ═══════════════════ Banners ═══════════════════ -->
     <v-alert
+      v-if="isDemo"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+      icon="mdi-flask-outline"
+      data-testid="demo-banner"
+    >
+      <strong>Demo run.</strong> This is a guided sample scan against a built-in vulnerable agent —
+      the results are illustrative and reproducible, and no real endpoint is contacted. Point it at
+      your own endpoint to run a live scan.
+    </v-alert>
+
+    <v-alert
       v-if="consecutiveConnectionErrors >= 3 && !isTerminal"
       type="error"
       variant="tonal"
@@ -357,6 +371,7 @@ let elapsedTimer: ReturnType<typeof setInterval> | null = null
 let eventSource: EventSource | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let redirectTimer: ReturnType<typeof setTimeout> | null = null
+let demoCancelled = false  // stop the demo replay if the user navigates away
 
 // ---------------------------------------------------------------------------
 // Computed
@@ -671,6 +686,98 @@ function stopTimers() {
   }
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    redirectTimer = setTimeout(resolve, ms)
+  })
+}
+
+/**
+ * Demo runs complete instantly (canned result). Replay the recorded scenarios as a simulated
+ * live feed — so the user SEES the execution stage (attacks firing, results streaming) before
+ * landing on results, exactly like a real scan. Then redirect to the report.
+ */
+async function playDemoProgress() {
+  let scenarios: Array<{
+    scenario_id: string
+    title?: string | null
+    passed?: boolean | null
+    skipped?: boolean
+    skipped_reason?: string | null
+    actual?: string | null
+    latency_ms?: number | null
+  }> = []
+  try {
+    const res = await api.get(`/v1/benchmark/runs/${runId.value}/scenarios`, { params: { limit: 200 } })
+    scenarios = res.data
+  } catch {
+    router.push(`/red-team/results/${runId.value}`)
+    return
+  }
+  total.value = scenarios.length
+  completed.value = 0
+  // Pace the replay so the whole thing feels like a ~15s scan, regardless of count.
+  const perItem = Math.max(350, Math.min(750, Math.round(15000 / Math.max(1, scenarios.length))))
+
+  for (const s of scenarios) {
+    if (demoCancelled) return
+    currentScenario.value = s.title ? `${s.scenario_id} · ${s.title}` : s.scenario_id
+    feedItems.value.push({
+      key: `start-${s.scenario_id}`,
+      scenarioId: s.scenario_id,
+      title: s.title || '',
+      resultMeta: liveResultMeta('running'),
+      resultLabel: 'Running…',
+      latencyMs: null,
+      status: 'running',
+    })
+    scrollToBottom()
+    await sleep(perItem)
+    if (demoCancelled) return
+
+    const idx = feedItems.value.findIndex((f) => f.scenarioId === s.scenario_id && f.status === 'running')
+    let item: FeedItem
+    if (s.skipped) {
+      skippedCount.value++
+      item = {
+        key: `done-${s.scenario_id}`,
+        scenarioId: s.scenario_id,
+        title: s.title || '',
+        resultMeta: liveResultMeta('skipped'),
+        resultLabel: `Skipped — ${humanSkipReason(s.skipped_reason ?? 'unknown')}`,
+        latencyMs: null,
+        status: 'skipped',
+      }
+    } else {
+      const passed = s.passed === true
+      if (passed) blockedCount.value++
+      else gotThroughCount.value++
+      if (s.latency_ms) latencies.value.push(s.latency_ms)
+      const status = classifyScenarioResult(passed, s.actual ?? null)
+      item = {
+        key: `done-${s.scenario_id}`,
+        scenarioId: s.scenario_id,
+        title: s.title || '',
+        resultMeta: liveResultMeta(status),
+        resultLabel: buildResultLabel(passed, s.actual ?? null),
+        latencyMs: s.latency_ms ?? null,
+        status: passed ? 'passed' : 'failed',
+      }
+    }
+    completed.value++
+    if (idx >= 0) feedItems.value.splice(idx, 1, item)
+    else feedItems.value.push(item)
+    currentScenario.value = null
+    scrollToBottom()
+  }
+
+  isTerminal.value = true
+  stopTimers()
+  redirectTimer = setTimeout(() => {
+    if (!demoCancelled) router.push(`/red-team/results/${runId.value}`)
+  }, 2500)
+}
+
 async function fetchRunDetail() {
   try {
     const res = await api.get<RunDetail>(`/v1/benchmark/runs/${runId.value}`)
@@ -679,6 +786,14 @@ async function fetchRunDetail() {
     completed.value = res.data.executed + res.data.skipped
 
     if (['completed', 'failed', 'cancelled'].includes(res.data.status)) {
+      // Demo target completes instantly — replay a simulated live feed before results.
+      if (res.data.status === 'completed' && res.data.target_type === 'demo') {
+        elapsedTimer = setInterval(() => {
+          elapsedSeconds.value++
+        }, 1000)
+        await playDemoProgress()
+        return
+      }
       isTerminal.value = true
       if (res.data.status === 'failed') {
         isFailed.value = true
@@ -704,11 +819,13 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  demoCancelled = true
   stopTimers()
   closeSSE()
 })
 
 onBeforeRouteLeave(() => {
+  demoCancelled = true
   stopTimers()
   closeSSE()
 })

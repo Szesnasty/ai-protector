@@ -236,6 +236,7 @@ def _enrich_scenario(s: dict[str, Any]) -> dict[str, Any]:
         "injection_marker",
         "structural_marker",
         "pii_marker",
+        "canary_marker",
         "jailbreak_layered",
         # Ingress/proxy decisions are mechanical too: a secret/PII regex matched the payload
         # (ingress_block/redact) or the proxy made a deterministic block decision. The verdict
@@ -255,6 +256,18 @@ def _enrich_scenario(s: dict[str, Any]) -> dict[str, Any]:
         s["confidence_kind"] = "heuristic"
     s["is_heuristic"] = s["confidence_kind"] == "heuristic"
     s["business_impact"] = ""
+
+    # Sensitive-data breaches: make explicit that the threat is the data REACHING the model —
+    # transmitted/disclosed unprotected — not merely what the model said back. A PESEL/PII/secret
+    # that "the model declined to use" is still a breach: it was sent to (or emitted by) the LLM,
+    # where the provider may log, cache, or train on it. Readers ask "why is this flagged?" — say it.
+    _sensitive_detectors = {"ingress_block", "ingress_redact", "proxy_block", "pii_marker"}
+    _sensitive_cats = {"pii_disclosure", "data_leakage_pii", "secrets_detection"}
+    s["data_reached_model"] = (
+        not s.get("passed")
+        and not s.get("skipped")
+        and (s.get("detector_type") in _sensitive_detectors or s.get("category", "") in _sensitive_cats)
+    )
 
     if not s.get("passed") and not s.get("skipped"):
         s["business_impact"] = get_business_impact(
