@@ -671,7 +671,7 @@ class RunEngine:
                 # Layered deterministic scorer: base detector + jailbreak-persona overlay
                 # + positive structural markers. Reproducible (no LLM judge); strictly
                 # stronger than the bare detector on jailbreak/structural categories.
-                eval_result = grade_to_eval_result(eval_scenario, normalized)
+                eval_result = grade_to_eval_result(eval_scenario, normalized, canary=run.canary_token)
 
         # Convert to ScenarioResult
         category = scenario.category.value if hasattr(scenario.category, "value") else str(scenario.category)

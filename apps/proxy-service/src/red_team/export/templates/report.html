@@ -191,11 +191,13 @@ li { margin-bottom: 3px; }
   border-left: 6px solid #c9372c;
   box-shadow: 0 2px 6px rgba(9, 30, 66, 0.10);
 }
+/* Block layout (NOT flex): WeasyPrint mis-positions a long title in a flex row so it overlaps
+   the pills. Pills are inline-block → they flow and wrap; the title is a block → its own line. */
 .finding-head {
-  display: flex; align-items: center; gap: 8px;
   padding: 12px 16px; background: #fdf2f1; border-bottom: 1px solid #f4d6d2;
 }
-.finding-title { font-weight: 700; font-size: 12.5px; color: #091e42; }
+.finding-head .pill { margin: 0 5px 5px 0; }
+.finding-title { display: block; font-weight: 700; font-size: 12.5px; color: #091e42; margin-top: 3px; }
 .finding-body { padding: 6px 16px 14px 16px; }
 
 /* ── Confidence chips — quiet; never compete with the verdict. ── */
@@ -235,8 +237,9 @@ li { margin-bottom: 3px; }
   background: #eef0f3; border: 1px solid #d6dae0; color: #42526e;
   border-radius: 6px; padding: 7px 10px; margin: 4px 0 6px 0; font-size: 10px; line-height: 1.5;
 }
-.stile-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.stile-title { font-weight: 700; font-size: 11.5px; color: #091e42; }
+.stile-head { }  /* block; pills inline-block flow+wrap, title drops to its own line (WeasyPrint-safe) */
+.stile-head .pill { margin: 0 5px 4px 0; }
+.stile-title { display: block; font-weight: 700; font-size: 11.5px; color: #091e42; margin-top: 2px; }
 .stile-meta {
   display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 6px 0 8px 0;
   font-size: 9.5px; color: #5e6c84;
@@ -512,6 +515,17 @@ li { margin-bottom: 3px; }
         {% if s.detector_evidence %} <span class="mono">(matched: {{ s.detector_evidence }})</span>{% endif %}
         {% if s.why_it_passes %}<div style="margin-top:4px;">{{ s.why_it_passes }}</div>{% endif %}
       </div>
+      {% if s.data_reached_model %}
+      <div class="caveat" style="border-color:#ff8b00; background:#fff7eb; color:#7a4f00;">
+        <strong>Why this is a breach even if the model “declined”:</strong> the sensitive data
+        (PII / a secret / a PESEL / card / email) <strong>reached the model unprotected</strong> —
+        it was transmitted to, or emitted by, the LLM. Once there it may be logged, cached, or used
+        for training by the provider, outside your control. The breach is the <em>exposure of the
+        data to the model</em>, not just what the model said back. <strong>Fix:</strong> redact or
+        block sensitive data on ingress/egress (AI Protector’s PII layer) so it never reaches — or
+        leaves — the model in the clear.
+      </div>
+      {% endif %}
       {% if s.is_heuristic %}
       <div class="caveat">
         <strong>Heuristic verdict — review.</strong> Flagged because no refusal phrase was

@@ -119,10 +119,11 @@ async def _seed_scenario(
 
 class TestCreateRun:
     async def test_create_run_returns_201(self, client: AsyncClient) -> None:
+        # A real (non-demo) target schedules the engine and returns status="created".
         resp = await client.post(
             f"{_PREFIX}/runs",
             json={
-                "target_type": "demo",
+                "target_type": "hosted_endpoint",
                 "target_config": {"endpoint_url": "http://demo"},
                 "pack": "core_security",
             },
@@ -135,7 +136,34 @@ class TestCreateRun:
         assert data["total_in_pack"] > 0
         assert data["total_applicable"] >= 0
 
+    async def test_create_run_demo_target_returns_mocked_completed(self, client: AsyncClient) -> None:
+        # The DEMO TARGET is always a canned quick-win — instant, completed, exportable — in any
+        # MODE (it's the public showcase, never a live scan). A protected re-run flips it to passes.
+        resp = await client.post(
+            f"{_PREFIX}/runs",
+            json={"target_type": "demo", "target_config": {}, "pack": "core_security"},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["status"] == "completed"
+        scen = await client.get(f"{_PREFIX}/runs/{data['id']}/scenarios")
+        assert scen.status_code == 200
+        baseline = scen.json()
+        assert len(baseline) > 0
+        baseline_failures = sum(1 for s in baseline if s["passed"] is False and not s["skipped"])
+        assert baseline_failures > 0  # baseline must show visible failures
+
+        # Re-run the same demo through AI Protector → the same attacks now defended.
+        resp2 = await client.post(
+            f"{_PREFIX}/runs",
+            json={"target_type": "demo", "target_config": {"through_proxy": True}, "pack": "core_security"},
+        )
+        prot = await client.get(f"{_PREFIX}/runs/{resp2.json()['id']}/scenarios")
+        prot_failures = sum(1 for s in prot.json() if s["passed"] is False and not s["skipped"])
+        assert prot_failures < baseline_failures  # protection closes gaps
+
     async def test_create_run_409_concurrent(self, client: AsyncClient, session: AsyncSession) -> None:
+        # Concurrency guard applies to real (engine) runs.
         # Seed an active run for the same target
         await _seed_run(
             session,
@@ -149,7 +177,7 @@ class TestCreateRun:
         resp1 = await client.post(
             f"{_PREFIX}/runs",
             json={
-                "target_type": "demo",
+                "target_type": "hosted_endpoint",
                 "target_config": {"endpoint_url": "http://unique-409"},
                 "pack": "core_security",
             },
@@ -160,7 +188,7 @@ class TestCreateRun:
         resp2 = await client.post(
             f"{_PREFIX}/runs",
             json={
-                "target_type": "demo",
+                "target_type": "hosted_endpoint",
                 "target_config": {"endpoint_url": "http://unique-409"},
                 "pack": "core_security",
             },

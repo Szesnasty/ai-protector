@@ -82,6 +82,10 @@ that's what makes the report auditable and reproducible. But a successful attack
 - `docs/red-team-deterministic-grading.md` — how grading works (markers vs heuristic vs classifier).
 - `docs/red-team-hub-results.md` — the oracle-validation study (κ across 8 models, judge cross-check,
   grader-accuracy vs reference labels) and its honest limits.
+- `docs/red-team-oracle-calibration.md` — calibrating the grader against **objective** ground truth
+  (planted secret/canary, no LLM judge): the false-positive/false-negative study across 6 vendors,
+  the bugs it exposed, and the fix (objective accuracy 94%→99%, dangerous-miss 10→2). Reproduce with
+  `python -m benchmarks.calibrate_oracle` (and `--regrade` for instant before/after).
 
 > A confidence signal, **not a safety certificate.** It tells you where a model leaks and how much
 > to trust each verdict — the rest is your judgment.
