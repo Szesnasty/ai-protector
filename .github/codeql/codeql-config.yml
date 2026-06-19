@@ -1,0 +1,12 @@
+name: "CodeQL config"
+
+# Exclude non-production tooling from security scanning. These are local-only
+# dev/research/ops scripts — NOT part of the served application's attack surface —
+# and they intentionally handle planted fixtures (fake secrets/canaries like
+# `sk-ACME…`) and print/store model responses for human review. CodeQL's
+# clear-text storage/logging "secret" taint fires on those fixtures, which is a
+# false positive for these tools. Application code under `src/` stays fully scanned.
+paths-ignore:
+  - "**/benchmarks/**"
+  - "**/scripts/**"
+  - "**/training/**"
