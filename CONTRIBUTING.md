@@ -1,8 +1,22 @@
-# Contributing to AI Protector
+# Contributing & running AI Protector
 
-Thanks for your interest in contributing! This guide will help you get started.
+**AI Protector is a solo-authored, source-available project.** I build and maintain it
+alone — it is both a working tool and a portfolio of how I approach agent security.
 
-## Quick Setup
+**Code contributions are not accepted.** Pull requests will be closed unmerged. No hard
+feelings — it is a deliberate choice to keep the codebase fully owned and vouched-for.
+
+**What *is* very welcome:**
+
+- 🐛 **Bug reports** and 💡 **ideas** → [open an issue](https://github.com/Szesnasty/ai-protector/issues)
+- 🧪 **"I ran it against my model and here's what happened"** → issues or [Discussions](https://github.com/Szesnasty/ai-protector/discussions)
+- ⭐ a star, if it is useful to you
+
+The [Apache-2.0](LICENSE) license lets you **fork, run, and adapt it freely** for your own use.
+
+---
+
+## Running it locally
 
 ```bash
 git clone https://github.com/Szesnasty/ai-protector.git
@@ -12,9 +26,7 @@ make init          # builds everything + pulls LLM model (~4.7 GB)
 
 Open http://localhost:3000 when done.
 
-## Development Workflow
-
-### Option A: Full Docker (simplest)
+### Option A — Full Docker (simplest)
 
 ```bash
 make dev           # start all services
@@ -22,7 +34,7 @@ make logs          # stream logs
 make down          # stop
 ```
 
-### Option B: Native apps with hot-reload (recommended for development)
+### Option B — Native apps with hot-reload
 
 ```bash
 make dev-infra     # start only PostgreSQL, Redis, Ollama, Langfuse
@@ -45,47 +57,15 @@ npm install
 npm run dev
 ```
 
-## Before Submitting a PR
+### Checks
 
 ```bash
 make lint          # ruff (Python) + eslint (TypeScript/Vue)
-make test          # all tests must pass
+make test          # full test suite
+make format        # auto-fix formatting
 ```
 
-## Commit Convention
-
-We use [Conventional Commits](https://www.conventionalcommits.org/):
-
-| Prefix | Use for |
-|--------|---------|
-| `feat:` | New feature |
-| `fix:` | Bug fix |
-| `docs:` | Documentation only |
-| `test:` | Adding/fixing tests |
-| `refactor:` | Code change that doesn't add feature or fix bug |
-| `dx:` | Developer experience improvements |
-| `ci:` | CI/CD changes |
-
-Examples:
-```
-feat: add rate limiting to chat endpoint
-fix: streaming BLOCK requests not logged to analytics
-docs: update README quick start section
-```
-
-## Code Style
-
-| Language | Tool | Config |
-|----------|------|--------|
-| Python | [Ruff](https://docs.astral.sh/ruff/) | `pyproject.toml` (line-length: 120, Python 3.12) |
-| TypeScript / Vue | [ESLint](https://eslint.org/) | `eslint.config.mjs` |
-
-Don't format manually — the tools handle it:
-```bash
-make format        # auto-fix all formatting
-```
-
-## Project Structure
+## Project structure
 
 ```
 apps/
@@ -99,16 +79,7 @@ docs/
 └── assets/            # Screenshots and diagrams
 ```
 
-## PR Checklist
-
-Before requesting review, ensure:
-
-- [ ] Tests pass (`make test`)
-- [ ] Linting passes (`make lint`)
-- [ ] Commit messages follow Conventional Commits
-- [ ] New features have tests
-- [ ] Documentation updated if needed
-
 ## Questions?
 
-Open a [GitHub Discussion](https://github.com/Szesnasty/ai-protector/discussions) for questions or ideas.
+Open an [issue](https://github.com/Szesnasty/ai-protector/issues) or start a
+[Discussion](https://github.com/Szesnasty/ai-protector/discussions). Feedback is genuinely welcome.
