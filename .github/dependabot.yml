@@ -10,6 +10,12 @@ updates:
     labels:
       - dependencies
       - python
+    # Bundle all minor/patch bumps into ONE PR; majors stay separate for review.
+    groups:
+      proxy-minor-patch:
+        update-types:
+          - minor
+          - patch
 
   # Python — Agent Demo
   - package-ecosystem: pip
@@ -21,6 +27,11 @@ updates:
     labels:
       - dependencies
       - python
+    groups:
+      agent-minor-patch:
+        update-types:
+          - minor
+          - patch
 
   # npm — Frontend
   - package-ecosystem: npm
@@ -32,6 +43,11 @@ updates:
     labels:
       - dependencies
       - javascript
+    groups:
+      frontend-minor-patch:
+        update-types:
+          - minor
+          - patch
 
   # Docker — all Dockerfiles
   - package-ecosystem: docker
@@ -66,3 +82,8 @@ updates:
     labels:
       - dependencies
       - ci
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
