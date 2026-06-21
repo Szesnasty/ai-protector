@@ -11,7 +11,7 @@ dependencies = [
     "langgraph==1.2.6",
     "litellm==1.89.3",
     "httpx==0.28.1",
-    "structlog==25.5.0",
+    "structlog==26.1.0",
 ]
 
 [project.optional-dependencies]
