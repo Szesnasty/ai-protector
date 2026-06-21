@@ -1,94 +1,52 @@
 version: 2
+# Security-only mode.
+#
+# Routine version-update PRs are disabled (open-pull-requests-limit: 0).
+# Dependabot SECURITY updates still open automatically when a CVE affects a
+# dependency (those are not governed by this limit). This keeps the repo patched
+# against real vulnerabilities without the constant minor/patch churn — the
+# pinned ML stack (llm-guard / presidio / litellm / transformers) over-pins
+# itself, so routine bumps repeatedly turn into transitive-pin conflicts that
+# aren't worth chasing on a solo-maintained repo.
 updates:
-  # Python — Proxy Service
   - package-ecosystem: pip
     directory: /apps/proxy-service
     schedule:
       interval: weekly
-      day: monday
-    open-pull-requests-limit: 5
-    labels:
-      - dependencies
-      - python
-    # Bundle all minor/patch bumps into ONE PR; majors stay separate for review.
-    groups:
-      proxy-minor-patch:
-        update-types:
-          - minor
-          - patch
-    # litellm 1.83.x+ hard-pins python-dotenv==1.0.1, which conflicts with our
-    # python-dotenv==1.2.2 pin (ResolutionImpossible on install). Hold litellm here
-    # until it loosens that transitive pin; revisit (or switch to a uv override) then.
-    ignore:
-      - dependency-name: "litellm"
+    open-pull-requests-limit: 0
 
-  # Python — Agent Demo
   - package-ecosystem: pip
     directory: /apps/agent-demo
     schedule:
       interval: weekly
-      day: monday
-    open-pull-requests-limit: 3
-    labels:
-      - dependencies
-      - python
-    groups:
-      agent-minor-patch:
-        update-types:
-          - minor
-          - patch
+    open-pull-requests-limit: 0
 
-  # npm — Frontend
   - package-ecosystem: npm
     directory: /apps/frontend
     schedule:
       interval: weekly
-      day: monday
-    open-pull-requests-limit: 5
-    labels:
-      - dependencies
-      - javascript
-    groups:
-      frontend-minor-patch:
-        update-types:
-          - minor
-          - patch
+    open-pull-requests-limit: 0
 
-  # Docker — all Dockerfiles
   - package-ecosystem: docker
     directory: /apps/proxy-service
     schedule:
       interval: weekly
-    labels:
-      - dependencies
-      - docker
+    open-pull-requests-limit: 0
 
   - package-ecosystem: docker
     directory: /apps/agent-demo
     schedule:
       interval: weekly
-    labels:
-      - dependencies
-      - docker
+    open-pull-requests-limit: 0
 
   - package-ecosystem: docker
     directory: /apps/frontend
     schedule:
       interval: weekly
-    labels:
-      - dependencies
-      - docker
+    open-pull-requests-limit: 0
 
-  # GitHub Actions
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-    labels:
-      - dependencies
-      - ci
-    groups:
-      actions-minor-patch:
-        update-types:
-          - minor
-          - patch
+    open-pull-requests-limit: 0
