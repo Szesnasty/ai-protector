@@ -16,6 +16,11 @@ updates:
         update-types:
           - minor
           - patch
+    # litellm 1.83.x+ hard-pins python-dotenv==1.0.1, which conflicts with our
+    # python-dotenv==1.2.2 pin (ResolutionImpossible on install). Hold litellm here
+    # until it loosens that transitive pin; revisit (or switch to a uv override) then.
+    ignore:
+      - dependency-name: "litellm"
 
   # Python — Agent Demo
   - package-ecosystem: pip
