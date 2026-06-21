@@ -18,7 +18,7 @@
     "axios": "1.13.6",
     "dompurify": "3.3.2",
     "echarts": "6.0.0",
-    "marked": "17.0.4",
+    "marked": "18.0.0",
     "nuxt": "4.3.1",
     "pinia": "3.0.4",
     "vee-validate": "4.15.1",
