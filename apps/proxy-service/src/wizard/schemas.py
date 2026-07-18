@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from src.wizard.models import (
     AccessType,
@@ -25,8 +26,43 @@ from src.wizard.models import (
     TraceGate,
 )
 
+# Names and descriptions from the wizard are rendered verbatim into the generated
+# integration kit (Python source + YAML). Reject characters that could break out of
+# a string literal or comment and inject code; free-text descriptions have control
+# characters / newlines stripped for the same reason.
+_UNSAFE_NAME_CHARS = re.compile(r"""[\x00-\x1f\x7f"'\\`]""")
+_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
 
-class AgentCreate(BaseModel):
+
+def _reject_unsafe_name(value: str | None) -> str | None:
+    if value is None:
+        return value
+    if _UNSAFE_NAME_CHARS.search(value):
+        raise ValueError("name must not contain quotes, backslashes, or control characters")
+    return value
+
+
+def _strip_control_chars(value: str | None) -> str | None:
+    if value is None:
+        return value
+    return _CONTROL_CHARS.sub(" ", value)
+
+
+class _SafeWizardStrings(BaseModel):
+    """Mixin: sanitise operator-supplied name/description before they reach code generation."""
+
+    @field_validator("name", check_fields=False)
+    @classmethod
+    def _validate_name(cls, v: str | None) -> str | None:
+        return _reject_unsafe_name(v)
+
+    @field_validator("description", check_fields=False)
+    @classmethod
+    def _validate_description(cls, v: str | None) -> str | None:
+        return _strip_control_chars(v)
+
+
+class AgentCreate(_SafeWizardStrings):
     """Schema for creating a new agent."""
 
     name: str = Field(..., min_length=2, max_length=128)
@@ -43,7 +79,7 @@ class AgentCreate(BaseModel):
     policy_pack: str | None = None
 
 
-class AgentUpdate(BaseModel):
+class AgentUpdate(_SafeWizardStrings):
     """Schema for partial agent update."""
 
     name: str | None = Field(None, min_length=2, max_length=128)
@@ -104,7 +140,7 @@ class AgentListResponse(BaseModel):
 # ═══════════════════════════════════════════════════════════════════════
 
 
-class ToolCreate(BaseModel):
+class ToolCreate(_SafeWizardStrings):
     """Schema for registering a tool on an agent."""
 
     name: str = Field(..., min_length=2, max_length=128)
@@ -118,7 +154,7 @@ class ToolCreate(BaseModel):
     rate_limit: int | None = None
 
 
-class ToolUpdate(BaseModel):
+class ToolUpdate(_SafeWizardStrings):
     """Schema for partial tool update."""
 
     name: str | None = Field(None, min_length=2, max_length=128)
@@ -158,7 +194,7 @@ class ToolRead(BaseModel):
 # ═══════════════════════════════════════════════════════════════════════
 
 
-class RoleCreate(BaseModel):
+class RoleCreate(_SafeWizardStrings):
     """Schema for creating a role on an agent."""
 
     name: str = Field(..., min_length=2, max_length=128)
@@ -166,7 +202,7 @@ class RoleCreate(BaseModel):
     inherits_from: uuid.UUID | None = None
 
 
-class RoleUpdate(BaseModel):
+class RoleUpdate(_SafeWizardStrings):
     """Schema for partial role update."""
 
     name: str | None = Field(None, min_length=2, max_length=128)
