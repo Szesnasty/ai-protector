@@ -1,14 +1,9 @@
 name: Benchmark
 
 on:
-  # The benchmark is expensive, so it does NOT run on every push/PR. Trigger it by adding the
-  # `run-benchmark` label to a PR, or run it manually (workflow_dispatch). The weekly schedule
-  # only refreshes the dynamic badges.
+  # Expensive — never runs automatically. Add the `run-benchmark` label to a PR to run it.
   pull_request:
     types: [labeled]
-  schedule:
-    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC — refreshes the dynamic badges
-  workflow_dispatch:
 
 concurrency:
   group: bench-${{ github.ref }}
@@ -18,9 +13,7 @@ jobs:
   # ── External deterministic attacks gate — opt-in via the `run-benchmark` label ──────
   detection-gate:
     name: External attack detection gate (proxy)
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && github.event.label.name == 'run-benchmark')
+    if: github.event.label.name == 'run-benchmark'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -76,7 +69,7 @@ jobs:
   # ── Publish dynamic badges (nightly / manual; never on PRs) ────────────
   publish-badges:
     name: Publish benchmark badges
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event.label.name == 'run-benchmark'
     runs-on: ubuntu-latest
     permissions:
       contents: write # push to the orphan `badges` branch
