@@ -30,20 +30,20 @@ LIMITS_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "limits.yaml")
 POLICY_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "policy.yaml")
 
 # ── Agent metadata ──────────────────────────────────────────────────
-AGENT_ID = "{{ agent_id }}"
-AGENT_NAME = "{{ agent_name }}"
-POLICY_PACK = "{{ policy_pack }}"
+AGENT_ID = {{ agent_id | py_str }}
+AGENT_NAME = {{ agent_name | py_str }}
+POLICY_PACK = {{ policy_pack | py_str }}
 
 # ── Known tools and roles ───────────────────────────────────────────
 TOOL_NAMES = [
 {% for tool in tools %}
-    "{{ tool.name }}",  # {{ tool.sensitivity }} / {{ tool.access_type }}
+    {{ tool.name | py_str }},  # {{ tool.sensitivity }} / {{ tool.access_type }}
 {% endfor %}
 ]
 
 ROLE_NAMES = [
 {% for role in roles %}
-    "{{ role.name }}",  # {{ role.description }}
+    {{ role.name | py_str }},  # {{ role.description }}
 {% endfor %}
 ]
 

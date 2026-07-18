@@ -5,6 +5,7 @@ Builds a 7-file deployment kit from Jinja2 templates + existing YAML generators.
 
 from __future__ import annotations
 
+import json
 import re
 import uuid
 from datetime import UTC, datetime
@@ -28,6 +29,17 @@ from src.wizard.services.policy_packs import get_policy_pack
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates" / "kit"
 
+
+def _py_str(value: object) -> str:
+    """Render *value* as a safe Python string literal.
+
+    Defence-in-depth for code-generation templates: even though wizard names are
+    validated on input, encoding them here escapes any quote / backslash /
+    newline so a value can never break out of a generated string literal.
+    """
+    return json.dumps("" if value is None else str(value))
+
+
 _jinja_env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(str(_TEMPLATE_DIR)),
     keep_trailing_newline=True,
@@ -35,6 +47,7 @@ _jinja_env = jinja2.Environment(
     lstrip_blocks=True,
     undefined=jinja2.StrictUndefined,
 )
+_jinja_env.filters["py_str"] = _py_str
 
 
 def get_jinja_env() -> jinja2.Environment:
