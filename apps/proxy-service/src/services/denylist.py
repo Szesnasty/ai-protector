@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
-import re
 from dataclasses import dataclass
 
+import regex  # regex engine with an interruptible timeout (bounds catastrophic backtracking)
 import structlog
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -16,6 +17,44 @@ from src.models.policy import Policy
 logger = structlog.get_logger()
 
 CACHE_TTL = 60  # seconds
+
+# Denylist regexes are operator-supplied. Run them defensively so a pathological
+# (catastrophic-backtracking) pattern cannot stall the async event loop: the
+# match runs off-loop with a wall-clock timeout, and the input is length-capped
+# to bound cost. On timeout or an invalid pattern the phrase is treated as a
+# non-match (fail open on that single rule, never a hang).
+_REGEX_TIMEOUT_S = 0.5
+_REGEX_MAX_INPUT = 20_000
+
+
+def _search_bounded(pattern: str, text: str) -> bool:
+    """Run one regex with an interruptible timeout; the match aborts on backtracking blow-up."""
+    try:
+        return regex.search(pattern, text, regex.IGNORECASE, timeout=_REGEX_TIMEOUT_S) is not None
+    except TimeoutError:
+        logger.warning("denylist_regex_timeout", pattern=pattern[:80])
+        return False
+    except regex.error:
+        logger.warning("denylist_regex_invalid", pattern=pattern[:80])
+        return False
+
+
+async def _regex_matches(pattern: str, text: str) -> bool:
+    """Return whether *pattern* matches *text* without risking an event-loop stall.
+
+    The match runs off-loop in the default executor, and the regex engine's own
+    timeout aborts catastrophic backtracking so the worker thread cannot leak.
+    """
+    capped = text[:_REGEX_MAX_INPUT]
+    loop = asyncio.get_running_loop()
+    try:
+        return await asyncio.wait_for(
+            loop.run_in_executor(None, _search_bounded, pattern, capped),
+            timeout=_REGEX_TIMEOUT_S + 1.0,
+        )
+    except TimeoutError:
+        logger.warning("denylist_regex_timeout_outer", pattern=pattern[:80])
+        return False
 
 
 @dataclass
@@ -86,8 +125,7 @@ async def check_denylist(text: str, policy_name: str) -> list[DenylistHit]:
         phrase_str: str = p["phrase"]
         matched = False
         if p.get("is_regex"):
-            if re.search(phrase_str, text, re.IGNORECASE):
-                matched = True
+            matched = await _regex_matches(phrase_str, text)
         else:
             if phrase_str.lower() in text_lower:
                 matched = True
