@@ -91,6 +91,10 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       DEFAULT_POLICY: ${DEFAULT_POLICY:-balanced}
       BENCHMARK_SECRET_KEY: ${BENCHMARK_SECRET_KEY:-}
+      # The bundled demo scans the agent on the private compose network, so this
+      # stack opts in to private targets. Production deployments leave it unset
+      # (default: block internal/metadata addresses — SSRF guard on).
+      RED_TEAM_ALLOW_PRIVATE_TARGETS: ${RED_TEAM_ALLOW_PRIVATE_TARGETS:-true}
     depends_on:
       db:
         condition: service_healthy

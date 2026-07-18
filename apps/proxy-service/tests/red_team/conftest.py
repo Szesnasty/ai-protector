@@ -9,10 +9,18 @@ Only creates the red_team tables — never the app's JSONB-based tables.
 
 from __future__ import annotations
 
+import os
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.red_team.persistence.models import BenchmarkRun, BenchmarkScenarioResult
+
+# Red-team tests scan mock targets on localhost, which is exactly the private-network
+# scenario the SSRF egress guard blocks by default. Opt in for the test suite (mirrors
+# the demo/dev deployment); the guard's default-block behaviour is covered explicitly
+# by test_net_ssrf.py.
+os.environ.setdefault("RED_TEAM_ALLOW_PRIVATE_TARGETS", "true")
 
 # Only the red_team tables — NOT the whole Base.metadata
 _RED_TEAM_TABLES = [BenchmarkRun.__table__, BenchmarkScenarioResult.__table__]

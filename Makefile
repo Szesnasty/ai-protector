@@ -53,9 +53,12 @@ dev:
 	cd infra && docker compose up db redis ollama langfuse -d
 	@echo ""
 	@echo "🔧  Infrastructure started. Run apps locally:"
-	@echo "    cd apps/proxy-service && uvicorn src.main:app --reload --port 8000"
+	@echo "    cd apps/proxy-service && RED_TEAM_ALLOW_PRIVATE_TARGETS=true uvicorn src.main:app --reload --port 8000"
 	@echo "    cd apps/agent-demo && uvicorn src.main:app --reload --port 8002"
 	@echo "    cd apps/frontend && npm run dev"
+	@echo ""
+	@echo "    (RED_TEAM_ALLOW_PRIVATE_TARGETS=true lets the scanner reach local targets in dev;"
+	@echo "     leave it unset in production so internal/metadata addresses stay blocked.)"
 
 pull-model:
 	cd infra && docker compose --profile full --profile init run --rm model-pull
