@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 
 from src.red_team.engine.protocols import HttpResponse
-from src.red_team.net import rewrite_localhost_for_docker
+from src.red_team.net import rewrite_localhost_for_docker, validate_url
 from src.red_team.progress.events import (
     RunCancelledEvent,
     RunCompleteEvent,
@@ -74,6 +74,14 @@ class RealHttpClient:
 
     async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
         endpoint_url = rewrite_localhost_for_docker(target_config.get("endpoint_url") or _DEMO_AGENT_URL)
+        # SSRF guard on the scan execution path — refuse internal/metadata targets
+        # unless private targets are explicitly allowed (see net.validate_url).
+        safe_url = validate_url(endpoint_url)
+        if safe_url is None:
+            raise ConnectionError(
+                f"Target endpoint is not allowed (invalid scheme or internal address): {endpoint_url}"
+            )
+        endpoint_url = safe_url
         timeout_s: int = target_config.get("timeout_s", 30)
 
         headers: dict[str, str] = {"Content-Type": "application/json"}
