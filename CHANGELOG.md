@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.8](https://github.com/Szesnasty/ai-protector/compare/v0.2.7...v0.2.8) (2026-07-18)
+
+
+### Bug Fixes
+
+* **denylist:** bound operator regex execution to prevent event-loop stalls ([97a1e8f](https://github.com/Szesnasty/ai-protector/commit/97a1e8faa37f54b85065d62abe144deab2b5115b))
+* **red-team:** enforce SSRF egress guard on every scan request ([234cafe](https://github.com/Szesnasty/ai-protector/commit/234cafea546c0a5bf8c5cfc2ee9a4e7c85d69187))
+* **wizard:** validate names and encode generated kit literals ([bd8ce7a](https://github.com/Szesnasty/ai-protector/commit/bd8ce7aab86065c1aff206a362d9c2977ee38a40))
+
 ## [0.2.7](https://github.com/Szesnasty/ai-protector/compare/v0.2.6...v0.2.7) (2026-06-19)
 
 
