@@ -61,9 +61,11 @@
 | **Data exfiltration** | Extract PII, system prompts, training data via crafted prompts | LLM02, LLM06 |
 | **Jailbreak** | Bypass safety filters to generate harmful/unrestricted content | LLM01 |
 | **Tool abuse** | Invoke unauthorized tools, escalate privileges, perform actions beyond role | LLM07, LLM08 |
-| **Denial of service** | Exhaust token budgets, flood requests, trigger expensive model calls | LLM04 |
+| **Denial of service** | Exhaust token budgets, flood requests, trigger expensive model calls, stall the event loop with a crafted denylist regex (ReDoS) | LLM04 |
 | **Policy bypass** | Craft inputs that evade scanners while carrying malicious semantics | LLM01 |
 | **Secret extraction** | Recover API keys, database credentials, internal endpoints | LLM06 |
+| **Server-Side Request Forgery (SSRF)** | Abuse the red-team scanner's target-URL fetch to reach cloud metadata (169.254.169.254), loopback, or internal hosts | Infra (web) |
+| **Generated-artifact code injection** | Smuggle code through wizard names/descriptions into the generated integration kit | Infra (web) |
 
 ---
 
@@ -76,8 +78,16 @@
 | `POST /v1/scan` | HTTP/JSON | API key (passthrough) | By policy config |
 | `GET/POST /v1/policies/*` | HTTP/JSON | None (admin API) | No |
 | `GET/POST /v1/rules/*` | HTTP/JSON | None (admin API) | No |
+| `POST /v1/benchmark/*` (red-team scanner; accepts a target URL the server fetches) | HTTP/JSON | None (admin API) | No |
+| `GET/POST /v1/agents/*` (agent wizard: RBAC, tools, roles, kit generation) | HTTP/JSON | None (admin API) | No |
 | `POST /agent/chat` | HTTP/JSON | Session-based | By budget limits |
 | Frontend (port 3000) | HTTP | None | No |
+
+> **Deployment contract.** The management surface (`/v1/policies`, `/v1/rules`,
+> `/v1/benchmark`, `/v1/agents`) is unauthenticated by design for the local-first,
+> single-tenant scope (see §6). Operators **must not expose port 8000 to an
+> untrusted network**: bind it to localhost or place it behind their own
+> authentication and network policy. The default CORS origin is localhost only.
 
 ---
 
@@ -126,6 +136,14 @@
 | **No telemetry** | No external calls for analytics or tracking |
 | **CI enforcement** | Lint, tests, Docker build on every push; pre-commit hooks |
 
+### 5.5 Red-team scanner & generated artifacts
+
+| Control | Threat mitigated | Implementation |
+|---------|-----------------|----------------|
+| **Outbound target egress guard** | SSRF via scanner target URL | `red_team.net.validate_url` restricts schemes to http/https, resolves the host, and refuses loopback / private / link-local / reserved / multicast / metadata addresses. Applied on **every** scan request and the connectivity test. Default-secure; local stacks opt in to private targets via `RED_TEAM_ALLOW_PRIVATE_TARGETS`. |
+| **Bounded denylist regex** | ReDoS / event-loop stall | Operator-supplied denylist regexes run off the event loop with an interruptible engine timeout and a capped input length; a pathological pattern aborts to a non-match instead of hanging. |
+| **Generated-kit input validation** | Code injection into the generated integration kit | Wizard agent/tool/role **names** reject quotes, backslashes and control characters; **descriptions** are stripped of control characters; code-generation templates additionally encode values as Python string literals (defence-in-depth). |
+
 ---
 
 ## 6. Residual risks
@@ -134,7 +152,8 @@
 |------|----------|-------------------|-------|
 | **Novel semantic injection** | High | Partially mitigated | Pattern-based scanners cannot catch all novel attack phrasings. Defense-in-depth (3 scanner layers) reduces but does not eliminate risk. |
 | **Scanner evasion via encoding** | Medium | Mitigated | LLM Guard covers common encoding tricks (base64, unicode). Novel encodings may bypass. |
-| **Admin API unauthenticated** | Medium | Accepted (development scope) | Policy/rule CRUD endpoints have no auth. Production deployments must add authentication. |
+| **Admin API unauthenticated** | Medium | Accepted (single-tenant scope) | The management surface (policies, rules, benchmark scanner, agent wizard) has no auth by design. Safe under the §4 deployment contract (localhost / private network); exposing port 8000 to an untrusted network escalates this to High — production deployments must add authentication and network segmentation. |
+| **SSRF DNS rebinding (TOCTOU)** | Low | Partially mitigated | The egress guard validates the resolved IP at request time but does not pin it to the connection, so a rebinding host could shift between check and fetch. Closed in practice by a network egress policy / firewall on the deployment host. |
 | **Tool runtime behavior** | Medium | Partially mitigated | RBAC and argument validation gate *access*, but do not verify what a tool *actually does* at runtime. |
 | **Single-node availability** | Low | Accepted | No HA or horizontal scaling. Acceptable for current scope. |
 | **Provider-specific bypass** | Low | Accepted | Different LLM providers may respond differently to the same prompt. Policy tuning per model recommended. |
@@ -204,3 +223,4 @@ The frontend sets a strict CSP via Nitro server middleware (`server/middleware/s
 6. **Threshold calibration** — tune policy thresholds per domain and model to minimize false positives
 7. **Monitor scanner updates** — keep LLM Guard, Presidio, NeMo Guardrails up to date for new attack patterns
 8. **Rate limiting** — add request rate limits at the proxy or load balancer level
+9. **Scanner egress** — leave `RED_TEAM_ALLOW_PRIVATE_TARGETS` unset so the scanner refuses internal/metadata addresses, and back it with a host-level egress policy
